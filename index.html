@@ -324,7 +324,7 @@ body {
 }
 .field-input:focus { border-color: var(--gold); background: var(--white); }
 .field-input::placeholder { color: var(--light); }
-.field-input:disabled { opacity: 0.5; cursor: not-allowed; }
+.field-input: { opacity: 0.5; cursor: not-allowed; }
 select.field-input { appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236B7280'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
 
 .size-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -646,7 +646,7 @@ canvas#preview-canvas {
   color: var(--obsidian);
 }
 .btn-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-gold); filter: brightness(1.05); }
-.btn-primary:disabled { opacity: 0.4; pointer-events: none; }
+.btn-primary: { opacity: 0.4; pointer-events: none; }
 .btn-outline { background: transparent; color: var(--text); border: 1.5px solid var(--border2); }
 .btn-outline:hover { border-color: var(--obsidian); }
 .btn-dark { background: var(--obsidian); color: var(--gold2); border: 1px solid var(--border); }
