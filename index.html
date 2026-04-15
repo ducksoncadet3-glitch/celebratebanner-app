@@ -342,10 +342,10 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
       <div class="field-card" style="margin-top:16px;">
         <div class="field-card-title">Background Color</div>
         <div class="bg-picker-row">
-          <input type="color" class="bg-color-picker" id="bg-color-picker" value="#0A0E18" oninput="updateBgColor(this.value)">
+          <input type="color" class="bg-color-picker" id="bg-color-picker" value="#ffffff" oninput="updateBgColor(this.value)">
           <div class="bg-color-info">
             <div class="bg-color-label">Pick any background color</div>
-            <span class="bg-color-hex" id="bg-color-hex">#0A0E18</span>
+            <span class="bg-color-hex" id="bg-color-hex">#ffffff</span>
           </div>
         </div>
       </div>
@@ -552,7 +552,7 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
 var S = {
   page:0, theme:null, photos:[], hero:-1,
   fields:{}, size:'24x36', accent:'#C9A84C',
-  bgColor:'#0A0E18', delivery:'digital', email:'',
+  bgColor:'#ffffff', delivery:'digital', email:'',
   cupPhoto: null,
   effects: { filter:'none', overlay:'none', frame:'none', textFx:'none' }
 };
@@ -560,14 +560,14 @@ var S = {
 var PRICES = { '18x24':39, '24x36':49, '36x48':59, '48x72':69, '60x96':79 };
 
 var THEMES = [
-  { id:'graduation', emoji:'🎓', name:'Graduation', desc:'Hero portrait + auto photo collage. Perfect for grad parties and keepsakes.', maxPhotos:54, tags:['Milestones','Portraits','Family'], tagBg:'rgba(201,168,76,0.1)', tagC:'#7A6020', bg:'#0A0E18', accent:'#C9A84C', fields:[ {id:'name',label:"Graduate's Name",ph:'e.g. Alexandra Rivera',req:true}, {id:'year',label:'Class Year',ph:'e.g. Class of 2026',req:true}, {id:'school',label:'School (optional)',ph:'e.g. Lincoln High',req:false} ], palettes:['#C9A84C','#FFFFFF','#4A9ECC','#5A8F6A','#C4617A'] },
-  { id:'champion', emoji:'🏆', name:'Team Champion', desc:'Upload your trophy + team photos. Sky blue & gold palette.', maxPhotos:54, tags:['Sports','Team','Victory'], tagBg:'rgba(74,158,204,0.1)', tagC:'#0C4F75', bg:'#080E1A', accent:'#C9A84C', fixedHeadline:'CHAMPION', fields:[ {id:'teamName',label:'Team Name',ph:'e.g. Fort Pierce Lions',req:false}, {id:'year',label:'Year (optional)',ph:'e.g. 2025',req:false} ], palettes:['#4A9ECC','#C9A84C','#FFFFFF','#5A8F6A','#7A62C4'] },
-  { id:'wedding', emoji:'💒', name:'Wedding', desc:'Romantic wide hero + photo grid. Lavender & champagne palette.', maxPhotos:30, tags:['Wedding','Love','Romantic'], tagBg:'rgba(122,98,196,0.1)', tagC:'#4B2A8A', bg:'#180A28', accent:'#D4A8D4', fields:[ {id:'name1',label:'Partner 1 Name',ph:'e.g. Elena',req:true,inline:true}, {id:'name2',label:'Partner 2 Name',ph:'e.g. Marco',req:true,inline:true}, {id:'date',label:'Wedding Date',ph:'e.g. June 14, 2026',req:false} ], palettes:['#D4A8D4','#C9A84C','#FFFFFF','#C4617A','#7A62C4'] },
-  { id:'anniversary', emoji:'❤️', name:'Anniversary', desc:'Circular hero portrait surrounded by warm photo memories.', maxPhotos:25, tags:['Anniversary','Romance','Milestone'], tagBg:'rgba(196,97,122,0.1)', tagC:'#8B2040', bg:'#1A0505', accent:'#E05080', fields:[ {id:'names',label:'Names',ph:'e.g. Elena & Marco',req:true}, {id:'years',label:'Years Together',ph:'e.g. 25 Years',req:false} ], palettes:['#C4617A','#C9A84C','#FFFFFF','#7A62C4','#5A8F6A'] },
-  { id:'pets', emoji:'🐾', name:'Pets', desc:'Playful, warm layout celebrating your furry family member.', maxPhotos:25, tags:['Pets','Fun','Family'], tagBg:'rgba(90,143,106,0.1)', tagC:'#2A6040', bg:'#050E08', accent:'#5A8F6A', fields:[ {id:'petName',label:"Pet's Name",ph:'e.g. Biscuit',req:true}, {id:'caption',label:'Caption',ph:'e.g. Best boy 🐶',req:false} ], palettes:['#5A8F6A','#C9A84C','#FFFFFF','#C4617A','#4A9ECC'] },
-  { id:'america250-official', emoji:'🇺🇸', name:'America 250 — Official', desc:'Navy & gold patriotic design. Perfect for government agencies, municipalities & official July 4th events.', maxPhotos:20, tags:['Patriotic','America250','Government'], tagBg:'rgba(10,22,40,0.12)', tagC:'#0A1628', bg:'#0A1628', accent:'#C9A84C', fixedHeadline:'250TH ANNIVERSARY', fields:[ {id:'city',label:'City or Agency Name',ph:'e.g. City of West Palm Beach',req:false}, {id:'date',label:'Event Date',ph:'e.g. July 4, 2026',req:false} ], palettes:['#C9A84C','#FFFFFF','#B22234','#3C3F8F','#F5F0E8'] },
-  { id:'america250-family', emoji:'🎆', name:'America 250 — Family', desc:'Warm & festive for families, neighborhoods and community July 4th events. Happy Birthday, America!', maxPhotos:20, tags:['Festive','Family','July4th'], tagBg:'rgba(178,34,52,0.1)', tagC:'#8B1020', bg:'#FDF6EC', accent:'#B22234', fixedHeadline:'HAPPY BIRTHDAY AMERICA', fields:[ {id:'name',label:'Family or Group Name',ph:'e.g. The Rivera Family',req:false}, {id:'caption',label:'Caption',ph:'e.g. Celebrating 250 Years!',req:false} ], palettes:['#B22234','#C9A84C','#3C3F8F','#0A1628','#FFFFFF'] },
-  { id:'america250-parade', emoji:'🥁', name:'America 250 — Parade', desc:'Bold red, white & blue for parades, street festivals and community celebrations.', maxPhotos:20, tags:['Parade','Bold','Community'], tagBg:'rgba(60,63,143,0.1)', tagC:'#2A2D8F', bg:'#B22234', accent:'#F5F0E8', fixedHeadline:'STARS & STRIPES', fields:[ {id:'city',label:'City or Organization',ph:'e.g. West Palm Beach Parade',req:false}, {id:'date',label:'Event Date',ph:'e.g. July 4, 2026',req:false} ], palettes:['#F5F0E8','#C9A84C','#0A1628','#3C3F8F','#B22234'] }
+  { id:'graduation', emoji:'🎓', name:'Graduation', desc:'Hero portrait + auto photo collage. Perfect for grad parties and keepsakes.', maxPhotos:55, tags:['Milestones','Portraits','Family'], tagBg:'rgba(201,168,76,0.1)', tagC:'#7A6020', bg:'#ffffff', accent:'#C9A84C', fields:[ {id:'name',label:"Graduate's Name",ph:'e.g. Alexandra Rivera',req:true}, {id:'year',label:'Class Year',ph:'e.g. Class of 2026',req:true}, {id:'school',label:'School (optional)',ph:'e.g. Lincoln High',req:false} ], palettes:['#C9A84C','#FFFFFF','#4A9ECC','#5A8F6A','#C4617A'] },
+  { id:'champion', emoji:'🏆', name:'Team Champion', desc:'Upload your trophy + team photos. Sky blue & gold palette.', maxPhotos:55, tags:['Sports','Team','Victory'], tagBg:'rgba(74,158,204,0.1)', tagC:'#0C4F75', bg:'#ffffff', accent:'#C9A84C', fixedHeadline:'CHAMPION', fields:[ {id:'teamName',label:'Team Name',ph:'e.g. Riverside High Rockets',req:false}, {id:'year',label:'Year (optional)',ph:'e.g. 2025',req:false} ], palettes:['#4A9ECC','#C9A84C','#FFFFFF','#5A8F6A','#7A62C4'] },
+  { id:'wedding', emoji:'💒', name:'Wedding', desc:'Romantic wide hero + photo grid. Lavender & champagne palette.', maxPhotos:55, tags:['Wedding','Love','Romantic'], tagBg:'rgba(122,98,196,0.1)', tagC:'#4B2A8A', bg:'#ffffff', accent:'#D4A8D4', fields:[ {id:'name1',label:'Partner 1 Name',ph:'e.g. Elena',req:true,inline:true}, {id:'name2',label:'Partner 2 Name',ph:'e.g. Marco',req:true,inline:true}, {id:'date',label:'Wedding Date',ph:'e.g. June 14, 2026',req:false} ], palettes:['#D4A8D4','#C9A84C','#FFFFFF','#C4617A','#7A62C4'] },
+  { id:'anniversary', emoji:'❤️', name:'Anniversary', desc:'Circular hero portrait surrounded by warm photo memories.', maxPhotos:55, tags:['Anniversary','Romance','Milestone'], tagBg:'rgba(196,97,122,0.1)', tagC:'#8B2040', bg:'#ffffff', accent:'#E05080', fields:[ {id:'names',label:'Names',ph:'e.g. Elena & Marco',req:true}, {id:'years',label:'Years Together',ph:'e.g. 25 Years',req:false} ], palettes:['#C4617A','#C9A84C','#FFFFFF','#7A62C4','#5A8F6A'] },
+  { id:'pets', emoji:'🐾', name:'Pets', desc:'Playful, warm layout celebrating your furry family member.', maxPhotos:24, tags:['Pets','Fun','Family'], tagBg:'rgba(90,143,106,0.1)', tagC:'#2A6040', bg:'#ffffff', accent:'#5A8F6A', fields:[ {id:'petName',label:"Pet's Name",ph:'e.g. Biscuit',req:true}, {id:'caption',label:'Caption',ph:'e.g. Best boy 🐶',req:false} ], palettes:['#5A8F6A','#C9A84C','#FFFFFF','#C4617A','#4A9ECC'] },
+  { id:'america250-official', emoji:'🇺🇸', name:'America 250 — Official', desc:'Navy & gold patriotic design. Perfect for government agencies, municipalities & official July 4th events.', maxPhotos:24, tags:['Patriotic','America250','Government'], tagBg:'rgba(10,22,40,0.12)', tagC:'#0A1628', bg:'#ffffff', accent:'#C9A84C', fixedHeadline:'250TH ANNIVERSARY', fields:[ {id:'city',label:'City or Agency Name',ph:'e.g. City of West Palm Beach',req:false}, {id:'date',label:'Event Date',ph:'e.g. July 4, 2026',req:false} ], palettes:['#C9A84C','#FFFFFF','#B22234','#3C3F8F','#F5F0E8'] },
+  { id:'america250-family', emoji:'🎆', name:'America 250 — Family', desc:'Warm & festive for families, neighborhoods and community July 4th events. Happy Birthday, America!', maxPhotos:24, tags:['Festive','Family','July4th'], tagBg:'rgba(178,34,52,0.1)', tagC:'#8B1020', bg:'#ffffff', accent:'#B22234', fixedHeadline:'HAPPY BIRTHDAY AMERICA', fields:[ {id:'name',label:'Family or Group Name',ph:'e.g. The Rivera Family',req:false}, {id:'caption',label:'Caption',ph:'e.g. Celebrating 250 Years!',req:false} ], palettes:['#B22234','#C9A84C','#3C3F8F','#0A1628','#FFFFFF'] },
+  { id:'america250-parade', emoji:'🥁', name:'America 250 — Parade', desc:'Bold red, white & blue for parades, street festivals and community celebrations.', maxPhotos:24, tags:['Parade','Bold','Community'], tagBg:'rgba(60,63,143,0.1)', tagC:'#2A2D8F', bg:'#ffffff', accent:'#F5F0E8', fixedHeadline:'STARS & STRIPES', fields:[ {id:'city',label:'City or Organization',ph:'e.g. West Palm Beach Parade',req:false}, {id:'date',label:'Event Date',ph:'e.g. July 4, 2026',req:false} ], palettes:['#F5F0E8','#C9A84C','#0A1628','#3C3F8F','#B22234'] }
 ];
 
 function init() { buildThemeGrid(); buildAdminThemes(); buildFunnelChart(); buildThemeMix(); }
@@ -882,11 +882,11 @@ function drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,accent) {
   var nameFSAdj = t.fixedHeadline ? Math.round(fS*0.75) : fS;
   if(t.id==='wedding'&&S.fields.name1&&S.fields.name2){
     drawTxt(S.fields.name1.toUpperCase(),W*0.27,nameY,'bold '+nameFSAdj+'px Cormorant Garamond,serif',accent);
-    ctx.save();ctx.font='bold '+Math.round(nameFSAdj*0.55)+'px Cormorant Garamond,serif';ctx.fillStyle='rgba(255,255,255,0.7)';ctx.textAlign='center';ctx.fillText('&',W*0.5,nameY);ctx.restore();
+    ctx.save();ctx.font='bold '+Math.round(nameFSAdj*1.2)+'px Cormorant Garamond,serif';ctx.fillStyle='rgba(255,255,255,0.85)';ctx.textAlign='center';ctx.fillText('&',W*0.5,nameY);ctx.restore();
     drawTxt(S.fields.name2.toUpperCase(),W*0.73,nameY,'bold '+nameFSAdj+'px Cormorant Garamond,serif',accent);
   } else if(name) drawTxt(name.toUpperCase(),W/2,nameY,'bold '+nameFSAdj+'px Cormorant Garamond,serif',accent);
   if(sub) drawTxt(sub.toUpperCase(),W/2,subY,'700 '+sS+'px Outfit,sans-serif','rgba(255,255,255,0.90)');
-  if(sub2) drawTxt(sub2.toUpperCase(),W/2,sub2Y,'500 '+s2S+'px Outfit,sans-serif','rgba(255,255,255,0.65)');
+  if(sub2&&!(t.id==='wedding'&&S.fields.name1&&S.fields.name2)) drawTxt(sub2.toUpperCase(),W/2,sub2Y,'500 '+s2S+'px Outfit,sans-serif','rgba(255,255,255,0.65)');
 }
 
 function drawWatermarkText(ctx,text,W,H,accent){
@@ -960,7 +960,7 @@ function fakeDl(ext) {
 }
 
 function resetBuilder() {
-  S={page:0,theme:null,photos:[],hero:-1,fields:{},size:'24x36',accent:'#C9A84C',bgColor:'#0A0E18',delivery:'digital',email:'',cupPhoto:null,effects:{filter:'none',overlay:'none',frame:'none',textFx:'none'}};
+  S={page:0,theme:null,photos:[],hero:-1,fields:{},size:'24x36',accent:'#C9A84C',bgColor:'#ffffff',delivery:'digital',email:'',cupPhoto:null,effects:{filter:'none',overlay:'none',frame:'none',textFx:'none'}};
   document.getElementById('photo-grid').innerHTML='';
   document.getElementById('upload-stats-wrap').style.display='none';
   document.querySelectorAll('.theme-card').forEach(function(c){c.classList.remove('selected');});
@@ -1678,7 +1678,7 @@ function liveRender() {
       var ctx = _livePreviewCtx;
 
       // Background
-      ctx.fillStyle = S.bgColor || '#0A0E18';
+      ctx.fillStyle = S.bgColor || '#ffffff';
       ctx.fillRect(0, 0, LW, LH);
 
       // Subtle texture
