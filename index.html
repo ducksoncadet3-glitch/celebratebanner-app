@@ -811,18 +811,43 @@ function buildPreview() {
     nomH = Math.floor(nomH * sc / 2) * 2;
   }
 
-  // ── Collage photo cap based on size + theme ──────────────────
+  // ── Collage: ALL uploaded photos; tile if fewer than target ──────
   var isSmallTheme = SMALL_COLLAGE_THEMES.indexOf(t.id) >= 0;
-  var collageCap = isSmallTheme ? 24 : (COLLAGE_CAPS[S.size] || 45);
-  var others = S.photos.filter(function(_,i){return i!==S.hero;}).slice(0, collageCap);
-  var cols = COLLAGE_COLS[collageCap] || 9;
+  var targetSlots = isSmallTheme ? 24 : (COLLAGE_CAPS[S.size] || 45);
+  var defaultCols  = COLLAGE_COLS[targetSlots] || 9;
+  var baseList     = S.photos.filter(function(_,i){return i!==S.hero;});
+  var actualCount  = baseList.length;
+
+  // Build draw list — NO slice/cap; tile up to targetSlots if fewer uploaded
+  var drawList = [];
+  if (actualCount > 0) {
+    if (actualCount >= targetSlots) {
+      drawList = baseList.slice(); // every uploaded photo, nothing dropped
+    } else {
+      // tile/repeat to fill all target slots
+      for (var k=0; k<targetSlots; k++) drawList.push(baseList[k % actualCount]);
+    }
+  }
+  var totalDrawn = drawList.length;
+
+  // Dynamic cols: if more photos than target, expand columns to keep cells crisp
+  var approxHeroBot = Math.round(W*0.28) + 20 + Math.round(W*0.55);
+  var availH = Math.max(1, nomH - approxHeroBot - Math.round(W*0.04));
+  var cols;
+  if (totalDrawn <= targetSlots || actualCount === 0) {
+    cols = defaultCols;
+  } else {
+    // solve for cols that fills available height with all photos
+    var ar = W / availH;
+    cols = Math.max(defaultCols, Math.ceil(Math.sqrt(totalDrawn * ar)));
+  }
 
   // ── Layout in 300 DPI coordinate space ──────────────────────
   var textH=Math.round(W*0.28), heroSz=Math.round(W*0.55);
   var heroX=Math.round((W-heroSz)/2), heroY=textH+10, heroBot=heroY+heroSz+10;
   var pad=Math.max(6,Math.round(W*0.003)), margin=Math.max(8,Math.round(W*0.003));
   var cw=Math.floor((W-margin*2-(cols-1)*pad)/cols), ch=cw;
-  var rows=Math.max(1,Math.ceil(others.length/cols));
+  var rows=Math.max(1,Math.ceil(totalDrawn/cols));
   var H=Math.max(nomH, heroBot+rows*(ch+pad)+Math.round(W*0.02));
 
   // ── Set canvas to full 300 DPI size; display scaled in CSS ───
@@ -849,7 +874,15 @@ function buildPreview() {
   drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,S.accent);
   drawSquareHero(ctx,heroPhoto,heroX,heroY,heroSz,S.accent);
   if(t.id==='graduation') drawVerticalCongrats(ctx,heroX,heroY,heroSz,S.accent);
-  drawCollageRow(ctx,others,W,H,S.accent,heroBot,cols);
+  // ── Diagnostics ──────────────────────────────────────────────
+  console.log('[CelebrateBanner] Uploaded:', S.photos.length,
+    '| Collage (excl. hero):', actualCount,
+    '| Target slots:', targetSlots,
+    '| Drawing to canvas:', totalDrawn,
+    '| Cols:', cols, '| Rows:', rows,
+    '| Cell px:', cw,
+    '| Canvas:', W+'×'+H+'px ('+S.size+' @ 300 DPI)');
+  drawCollageRow(ctx,drawList,W,H,S.accent,heroBot,cols);
   // Apply overlay effect only if customer selected one
   if(typeof drawOverlay==='function' && S.effects && S.effects.overlay && S.effects.overlay!=='none') drawOverlay(ctx,W,H,S.accent);
   updateCheckoutSummary();
