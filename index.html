@@ -558,6 +558,20 @@ var S = {
 };
 
 var PRICES = { '18x24':39, '24x36':49, '36x48':59, '48x72':69, '60x96':79 };
+// True 300 DPI canvas dimensions per size (width × height in pixels)
+var CANVAS_DIMS = {
+  '18x24':{w:5400, h:7200},
+  '24x36':{w:7200, h:10800},
+  '36x48':{w:10800,h:14400},
+  '48x72':{w:14400,h:21600},
+  '60x96':{w:18000,h:28800}
+};
+// Max collage photos for crisp quality per size
+var COLLAGE_CAPS = {'18x24':20,'24x36':45,'36x48':55,'48x72':55,'60x96':55};
+// These themes always cap at 24 regardless of size
+var SMALL_COLLAGE_THEMES = ['pets','america250-official','america250-family','america250-parade'];
+// Column counts per collage cap for optimal grid layout
+var COLLAGE_COLS = {20:5, 24:6, 45:9, 55:11};
 
 var THEMES = [
   { id:'graduation', emoji:'🎓', name:'Graduation', desc:'Hero portrait + auto photo collage. Perfect for grad parties and keepsakes.', maxPhotos:55, tags:['Milestones','Portraits','Family'], tagBg:'rgba(201,168,76,0.1)', tagC:'#7A6020', bg:'#ffffff', accent:'#C9A84C', fields:[ {id:'name',label:"Graduate's Name",ph:'e.g. Alexandra Rivera',req:true}, {id:'year',label:'Class Year',ph:'e.g. Class of 2026',req:true}, {id:'school',label:'School (optional)',ph:'e.g. Lincoln High',req:false} ], palettes:['#C9A84C','#FFFFFF','#4A9ECC','#5A8F6A','#C4617A'] },
@@ -777,7 +791,6 @@ function buildPreview() {
   if (!S.theme) return;
   var t = S.theme;
   var heroPhoto = S.hero>=0 ? S.photos[S.hero] : (S.photos[0]||null);
-  var others = S.photos.filter(function(_,i){return i!==S.hero;});
   var name = t.id==='champion' ? (S.fields.teamName||'') : (S.fields.name||S.fields.name1||S.fields.names||S.fields.petName||'Your Name');
   var sub  = S.fields.year||S.fields.date||S.fields.years||S.fields.caption||'';
   var sub2 = S.fields.school||S.fields.name2||'';
@@ -786,25 +799,47 @@ function buildPreview() {
   document.getElementById('sum-photos').textContent= S.photos.length+' photos';
   document.getElementById('sum-name').textContent  = name;
   document.getElementById('preview-spec').textContent = S.size+'" · 300 DPI · CMYK';
-  var preview = document.getElementById('banner-preview');
-  var canvas  = document.getElementById('preview-canvas');
-  var W = preview.offsetWidth||320;
+
+  // ── True 300 DPI canvas dimensions ──────────────────────────
+  var dims = CANVAS_DIMS[S.size] || CANVAS_DIMS['24x36'];
+  var W = dims.w, nomH = dims.h;
+  // Safety cap: Chrome/Firefox max canvas area ≈ 268M pixels
+  var MAX_PX = 268000000;
+  if (W * nomH > MAX_PX) {
+    var sc = Math.sqrt(MAX_PX / (W * nomH));
+    W = Math.floor(W * sc / 2) * 2;
+    nomH = Math.floor(nomH * sc / 2) * 2;
+  }
+
+  // ── Collage photo cap based on size + theme ──────────────────
+  var isSmallTheme = SMALL_COLLAGE_THEMES.indexOf(t.id) >= 0;
+  var collageCap = isSmallTheme ? 24 : (COLLAGE_CAPS[S.size] || 45);
+  var others = S.photos.filter(function(_,i){return i!==S.hero;}).slice(0, collageCap);
+  var cols = COLLAGE_COLS[collageCap] || 9;
+
+  // ── Layout in 300 DPI coordinate space ──────────────────────
   var textH=Math.round(W*0.28), heroSz=Math.round(W*0.55);
   var heroX=Math.round((W-heroSz)/2), heroY=textH+10, heroBot=heroY+heroSz+10;
-  var n=4,pad=3,cw=Math.floor((W-16-(n-1)*pad)/n),ch=cw;
-  var othersCount=S.photos.length>0?S.photos.length-1:0;
-  var rows=Math.max(1,Math.ceil(othersCount/n));
-  var H=Math.max(Math.round(W*1.5),heroBot+rows*(ch+pad)+20);
-  var dpr=window.devicePixelRatio||1;
-  canvas.width=W*dpr; canvas.height=H*dpr;
-  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  var pad=Math.max(6,Math.round(W*0.003)), margin=Math.max(8,Math.round(W*0.003));
+  var cw=Math.floor((W-margin*2-(cols-1)*pad)/cols), ch=cw;
+  var rows=Math.max(1,Math.ceil(others.length/cols));
+  var H=Math.max(nomH, heroBot+rows*(ch+pad)+Math.round(W*0.02));
+
+  // ── Set canvas to full 300 DPI size; display scaled in CSS ───
+  var preview = document.getElementById('banner-preview');
+  var canvas  = document.getElementById('preview-canvas');
+  var displayW = preview.offsetWidth||320;
+  var displayH = Math.round(displayW * H / W);
+  canvas.width=W; canvas.height=H;
+  canvas.style.width=displayW+'px'; canvas.style.height=displayH+'px';
   canvas._logW=W; canvas._logH=H;
-  preview.style.height=H+'px';
+  preview.style.height=displayH+'px';
+
   var ctx=canvas.getContext('2d');
-  ctx.scale(dpr,dpr);
   ctx.fillStyle=S.bgColor; ctx.fillRect(0,0,W,H);
-  ctx.save(); ctx.globalAlpha=0.04; ctx.strokeStyle=S.accent; ctx.lineWidth=1;
-  for(var x=-H;x<W+H;x+=22){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+H,H);ctx.stroke();}
+  ctx.save(); ctx.globalAlpha=0.04; ctx.strokeStyle=S.accent; ctx.lineWidth=Math.max(1,Math.round(W*0.001));
+  var stripe=Math.round(W*0.025);
+  for(var x=-H;x<W+H;x+=stripe){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+H,H);ctx.stroke();}
   ctx.restore();
   var vig=ctx.createRadialGradient(W/2,H*0.4,H*0.1,W/2,H*0.5,H*0.8);
   vig.addColorStop(0,'rgba(0,0,0,0)'); vig.addColorStop(1,'rgba(0,0,0,0.4)');
@@ -814,7 +849,7 @@ function buildPreview() {
   drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,S.accent);
   drawSquareHero(ctx,heroPhoto,heroX,heroY,heroSz,S.accent);
   if(t.id==='graduation') drawVerticalCongrats(ctx,heroX,heroY,heroSz,S.accent);
-  drawCollageRow(ctx,others,W,H,S.accent,heroBot);
+  drawCollageRow(ctx,others,W,H,S.accent,heroBot,cols);
   // Apply overlay effect only if customer selected one
   if(typeof drawOverlay==='function' && S.effects && S.effects.overlay && S.effects.overlay!=='none') drawOverlay(ctx,W,H,S.accent);
   updateCheckoutSummary();
@@ -823,7 +858,8 @@ function buildPreview() {
 
 function drawImg(ctx, photo, x, y, w, h) {
   if (!photo) { ctx.fillStyle='rgba(255,255,255,0.05)'; ctx.fillRect(x,y,w,h); return; }
-  var img = new Image(); img.src = photo.src;
+  // Use pre-cached full-res Image object; fall back to creating one from src
+  var img = (photo._img&&photo._img.complete&&photo._img.naturalWidth)?photo._img:(function(){var i=new Image();i.src=photo.src;return i;})();
   var rot = photo.rotation||0;
   var f = (typeof FILTERS!=='undefined') ? FILTERS.find(function(f){return f.id===S.effects.filter;}) : null;
   ctx.save();
@@ -902,15 +938,17 @@ function drawWatermarkText(ctx,text,W,H,accent){
   ctx.restore();
 }
 
-function drawCollageRow(ctx,photos,W,H,accent,startY){
+function drawCollageRow(ctx,photos,W,H,accent,startY,cols){
   if(!photos||photos.length===0) return;
   startY=startY||(H*0.27+W*0.22+18);
-  var n=4,pad=4,margin=6;
+  var n=cols||4;
+  var pad=Math.max(4,Math.round(W*0.003)), margin=Math.max(6,Math.round(W*0.003));
   var cw=Math.floor((W-margin*2-(n-1)*pad)/n),ch=cw;
+  var cornerR=Math.max(4,Math.round(cw*0.025));
   for(var i=0;i<photos.length;i++){
     var col=i%n,row=Math.floor(i/n);
     var x=margin+col*(cw+pad),y=startY+row*(ch+pad);
-    roundClip(ctx,x,y,cw,ch,4); drawImg(ctx,photos[i],x,y,cw,ch); ctx.restore();
+    roundClip(ctx,x,y,cw,ch,cornerR); drawImg(ctx,photos[i],x,y,cw,ch); ctx.restore();
   }
 }
 
