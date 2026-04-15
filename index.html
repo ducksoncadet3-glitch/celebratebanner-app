@@ -657,7 +657,7 @@ function handleFiles(files) {
   arr.forEach(function(f){
     getExifRotation(f, function(rot) {
       var r = new FileReader();
-      r.onload = function(e){ S.photos.push({src:e.target.result,name:f.name,rotation:rot}); renderPhotoGrid(); };
+      r.onload = function(e){ var imgObj=new Image(); imgObj.src=e.target.result; S.photos.push({src:e.target.result,name:f.name,rotation:rot,_img:imgObj}); renderPhotoGrid(); };
       r.readAsDataURL(f);
     });
   });
@@ -705,7 +705,8 @@ function handleUrlPhoto() {
     tc.width=img.width; tc.height=img.height;
     var tCtx=tc.getContext('2d'); tCtx.drawImage(img,0,0);
     var src = tc.toDataURL('image/jpeg',0.92);
-    S.photos.push({src:src,name:'web-photo.jpg',rotation:0});
+    var cached=new Image(); cached.src=src;
+    S.photos.push({src:src,name:'web-photo.jpg',rotation:0,_img:cached});
     renderPhotoGrid();
     document.getElementById('url-input').value='';
     showToast('✓ Photo added from web');
@@ -790,12 +791,17 @@ function buildPreview() {
   var W = preview.offsetWidth||320;
   var textH=Math.round(W*0.28), heroSz=Math.round(W*0.55);
   var heroX=Math.round((W-heroSz)/2), heroY=textH+10, heroBot=heroY+heroSz+10;
-  var n=6,pad=3,cw=Math.floor((W-16-(n-1)*pad)/n),ch=cw;
+  var n=4,pad=3,cw=Math.floor((W-16-(n-1)*pad)/n),ch=cw;
   var othersCount=S.photos.length>0?S.photos.length-1:0;
   var rows=Math.max(1,Math.ceil(othersCount/n));
   var H=Math.max(Math.round(W*1.5),heroBot+rows*(ch+pad)+20);
-  canvas.width=W; canvas.height=H; preview.style.height=H+'px';
+  var dpr=window.devicePixelRatio||1;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  canvas._logW=W; canvas._logH=H;
+  preview.style.height=H+'px';
   var ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
   ctx.fillStyle=S.bgColor; ctx.fillRect(0,0,W,H);
   ctx.save(); ctx.globalAlpha=0.04; ctx.strokeStyle=S.accent; ctx.lineWidth=1;
   for(var x=-H;x<W+H;x+=22){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+H,H);ctx.stroke();}
@@ -882,7 +888,7 @@ function drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,accent) {
   var nameFSAdj = t.fixedHeadline ? Math.round(fS*0.75) : fS;
   if(t.id==='wedding'&&S.fields.name1&&S.fields.name2){
     drawTxt(S.fields.name1.toUpperCase(),W*0.27,nameY,'bold '+nameFSAdj+'px Cormorant Garamond,serif',accent);
-    ctx.save();ctx.font='bold '+Math.round(nameFSAdj*1.2)+'px Cormorant Garamond,serif';ctx.fillStyle='rgba(255,255,255,0.85)';ctx.textAlign='center';ctx.fillText('&',W*0.5,nameY);ctx.restore();
+    ctx.save();ctx.font='bold '+nameFSAdj+'px Cormorant Garamond,serif';ctx.textBaseline='alphabetic';ctx.fillStyle='rgba(255,255,255,0.85)';ctx.textAlign='center';ctx.fillText('&',W*0.5,nameY);ctx.restore();
     drawTxt(S.fields.name2.toUpperCase(),W*0.73,nameY,'bold '+nameFSAdj+'px Cormorant Garamond,serif',accent);
   } else if(name) drawTxt(name.toUpperCase(),W/2,nameY,'bold '+nameFSAdj+'px Cormorant Garamond,serif',accent);
   if(sub) drawTxt(sub.toUpperCase(),W/2,subY,'700 '+sS+'px Outfit,sans-serif','rgba(255,255,255,0.90)');
@@ -899,7 +905,7 @@ function drawWatermarkText(ctx,text,W,H,accent){
 function drawCollageRow(ctx,photos,W,H,accent,startY){
   if(!photos||photos.length===0) return;
   startY=startY||(H*0.27+W*0.22+18);
-  var n=6,pad=2,margin=4;
+  var n=4,pad=4,margin=6;
   var cw=Math.floor((W-margin*2-(n-1)*pad)/n),ch=cw;
   for(var i=0;i<photos.length;i++){
     var col=i%n,row=Math.floor(i/n);
@@ -1505,11 +1511,11 @@ buildCustomizeFields = function() {
   buildEffectsPanel();
 };
 
-// Override drawImg to apply filters
+// Override drawImg to apply filters — use pre-cached _img for full-res crisp rendering
 var _origDrawImg = drawImg;
 drawImg = function(ctx, photo, x, y, w, h) {
   if (!photo) { ctx.fillStyle='rgba(255,255,255,0.05)'; ctx.fillRect(x,y,w,h); return; }
-  var img = new Image(); img.src = photo.src;
+  var img = (photo._img && photo._img.complete && photo._img.naturalWidth) ? photo._img : (function(){ var i=new Image(); i.src=photo.src; return i; })();
   var rot = photo.rotation || 0;
   var f = FILTERS.find(function(f){ return f.id === S.effects.filter; });
   ctx.save();
@@ -1540,7 +1546,7 @@ buildPreview = function() {
     var canvas = document.getElementById('preview-canvas');
     if (!canvas || canvas.width === 0) return;
     var ctx = canvas.getContext('2d');
-    drawOverlay(ctx, canvas.width, canvas.height, S.accent);
+    drawOverlay(ctx, canvas._logW||canvas.width, canvas._logH||canvas.height, S.accent);
   }, 200);
 };
 
