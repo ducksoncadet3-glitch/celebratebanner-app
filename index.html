@@ -826,7 +826,7 @@ function buildCustomizeFields() {
   buildEffectsPanel();
 }
 
-function selectSize(sz,el) { S.size=sz; document.querySelectorAll('.size-card').forEach(function(c){c.classList.remove('sel');}); el.classList.add('sel'); updatePriceDisplay(); }
+function selectSize(sz,el) { S.size=sz; document.querySelectorAll('.size-card').forEach(function(c){c.classList.remove('sel');}); el.classList.add('sel'); updatePriceDisplay(); updateCheckoutSummary(); }
 function setAccent(col,el) { S.accent=col; document.querySelectorAll('.pal-swatch').forEach(function(s){s.classList.remove('active');}); el.classList.add('active'); }
 function updatePriceDisplay() {
   Object.keys(PRICES).forEach(function(sz){
@@ -955,6 +955,8 @@ function buildPreview() {
   drawCollageRow(ctx,drawList,W,H,S.accent,heroBot,cols);
   // Apply overlay effect only if customer selected one
   if(typeof drawOverlay==='function' && S.effects && S.effects.overlay && S.effects.overlay!=='none') drawOverlay(ctx,W,H,S.accent);
+  // Subtle branding watermark at very bottom
+  drawBannerBranding(ctx,W,H,S.accent);
   updateCheckoutSummary();
   gotoPage(3);
 }
@@ -1243,34 +1245,56 @@ function drawThemeBackground(ctx, t, W, H, accent, bgColor) {
   }
 
   else if (t.id === 'champion') {
-    // Stadium spotlight rays from top center
+    // Stadium spotlight rays from two top-corner light sources
     ctx.save();
-    ctx.globalAlpha = 0.055;
-    var rayCount = 12;
-    for (var r = 0; r < rayCount; r++) {
-      var angle = ((r / rayCount) - 0.5) * Math.PI * 1.4;
-      var grd = ctx.createLinearGradient(W/2, 0, W/2 + Math.sin(angle)*W*1.5, H);
-      grd.addColorStop(0, 'rgba(255,220,120,0.7)');
-      grd.addColorStop(0.4, 'rgba(255,220,120,0.2)');
-      grd.addColorStop(1, 'rgba(255,220,120,0)');
-      ctx.fillStyle = grd;
-      var halfAng = Math.PI / rayCount * 0.6;
-      ctx.beginPath();
-      ctx.moveTo(W/2, -H*0.05);
-      ctx.lineTo(W/2 + Math.sin(angle - halfAng) * W * 2.5, H * 1.1);
-      ctx.lineTo(W/2 + Math.sin(angle + halfAng) * W * 2.5, H * 1.1);
-      ctx.closePath();
-      ctx.fill();
+    var lightSources = [[W*0.12, -H*0.05], [W*0.88, -H*0.05]];
+    lightSources.forEach(function(ls) {
+      ctx.globalAlpha = 0.04;
+      var rayCount = 8;
+      for (var r = 0; r < rayCount; r++) {
+        var angle = ((r / rayCount) - 0.5) * Math.PI * 1.2;
+        var grd = ctx.createLinearGradient(ls[0], ls[1], ls[0] + Math.sin(angle)*W*1.5, H);
+        grd.addColorStop(0, 'rgba(255,220,120,0.8)');
+        grd.addColorStop(0.35, 'rgba(255,220,120,0.25)');
+        grd.addColorStop(1, 'rgba(255,220,120,0)');
+        ctx.fillStyle = grd;
+        var halfAng = Math.PI / rayCount * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(ls[0], ls[1]);
+        ctx.lineTo(ls[0] + Math.sin(angle - halfAng) * W * 2.5, H * 1.1);
+        ctx.lineTo(ls[0] + Math.sin(angle + halfAng) * W * 2.5, H * 1.1);
+        ctx.closePath();
+        ctx.fill();
+      }
+    });
+    ctx.restore();
+    // Top center strong glow burst
+    ctx.save();
+    var cGlow = ctx.createRadialGradient(W/2, -H*0.05, 0, W/2, -H*0.05, H*0.65);
+    cGlow.addColorStop(0, 'rgba(74,158,204,0.18)');
+    cGlow.addColorStop(0.5, 'rgba(74,158,204,0.05)');
+    cGlow.addColorStop(1, 'rgba(74,158,204,0)');
+    ctx.fillStyle = cGlow; ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+    // Star field — gold stars scattered across canvas
+    ctx.save(); ctx.globalAlpha = 0.08;
+    var sFS = Math.round(W * 0.020);
+    ctx.font = 'bold ' + sFS + 'px Outfit,sans-serif'; ctx.textAlign = 'center';
+    for (var sy = sFS * 1.5; sy < H; sy += sFS * 3.2) {
+      var sOff = (Math.floor(sy / (sFS*3.2)) % 2) * sFS * 1.6;
+      for (var sx = sOff; sx < W + sFS; sx += sFS * 3.2) {
+        // Alternate sky blue and gold stars
+        ctx.fillStyle = (Math.floor(sx / (sFS*3.2) + sy / (sFS*3.2)) % 2) ? '#4A9ECC' : '#C9A84C';
+        ctx.fillText('★', sx, sy);
+      }
     }
     ctx.restore();
-    // Subtle star field
-    ctx.save(); ctx.globalAlpha = 0.06; ctx.fillStyle = '#4A9ECC';
-    var sFS = Math.round(W * 0.018);
-    ctx.font = 'bold ' + sFS + 'px Outfit,sans-serif'; ctx.textAlign = 'center';
-    for (var sy = sFS * 2; sy < H; sy += sFS * 3.5) {
-      var sOff = (Math.floor(sy / (sFS*3.5)) % 2) * sFS * 1.8;
-      for (var sx = sOff; sx < W + sFS; sx += sFS * 3.5) { ctx.fillText('★', sx, sy); }
-    }
+    // Bottom accent — champion gold glow
+    ctx.save();
+    var bGlow = ctx.createRadialGradient(W/2, H, 0, W/2, H, H*0.4);
+    bGlow.addColorStop(0, 'rgba(201,168,76,0.12)');
+    bGlow.addColorStop(1, 'rgba(201,168,76,0)');
+    ctx.fillStyle = bGlow; ctx.fillRect(0, 0, W, H);
     ctx.restore();
   }
 
@@ -1317,12 +1341,36 @@ function drawThemeBackground(ctx, t, W, H, accent, bgColor) {
 
   else if (t.id === 'anniversary') {
     drawWatermarkText(ctx, '♥  together always  ♥', W, H, accent);
-    // Warm glow at center
+    // Scattered heart decorations
+    ctx.save(); ctx.globalAlpha = 0.08;
+    var heartSizes = [0.03, 0.025, 0.02, 0.015];
+    for (var ah = 0; ah < 50; ah++) {
+      var ahx = (Math.sin(ah * 151.7) * 0.5 + 0.5) * W;
+      var ahy = (Math.cos(ah * 113.3) * 0.5 + 0.5) * H;
+      var ahFS = Math.round(W * heartSizes[ah % heartSizes.length]);
+      ctx.font = ahFS + 'px serif'; ctx.textAlign = 'center';
+      ctx.fillText('♥', ahx, ahy);
+    }
+    ctx.restore();
+    // Warm rose glow at top center (where text/hero is)
     ctx.save();
-    var aGlow = ctx.createRadialGradient(W/2, H*0.4, 0, W/2, H*0.4, H*0.5);
-    aGlow.addColorStop(0, 'rgba(224,80,128,0.10)');
+    var aGlow = ctx.createRadialGradient(W/2, H*0.25, 0, W/2, H*0.35, H*0.55);
+    aGlow.addColorStop(0, 'rgba(224,80,128,0.14)');
+    aGlow.addColorStop(0.5, 'rgba(224,80,128,0.05)');
     aGlow.addColorStop(1, 'rgba(224,80,128,0)');
     ctx.fillStyle = aGlow; ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+    // Subtle gold corner accents
+    ctx.save(); ctx.globalAlpha = 0.18; ctx.strokeStyle = '#C9A84C';
+    ctx.lineWidth = Math.max(3, Math.round(W * 0.003));
+    var acSize = Math.round(W * 0.07);
+    [[0,0],[W,0],[0,H],[W,H]].forEach(function(pt) {
+      var sx=pt[0]>0?-1:1, sy=pt[1]>0?-1:1;
+      ctx.beginPath();
+      ctx.moveTo(pt[0]+sx*acSize*0.05, pt[1]+sy*acSize*0.45);
+      ctx.quadraticCurveTo(pt[0]+sx*acSize*0.05, pt[1]+sy*acSize*0.05, pt[0]+sx*acSize*0.45, pt[1]+sy*acSize*0.05);
+      ctx.stroke();
+    });
     ctx.restore();
   }
 
@@ -1485,6 +1533,15 @@ function drawCollageRow(ctx,photos,W,H,accent,startY,cols){
     var x=margin+col*(cw+pad),y=startY+row*(ch+pad);
     roundClip(ctx,x,y,cw,ch,cornerR); drawImg(ctx,photos[i],x,y,cw,ch); ctx.restore();
   }
+}
+
+function drawBannerBranding(ctx,W,H,accent){
+  ctx.save();
+  ctx.globalAlpha=0.18;
+  ctx.font='600 '+Math.round(W*0.018)+'px Outfit,sans-serif';
+  ctx.fillStyle=accent; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+  ctx.fillText('celebratebanner.com',W/2,H-Math.round(W*0.012));
+  ctx.restore();
 }
 
 function roundClip(ctx,x,y,w,h,r){ctx.save();ctx.beginPath();roundPath(ctx,x,y,w,h,r);ctx.clip();}
