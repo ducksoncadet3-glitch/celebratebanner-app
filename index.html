@@ -542,7 +542,7 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
     <div class="stat-grid">
       <div class="stat-box"><div class="stat-box-label">Orders Today</div><div class="stat-box-val">24</div><div class="stat-box-delta delta-up">↑ +8 vs yesterday</div></div>
       <div class="stat-box"><div class="stat-box-label">Revenue (MTD)</div><div class="stat-box-val">$1,284</div><div class="stat-box-delta delta-up">↑ +14%</div></div>
-      <div class="stat-box"><div class="stat-box-label">Active Themes</div><div class="stat-box-val" id="adm-active-themes">8</div><div class="stat-box-delta">of 8 enabled</div></div>
+      <div class="stat-box"><div class="stat-box-label">Active Themes</div><div class="stat-box-val" id="adm-active-themes">9</div><div class="stat-box-delta">of 9 enabled</div></div>
       <div class="stat-box"><div class="stat-box-label">Avg Render</div><div class="stat-box-val">18s</div><div class="stat-box-delta delta-up">↓ 4s faster</div></div>
     </div>
     <div class="admin-card">
@@ -1786,7 +1786,7 @@ function adminTab(id,el){
 }
 function buildAdminThemes(){
   var list=document.getElementById('admin-theme-list');
-  var bgs=['linear-gradient(135deg,#0A0E18,#1A2540)','linear-gradient(135deg,#080E1A,#102040)','linear-gradient(135deg,#180A28,#3D1A5A)','linear-gradient(135deg,#1A0505,#4A1010)','linear-gradient(135deg,#050E08,#0A2814)','linear-gradient(135deg,#0A1628,#1a3a6a)','linear-gradient(135deg,#e8dcc8,#c8b898)','linear-gradient(135deg,#B22234,#8B1020)'];
+  var bgs=['linear-gradient(135deg,#0A0E18,#1A2540)','linear-gradient(135deg,#080E1A,#102040)','linear-gradient(135deg,#180A28,#3D1A5A)','linear-gradient(135deg,#1A0505,#4A1010)','linear-gradient(135deg,#050E08,#0A2814)','linear-gradient(135deg,#0A1628,#1a3a6a)','linear-gradient(135deg,#0C0E14,#1B1F2C)','linear-gradient(135deg,#B22234,#8B1020)','linear-gradient(135deg,#0A1628,#2A0808)'];
   list.innerHTML=THEMES.map(function(t,i){
     return '<div class="theme-toggle-row"><div class="tt-thumb" style="background:'+bgs[i]+'">'+t.emoji+'</div>'+
       '<div class="tt-info"><div class="tt-name">'+t.name+'</div><div class="tt-meta">Max '+t.maxPhotos+' photos</div></div>'+
@@ -2030,78 +2030,82 @@ function applyFilterToImage(ctx, photo, x, y, w, h) {
 function drawHeroFrame(ctx, x, y, sz, accent) {
   var frame = S.effects.frame;
   if (frame === 'none') return;
+  // Scale all measurements relative to sz so frames look right at any resolution
+  var u = Math.max(2, Math.round(sz * 0.006)); // base unit (~4px at display, ~24px at 300DPI)
+  var r14 = Math.max(8, Math.round(sz * 0.022));
 
   ctx.save();
   if (frame === 'classic') {
-    ctx.strokeStyle = accent; ctx.lineWidth = 8;
-    roundPath(ctx, x-4, y-4, sz+8, sz+8, 14); ctx.stroke();
+    ctx.strokeStyle = accent; ctx.lineWidth = u*2;
+    roundPath(ctx, x-u, y-u, sz+u*2, sz+u*2, r14); ctx.stroke();
   }
   else if (frame === 'double') {
-    ctx.strokeStyle = accent; ctx.lineWidth = 5;
-    roundPath(ctx, x-4, y-4, sz+8, sz+8, 14); ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 2;
-    roundPath(ctx, x-12, y-12, sz+24, sz+24, 18); ctx.stroke();
+    ctx.strokeStyle = accent; ctx.lineWidth = u*1.5;
+    roundPath(ctx, x-u, y-u, sz+u*2, sz+u*2, r14); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = u*0.8;
+    roundPath(ctx, x-u*3, y-u*3, sz+u*6, sz+u*6, r14+u*2); ctx.stroke();
   }
   else if (frame === 'rounded') {
-    ctx.strokeStyle = accent; ctx.lineWidth = 10;
-    roundPath(ctx, x-5, y-5, sz+10, sz+10, sz/2); ctx.stroke();
+    ctx.strokeStyle = accent; ctx.lineWidth = u*2.5;
+    roundPath(ctx, x-u, y-u, sz+u*2, sz+u*2, sz/2); ctx.stroke();
   }
   else if (frame === 'polaroid') {
-    ctx.fillStyle = '#fff'; ctx.fillRect(x-12, y-12, sz+24, sz+44);
-    ctx.strokeStyle = '#ddd'; ctx.lineWidth = 1; ctx.strokeRect(x-12, y-12, sz+24, sz+44);
-    ctx.strokeStyle = accent; ctx.lineWidth = 3; ctx.strokeRect(x-8, y-8, sz+16, sz+16);
+    ctx.fillStyle = '#fff'; ctx.fillRect(x-u*3, y-u*3, sz+u*6, sz+u*11);
+    ctx.strokeStyle = '#ddd'; ctx.lineWidth = u*0.5; ctx.strokeRect(x-u*3, y-u*3, sz+u*6, sz+u*11);
+    ctx.strokeStyle = accent; ctx.lineWidth = u; ctx.strokeRect(x-u*2, y-u*2, sz+u*4, sz+u*4);
   }
   else if (frame === 'film') {
-    ctx.fillStyle = '#111'; ctx.fillRect(x-20, y-8, 16, sz+16);
-    ctx.fillRect(x+sz+4, y-8, 16, sz+16);
+    var fStrip = u*4;
+    ctx.fillStyle = '#111'; ctx.fillRect(x-fStrip-u, y-u*2, fStrip, sz+u*4);
+    ctx.fillRect(x+sz+u, y-u*2, fStrip, sz+u*4);
     ctx.fillStyle = '#fff';
     for (var i=0; i<8; i++) {
-      var fy = y + i*(sz+16)/8;
-      ctx.fillRect(x-18, fy, 12, 8);
-      ctx.fillRect(x+sz+6, fy, 12, 8);
+      var fy = y + i*(sz+u*4)/8;
+      ctx.fillRect(x-fStrip, fy, fStrip-u, u*2);
+      ctx.fillRect(x+sz+u*2, fy, fStrip-u, u*2);
     }
-    ctx.strokeStyle = accent; ctx.lineWidth = 3;
-    roundPath(ctx, x-4, y-4, sz+8, sz+8, 4); ctx.stroke();
+    ctx.strokeStyle = accent; ctx.lineWidth = u;
+    roundPath(ctx, x-u, y-u, sz+u*2, sz+u*2, r14*0.5); ctx.stroke();
   }
   else if (frame === 'stars') {
-    ctx.strokeStyle = accent; ctx.lineWidth = 6;
-    roundPath(ctx, x-4, y-4, sz+8, sz+8, 14); ctx.stroke();
+    ctx.strokeStyle = accent; ctx.lineWidth = u*1.5;
+    roundPath(ctx, x-u, y-u, sz+u*2, sz+u*2, r14); ctx.stroke();
     ctx.fillStyle = accent; ctx.font = 'bold '+(sz*0.06)+'px serif';
-    ctx.textAlign = 'center';
-    var step = (sz+8)*4 / 20;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     for (var s=0; s<20; s++) {
       var angle = (s / 20) * Math.PI * 2 - Math.PI/2;
-      var r = sz/2 + 16;
-      var sx2 = x + sz/2 + r * Math.cos(angle);
-      var sy2 = y + sz/2 + r * Math.sin(angle);
-      ctx.fillText('★', sx2, sy2+4);
+      var starR = sz/2 + u*4;
+      var sx2 = x + sz/2 + starR * Math.cos(angle);
+      var sy2 = y + sz/2 + starR * Math.sin(angle);
+      ctx.fillText('★', sx2, sy2);
     }
   }
   else if (frame === 'patriotic') {
     var colors = ['#B22234','#FFFFFF','#3C3F8F'];
     for (var c=0; c<3; c++) {
-      ctx.strokeStyle = colors[c]; ctx.lineWidth = 4;
-      roundPath(ctx, x-4-c*6, y-4-c*6, sz+8+c*12, sz+8+c*12, 14+c*4); ctx.stroke();
+      ctx.strokeStyle = colors[c]; ctx.lineWidth = u;
+      roundPath(ctx, x-u-c*u*2, y-u-c*u*2, sz+u*2+c*u*4, sz+u*2+c*u*4, r14+c*u*2); ctx.stroke();
     }
   }
   else if (frame === 'floral') {
     ctx.strokeStyle = accent; ctx.lineWidth = 5;
-    roundPath(ctx, x-4, y-4, sz+8, sz+8, 14); ctx.stroke();
-    ctx.font = (sz*0.07)+'px serif'; ctx.textAlign = 'center';
+    ctx.strokeStyle = accent; ctx.lineWidth = u;
+    roundPath(ctx, x-u, y-u, sz+u*2, sz+u*2, r14); ctx.stroke();
+    ctx.font = (sz*0.07)+'px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     var petals = ['🌸','🌺','🌼','🌻','🌷'];
     for (var p=0; p<16; p++) {
       var pa = (p/16)*Math.PI*2 - Math.PI/2;
-      var pr = sz/2 + 18;
-      ctx.fillText(petals[p%petals.length], x+sz/2 + pr*Math.cos(pa), y+sz/2 + pr*Math.sin(pa)+5);
+      var pr = sz/2 + u*4;
+      ctx.fillText(petals[p%petals.length], x+sz/2 + pr*Math.cos(pa), y+sz/2 + pr*Math.sin(pa));
     }
   }
   else if (frame === 'neon') {
-    ctx.shadowColor = accent; ctx.shadowBlur = 20;
-    ctx.strokeStyle = accent; ctx.lineWidth = 4;
-    roundPath(ctx, x-4, y-4, sz+8, sz+8, 14); ctx.stroke();
-    ctx.shadowColor = '#fff'; ctx.shadowBlur = 8;
-    ctx.lineWidth = 1.5;
-    roundPath(ctx, x-4, y-4, sz+8, sz+8, 14); ctx.stroke();
+    ctx.shadowColor = accent; ctx.shadowBlur = Math.round(sz*0.015);
+    ctx.strokeStyle = accent; ctx.lineWidth = u;
+    roundPath(ctx, x-u, y-u, sz+u*2, sz+u*2, r14); ctx.stroke();
+    ctx.shadowColor = '#fff'; ctx.shadowBlur = Math.round(sz*0.006);
+    ctx.lineWidth = u*0.5;
+    roundPath(ctx, x-u, y-u, sz+u*2, sz+u*2, r14); ctx.stroke();
     ctx.shadowBlur = 0;
   }
   ctx.restore();
