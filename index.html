@@ -801,7 +801,10 @@ function buildPreview() {
   if (!S.theme) return;
   var t = S.theme;
   var heroPhoto = S.hero>=0 ? S.photos[S.hero] : (S.photos[0]||null);
-  var name = t.id==='champion' ? (S.fields.teamName||'') : (S.fields.name||S.fields.name1||S.fields.names||S.fields.petName||'Your Name');
+  // Only use 'Your Name' fallback for themes that have a name-type field
+  var _nameFieldIds = ['name','teamName','name1','names','petName'];
+  var _hasNameField = t.fields.some(function(f){ return _nameFieldIds.indexOf(f.id)>=0; });
+  var name = t.id==='champion' ? (S.fields.teamName||'') : (S.fields.name||S.fields.name1||S.fields.names||S.fields.petName||(_hasNameField?'Your Name':''));
   var sub  = S.fields.year||S.fields.date||S.fields.years||S.fields.caption||'';
   var sub2 = S.fields.school||S.fields.name2||S.fields.city||'';
   document.getElementById('sum-theme').textContent = t.emoji+' '+t.name;
@@ -901,12 +904,29 @@ function buildPreview() {
   drawCollageRow(ctx,drawList,W,H,S.accent,heroBot,cols);
   // Apply overlay effect only if customer selected one
   if(typeof drawOverlay==='function' && S.effects && S.effects.overlay && S.effects.overlay!=='none') drawOverlay(ctx,W,H,S.accent);
+  // Bleed marks & safe-margin guide (thin, for print reference)
+  drawPrintGuides(ctx,W,H);
   updateCheckoutSummary();
   gotoPage(3);
 }
 
 function drawImg(ctx, photo, x, y, w, h) {
-  if (!photo) { ctx.fillStyle='rgba(255,255,255,0.05)'; ctx.fillRect(x,y,w,h); return; }
+  if (!photo) {
+    // Styled placeholder: subtle dark fill + camera icon suggestion
+    ctx.save();
+    ctx.fillStyle='rgba(255,255,255,0.06)'; ctx.fillRect(x,y,w,h);
+    ctx.strokeStyle='rgba(255,255,255,0.12)'; ctx.lineWidth=Math.max(1,Math.round(Math.min(w,h)*0.015));
+    ctx.strokeRect(x+ctx.lineWidth,y+ctx.lineWidth,w-ctx.lineWidth*2,h-ctx.lineWidth*2);
+    // Small camera icon at center
+    var ic=Math.max(8,Math.round(Math.min(w,h)*0.22));
+    ctx.fillStyle='rgba(255,255,255,0.15)';
+    ctx.beginPath();
+    ctx.roundRect(x+w/2-ic,y+h/2-ic*0.7,ic*2,ic*1.4,Math.round(ic*0.2));
+    ctx.fill();
+    ctx.beginPath(); ctx.arc(x+w/2,y+h/2+ic*0.05,ic*0.38,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+    return;
+  }
   // Use pre-cached full-res Image object; fall back to creating one from src
   var img = (photo._img&&photo._img.complete&&photo._img.naturalWidth)?photo._img:(function(){var i=new Image();i.src=photo.src;return i;})();
   var rot = photo.rotation||0;
@@ -920,10 +940,37 @@ function drawImg(ctx, photo, x, y, w, h) {
 }
 
 function drawSquareHero(ctx,photo,x,y,sz,accent) {
-  var r=14;
-  roundClip(ctx,x,y,sz,sz,r); drawImg(ctx,photo,x,y,sz,sz); ctx.restore();
+  var r=Math.max(8,Math.round(sz*0.03)); // scale radius: ~3% of hero size
+  roundClip(ctx,x,y,sz,sz,r);
+  if(!photo){
+    // Attractive hero placeholder — gradient fill + person silhouette
+    var pg=ctx.createRadialGradient(x+sz*0.5,y+sz*0.35,sz*0.05,x+sz*0.5,y+sz*0.5,sz*0.7);
+    pg.addColorStop(0,'rgba(255,255,255,0.10)'); pg.addColorStop(1,'rgba(0,0,0,0.20)');
+    ctx.fillStyle=pg; ctx.fillRect(x,y,sz,sz);
+    // Head circle
+    ctx.fillStyle='rgba(255,255,255,0.18)';
+    ctx.beginPath(); ctx.arc(x+sz*0.5,y+sz*0.30,sz*0.14,0,Math.PI*2); ctx.fill();
+    // Body oval
+    ctx.beginPath();
+    ctx.ellipse(x+sz*0.5,y+sz*0.68,sz*0.22,sz*0.20,0,0,Math.PI*2);
+    ctx.fill();
+    // "Add photo" label
+    ctx.fillStyle='rgba(255,255,255,0.35)';
+    var lpFS=Math.round(sz*0.055);
+    ctx.font='600 '+lpFS+'px Outfit,sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('Add Hero Photo',x+sz*0.5,y+sz*0.87);
+  } else {
+    drawImg(ctx,photo,x,y,sz,sz);
+  }
+  ctx.restore();
   if(typeof drawHeroFrame==='function') drawHeroFrame(ctx,x,y,sz,accent);
-  else { ctx.save(); ctx.strokeStyle=accent; ctx.lineWidth=8; roundPath(ctx,x-4,y-4,sz+8,sz+8,r+4); ctx.stroke(); ctx.restore(); }
+  else {
+    var lw=Math.max(4,Math.round(sz*0.007));
+    ctx.save(); ctx.strokeStyle=accent; ctx.lineWidth=lw;
+    roundPath(ctx,x-Math.round(lw/2),y-Math.round(lw/2),sz+lw,sz+lw,r+Math.round(lw/2));
+    ctx.stroke(); ctx.restore();
+  }
 }
 
 function drawVerticalCongrats(ctx, heroX, heroY, heroSz, accent) {
@@ -1227,6 +1274,22 @@ function drawCollageRow(ctx,photos,W,H,accent,startY,cols){
     var x=margin+col*(cw+pad),y=startY+row*(ch+pad);
     roundClip(ctx,x,y,cw,ch,cornerR); drawImg(ctx,photos[i],x,y,cw,ch); ctx.restore();
   }
+}
+
+function drawPrintGuides(ctx,W,H){
+  // Bleed = 0.125 in × 300 DPI = 37.5px ≈ 38px; Safe margin = 0.25 in × 300 = 75px
+  var bleed=Math.round(W*0.00521), safe=Math.round(W*0.01042); // proportion to width
+  ctx.save();
+  // Bleed boundary — very faint red
+  ctx.globalAlpha=0.18; ctx.strokeStyle='#FF4444'; ctx.lineWidth=Math.max(1,Math.round(W*0.0006));
+  ctx.setLineDash([Math.round(W*0.005),Math.round(W*0.005)]);
+  ctx.strokeRect(bleed,bleed,W-bleed*2,H-bleed*2);
+  // Safe margin — very faint white
+  ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=Math.max(1,Math.round(W*0.0004));
+  ctx.setLineDash([Math.round(W*0.003),Math.round(W*0.007)]);
+  ctx.strokeRect(safe,safe,W-safe*2,H-safe*2);
+  ctx.setLineDash([]);
+  ctx.restore();
 }
 
 function roundClip(ctx,x,y,w,h,r){ctx.save();ctx.beginPath();roundPath(ctx,x,y,w,h,r);ctx.clip();}
