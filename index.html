@@ -229,6 +229,28 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
 .toast.show { opacity: 1; transform: translateY(0) scale(1); }
 .mockup-label { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); background: var(--white); border: 1px solid var(--border2); padding: 5px 12px; border-radius: 20px; white-space: nowrap; }
 #mockup-canvas { display: block; width: 100%; border-radius: 14px; box-shadow: 0 12px 48px rgba(12,14,20,0.22); }
+/* ── Mobile improvements ── */
+@media (max-width: 640px) {
+  .app-header { padding: 0 1rem; height: 58px; }
+  .header-stepper { gap: 0; }
+  .h-step { padding: 5px 8px; font-size: 11px; gap: 5px; }
+  .h-step-sep { padding: 0 1px; }
+  .logo-text { font-size: 18px; }
+  .main { padding: 1.5rem 1rem 4rem; }
+  .sec-title { font-size: 28px; }
+  .btn { padding: 11px 20px; font-size: 13px; }
+  .delivery-cards { grid-template-columns: 1fr; }
+  .btn-group { gap: 8px; }
+  .photo-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+  .photo-cell .rm-btn, .photo-cell .rot-btn { opacity: 1; }
+}
+@media (max-width: 420px) {
+  .h-step { display: none; }
+  .h-step.active, .h-step.done { display: flex; }
+  .h-step-sep { display: none; }
+  .h-step.active ~ .h-step-sep { display: none; }
+  .progress-track { top: 58px; }
+}
 </style>
 </head>
 <body>
@@ -904,8 +926,6 @@ function buildPreview() {
   drawCollageRow(ctx,drawList,W,H,S.accent,heroBot,cols);
   // Apply overlay effect only if customer selected one
   if(typeof drawOverlay==='function' && S.effects && S.effects.overlay && S.effects.overlay!=='none') drawOverlay(ctx,W,H,S.accent);
-  // Bleed marks & safe-margin guide (thin, for print reference)
-  drawPrintGuides(ctx,W,H);
   updateCheckoutSummary();
   gotoPage(3);
 }
@@ -921,7 +941,11 @@ function drawImg(ctx, photo, x, y, w, h) {
     var ic=Math.max(8,Math.round(Math.min(w,h)*0.22));
     ctx.fillStyle='rgba(255,255,255,0.15)';
     ctx.beginPath();
-    ctx.roundRect(x+w/2-ic,y+h/2-ic*0.7,ic*2,ic*1.4,Math.round(ic*0.2));
+    var cr=Math.round(ic*0.2),cx=x+w/2-ic,cy=y+h/2-ic*0.7,cw2=ic*2,ch2=ic*1.4;
+    ctx.moveTo(cx+cr,cy);ctx.lineTo(cx+cw2-cr,cy);ctx.quadraticCurveTo(cx+cw2,cy,cx+cw2,cy+cr);
+    ctx.lineTo(cx+cw2,cy+ch2-cr);ctx.quadraticCurveTo(cx+cw2,cy+ch2,cx+cw2-cr,cy+ch2);
+    ctx.lineTo(cx+cr,cy+ch2);ctx.quadraticCurveTo(cx,cy+ch2,cx,cy+ch2-cr);
+    ctx.lineTo(cx,cy+cr);ctx.quadraticCurveTo(cx,cy,cx+cr,cy);ctx.closePath();
     ctx.fill();
     ctx.beginPath(); ctx.arc(x+w/2,y+h/2+ic*0.05,ic*0.38,0,Math.PI*2); ctx.fill();
     ctx.restore();
@@ -1274,22 +1298,6 @@ function drawCollageRow(ctx,photos,W,H,accent,startY,cols){
     var x=margin+col*(cw+pad),y=startY+row*(ch+pad);
     roundClip(ctx,x,y,cw,ch,cornerR); drawImg(ctx,photos[i],x,y,cw,ch); ctx.restore();
   }
-}
-
-function drawPrintGuides(ctx,W,H){
-  // Bleed = 0.125 in × 300 DPI = 37.5px ≈ 38px; Safe margin = 0.25 in × 300 = 75px
-  var bleed=Math.round(W*0.00521), safe=Math.round(W*0.01042); // proportion to width
-  ctx.save();
-  // Bleed boundary — very faint red
-  ctx.globalAlpha=0.18; ctx.strokeStyle='#FF4444'; ctx.lineWidth=Math.max(1,Math.round(W*0.0006));
-  ctx.setLineDash([Math.round(W*0.005),Math.round(W*0.005)]);
-  ctx.strokeRect(bleed,bleed,W-bleed*2,H-bleed*2);
-  // Safe margin — very faint white
-  ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=Math.max(1,Math.round(W*0.0004));
-  ctx.setLineDash([Math.round(W*0.003),Math.round(W*0.007)]);
-  ctx.strokeRect(safe,safe,W-safe*2,H-safe*2);
-  ctx.setLineDash([]);
-  ctx.restore();
 }
 
 function roundClip(ctx,x,y,w,h,r){ctx.save();ctx.beginPath();roundPath(ctx,x,y,w,h,r);ctx.clip();}
