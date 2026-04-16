@@ -1129,6 +1129,23 @@ function drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,accent) {
     if(sub) drawTxt(sub.toUpperCase(),W/2,topY+champFS*0.95+(name?teamFS*1.15:0),'600 '+yearFS+'px Outfit,sans-serif','rgba(255,255,255,0.68)');
     return;
   }
+  // Stars & Stripes: add patriotic header above name
+  if(t.id==='stars-stripes'){
+    var ssHeaderFS=Math.round(W*0.028);
+    var ssHeaderY=Math.round(textH*0.12);
+    // ★ UNITED STATES OF AMERICA ★ header
+    drawTxt('★  UNITED STATES OF AMERICA  ★',W/2,ssHeaderY,'600 '+ssHeaderFS+'px Outfit,sans-serif','rgba(245,240,232,0.65)');
+    // Thin red/white/blue rule below header
+    ctx.save(); ctx.globalAlpha=0.30;
+    var ssRuleY=ssHeaderY+Math.round(ssHeaderFS*0.4);
+    ctx.strokeStyle='#B22234'; ctx.lineWidth=Math.max(2,Math.round(W*0.0018));
+    ctx.beginPath(); ctx.moveTo(Math.round(W*0.1),ssRuleY); ctx.lineTo(Math.round(W*0.9),ssRuleY); ctx.stroke();
+    ctx.strokeStyle='#F5F0E8'; ctx.lineWidth=Math.max(1,Math.round(W*0.0010));
+    ctx.beginPath(); ctx.moveTo(Math.round(W*0.1),ssRuleY+ctx.lineWidth*2); ctx.lineTo(Math.round(W*0.9),ssRuleY+ctx.lineWidth*2); ctx.stroke();
+    ctx.strokeStyle='#3C3F8F'; ctx.lineWidth=Math.max(2,Math.round(W*0.0018));
+    ctx.beginPath(); ctx.moveTo(Math.round(W*0.1),ssRuleY+ctx.lineWidth*3); ctx.lineTo(Math.round(W*0.9),ssRuleY+ctx.lineWidth*3); ctx.stroke();
+    ctx.restore();
+  }
   // Fixed headline at top, name stacked below without overlap
   var usedH = 0;
   // America 250 Family headline is long — use a smaller font so it fits cleanly
@@ -1183,9 +1200,11 @@ function drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,accent) {
     var nmFS=nameFSAdj;
     if(nmW>W*0.88){nmFS=Math.floor(nameFSAdj*(W*0.88/nmW));}
     ctx.restore();
-    // Stars & Stripes: name in warm ivory, not gold
+    // Per-theme name color and style
     var nameColor = (t.id==='stars-stripes') ? '#F5F0E8' : accent;
-    drawTxt(name.toUpperCase(),W/2,nameY,'bold '+nmFS+'px Cormorant Garamond,serif',nameColor);
+    var nameFont = (t.id==='pets') ? ('bold '+nmFS+'px Outfit,sans-serif') : ('bold '+nmFS+'px Cormorant Garamond,serif');
+    var nameText = (t.id==='pets') ? name : name.toUpperCase();
+    drawTxt(nameText,W/2,nameY,nameFont,nameColor);
   }
   if(t.id==='anniversary' && sub) {
     // Anniversary: draw a decorative heart separator before the years
@@ -1194,6 +1213,16 @@ function drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,accent) {
     ctx.save(); ctx.font=heartFS+'px serif'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
     ctx.globalAlpha=0.55; ctx.fillText('♥',W/2,heartY); ctx.restore();
     drawTxt(sub.toUpperCase(),W/2,subY,'700 '+sS+'px Outfit,sans-serif',accent);
+  } else if(t.id==='graduation' && sub) {
+    // Graduation: class year with decorative stars → ★ CLASS OF 2026 ★
+    var gradSub='★  '+sub.toUpperCase()+'  ★';
+    drawTxt(gradSub,W/2,subY,'700 '+sS+'px Outfit,sans-serif',accent);
+  } else if(t.id==='wedding' && sub) {
+    // Wedding date: render in elegant italic lowercase
+    drawTxt(sub,W/2,subY,'italic '+sS+'px Cormorant Garamond,serif','rgba(255,255,255,0.85)');
+  } else if(t.id==='pets' && sub) {
+    // Pets caption: with a paw prefix
+    drawTxt('🐾  '+sub+'  🐾',W/2,subY,'600 '+sS+'px Outfit,sans-serif','rgba(255,255,255,0.88)');
   } else if(sub) {
     drawTxt(sub.toUpperCase(),W/2,subY,'700 '+sS+'px Outfit,sans-serif','rgba(255,255,255,0.92)');
   }
