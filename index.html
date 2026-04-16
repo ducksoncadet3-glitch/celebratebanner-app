@@ -496,7 +496,13 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
   <div class="processing-wrap">
     <div class="processing-ring"></div>
     <div class="processing-title" id="proc-title">Processing your payment…</div>
-    <div class="processing-sub">Please don't close this window.</div>
+    <div class="processing-sub" id="proc-sub">Please don't close this window.</div>
+    <div style="width:260px;max-width:80vw;margin-top:1.5rem;">
+      <div style="height:4px;background:rgba(201,168,76,0.12);border-radius:4px;overflow:hidden;">
+        <div id="proc-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:4px;transition:width 0.7s cubic-bezier(0.4,0,0.2,1);"></div>
+      </div>
+    </div>
+    <div id="proc-step" style="font-size:12px;color:rgba(201,168,76,0.45);margin-top:8px;letter-spacing:1px;text-transform:uppercase;font-family:'Outfit',sans-serif;">Step 1 of 6</div>
   </div>
 </div>
 
@@ -875,8 +881,8 @@ function buildPreview() {
   var _nameFieldIds = ['name','teamName','name1','names','petName'];
   var _hasNameField = t.fields.some(function(f){ return _nameFieldIds.indexOf(f.id)>=0; });
   var name = t.id==='champion' ? (S.fields.teamName||'') : (S.fields.name||S.fields.name1||S.fields.names||S.fields.petName||(_hasNameField?'Your Name':''));
-  var sub  = S.fields.year||S.fields.date||S.fields.years||S.fields.caption||'';
-  var sub2 = S.fields.school||S.fields.name2||S.fields.city||'';
+  var sub  = S.fields.year||S.fields.date||S.fields.years||(t.id!=='stars-stripes'?S.fields.caption:'')||'';
+  var sub2 = S.fields.school||S.fields.name2||S.fields.city||(t.id==='stars-stripes'?S.fields.caption:'')||'';
   document.getElementById('sum-theme').textContent = t.emoji+' '+t.name;
   document.getElementById('sum-size').textContent  = S.size+'"';
   document.getElementById('sum-photos').textContent= S.photos.length+' photos';
@@ -1234,8 +1240,8 @@ function drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,accent) {
     ctx.restore();
     // Per-theme name color and style
     var nameColor = (t.id==='stars-stripes') ? '#F5F0E8' : accent;
-    var nameFont = (t.id==='pets') ? ('bold '+nmFS+'px Outfit,sans-serif') : ('bold '+nmFS+'px Cormorant Garamond,serif');
-    var nameText = (t.id==='pets') ? name : name.toUpperCase();
+    var nameFont = (t.id==='pets'||t.id==='stars-stripes') ? ('bold '+nmFS+'px Outfit,sans-serif') : ('bold '+nmFS+'px Cormorant Garamond,serif');
+    var nameText = (t.id==='pets'||t.id==='stars-stripes'||t.id==='anniversary') ? name : name.toUpperCase();
     drawTxt(nameText,W/2,nameY,nameFont,nameColor);
   }
   if(t.id==='anniversary' && sub) {
@@ -1497,10 +1503,18 @@ function drawThemeBackground(ctx, t, W, H, accent, bgColor) {
     ctx.save(); ctx.globalAlpha = 0.25; ctx.strokeStyle = accent;
     ctx.lineWidth = Math.round(W * 0.005); ctx.lineJoin = 'round';
     var waveAmp = Math.round(W * 0.012), waveLen = Math.round(W * 0.08);
+    // Top wave
     ctx.beginPath();
     for (var wx = 0; wx <= W; wx += 4) {
       var wy = Math.round(W * 0.015) + Math.sin(wx / waveLen * Math.PI * 2) * waveAmp;
       if (wx === 0) ctx.moveTo(wx, wy); else ctx.lineTo(wx, wy);
+    }
+    ctx.stroke();
+    // Bottom wave (inverted phase)
+    ctx.beginPath();
+    for (var wx2 = 0; wx2 <= W; wx2 += 4) {
+      var wy2 = H - Math.round(W * 0.015) - Math.sin(wx2 / waveLen * Math.PI * 2) * waveAmp;
+      if (wx2 === 0) ctx.moveTo(wx2, wy2); else ctx.lineTo(wx2, wy2);
     }
     ctx.stroke();
     ctx.restore();
@@ -1570,6 +1584,41 @@ function drawThemeBackground(ctx, t, W, H, accent, bgColor) {
       for (var scx = srOff; scx < W + cSp; scx += cSp) { ctx.fillText('★', scx, sry); }
     }
     ctx.restore();
+    // America 250 Family: festive confetti dots + firework burst glows
+    if (t.id === 'america250-family') {
+      ctx.save(); ctx.globalAlpha = 0.09;
+      var famCols = ['#B22234','#3C3F8F','#F5F0E8','#C9A84C','#E8C97A'];
+      for (var fc = 0; fc < 120; fc++) {
+        ctx.fillStyle = famCols[fc % famCols.length];
+        var fcx = (Math.sin(fc * 127.5) * 0.5 + 0.5) * W;
+        var fcy = (Math.cos(fc * 93.7) * 0.5 + 0.5) * H;
+        var fcr = Math.round(W * 0.003) + (fc % 3) * Math.round(W * 0.0012);
+        ctx.beginPath(); ctx.arc(fcx, fcy, fcr, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+      // Diagonal confetti streaks
+      ctx.save(); ctx.globalAlpha = 0.07;
+      for (var fci = 0; fci < 50; fci++) {
+        var fsx = (Math.cos(fci * 83.1) * 0.5 + 0.5) * W;
+        var fsy = (Math.sin(fci * 61.4) * 0.5 + 0.5) * H;
+        var fsLen = Math.round(W * 0.022);
+        ctx.strokeStyle = famCols[fci % famCols.length];
+        ctx.lineWidth = Math.max(2, Math.round(W * 0.0018));
+        ctx.save(); ctx.translate(fsx, fsy); ctx.rotate((fci * 53) % 360 * Math.PI / 180);
+        ctx.beginPath(); ctx.moveTo(-fsLen/2, 0); ctx.lineTo(fsLen/2, 0); ctx.stroke();
+        ctx.restore();
+      }
+      ctx.restore();
+      // Firework burst glows at corners
+      ctx.save();
+      [[W*0.15,H*0.12],[W*0.85,H*0.08],[W*0.5,H*0.05],[W*0.25,H*0.85],[W*0.75,H*0.92]].forEach(function(pt,gi) {
+        var fg = ctx.createRadialGradient(pt[0], pt[1], 0, pt[0], pt[1], H * 0.12);
+        var col = ['rgba(178,34,52,0.12)','rgba(60,63,143,0.10)','rgba(245,240,232,0.10)','rgba(201,168,76,0.12)','rgba(178,34,52,0.10)'][gi];
+        fg.addColorStop(0, col); fg.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = fg; ctx.fillRect(0, 0, W, H);
+      });
+      ctx.restore();
+    }
     // Vertical red/white/blue stripe accent (subtle, left edge)
     if (t.id === 'america250-parade') {
       ctx.save(); ctx.globalAlpha = 0.08;
@@ -1677,10 +1726,35 @@ function processPayment() {
   var email=document.getElementById('customer-email').value;
   if(!email){showToast('⚠️ Please enter your email address');return;}
   S.email=email; gotoPage(5);
-  var msgs=['Processing payment…','Generating your banner…','Rendering 300 DPI output…','Preparing your files…'],i=0;
-  var iv=setInterval(function(){i++;if(i<msgs.length)document.getElementById('proc-title').textContent=msgs[i];},900);
+  var tn=S.theme?S.theme.name:'Custom';
+  var steps=[
+    {title:'Payment confirmed ✓', sub:'Securing your order…', pct:10},
+    {title:'Initializing '+tn+' template…', sub:'Loading design assets', pct:25},
+    {title:'Compositing your photos…', sub:'Applying collage layout', pct:42},
+    {title:'Rendering at 300 DPI…', sub:'This takes a few seconds', pct:58},
+    {title:'Adding CMYK color profile…', sub:'Optimizing for print', pct:72},
+    {title:'Generating PDF + JPG + PNG…', sub:'Preparing download links', pct:88},
+    {title:'Files ready!', sub:'Almost there…', pct:97}
+  ];
+  var i=0;
+  var titleEl=document.getElementById('proc-title');
+  var subEl=document.getElementById('proc-sub');
+  var barEl=document.getElementById('proc-bar');
+  var stepEl=document.getElementById('proc-step');
+  function advance(){
+    if(i<steps.length){
+      var s=steps[i];
+      if(titleEl) titleEl.textContent=s.title;
+      if(subEl) subEl.textContent=s.sub;
+      if(barEl) barEl.style.width=s.pct+'%';
+      if(stepEl) stepEl.textContent='Step '+(i+1)+' of '+steps.length;
+      i++;
+      setTimeout(advance, i===1?600:700);
+    }
+  }
+  advance();
   setTimeout(function(){
-    clearInterval(iv);
+    if(barEl) barEl.style.width='100%';
     var n=(S.fields.name||S.fields.name1||S.fields.names||S.fields.petName||S.fields.teamName||'Custom').replace(/\s/g,'_');
     document.getElementById('dl-name1').textContent=n;
     document.getElementById('dl-name2').textContent=n;
@@ -1693,7 +1767,7 @@ function processPayment() {
       try{prevImg.src=prevCanvas.toDataURL('image/jpeg',0.80);prevWrap.style.display='block';}catch(e){}
     }
     gotoPage(6);
-  },3800);
+  },5200);
 }
 
 function fakeDl(ext) {
@@ -1757,8 +1831,8 @@ function _renderBanner(ctx,W,H){
   var _nameFieldIds2=['name','teamName','name1','names','petName'];
   var _hasNameField2=t.fields.some(function(f){return _nameFieldIds2.indexOf(f.id)>=0;});
   var name=t.id==='champion'?(S.fields.teamName||''):(S.fields.name||S.fields.name1||S.fields.names||S.fields.petName||(_hasNameField2?'Your Name':''));
-  var sub=S.fields.year||S.fields.date||S.fields.years||S.fields.caption||'';
-  var sub2=S.fields.school||S.fields.name2||S.fields.city||'';
+  var sub=S.fields.year||S.fields.date||S.fields.years||(t.id!=='stars-stripes'?S.fields.caption:'')||'';
+  var sub2=S.fields.school||S.fields.name2||S.fields.city||(t.id==='stars-stripes'?S.fields.caption:'')||'';
   var textH=Math.round(W*0.28),heroSz=Math.round(W*0.55),heroX=Math.round((W-heroSz)/2),heroY=textH+10,heroBot=heroY+heroSz+10;
   ctx.fillStyle=S.bgColor;ctx.fillRect(0,0,W,H);
   drawThemeBackground(ctx,t,W,H,S.accent,S.bgColor);
@@ -2468,8 +2542,8 @@ function liveRender() {
       var name = t.id === 'champion'
         ? (S.fields.teamName || '')
         : (S.fields.name || S.fields.name1 || S.fields.names || S.fields.petName || (_lrHasName ? 'Your Name' : ''));
-      var sub = S.fields.year || S.fields.date || S.fields.years || S.fields.caption || '';
-      var sub2 = S.fields.school || S.fields.name2 || '';
+      var sub = S.fields.year || S.fields.date || S.fields.years || (t.id !== 'stars-stripes' ? S.fields.caption : '') || '';
+      var sub2 = S.fields.school || S.fields.name2 || S.fields.city || (t.id === 'stars-stripes' ? S.fields.caption : '') || '';
 
       var textH = Math.round(LW * 0.28);
       var heroSz = Math.round(LW * 0.55);
@@ -2505,8 +2579,31 @@ function liveRender() {
       drawHeroFrame(ctx, heroX, heroY, heroSz, S.accent || '#C9A84C');
 
       // Vertical text decorations
-      if (t.id === 'graduation') drawVerticalCongrats(ctx, heroX, heroY, heroSz, S.accent);
+      if (t.id === 'graduation') { drawVerticalCongrats(ctx, heroX, heroY, heroSz, S.accent); drawGradDiploma(ctx, LW, heroY, heroSz, S.accent); }
       if (t.id === 'stars-stripes') drawVerticalStripes(ctx, heroX, heroY, heroSz, S.accent);
+
+      // Champion: trophy emoji on sides
+      if (t.id === 'champion') {
+        var lrCpSz = Math.round(heroSz * 0.62);
+        var lrCpY = heroY + Math.round((heroSz - lrCpSz) / 2);
+        var lrCpGap = Math.round(LW * 0.018);
+        var lrCpLeft = Math.max(2, heroX - lrCpSz - lrCpGap);
+        var lrCpRight = heroX + heroSz + lrCpGap;
+        var lrTFS = Math.round(lrCpSz * 0.70);
+        var lrTCY = lrCpY + Math.round(lrCpSz * 0.72);
+        ctx.save();
+        ctx.font = lrTFS + 'px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+        ctx.globalAlpha = 0.55;
+        if (S.cupPhoto) {
+          var lrCpR = Math.max(4, Math.round(lrCpSz * 0.06));
+          roundClip(ctx, lrCpLeft, lrCpY, lrCpSz, lrCpSz, lrCpR); drawImg(ctx, S.cupPhoto, lrCpLeft, lrCpY, lrCpSz, lrCpSz); ctx.restore();
+          roundClip(ctx, lrCpRight, lrCpY, lrCpSz, lrCpSz, lrCpR); drawImg(ctx, S.cupPhoto, lrCpRight, lrCpY, lrCpSz, lrCpSz); ctx.restore();
+        } else {
+          ctx.fillText('🏆', lrCpLeft + lrCpSz / 2, lrTCY);
+          ctx.fillText('🏆', lrCpRight + lrCpSz / 2, lrTCY);
+        }
+        ctx.restore();
+      }
 
       // Collage
       drawCollageRow(ctx, others, LW, LH, S.accent, heroBot);
