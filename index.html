@@ -1077,24 +1077,29 @@ function drawVerticalCongrats(ctx, heroX, heroY, heroSz, accent) {
 }
 
 function drawGradDiploma(ctx, W, heroY, heroSz, accent) {
-  // Draw a small diploma/scroll motif at bottom-center, just below the text area
-  var dW=Math.round(W*0.12), dH=Math.round(dW*0.65);
-  var dX=Math.round(W/2-dW/2), dY=Math.round(heroY-dH-Math.round(W*0.025));
-  var dR=Math.round(dH*0.10);
-  ctx.save(); ctx.globalAlpha=0.22;
-  // Scroll background
-  ctx.fillStyle='rgba(255,255,255,0.08)';
-  roundPath(ctx,dX,dY,dW,dH,dR); ctx.fill();
-  // Scroll border
-  ctx.strokeStyle=accent; ctx.lineWidth=Math.max(2,Math.round(W*0.0018));
-  roundPath(ctx,dX,dY,dW,dH,dR); ctx.stroke();
-  // Scroll ribbon (horizontal line across center)
-  ctx.strokeStyle=accent; ctx.lineWidth=Math.max(1,Math.round(W*0.001));
-  ctx.beginPath(); ctx.moveTo(dX+Math.round(dW*0.12),dY+Math.round(dH*0.5)); ctx.lineTo(dX+Math.round(dW*0.88),dY+Math.round(dH*0.5)); ctx.stroke();
-  // Two small horizontal lines suggesting text on scroll
-  ctx.globalAlpha=0.15;
-  ctx.beginPath(); ctx.moveTo(dX+Math.round(dW*0.20),dY+Math.round(dH*0.32)); ctx.lineTo(dX+Math.round(dW*0.80),dY+Math.round(dH*0.32)); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(dX+Math.round(dW*0.25),dY+Math.round(dH*0.68)); ctx.lineTo(dX+Math.round(dW*0.75),dY+Math.round(dH*0.68)); ctx.stroke();
+  // Small corner ornaments in the text area — avoid overlapping with text
+  var oS=Math.round(W*0.055); // ornament size
+  var pad=Math.round(W*0.025);
+  ctx.save(); ctx.globalAlpha=0.20; ctx.strokeStyle=accent;
+  ctx.lineWidth=Math.max(2,Math.round(W*0.0022));
+  // Top-left corner ornament
+  var tlX=pad, tlY=pad;
+  ctx.beginPath();
+  ctx.moveTo(tlX+oS,tlY); ctx.lineTo(tlX,tlY); ctx.lineTo(tlX,tlY+oS);
+  ctx.moveTo(tlX,tlY+Math.round(oS*0.5)); ctx.lineTo(tlX+Math.round(oS*0.4),tlY+Math.round(oS*0.5));
+  ctx.stroke();
+  // Top-right corner ornament
+  var trX=W-pad, trY=pad;
+  ctx.beginPath();
+  ctx.moveTo(trX-oS,trY); ctx.lineTo(trX,trY); ctx.lineTo(trX,trY+oS);
+  ctx.moveTo(trX,trY+Math.round(oS*0.5)); ctx.lineTo(trX-Math.round(oS*0.4),trY+Math.round(oS*0.5));
+  ctx.stroke();
+  // Small star accents near each corner ornament
+  ctx.globalAlpha=0.16; ctx.fillStyle=accent;
+  ctx.font='bold '+Math.round(W*0.018)+'px Outfit,sans-serif'; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  ctx.fillText('★',tlX+oS+Math.round(W*0.008),tlY+Math.round(W*0.018));
+  ctx.textAlign='right';
+  ctx.fillText('★',trX-oS-Math.round(W*0.008),trY+Math.round(W*0.018));
   ctx.restore();
 }
 
@@ -1762,7 +1767,7 @@ function _renderBanner(ctx,W,H){
   ctx.fillStyle=vig;ctx.fillRect(0,0,W,H);
   drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,S.accent);
   drawSquareHero(ctx,heroPhoto,heroX,heroY,heroSz,S.accent);
-  if(t.id==='graduation')drawVerticalCongrats(ctx,heroX,heroY,heroSz,S.accent);
+  if(t.id==='graduation'){drawVerticalCongrats(ctx,heroX,heroY,heroSz,S.accent);drawGradDiploma(ctx,W,heroY,heroSz,S.accent);}
   if(t.id==='stars-stripes')drawVerticalStripes(ctx,heroX,heroY,heroSz,S.accent);
   if(t.id==='champion'){
     var cpSz2=Math.round(heroSz*0.62),cpY2=heroY+Math.round((heroSz-cpSz2)/2),cpGap2=Math.round(W*0.018);
