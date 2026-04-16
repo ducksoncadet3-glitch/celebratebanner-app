@@ -1217,14 +1217,27 @@ function drawThemeBackground(ctx, t, W, H, accent, bgColor) {
     ctx.restore();
     // Confetti dots — celebratory scatter
     ctx.save();
-    ctx.globalAlpha = 0.09;
+    ctx.globalAlpha = 0.11;
     var dotCols = ['#C9A84C','#E8C97A','#FFFFFF','#4A9ECC','#5A8F6A','#C4617A'];
-    for (var i = 0; i < 150; i++) {
+    for (var i = 0; i < 180; i++) {
       ctx.fillStyle = dotCols[i % dotCols.length];
       var rx = (Math.sin(i * 137.508) * 0.5 + 0.5) * W;
       var ry = (Math.cos(i * 97.314) * 0.5 + 0.5) * H;
-      var rr = Math.round(W * 0.003) + (i % 3) * Math.round(W * 0.0012);
+      var rr = Math.round(W * 0.0035) + (i % 3) * Math.round(W * 0.0015);
       ctx.beginPath(); ctx.arc(rx, ry, rr, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+    // Subtle diagonal confetti streaks
+    ctx.save(); ctx.globalAlpha = 0.06;
+    for (var ci = 0; ci < 40; ci++) {
+      var csx = (Math.cos(ci * 89.3) * 0.5 + 0.5) * W;
+      var csy = (Math.sin(ci * 67.7) * 0.5 + 0.5) * H;
+      var csLen = Math.round(W * 0.025);
+      ctx.strokeStyle = dotCols[ci % dotCols.length];
+      ctx.lineWidth = Math.max(2, Math.round(W * 0.002));
+      ctx.save(); ctx.translate(csx, csy); ctx.rotate((ci * 47) % 360 * Math.PI / 180);
+      ctx.beginPath(); ctx.moveTo(-csLen/2, 0); ctx.lineTo(csLen/2, 0); ctx.stroke();
+      ctx.restore();
     }
     ctx.restore();
   }
@@ -1262,24 +1275,43 @@ function drawThemeBackground(ctx, t, W, H, accent, bgColor) {
   }
 
   else if (t.id === 'wedding') {
-    // Romantic corner flourishes
-    ctx.save(); ctx.globalAlpha = 0.09; ctx.fillStyle = accent;
-    var fFS = Math.round(W * 0.04);
-    ctx.font = fFS + 'px serif'; ctx.textAlign = 'center';
-    var wm = '♥  forever  ♥';
-    var ww = ctx.measureText(wm).width + Math.round(W*0.04);
-    var wh = Math.round(W * 0.09);
+    // Romantic watermark text pattern
+    ctx.save(); ctx.globalAlpha = 0.07; ctx.fillStyle = accent;
+    var fFS = Math.round(W * 0.038);
+    ctx.font = 'italic ' + fFS + 'px Cormorant Garamond,serif'; ctx.textAlign = 'center';
+    var wm = '♥  forever & always  ♥';
+    ctx.font = 'italic ' + fFS + 'px Cormorant Garamond,serif';
+    var ww = ctx.measureText(wm).width + Math.round(W*0.05);
+    var wh = Math.round(W * 0.10);
     for (var wy = wh; wy < H; wy += wh) {
       var wo = (Math.floor(wy/wh) % 2) * (ww/2);
       for (var wx = -ww + wo; wx < W + ww; wx += ww) { ctx.fillText(wm, wx, wy); }
     }
     ctx.restore();
-    // Subtle gradient glow at top center (romantic spotlight)
+    // Lavender-pink spotlight glow at top center
     ctx.save();
-    var wGlow = ctx.createRadialGradient(W/2, 0, 0, W/2, 0, H*0.5);
-    wGlow.addColorStop(0, 'rgba(212,168,212,0.12)');
+    var wGlow = ctx.createRadialGradient(W/2, 0, 0, W/2, 0, H*0.55);
+    wGlow.addColorStop(0, 'rgba(212,168,212,0.18)');
+    wGlow.addColorStop(0.5, 'rgba(212,168,212,0.06)');
     wGlow.addColorStop(1, 'rgba(212,168,212,0)');
     ctx.fillStyle = wGlow; ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+    // Elegant corner filigree — thin curved lines at four corners
+    ctx.save(); ctx.globalAlpha = 0.22; ctx.strokeStyle = accent;
+    ctx.lineWidth = Math.max(2, Math.round(W * 0.002));
+    var cSize = Math.round(W * 0.09);
+    var corners = [[0,0,1,1],[W,0,-1,1],[0,H,1,-1],[W,H,-1,-1]];
+    corners.forEach(function(c) {
+      var cx=c[0], cy=c[1], sx=c[2], sy=c[3];
+      ctx.beginPath();
+      ctx.moveTo(cx + sx*cSize*0.1, cy + sy*cSize*0.5);
+      ctx.quadraticCurveTo(cx + sx*cSize*0.1, cy + sy*cSize*0.1, cx + sx*cSize*0.5, cy + sy*cSize*0.1);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cx + sx*cSize*0.25, cy + sy*cSize*0.7);
+      ctx.quadraticCurveTo(cx + sx*cSize*0.25, cy + sy*cSize*0.25, cx + sx*cSize*0.7, cy + sy*cSize*0.25);
+      ctx.stroke();
+    });
     ctx.restore();
   }
 
@@ -1295,22 +1327,45 @@ function drawThemeBackground(ctx, t, W, H, accent, bgColor) {
   }
 
   else if (t.id === 'pets') {
-    // Scattered paw prints
-    ctx.save(); ctx.globalAlpha = 0.08;
-    var pawSyms = ['🐾','🐶','🐱','🐾'];
-    ctx.font = Math.round(W * 0.04) + 'px serif'; ctx.textAlign = 'center';
-    for (var pi = 0; pi < 60; pi++) {
+    // Colorful polka-dot background — playful & fun
+    ctx.save(); ctx.globalAlpha = 0.07;
+    var petDotColors = ['#5A8F6A','#C9A84C','#E8C97A','#C4617A','#4A9ECC','#E05080'];
+    for (var pd = 0; pd < 80; pd++) {
+      ctx.fillStyle = petDotColors[pd % petDotColors.length];
+      var pdx = (Math.sin(pd * 143.5) * 0.5 + 0.5) * W;
+      var pdy = (Math.cos(pd * 101.3) * 0.5 + 0.5) * H;
+      var pdr = Math.round(W * 0.012) + (pd % 4) * Math.round(W * 0.004);
+      ctx.beginPath(); ctx.arc(pdx, pdy, pdr, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+    // Scattered paw prints (larger, more visible)
+    ctx.save(); ctx.globalAlpha = 0.10;
+    var pawSyms = ['🐾','🐶','🐱','🐾','🐕','🐈'];
+    ctx.font = Math.round(W * 0.05) + 'px serif'; ctx.textAlign = 'center';
+    for (var pi = 0; pi < 45; pi++) {
       var px = (Math.sin(pi * 173.1) * 0.5 + 0.5) * W;
       var py = (Math.cos(pi * 117.4) * 0.5 + 0.5) * H;
       ctx.fillText(pawSyms[pi % pawSyms.length], px, py);
     }
     ctx.restore();
-    // Warm color glow
+    // Warm green-sage glow at center
     ctx.save();
-    var pGlow = ctx.createRadialGradient(W/2, H*0.35, 0, W/2, H*0.35, H*0.55);
-    pGlow.addColorStop(0, 'rgba(90,143,106,0.12)');
+    var pGlow = ctx.createRadialGradient(W/2, H*0.35, 0, W/2, H*0.35, H*0.60);
+    pGlow.addColorStop(0, 'rgba(90,143,106,0.15)');
+    pGlow.addColorStop(0.6, 'rgba(90,143,106,0.06)');
     pGlow.addColorStop(1, 'rgba(90,143,106,0)');
     ctx.fillStyle = pGlow; ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+    // Playful wavy border accent at top and bottom
+    ctx.save(); ctx.globalAlpha = 0.25; ctx.strokeStyle = accent;
+    ctx.lineWidth = Math.round(W * 0.005); ctx.lineJoin = 'round';
+    var waveAmp = Math.round(W * 0.012), waveLen = Math.round(W * 0.08);
+    ctx.beginPath();
+    for (var wx = 0; wx <= W; wx += 4) {
+      var wy = Math.round(W * 0.015) + Math.sin(wx / waveLen * Math.PI * 2) * waveAmp;
+      if (wx === 0) ctx.moveTo(wx, wy); else ctx.lineTo(wx, wy);
+    }
+    ctx.stroke();
     ctx.restore();
   }
 
@@ -1411,6 +1466,16 @@ function drawThemeBackground(ctx, t, W, H, accent, bgColor) {
 function drawCollageRow(ctx,photos,W,H,accent,startY,cols){
   if(!photos||photos.length===0) return;
   startY=startY||(H*0.27+W*0.22+18);
+  // Decorative rule line between hero and collage
+  var ruleY=startY-Math.round(W*0.012);
+  var ruleMargin=Math.round(W*0.06);
+  ctx.save();
+  ctx.strokeStyle=accent; ctx.globalAlpha=0.35;
+  ctx.lineWidth=Math.max(1,Math.round(W*0.0015));
+  ctx.beginPath(); ctx.moveTo(ruleMargin,ruleY); ctx.lineTo(W-ruleMargin,ruleY); ctx.stroke();
+  ctx.globalAlpha=0.15; ctx.lineWidth=Math.max(1,Math.round(W*0.0008));
+  ctx.beginPath(); ctx.moveTo(ruleMargin*1.5,ruleY+Math.round(W*0.004)); ctx.lineTo(W-ruleMargin*1.5,ruleY+Math.round(W*0.004)); ctx.stroke();
+  ctx.restore();
   var n=cols||4;
   var pad=Math.max(4,Math.round(W*0.003)), margin=Math.max(6,Math.round(W*0.003));
   var cw=Math.floor((W-margin*2-(n-1)*pad)/n),ch=cw;
