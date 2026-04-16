@@ -227,6 +227,8 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
 .btn-group { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .toast { position: fixed; bottom: 28px; right: 28px; background: var(--obsidian); color: var(--gold2); padding: 14px 20px; border-radius: var(--r2); font-size: 13px; font-weight: 500; border: 1px solid var(--border); display: flex; align-items: center; gap: 8px; opacity: 0; transform: translateY(10px) scale(0.97); transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); pointer-events: none; z-index: 9999; box-shadow: var(--shadow-lg); }
 .toast.show { opacity: 1; transform: translateY(0) scale(1); }
+.mockup-label { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); background: var(--white); border: 1px solid var(--border2); padding: 5px 12px; border-radius: 20px; white-space: nowrap; }
+#mockup-canvas { display: block; width: 100%; border-radius: 14px; box-shadow: 0 12px 48px rgba(12,14,20,0.22); }
 </style>
 </head>
 <body>
@@ -363,9 +365,16 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
   <p class="sec-sub">This is your live digital mockup. Final output is 300 DPI, print-ready with bleed marks.</p>
   <div class="preview-layout">
     <div>
-      <div class="preview-frame">
-        <div class="preview-label"><span>Live Preview</span><span class="preview-spec" id="preview-spec">24×36" · 300 DPI · CMYK</span></div>
-        <div id="banner-preview"><canvas id="preview-canvas"></canvas></div>
+      <!-- Hidden canvas kept off-screen — used only for file downloads -->
+      <div id="banner-preview" style="position:fixed;left:-9999px;top:0;width:320px;pointer-events:none;overflow:hidden;"><canvas id="preview-canvas"></canvas></div>
+      <!-- 3D Mockup Display -->
+      <div id="mockup-container" style="max-width:600px;margin:0 auto;">
+        <div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
+          <span>3D Banner Mockup</span>
+          <span id="preview-spec" style="color:var(--light);">24×36" · 300 DPI · CMYK</span>
+        </div>
+        <canvas id="mockup-canvas"></canvas>
+        <div id="mockup-labels" style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap;"></div>
       </div>
     </div>
     <div class="sidebar-panel">
@@ -1945,6 +1954,361 @@ rotatePhoto = function(i) {
 
 console.log('✓ CelebrateBanner Live Preview loaded');
 // ============================================================
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CELEBRATEBANNER — 3D BANNER MOCKUP SYSTEM
+// Renders a realistic scene behind the rendered banner canvas (pg-3 preview)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function _mockupSceneType(themeId) {
+  if (themeId === 'wedding' || themeId === 'anniversary') return 'indoor';
+  if (themeId === 'america250-official' || themeId === 'america250-family' || themeId === 'america250-parade') return 'patriotic';
+  if (themeId === 'pets') return 'home';
+  return 'outdoor'; // graduation, champion, stars & stripes, default
+}
+
+function _bannerAspect(sz) {
+  return {'18x24':24/18,'24x36':36/24,'36x48':48/36,'48x72':72/48,'60x96':96/60}[sz] || 1.5;
+}
+
+function renderMockup() {
+  var previewCanvas = document.getElementById('preview-canvas');
+  var mockupCanvas  = document.getElementById('mockup-canvas');
+  if (!previewCanvas || !mockupCanvas || !S.theme) return;
+  if (previewCanvas.width === 0 || previewCanvas.height === 0) return;
+
+  var mW = 600, mH = 460;
+  mockupCanvas.width  = mW;
+  mockupCanvas.height = mH;
+  var ctx = mockupCanvas.getContext('2d');
+  ctx.clearRect(0, 0, mW, mH);
+
+  var scene      = _mockupSceneType(S.theme.id);
+  var isXWide    = (S.size === '60x96');        // 5 ft wide — two-pole setup
+  var groundY    = Math.round(mH * 0.80);
+
+  // ── 1. Scene background ──────────────────────────────────────────────
+  _drawMockupBg(ctx, scene, mW, mH, groundY);
+
+  // ── 2. Banner rect in mockup space ───────────────────────────────────
+  var aspect  = _bannerAspect(S.size);
+  var bannerW, bannerH;
+  if (isXWide) {
+    bannerW = Math.round(mW * 0.52);
+    bannerH = Math.round(bannerW * aspect);
+    if (bannerH > mH * 0.82) { bannerH = Math.round(mH * 0.82); bannerW = Math.round(bannerH / aspect); }
+  } else {
+    bannerH = Math.round(mH * 0.76);
+    bannerW = Math.round(bannerH / aspect);
+    if (bannerW > mW * 0.44) { bannerW = Math.round(mW * 0.44); bannerH = Math.round(bannerW * aspect); }
+  }
+  var bannerX = isXWide ? Math.round((mW - bannerW) / 2) : Math.round(mW * 0.38);
+  var bannerY = Math.round(mH * 0.07);
+
+  var sagPx   = Math.round(bannerH * 0.022);   // fabric drape depth at top center
+  var perspPx = Math.round(bannerW * 0.038);   // each-side perspective narrowing at top
+
+  // ── 3. Poles & ropes (behind banner) ─────────────────────────────────
+  if (isXWide) {
+    var lPole = bannerX - 32, rPole = bannerX + bannerW + 32;
+    _drawMockupPole(ctx, lPole, groundY, mH, scene);
+    _drawMockupPole(ctx, rPole, groundY, mH, scene);
+    // Top rope between poles
+    ctx.save();
+    ctx.strokeStyle = '#8B7355'; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(lPole, bannerY - 6);
+    ctx.quadraticCurveTo(bannerX + bannerW / 2, bannerY - 6 + sagPx * 2.8, rPole, bannerY - 6);
+    ctx.stroke();
+    ctx.restore();
+  } else {
+    var poleX = bannerX - 36;
+    _drawMockupPole(ctx, poleX, groundY, mH, scene);
+    var poleTopY = Math.round(mH * 0.025);
+    // Left rope: pole tip → top-left grommet
+    ctx.save();
+    ctx.strokeStyle = '#8B7355'; ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(poleX, poleTopY);
+    ctx.quadraticCurveTo(poleX + (bannerX - poleX) * 0.45, bannerY - 18, bannerX + perspPx, bannerY);
+    ctx.stroke();
+    // Right rope: pole tip → top-right grommet
+    ctx.beginPath();
+    ctx.moveTo(poleX, poleTopY);
+    ctx.quadraticCurveTo(poleX + (bannerX + bannerW - perspPx - poleX) * 0.55, bannerY - 12, bannerX + bannerW - perspPx, bannerY);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Ceiling hooks for indoor scenes
+  if (scene === 'indoor' || scene === 'home') {
+    var hookY = bannerY - 6;
+    _drawCeilingHook(ctx, bannerX + perspPx, hookY);
+    _drawCeilingHook(ctx, bannerX + bannerW - perspPx, hookY);
+    // Hook ropes up to ceiling
+    ctx.save();
+    ctx.strokeStyle = '#c0a870'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(bannerX + perspPx, hookY);
+    ctx.lineTo(bannerX + perspPx, 0);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(bannerX + bannerW - perspPx, hookY);
+    ctx.lineTo(bannerX + bannerW - perspPx, 0);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── 4. Drop shadow for banner ─────────────────────────────────────────
+  ctx.save();
+  ctx.filter = 'blur(10px)';
+  ctx.globalAlpha = 0.30;
+  ctx.fillStyle = '#000';
+  var sOx = Math.round(bannerW * 0.025), sOy = Math.round(bannerH * 0.007);
+  ctx.beginPath();
+  ctx.moveTo(bannerX + perspPx + sOx, bannerY + sOy);
+  ctx.quadraticCurveTo(bannerX + bannerW / 2 + sOx, bannerY + sagPx + sOy, bannerX + bannerW - perspPx + sOx, bannerY + sOy);
+  ctx.lineTo(bannerX + bannerW + sOx, bannerY + bannerH + sOy);
+  ctx.lineTo(bannerX + sOx, bannerY + bannerH + sOy);
+  ctx.closePath();
+  ctx.fill();
+  ctx.filter = 'none';
+  ctx.restore();
+
+  // ── 5. Banner image with perspective + drape clip ─────────────────────
+  _drawBannerWithDrape(ctx, previewCanvas, bannerX, bannerY, bannerW, bannerH, sagPx, perspPx);
+
+  // ── 6. Grommets ───────────────────────────────────────────────────────
+  var tlGx = bannerX + perspPx,      tlGy = bannerY;
+  var trGx = bannerX + bannerW - perspPx, trGy = bannerY;
+  var blGx = bannerX,                blGy = bannerY + bannerH;
+  var brGx = bannerX + bannerW,      brGy = bannerY + bannerH;
+  _drawGrommet(ctx, tlGx, tlGy);
+  _drawGrommet(ctx, trGx, trGy);
+  _drawGrommet(ctx, blGx, blGy);
+  _drawGrommet(ctx, brGx, brGy);
+  if (isXWide) {
+    _drawGrommet(ctx, bannerX + bannerW * 0.33, bannerY);
+    _drawGrommet(ctx, bannerX + bannerW * 0.67, bannerY);
+  }
+
+  // ── 7. Label strip ────────────────────────────────────────────────────
+  _updateMockupLabels();
+}
+
+// ── Scene backgrounds ─────────────────────────────────────────────────────────
+function _drawMockupBg(ctx, scene, mW, mH, groundY) {
+  if (scene === 'outdoor' || scene === 'patriotic') {
+    // Sky
+    var sky = ctx.createLinearGradient(0, 0, 0, groundY);
+    if (scene === 'patriotic') {
+      sky.addColorStop(0, '#14305c');
+      sky.addColorStop(0.55, '#2558a0');
+      sky.addColorStop(1, '#6a9fcf');
+    } else {
+      sky.addColorStop(0, '#6bbfe8');
+      sky.addColorStop(0.55, '#a8d8f0');
+      sky.addColorStop(1, '#d6eef8');
+    }
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, mW, groundY);
+
+    // Clouds (outdoor only)
+    if (scene === 'outdoor') {
+      ctx.save(); ctx.globalAlpha = 0.68; ctx.fillStyle = '#fff';
+      _drawCloud(ctx, mW * 0.13, mH * 0.08, 68, 22);
+      _drawCloud(ctx, mW * 0.70, mH * 0.055, 84, 28);
+      _drawCloud(ctx, mW * 0.48, mH * 0.13, 52, 17);
+      ctx.restore();
+    }
+
+    // Patriotic building silhouettes
+    if (scene === 'patriotic') {
+      ctx.save(); ctx.globalAlpha = 0.5; ctx.fillStyle = '#10265a';
+      ctx.fillRect(mW * 0.03, groundY - mH * 0.26, mW * 0.045, mH * 0.26);
+      ctx.fillRect(mW * 0.09, groundY - mH * 0.18, mW * 0.06,  mH * 0.18);
+      ctx.fillRect(mW * 0.83, groundY - mH * 0.22, mW * 0.055, mH * 0.22);
+      ctx.fillRect(mW * 0.90, groundY - mH * 0.32, mW * 0.05,  mH * 0.32);
+      ctx.restore();
+    }
+
+    // Ground / grass
+    var grass = ctx.createLinearGradient(0, groundY, 0, mH);
+    if (scene === 'patriotic') {
+      grass.addColorStop(0, '#26421a'); grass.addColorStop(1, '#182a10');
+    } else {
+      grass.addColorStop(0, '#58a035'); grass.addColorStop(0.35, '#488828'); grass.addColorStop(1, '#356820');
+    }
+    ctx.fillStyle = grass; ctx.fillRect(0, groundY, mW, mH - groundY);
+
+  } else if (scene === 'indoor') {
+    // Warm cream wall
+    var wall = ctx.createRadialGradient(mW * 0.5, mH * 0.3, 30, mW * 0.5, mH * 0.5, mW * 0.72);
+    wall.addColorStop(0, '#f7f0e7'); wall.addColorStop(1, '#e6ddd0');
+    ctx.fillStyle = wall; ctx.fillRect(0, 0, mW, groundY);
+    // Baseboard
+    ctx.fillStyle = '#d8cfc4'; ctx.fillRect(0, groundY - 12, mW, 12);
+    // Wood floor
+    var floor = ctx.createLinearGradient(0, groundY, 0, mH);
+    floor.addColorStop(0, '#8a6812'); floor.addColorStop(0.3, '#78580e'); floor.addColorStop(1, '#5a3f0a');
+    ctx.fillStyle = floor; ctx.fillRect(0, groundY, mW, mH - groundY);
+    ctx.save(); ctx.strokeStyle = 'rgba(0,0,0,0.11)'; ctx.lineWidth = 0.8;
+    for (var px = 0; px < mW; px += 58) { ctx.beginPath(); ctx.moveTo(px, groundY); ctx.lineTo(px + 22, mH); ctx.stroke(); }
+    ctx.restore();
+
+  } else {
+    // Home — clean white wall + light hardwood floor
+    var homeWall = ctx.createLinearGradient(0, 0, mW * 0.7, mH * 0.5);
+    homeWall.addColorStop(0, '#f8f8f8'); homeWall.addColorStop(1, '#eeeeee');
+    ctx.fillStyle = homeWall; ctx.fillRect(0, 0, mW, groundY);
+    ctx.fillStyle = '#e0dbd4'; ctx.fillRect(0, groundY - 10, mW, 10);
+    var homeFloor = ctx.createLinearGradient(0, groundY, 0, mH);
+    homeFloor.addColorStop(0, '#c8a060'); homeFloor.addColorStop(1, '#9a7840');
+    ctx.fillStyle = homeFloor; ctx.fillRect(0, groundY, mW, mH - groundY);
+    ctx.save(); ctx.strokeStyle = 'rgba(0,0,0,0.09)'; ctx.lineWidth = 0.8;
+    for (var px2 = 0; px2 < mW; px2 += 50) { ctx.beginPath(); ctx.moveTo(px2, groundY); ctx.lineTo(px2 + 16, mH); ctx.stroke(); }
+    ctx.restore();
+  }
+
+  // Ground / wall dividing line
+  ctx.save(); ctx.strokeStyle = 'rgba(0,0,0,0.09)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(mW, groundY); ctx.stroke();
+  ctx.restore();
+}
+
+function _drawCloud(ctx, cx, cy, w, h) {
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, w / 2, h / 2, 0, 0, Math.PI * 2);
+  ctx.ellipse(cx - w * 0.25, cy + h * 0.1, w * 0.35, h * 0.5, 0, 0, Math.PI * 2);
+  ctx.ellipse(cx + w * 0.25, cy + h * 0.1, w * 0.35, h * 0.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function _drawMockupPole(ctx, poleX, groundY, mH, scene) {
+  var topY = Math.round(mH * 0.02), poleW = 11;
+  var grad = ctx.createLinearGradient(poleX - poleW / 2, 0, poleX + poleW / 2, 0);
+  grad.addColorStop(0, '#777'); grad.addColorStop(0.3, '#ccc');
+  grad.addColorStop(0.7, '#aaa'); grad.addColorStop(1, '#555');
+  ctx.fillStyle = grad;
+  ctx.fillRect(poleX - poleW / 2, topY, poleW, groundY - topY + 32);
+  // Tip cap
+  ctx.fillStyle = '#bbb';
+  ctx.beginPath(); ctx.arc(poleX, topY, poleW / 2 + 3, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#888'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(poleX, topY, poleW / 2 + 3, 0, Math.PI * 2); ctx.stroke();
+  // Ground mount plate
+  ctx.fillStyle = '#555';
+  ctx.fillRect(poleX - poleW / 2 - 5, groundY + 14, poleW + 10, 18);
+}
+
+function _drawCeilingHook(ctx, x, y) {
+  // Small silver hook shape
+  ctx.save();
+  ctx.strokeStyle = '#aaaaaa'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.arc(x, y - 6, 5, 0, Math.PI);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ── Banner drawing with perspective strips + drape clip ───────────────────────
+function _drawBannerWithDrape(ctx, srcCanvas, x, y, w, h, sagPx, perspPx) {
+  ctx.save();
+
+  // Clip to the banner's trapezoidal + draped-top shape
+  ctx.beginPath();
+  ctx.moveTo(x + perspPx, y);
+  ctx.quadraticCurveTo(x + w / 2, y + sagPx, x + w - perspPx, y);  // sagging top edge
+  ctx.lineTo(x + w, y + h);   // right side (full width at bottom)
+  ctx.lineTo(x, y + h);        // bottom edge
+  ctx.closePath();             // left side back to top-left
+  ctx.clip();
+
+  // Draw banner in horizontal strips to simulate perspective foreshortening
+  var strips = 50;
+  for (var i = 0; i < strips; i++) {
+    var t    = (i + 0.5) / strips;        // midpoint for this strip
+    var perp = perspPx * (1 - t);         // less narrowing toward bottom
+    var destX = x + perp;
+    var destW = w - 2 * perp;
+    var destY = y + h * (i / strips);
+    var destH = h / strips + 1;           // +1 avoids sub-pixel gaps
+    var srcY  = srcCanvas.height * (i / strips);
+    var srcH  = srcCanvas.height / strips;
+    try { ctx.drawImage(srcCanvas, 0, srcY, srcCanvas.width, srcH, destX, destY, destW, destH); } catch (e) {}
+  }
+
+  // Fabric drape shadow at top (fold/crease effect)
+  var drape = ctx.createLinearGradient(0, y, 0, y + sagPx * 3.5);
+  drape.addColorStop(0, 'rgba(0,0,0,0.30)');
+  drape.addColorStop(0.5, 'rgba(0,0,0,0.09)');
+  drape.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = drape; ctx.fillRect(x, y, w, sagPx * 4);
+
+  // Left-edge depth shadow (perspective lighting)
+  var edgeShadow = ctx.createLinearGradient(x, 0, x + perspPx * 2.5, 0);
+  edgeShadow.addColorStop(0, 'rgba(0,0,0,0.16)');
+  edgeShadow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = edgeShadow; ctx.fillRect(x, y, perspPx * 3, h);
+
+  ctx.restore();
+
+  // Thin border around banner shape
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,0,0,0.18)'; ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(x + perspPx, y);
+  ctx.quadraticCurveTo(x + w / 2, y + sagPx, x + w - perspPx, y);
+  ctx.lineTo(x + w, y + h);
+  ctx.lineTo(x, y + h);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ── Grommet ───────────────────────────────────────────────────────────────────
+function _drawGrommet(ctx, x, y) {
+  var r = 5;
+  ctx.save();
+  // Outer ring
+  var outer = ctx.createRadialGradient(x - 1.5, y - 1.5, 0.5, x, y, r);
+  outer.addColorStop(0, '#e8e8e8'); outer.addColorStop(0.6, '#b0b0b0'); outer.addColorStop(1, '#707070');
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = outer; ctx.fill();
+  ctx.strokeStyle = '#505050'; ctx.lineWidth = 0.8; ctx.stroke();
+  // Inner hole
+  ctx.beginPath(); ctx.arc(x, y, r * 0.42, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fill();
+  ctx.restore();
+}
+
+// ── Label strip update ────────────────────────────────────────────────────────
+function _updateMockupLabels() {
+  var strip = document.getElementById('mockup-labels');
+  if (!strip || !S.theme) return;
+  var items = [
+    S.theme.emoji + ' ' + S.theme.name,
+    S.size + '"',
+    '300 DPI',
+    'CMYK',
+    S.photos.length + ' photo' + (S.photos.length !== 1 ? 's' : '')
+  ];
+  strip.innerHTML = items.map(function(item) {
+    return '<span class="mockup-label">' + item + '</span>';
+  }).join('');
+}
+
+// ── Patch buildPreview to also render mockup ─────────────────────────────────
+var _previewWithMockup = buildPreview;
+buildPreview = function() {
+  _previewWithMockup();
+  // Wait for canvas rendering to complete before drawing mockup
+  setTimeout(function() {
+    try { renderMockup(); } catch (e) { console.warn('[Mockup]', e); }
+  }, 280);
+};
+
+console.log('✓ CelebrateBanner 3D Mockup loaded');
+// ─────────────────────────────────────────────────────────────────────────────
 
 </script>
 
