@@ -619,18 +619,33 @@ function init() { buildThemeGrid(); buildAdminThemes(); buildFunnelChart(); buil
 
 function buildThemeGrid() {
   var g = document.getElementById('themes-grid');
-  var bgs = ['linear-gradient(145deg,#0A0E18,#1A2540)','linear-gradient(145deg,#080E1A,#102040)','linear-gradient(145deg,#180A28,#3D1A5A)','linear-gradient(145deg,#1A0505,#4A1010)','linear-gradient(145deg,#050E08,#0A2814)','linear-gradient(145deg,#0A1628,#1a3a6a)','linear-gradient(145deg,#e8dcc8,#c8b898)','linear-gradient(145deg,#B22234,#8B1020)'];
-  g.innerHTML = THEMES.map(function(t,i) {
+  g.innerHTML = THEMES.map(function(t) {
     var tags = t.tags.map(function(tg){ return '<span class="t-tag" style="background:'+t.tagBg+';color:'+t.tagC+'">'+tg+'</span>'; }).join('');
+    // Generate card background from theme's own bg + accent colors
+    var cardBg = 'linear-gradient(145deg,'+t.bg+' 0%,'+_blendAccent(t.bg,t.accent,0.18)+' 100%)';
+    // Accent bar: thin strip along bottom of the visual using theme accent
+    var accentBar = '<div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:'+t.accent+';opacity:0.85;"></div>';
+    // Ambient glow behind emoji
+    var glow = '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,'+t.accent+'33 0%,transparent 70%);"></div>';
     return '<div class="theme-card" data-id="'+t.id+'" onclick="selectTheme(\''+t.id+'\',this)">'+
-      '<div class="theme-visual" style="background:'+bgs[i]+';">'+
-      '<div class="tv-overlay"><div class="tv-emoji">'+t.emoji+'</div><div class="tv-label">'+t.name+'</div></div>'+
+      '<div class="theme-visual" style="background:'+cardBg+';">'+
+      glow+
+      '<div class="tv-overlay"><div class="tv-emoji">'+t.emoji+'</div><div class="tv-label" style="color:'+t.accent+';">'+t.name+'</div></div>'+
+      accentBar+
       '<div class="theme-badge-limit">'+t.maxPhotos+' photos max</div>'+
       '<div class="theme-sel-ring"></div></div>'+
       '<div class="theme-info"><div class="theme-name">'+t.emoji+' '+t.name+'</div>'+
       '<div class="theme-desc">'+t.desc+'</div>'+
       '<div class="theme-tags">'+tags+'</div></div></div>';
   }).join('');
+}
+
+// Blend a hex color toward another hex color by factor (0=base,1=toward)
+function _blendAccent(base, accent, factor) {
+  function hexToRgb(h){ h=h.replace('#',''); if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2]; return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]; }
+  function toHex(n){ return ('0'+Math.round(n).toString(16)).slice(-2); }
+  var b=hexToRgb(base), a=hexToRgb(accent);
+  return '#'+toHex(b[0]+(a[0]-b[0])*factor)+toHex(b[1]+(a[1]-b[1])*factor)+toHex(b[2]+(a[2]-b[2])*factor);
 }
 
 function selectTheme(id, el) {
@@ -2046,9 +2061,11 @@ function liveRender() {
       var t = S.theme;
       var heroPhoto = S.hero >= 0 ? S.photos[S.hero] : (S.photos[0] || null);
       var others = S.photos.filter(function(_, i) { return i !== S.hero; });
+      var _lrNameFields = ['name','teamName','name1','names','petName'];
+      var _lrHasName = t.fields && t.fields.some(function(f){ return _lrNameFields.indexOf(f.id) >= 0; });
       var name = t.id === 'champion'
         ? (S.fields.teamName || '')
-        : (S.fields.name || S.fields.name1 || S.fields.names || S.fields.petName || 'Your Name');
+        : (S.fields.name || S.fields.name1 || S.fields.names || S.fields.petName || (_lrHasName ? 'Your Name' : ''));
       var sub = S.fields.year || S.fields.date || S.fields.years || S.fields.caption || '';
       var sub2 = S.fields.school || S.fields.name2 || '';
 
