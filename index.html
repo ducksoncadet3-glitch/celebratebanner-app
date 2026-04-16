@@ -410,6 +410,7 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
       <div class="spec-badge">📋 300 DPI · CMYK · PDF + JPG · Bleed/safe margins included</div>
       <button class="btn btn-primary" style="width:100%;margin-bottom:10px;" onclick="gotoPage(4)">Choose Delivery →</button>
       <button class="btn btn-outline" style="width:100%;margin-bottom:10px;" onclick="gotoPage(2)">← Edit Design</button>
+      <button class="btn btn-dark" style="width:100%;margin-bottom:10px;font-size:13px;" onclick="buildPreview()">↻ Regenerate Preview</button>
       <div id="admin-dl-panel" style="display:none;margin-top:4px;padding:14px;background:linear-gradient(135deg,#0C0E14,#1B1F2C);border-radius:14px;border:1px solid rgba(201,168,76,0.3);">
         <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(201,168,76,0.7);margin-bottom:10px;">⚙️ Admin Download</div>
         <button class="btn btn-dark" style="width:100%;margin-bottom:8px;font-size:13px;" onclick="adminDownload('jpg')">↓ Download JPG (High-Res)</button>
@@ -623,13 +624,22 @@ function buildThemeGrid() {
   g.innerHTML = THEMES.map(function(t) {
     var tags = t.tags.map(function(tg){ return '<span class="t-tag" style="background:'+t.tagBg+';color:'+t.tagC+'">'+tg+'</span>'; }).join('');
     // Generate card background from theme's own bg + accent colors
-    var cardBg = 'linear-gradient(145deg,'+t.bg+' 0%,'+_blendAccent(t.bg,t.accent,0.18)+' 100%)';
+    var cardBg = 'linear-gradient(145deg,'+t.bg+' 0%,'+_blendAccent(t.bg,t.accent,0.22)+' 100%)';
     // Accent bar: thin strip along bottom of the visual using theme accent
-    var accentBar = '<div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:'+t.accent+';opacity:0.85;"></div>';
-    // Ambient glow behind emoji
-    var glow = '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,'+t.accent+'33 0%,transparent 70%);"></div>';
+    var accentBar = '<div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:linear-gradient(90deg,'+t.accent+','+t.accent+'88,'+t.accent+');"></div>';
+    // Ambient glow behind emoji (larger)
+    var glow = '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-58%);width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,'+t.accent+'44 0%,transparent 70%);"></div>';
+    // Per-theme decorative pattern overlay
+    var themeDecor = '';
+    if (t.id==='graduation') themeDecor = '<div style="position:absolute;inset:0;background:repeating-linear-gradient(45deg,'+t.accent+'08 0px,'+t.accent+'08 2px,transparent 2px,transparent 14px);"></div>';
+    else if (t.id==='wedding') themeDecor = '<div style="position:absolute;top:8px;left:0;right:0;text-align:center;font-size:11px;opacity:0.2;letter-spacing:2px;color:'+t.accent+'">♥ ♥ ♥ ♥ ♥</div>';
+    else if (t.id==='anniversary') themeDecor = '<div style="position:absolute;top:8px;right:8px;font-size:12px;opacity:0.25;color:'+t.accent+'">♥</div><div style="position:absolute;bottom:12px;left:8px;font-size:10px;opacity:0.2;color:'+t.accent+'">♥</div>';
+    else if (t.id==='champion') themeDecor = '<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% -10%,'+t.accent+'22 0%,transparent 65%);"></div>';
+    else if (t.id==='pets') themeDecor = '<div style="position:absolute;top:6px;left:6px;font-size:12px;opacity:0.18">🐾</div><div style="position:absolute;bottom:12px;right:8px;font-size:10px;opacity:0.18">🐾</div>';
+    else if (t.id.startsWith('america250') || t.id==='stars-stripes') themeDecor = '<div style="position:absolute;top:6px;right:8px;font-size:14px;opacity:0.22">★</div><div style="position:absolute;bottom:12px;left:8px;font-size:11px;opacity:0.20">★</div>';
     return '<div class="theme-card" data-id="'+t.id+'" onclick="selectTheme(\''+t.id+'\',this)">'+
       '<div class="theme-visual" style="background:'+cardBg+';">'+
+      themeDecor+
       glow+
       '<div class="tv-overlay"><div class="tv-emoji">'+t.emoji+'</div><div class="tv-label" style="color:'+t.accent+';">'+t.name+'</div></div>'+
       accentBar+
@@ -1600,6 +1610,9 @@ function resetBuilder() {
   document.getElementById('photo-grid').innerHTML='';
   document.getElementById('upload-stats-wrap').style.display='none';
   document.querySelectorAll('.theme-card').forEach(function(c){c.classList.remove('selected');});
+  // Remove the effects panel so it rebuilds fresh on next customize visit
+  var ep = document.getElementById('effects-panel');
+  if (ep && ep.parentNode) ep.parentNode.removeChild(ep);
   gotoPage(0);
 }
 
@@ -1756,7 +1769,11 @@ var TEXT_FX = [
 function buildEffectsPanel() {
   // Insert effects panel into Page 2 (Customize), after the color palette card
   var existing = document.getElementById('effects-panel');
-  if (existing) return; // already built
+  if (existing) {
+    // Re-sync active state with current S.effects
+    _syncEffectsPanelUI();
+    return;
+  }
 
   var panel = document.createElement('div');
   panel.id = 'effects-panel';
@@ -1828,6 +1845,27 @@ function buildEffectsPanel() {
     wrapper.appendChild(panel);
     grid.appendChild(wrapper);
   }
+}
+
+function _syncEffectsPanelUI() {
+  var map = {filter:'filter-swatches',overlay:'overlay-swatches',frame:'frame-swatches',textFx:'textfx-swatches'};
+  var dataMap = {filter:FILTERS,overlay:OVERLAYS,frame:FRAMES,textFx:TEXT_FX};
+  Object.keys(map).forEach(function(type) {
+    var groupEl = document.getElementById(map[type]);
+    if (!groupEl) return;
+    var activeVal = S.effects[type] || 'none';
+    var items = dataMap[type];
+    var divs = groupEl.querySelectorAll(':scope > div');
+    divs.forEach(function(d, i) {
+      if (items[i] && items[i].id === activeVal) {
+        d.style.borderColor = 'var(--gold)';
+        d.style.background = 'rgba(201,168,76,0.08)';
+      } else {
+        d.style.borderColor = 'var(--border2)';
+        d.style.background = 'var(--ivory)';
+      }
+    });
+  });
 }
 
 function setEffect(type, value, el) {
