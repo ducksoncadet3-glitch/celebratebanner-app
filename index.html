@@ -505,10 +505,15 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
     <div class="success-glow">🎉</div>
     <h1 class="success-title">Your banner is ready!</h1>
     <p class="success-sub">Your high-resolution, print-ready files have been generated and sent to your email. Download them below — links expire in 30 days.</p>
+    <!-- Mini banner preview thumbnail -->
+    <div id="success-preview-wrap" style="display:none;margin-bottom:1.5rem;border-radius:14px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.22);max-width:200px;margin-left:auto;margin-right:auto;">
+      <img id="success-preview-img" alt="Your banner preview" style="width:100%;display:block;border-radius:14px;">
+    </div>
     <div class="dl-card">
       <div class="dl-card-title">Your Files</div>
-      <div class="dl-row"><span>🖨️ Banner_<span id="dl-name1">Custom</span>_PrintReady.pdf</span><a class="dl-link" onclick="fakeDl('pdf')">↓ PDF</a></div>
-      <div class="dl-row"><span>🖼️ Banner_<span id="dl-name2">Custom</span>_HiRes.jpg</span><a class="dl-link" onclick="fakeDl('jpg')">↓ JPG</a></div>
+      <div class="dl-row"><span>🖨️ Banner_<span id="dl-name1">Custom</span>_PrintReady.pdf</span><a class="dl-link" onclick="fakeDl('pdf')" style="cursor:pointer;">↓ PDF</a></div>
+      <div class="dl-row"><span>🖼️ Banner_<span id="dl-name2">Custom</span>_HiRes.jpg</span><a class="dl-link" onclick="fakeDl('jpg')" style="cursor:pointer;">↓ JPG</a></div>
+      <div class="dl-row"><span>🗂️ Banner_<span id="dl-name3">Custom</span>_Lossless.png</span><a class="dl-link" onclick="fakeDl('png')" style="cursor:pointer;">↓ PNG</a></div>
     </div>
     <div class="info-note">📧 Download links also sent to your email · Files are 300 DPI, CMYK, print-ready</div>
     <div class="btn-group" style="justify-content:center;">
@@ -1634,22 +1639,46 @@ function processPayment() {
   var iv=setInterval(function(){i++;if(i<msgs.length)document.getElementById('proc-title').textContent=msgs[i];},900);
   setTimeout(function(){
     clearInterval(iv);
-    var n=(S.fields.name||S.fields.name1||S.fields.names||S.fields.petName||'Custom').replace(/\s/g,'_');
+    var n=(S.fields.name||S.fields.name1||S.fields.names||S.fields.petName||S.fields.teamName||'Custom').replace(/\s/g,'_');
     document.getElementById('dl-name1').textContent=n;
     document.getElementById('dl-name2').textContent=n;
+    document.getElementById('dl-name3').textContent=n;
+    // Show mini banner preview on success page
+    var prevCanvas=document.getElementById('preview-canvas');
+    var prevImg=document.getElementById('success-preview-img');
+    var prevWrap=document.getElementById('success-preview-wrap');
+    if(prevCanvas&&prevCanvas.width>0&&prevImg&&prevWrap){
+      try{prevImg.src=prevCanvas.toDataURL('image/jpeg',0.80);prevWrap.style.display='block';}catch(e){}
+    }
     gotoPage(6);
   },3800);
 }
 
 function fakeDl(ext) {
   var canvas=document.getElementById('preview-canvas');
-  if(canvas&&canvas.width>0){
-    var a=document.createElement('a');
-    a.href=canvas.toDataURL('image/jpeg',0.95);
-    a.download='CelebrateBanner_'+(S.fields.name||'Custom').replace(/\s/g,'_')+'.jpg';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  if(!canvas||canvas.width===0){ showToast('⚠️ No preview to download — generate a preview first'); return; }
+  var nameField=(S.fields.name||S.fields.name1||S.fields.names||S.fields.petName||S.fields.teamName||'Custom').replace(/\s/g,'_');
+  var themeSlug=S.theme?S.theme.id:'custom';
+  var sizeSlug=S.size||'24x36';
+  var fname='CelebrateBanner_'+themeSlug+'_'+sizeSlug+'_'+nameField;
+  var a=document.createElement('a');
+  if(ext==='pdf'){
+    // PDF: wrap the JPG data URI in a minimal valid PDF structure
+    var jpgData=canvas.toDataURL('image/jpeg',0.95);
+    // Use a data URL approach — for true PDF, API would do this; here we do best-effort JPG download
+    a.href=jpgData;
+    a.download=fname+'_PrintReady.jpg'; // Browser can't generate real PDF without lib
+    showToast('📄 Downloading high-res JPG for print (PDF requires API)');
+  } else if(ext==='png'){
+    a.href=canvas.toDataURL('image/png');
+    a.download=fname+'_Lossless.png';
+    showToast('✓ PNG download started');
+  } else {
+    a.href=canvas.toDataURL('image/jpeg',0.96);
+    a.download=fname+'_HiRes.jpg';
+    showToast('✓ JPG download started');
   }
-  showToast('✓ Download started');
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
 function resetBuilder() {
