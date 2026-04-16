@@ -566,8 +566,8 @@ var CANVAS_DIMS = {
   '48x72':{w:14400,h:21600},
   '60x96':{w:18000,h:28800}
 };
-// Max collage photos for crisp quality per size
-var COLLAGE_CAPS = {'18x24':20,'24x36':45,'36x48':55,'48x72':55,'60x96':55};
+// Max collage photos for crisp quality per size — all sizes use 11×5 = 55
+var COLLAGE_CAPS = {'18x24':55,'24x36':55,'36x48':55,'48x72':55,'60x96':55};
 // These themes always cap at 24 regardless of size
 var SMALL_COLLAGE_THEMES = ['pets','america250-official','america250-family','america250-parade'];
 // Column counts per collage cap for optimal grid layout
@@ -579,9 +579,9 @@ var THEMES = [
   { id:'wedding', emoji:'💒', name:'Wedding', desc:'Romantic wide hero + photo grid. Lavender & champagne palette.', maxPhotos:55, tags:['Wedding','Love','Romantic'], tagBg:'rgba(122,98,196,0.1)', tagC:'#4B2A8A', bg:'#ffffff', accent:'#D4A8D4', fields:[ {id:'name1',label:'Partner 1 Name',ph:'e.g. Elena',req:true,inline:true}, {id:'name2',label:'Partner 2 Name',ph:'e.g. Marco',req:true,inline:true}, {id:'date',label:'Wedding Date',ph:'e.g. June 14, 2026',req:false} ], palettes:['#D4A8D4','#C9A84C','#FFFFFF','#C4617A','#7A62C4'] },
   { id:'anniversary', emoji:'❤️', name:'Anniversary', desc:'Circular hero portrait surrounded by warm photo memories.', maxPhotos:55, tags:['Anniversary','Romance','Milestone'], tagBg:'rgba(196,97,122,0.1)', tagC:'#8B2040', bg:'#ffffff', accent:'#E05080', fields:[ {id:'names',label:'Names',ph:'e.g. Elena & Marco',req:true}, {id:'years',label:'Years Together',ph:'e.g. 25 Years',req:false} ], palettes:['#C4617A','#C9A84C','#FFFFFF','#7A62C4','#5A8F6A'] },
   { id:'pets', emoji:'🐾', name:'Pets', desc:'Playful, warm layout celebrating your furry family member.', maxPhotos:24, tags:['Pets','Fun','Family'], tagBg:'rgba(90,143,106,0.1)', tagC:'#2A6040', bg:'#ffffff', accent:'#5A8F6A', fields:[ {id:'petName',label:"Pet's Name",ph:'e.g. Biscuit',req:true}, {id:'caption',label:'Caption',ph:'e.g. Best boy 🐶',req:false} ], palettes:['#5A8F6A','#C9A84C','#FFFFFF','#C4617A','#4A9ECC'] },
-  { id:'america250-official', emoji:'🇺🇸', name:'America 250 — Official', desc:'Navy & gold patriotic design. Perfect for government agencies, municipalities & official July 4th events.', maxPhotos:24, tags:['Patriotic','America250','Government'], tagBg:'rgba(10,22,40,0.12)', tagC:'#0A1628', bg:'#ffffff', accent:'#C9A84C', fixedHeadline:'250TH ANNIVERSARY', fields:[ {id:'city',label:'City or Agency Name',ph:'e.g. City of West Palm Beach',req:false}, {id:'date',label:'Event Date',ph:'e.g. July 4, 2026',req:false} ], palettes:['#C9A84C','#FFFFFF','#B22234','#3C3F8F','#F5F0E8'] },
-  { id:'america250-family', emoji:'🎆', name:'America 250 — Family', desc:'Warm & festive for families, neighborhoods and community July 4th events. Happy Birthday, America!', maxPhotos:24, tags:['Festive','Family','July4th'], tagBg:'rgba(178,34,52,0.1)', tagC:'#8B1020', bg:'#ffffff', accent:'#B22234', fixedHeadline:'HAPPY BIRTHDAY AMERICA', fields:[ {id:'name',label:'Family or Group Name',ph:'e.g. The Rivera Family',req:false}, {id:'caption',label:'Caption',ph:'e.g. Celebrating 250 Years!',req:false} ], palettes:['#B22234','#C9A84C','#3C3F8F','#0A1628','#FFFFFF'] },
-  { id:'america250-parade', emoji:'🥁', name:'America 250 — Parade', desc:'Bold red, white & blue for parades, street festivals and community celebrations.', maxPhotos:24, tags:['Parade','Bold','Community'], tagBg:'rgba(60,63,143,0.1)', tagC:'#2A2D8F', bg:'#ffffff', accent:'#F5F0E8', fixedHeadline:'STARS & STRIPES', fields:[ {id:'city',label:'City or Organization',ph:'e.g. West Palm Beach Parade',req:false}, {id:'date',label:'Event Date',ph:'e.g. July 4, 2026',req:false} ], palettes:['#F5F0E8','#C9A84C','#0A1628','#3C3F8F','#B22234'] }
+  { id:'america250-official', emoji:'🇺🇸', name:'America 250 — Official', desc:'Navy & gold patriotic design. Perfect for government agencies, municipalities & official July 4th events.', maxPhotos:24, tags:['Patriotic','America250','Government'], tagBg:'rgba(10,22,40,0.12)', tagC:'#0A1628', bg:'#ffffff', accent:'#C9A84C', fixedHeadline:'250TH ANNIVERSARY', fields:[ {id:'city',label:'City or Agency Name',ph:'Your City or Agency Name',req:false}, {id:'date',label:'Event Date',ph:'e.g. July 4, 2026',req:false} ], palettes:['#C9A84C','#FFFFFF','#B22234','#3C3F8F','#F5F0E8'] },
+  { id:'america250-family', emoji:'🎆', name:'America 250 — Family', desc:'Warm & festive for families, neighborhoods and community July 4th events. Happy Birthday, America!', maxPhotos:24, tags:['Festive','Family','July4th'], tagBg:'rgba(178,34,52,0.1)', tagC:'#8B1020', bg:'#ffffff', accent:'#B22234', fixedHeadline:'HAPPY BIRTHDAY AMERICA', fields:[ {id:'name',label:'Family or Group Name',ph:'e.g. The Rivera Family',req:false}, {id:'caption',label:'Caption',ph:'e.g. Celebrating 250 Years!',req:false}, {id:'city',label:'City or Organization',ph:'Your City or Organization',req:false} ], palettes:['#B22234','#C9A84C','#3C3F8F','#0A1628','#FFFFFF'] },
+  { id:'america250-parade', emoji:'🥁', name:'America 250 — Parade', desc:'Bold red, white & blue for parades, street festivals and community celebrations.', maxPhotos:24, tags:['Parade','Bold','Community'], tagBg:'rgba(60,63,143,0.1)', tagC:'#2A2D8F', bg:'#ffffff', accent:'#F5F0E8', fixedHeadline:'STARS & STRIPES', fields:[ {id:'city',label:'City or Organization',ph:'Your City or Organization',req:false}, {id:'date',label:'Event Date',ph:'e.g. July 4, 2026',req:false} ], palettes:['#F5F0E8','#C9A84C','#0A1628','#3C3F8F','#B22234'] }
 ];
 
 function init() { buildThemeGrid(); buildAdminThemes(); buildFunnelChart(); buildThemeMix(); }
@@ -697,7 +697,8 @@ function handleCupUpload(files) {
   if (!files || !files[0]) return;
   var r = new FileReader();
   r.onload = function(e) {
-    S.cupPhoto = {src: e.target.result};
+    var imgObj = new Image(); imgObj.src = e.target.result;
+    S.cupPhoto = {src: e.target.result, rotation: 0, _img: imgObj};
     var prev = document.getElementById('cup-preview');
     var img  = document.getElementById('cup-img');
     if (prev && img) { img.src = e.target.result; prev.style.display='block'; }
@@ -793,7 +794,7 @@ function buildPreview() {
   var heroPhoto = S.hero>=0 ? S.photos[S.hero] : (S.photos[0]||null);
   var name = t.id==='champion' ? (S.fields.teamName||'') : (S.fields.name||S.fields.name1||S.fields.names||S.fields.petName||'Your Name');
   var sub  = S.fields.year||S.fields.date||S.fields.years||S.fields.caption||'';
-  var sub2 = S.fields.school||S.fields.name2||'';
+  var sub2 = S.fields.school||S.fields.name2||S.fields.city||'';
   document.getElementById('sum-theme').textContent = t.emoji+' '+t.name;
   document.getElementById('sum-size').textContent  = S.size+'"';
   document.getElementById('sum-photos').textContent= S.photos.length+' photos';
@@ -874,6 +875,17 @@ function buildPreview() {
   drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,S.accent);
   drawSquareHero(ctx,heroPhoto,heroX,heroY,heroSz,S.accent);
   if(t.id==='graduation') drawVerticalCongrats(ctx,heroX,heroY,heroSz,S.accent);
+  // ── Champion trophy/cup photo on left and right ──────────────
+  if(t.id==='champion' && S.cupPhoto) {
+    var cpSz=Math.round(heroSz*0.62);
+    var cpY=heroY+Math.round((heroSz-cpSz)/2);
+    var cpGap=Math.round(W*0.018);
+    var cpLeft=Math.max(margin,heroX-cpSz-cpGap);
+    var cpRight=heroX+heroSz+cpGap;
+    var cpR=Math.max(8,Math.round(cpSz*0.06));
+    roundClip(ctx,cpLeft,cpY,cpSz,cpSz,cpR); drawImg(ctx,S.cupPhoto,cpLeft,cpY,cpSz,cpSz); ctx.restore();
+    roundClip(ctx,cpRight,cpY,cpSz,cpSz,cpR); drawImg(ctx,S.cupPhoto,cpRight,cpY,cpSz,cpSz); ctx.restore();
+  }
   // ── Diagnostics ──────────────────────────────────────────────
   console.log('[CelebrateBanner] Uploaded:', S.photos.length,
     '| Collage (excl. hero):', actualCount,
@@ -945,10 +957,33 @@ function drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,accent) {
   }
   // Fixed headline at top, name stacked below without overlap
   var usedH = 0;
-  var headlineFS = Math.round(W*0.085);
+  // America 250 Family headline is long — use a smaller font so it fits cleanly
+  var headlineFS = t.id==='america250-family' ? Math.round(W*0.056) : Math.round(W*0.085);
   if(t.fixedHeadline){
     var hY = Math.round(textH*0.22);
-    drawTxt(t.fixedHeadline,W/2,hY,'bold '+headlineFS+'px Cormorant Garamond,serif',accent);
+    if(t.id==='america250-official'){
+      // Split "250TH" and "ANNIVERSARY" so the numeral block is visually balanced
+      var numPart='250TH', txtPart=' ANNIVERSARY';
+      var numFS=Math.round(headlineFS*0.80), txtFS=headlineFS;
+      ctx.save();
+      ctx.textBaseline='alphabetic';
+      ctx.font='bold '+numFS+'px Cormorant Garamond,serif';
+      var nw=ctx.measureText(numPart).width;
+      ctx.font='bold '+txtFS+'px Cormorant Garamond,serif';
+      var tw=ctx.measureText(txtPart).width;
+      var totalW=nw+tw;
+      var lx=W/2-totalW/2;
+      ctx.textAlign='left';
+      ctx.font='bold '+numFS+'px Cormorant Garamond,serif';
+      if(typeof applyTextEffect==='function') applyTextEffect(ctx,numPart,lx+nw/2,hY,numFS,accent);
+      else{ctx.fillStyle=accent;ctx.fillText(numPart,lx,hY);}
+      ctx.font='bold '+txtFS+'px Cormorant Garamond,serif';
+      if(typeof applyTextEffect==='function') applyTextEffect(ctx,txtPart,lx+nw+tw/2,hY,txtFS,accent);
+      else{ctx.fillStyle=accent;ctx.fillText(txtPart,lx+nw,hY);}
+      ctx.restore();
+    } else {
+      drawTxt(t.fixedHeadline,W/2,hY,'bold '+headlineFS+'px Cormorant Garamond,serif',accent);
+    }
     usedH = hY + headlineFS*0.3 + 8;
   }
   var nameY = t.fixedHeadline ? Math.round(textH*0.52) : centerY-(sub||sub2?sS*0.6:0);
@@ -957,7 +992,7 @@ function drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,accent) {
   var nameFSAdj = t.fixedHeadline ? Math.round(fS*0.75) : fS;
   if(t.id==='wedding'&&S.fields.name1&&S.fields.name2){
     drawTxt(S.fields.name1.toUpperCase(),W*0.27,nameY,'bold '+nameFSAdj+'px Cormorant Garamond,serif',accent);
-    ctx.save();ctx.font='bold '+nameFSAdj+'px Cormorant Garamond,serif';ctx.textBaseline='alphabetic';ctx.fillStyle='rgba(255,255,255,0.85)';ctx.textAlign='center';ctx.fillText('&',W*0.5,nameY);ctx.restore();
+    drawTxt('&',W*0.5,nameY,'bold '+nameFSAdj+'px Cormorant Garamond,serif','rgba(255,255,255,0.85)');
     drawTxt(S.fields.name2.toUpperCase(),W*0.73,nameY,'bold '+nameFSAdj+'px Cormorant Garamond,serif',accent);
   } else if(name) drawTxt(name.toUpperCase(),W/2,nameY,'bold '+nameFSAdj+'px Cormorant Garamond,serif',accent);
   if(sub) drawTxt(sub.toUpperCase(),W/2,subY,'700 '+sS+'px Outfit,sans-serif','rgba(255,255,255,0.90)');
@@ -1066,7 +1101,7 @@ function _renderBanner(ctx,W,H){
   var others=S.photos.filter(function(_,i){return i!==S.hero;});
   var name=t.id==='champion'?(S.fields.teamName||''):(S.fields.name||S.fields.name1||S.fields.names||S.fields.petName||'Your Name');
   var sub=S.fields.year||S.fields.date||S.fields.years||S.fields.caption||'';
-  var sub2=S.fields.school||S.fields.name2||'';
+  var sub2=S.fields.school||S.fields.name2||S.fields.city||'';
   var textH=Math.round(W*0.28),heroSz=Math.round(W*0.55),heroX=Math.round((W-heroSz)/2),heroY=textH+10,heroBot=heroY+heroSz+10;
   ctx.fillStyle=S.bgColor;ctx.fillRect(0,0,W,H);
   ctx.save();ctx.globalAlpha=0.04;ctx.strokeStyle=S.accent;ctx.lineWidth=1;
