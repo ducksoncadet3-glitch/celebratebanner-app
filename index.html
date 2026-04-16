@@ -599,7 +599,7 @@ var CANVAS_DIMS = {
 };
 // Max collage photos for crisp quality per size — all sizes use 11×5 = 55
 var COLLAGE_CAPS = {'18x24':55,'24x36':55,'36x48':55,'48x72':55,'60x96':55};
-// These themes always cap at 24 regardless of size
+// These themes cap at 24 (more focused layouts — not full 55-photo grid)
 var SMALL_COLLAGE_THEMES = ['pets','america250-official','america250-family','america250-parade'];
 // Column counts per collage cap for optimal grid layout
 var COLLAGE_COLS = {20:5, 24:6, 45:9, 55:11};
@@ -612,7 +612,8 @@ var THEMES = [
   { id:'pets', emoji:'🐾', name:'Pets', desc:'Playful, colorful layout celebrating your furry family member.', maxPhotos:24, tags:['Pets','Fun','Family'], tagBg:'rgba(90,143,106,0.1)', tagC:'#2A6040', bg:'#081410', accent:'#5A8F6A', fields:[ {id:'petName',label:"Pet's Name",ph:'e.g. Biscuit',req:true}, {id:'caption',label:'Caption (optional)',ph:"e.g. Best boy 🐶",req:false} ], palettes:['#5A8F6A','#C9A84C','#E8C97A','#C4617A','#4A9ECC'] },
   { id:'america250-official', emoji:'🇺🇸', name:'America 250 — Official', desc:'Navy & gold patriotic design. Perfect for government agencies, municipalities & official July 4th events.', maxPhotos:24, tags:['Patriotic','America250','Government'], tagBg:'rgba(10,22,40,0.12)', tagC:'#0A1628', bg:'#0A1628', accent:'#C9A84C', fixedHeadline:'250TH ANNIVERSARY', fields:[ {id:'city',label:'City or Agency Name',ph:'Your City or Agency Name',req:false}, {id:'date',label:'Event Date',ph:'e.g. July 4, 2026',req:false} ], palettes:['#C9A84C','#F5F0E8','#FFFFFF','#B22234','#3C3F8F'] },
   { id:'america250-family', emoji:'🎆', name:'America 250 — Family', desc:'Warm & festive for families, neighborhoods and community July 4th events. Happy Birthday, America!', maxPhotos:24, tags:['Festive','Family','July4th'], tagBg:'rgba(178,34,52,0.1)', tagC:'#8B1020', bg:'#0C0E14', accent:'#B22234', fixedHeadline:'HAPPY BIRTHDAY AMERICA', fields:[ {id:'name',label:'Family or Group Name',ph:'e.g. The Rivera Family',req:false}, {id:'caption',label:'Caption',ph:'e.g. Celebrating 250 Years!',req:false}, {id:'city',label:'City or Organization',ph:'Your City or Organization',req:false} ], palettes:['#B22234','#C9A84C','#F5F0E8','#3C3F8F','#FFFFFF'] },
-  { id:'america250-parade', emoji:'🥁', name:'America 250 — Parade', desc:'Bold red, white & blue for parades, street festivals and community celebrations.', maxPhotos:24, tags:['Parade','Bold','Community'], tagBg:'rgba(60,63,143,0.1)', tagC:'#2A2D8F', bg:'#0A1628', accent:'#F5F0E8', fixedHeadline:'STARS & STRIPES', fields:[ {id:'city',label:'City or Organization',ph:'Your City or Organization',req:false}, {id:'date',label:'Event Date',ph:'e.g. July 4, 2026',req:false} ], palettes:['#F5F0E8','#C9A84C','#B22234','#3C3F8F','#0A1628'] }
+  { id:'america250-parade', emoji:'🥁', name:'America 250 — Parade', desc:'Bold red, white & blue for parades, street festivals and community celebrations.', maxPhotos:24, tags:['Parade','Bold','Community'], tagBg:'rgba(60,63,143,0.1)', tagC:'#2A2D8F', bg:'#0A1628', accent:'#F5F0E8', fixedHeadline:'STARS & STRIPES', fields:[ {id:'city',label:'City or Organization',ph:'Your City or Organization',req:false}, {id:'date',label:'Event Date',ph:'e.g. July 4, 2026',req:false} ], palettes:['#F5F0E8','#C9A84C','#B22234','#3C3F8F','#0A1628'] },
+  { id:'stars-stripes', emoji:'🦅', name:'Stars & Stripes', desc:'Classic Americana — red, white & blue for veterans, patriotic milestones, and national pride.', maxPhotos:55, tags:['Patriotic','Americana','Classic'], tagBg:'rgba(178,34,52,0.1)', tagC:'#8B1020', bg:'#0A1628', accent:'#F5F0E8', fields:[ {id:'name',label:'Honoree or Group Name',ph:'e.g. The Johnson Family',req:false}, {id:'date',label:'Event or Date',ph:'e.g. July 4, 2026',req:false}, {id:'caption',label:'Caption (optional)',ph:'e.g. Proud to be an American',req:false} ], palettes:['#F5F0E8','#B22234','#3C3F8F','#C9A84C','#FFFFFF'] }
 ];
 
 function init() { buildThemeGrid(); buildAdminThemes(); buildFunnelChart(); buildThemeMix(); }
@@ -914,21 +915,34 @@ function buildPreview() {
   ctx.fillStyle=S.bgColor; ctx.fillRect(0,0,W,H);
   drawThemeBackground(ctx,t,W,H,S.accent,S.bgColor);
   var vig=ctx.createRadialGradient(W/2,H*0.35,H*0.08,W/2,H*0.52,H*0.75);
-  vig.addColorStop(0,'rgba(0,0,0,0.12)'); vig.addColorStop(1,'rgba(0,0,0,0.55)');
+  vig.addColorStop(0,'rgba(0,0,0,0.08)'); vig.addColorStop(1,'rgba(0,0,0,0.38)');
   ctx.fillStyle=vig; ctx.fillRect(0,0,W,H);
   drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,S.accent);
   drawSquareHero(ctx,heroPhoto,heroX,heroY,heroSz,S.accent);
   if(t.id==='graduation') drawVerticalCongrats(ctx,heroX,heroY,heroSz,S.accent);
+  if(t.id==='stars-stripes') drawVerticalStripes(ctx,heroX,heroY,heroSz,S.accent);
   // ── Champion trophy/cup photo on left and right ──────────────
-  if(t.id==='champion' && S.cupPhoto) {
+  if(t.id==='champion') {
     var cpSz=Math.round(heroSz*0.62);
     var cpY=heroY+Math.round((heroSz-cpSz)/2);
     var cpGap=Math.round(W*0.018);
     var cpLeft=Math.max(margin,heroX-cpSz-cpGap);
     var cpRight=heroX+heroSz+cpGap;
-    var cpR=Math.max(8,Math.round(cpSz*0.06));
-    roundClip(ctx,cpLeft,cpY,cpSz,cpSz,cpR); drawImg(ctx,S.cupPhoto,cpLeft,cpY,cpSz,cpSz); ctx.restore();
-    roundClip(ctx,cpRight,cpY,cpSz,cpSz,cpR); drawImg(ctx,S.cupPhoto,cpRight,cpY,cpSz,cpSz); ctx.restore();
+    if(S.cupPhoto) {
+      var cpR=Math.max(8,Math.round(cpSz*0.06));
+      roundClip(ctx,cpLeft,cpY,cpSz,cpSz,cpR); drawImg(ctx,S.cupPhoto,cpLeft,cpY,cpSz,cpSz); ctx.restore();
+      roundClip(ctx,cpRight,cpY,cpSz,cpSz,cpR); drawImg(ctx,S.cupPhoto,cpRight,cpY,cpSz,cpSz); ctx.restore();
+    } else {
+      // Draw trophy emoji on both sides as default
+      var tFS=Math.round(cpSz*0.70);
+      var tCY=cpY+Math.round(cpSz*0.72);
+      ctx.save();
+      ctx.font=tFS+'px serif'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+      ctx.globalAlpha=0.55;
+      ctx.fillText('🏆',cpLeft+cpSz/2,tCY);
+      ctx.fillText('🏆',cpRight+cpSz/2,tCY);
+      ctx.restore();
+    }
   }
   // ── Diagnostics ──────────────────────────────────────────────
   console.log('[CelebrateBanner] Uploaded:', S.photos.length,
@@ -1028,12 +1042,41 @@ function drawVerticalCongrats(ctx, heroX, heroY, heroSz, accent) {
   ctx.restore();
 }
 
+function drawVerticalStripes(ctx, heroX, heroY, heroSz, accent) {
+  var leftText='UNITED', rightText='WE STAND';
+  var fontSize=Math.max(11,Math.round(heroSz*0.052));
+  var letterSpacing=fontSize*1.6;
+  ctx.save();
+  ctx.font='800 '+fontSize+'px Outfit,sans-serif';
+  ctx.textBaseline='alphabetic';
+  ctx.textAlign='center';
+  // Alternate red/white/blue for each letter
+  var colors=['#B22234','#F5F0E8','#3C3F8F'];
+  var lx=heroX-fontSize*1.5;
+  var leftTotalH=leftText.length*letterSpacing;
+  var leftStartY=heroY+(heroSz-leftTotalH)/2;
+  for(var i=0;i<leftText.length;i++){
+    ctx.save();ctx.translate(lx,leftStartY+i*letterSpacing);
+    ctx.fillStyle=colors[i%3]; ctx.shadowColor='rgba(0,0,0,0.6)'; ctx.shadowBlur=4;
+    ctx.fillText(leftText[i],0,0);ctx.restore();
+  }
+  var rx=heroX+heroSz+fontSize*1.5;
+  var rightTotalH=rightText.length*letterSpacing;
+  var rightStartY=heroY+(heroSz-rightTotalH)/2;
+  for(var j=0;j<rightText.length;j++){
+    ctx.save();ctx.translate(rx,rightStartY+j*letterSpacing);
+    ctx.fillStyle=colors[j%3]; ctx.shadowColor='rgba(0,0,0,0.6)'; ctx.shadowBlur=4;
+    ctx.fillText(rightText[j],0,0);ctx.restore();
+  }
+  ctx.restore();
+}
+
 function drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,accent) {
   var fS=Math.round(W*0.095),sS=Math.round(W*0.042),s2S=Math.round(W*0.030);
   var centerY=Math.round(textH/2);
   var textFx=(S.effects&&S.effects.textFx)||'none';
   function drawTxt(text,x,y,font,color){
-    ctx.save(); ctx.font=font; ctx.textAlign='center';
+    ctx.save(); ctx.font=font; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
     if(typeof applyTextEffect==='function') applyTextEffect(ctx,text,x,y,parseInt(font),color);
     else { ctx.fillStyle=color; ctx.fillText(text,x,y); }
     ctx.restore();
@@ -1120,9 +1163,20 @@ function drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,accent) {
     var nmFS=nameFSAdj;
     if(nmW>W*0.88){nmFS=Math.floor(nameFSAdj*(W*0.88/nmW));}
     ctx.restore();
-    drawTxt(name.toUpperCase(),W/2,nameY,'bold '+nmFS+'px Cormorant Garamond,serif',accent);
+    // Stars & Stripes: name in warm ivory, not gold
+    var nameColor = (t.id==='stars-stripes') ? '#F5F0E8' : accent;
+    drawTxt(name.toUpperCase(),W/2,nameY,'bold '+nmFS+'px Cormorant Garamond,serif',nameColor);
   }
-  if(sub) drawTxt(sub.toUpperCase(),W/2,subY,'700 '+sS+'px Outfit,sans-serif','rgba(255,255,255,0.92)');
+  if(t.id==='anniversary' && sub) {
+    // Anniversary: draw a decorative heart separator before the years
+    var heartFS=Math.round(sS*0.85);
+    var heartY=subY-Math.round(sS*0.5);
+    ctx.save(); ctx.font=heartFS+'px serif'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+    ctx.globalAlpha=0.55; ctx.fillText('♥',W/2,heartY); ctx.restore();
+    drawTxt(sub.toUpperCase(),W/2,subY,'700 '+sS+'px Outfit,sans-serif',accent);
+  } else if(sub) {
+    drawTxt(sub.toUpperCase(),W/2,subY,'700 '+sS+'px Outfit,sans-serif','rgba(255,255,255,0.92)');
+  }
   if(sub2&&!(t.id==='wedding'&&S.fields.name1&&S.fields.name2)) drawTxt(sub2.toUpperCase(),W/2,sub2Y,'500 '+s2S+'px Outfit,sans-serif','rgba(255,255,255,0.70)');
 }
 
@@ -1260,6 +1314,59 @@ function drawThemeBackground(ctx, t, W, H, accent, bgColor) {
     ctx.restore();
   }
 
+  else if (t.id === 'stars-stripes') {
+    // Horizontal red & white stripes across full canvas (classic flag)
+    ctx.save();
+    ctx.globalAlpha = 0.06;
+    var stH = Math.round(H / 13);
+    for (var si = 0; si < 13; si++) {
+      ctx.fillStyle = (si % 2 === 0) ? '#B22234' : '#F5F0E8';
+      ctx.fillRect(0, si * stH, W, stH);
+    }
+    ctx.restore();
+    // Canton area (upper-left) — deep navy
+    ctx.save();
+    ctx.globalAlpha = 0.10;
+    ctx.fillStyle = '#3C3F8F';
+    ctx.fillRect(0, 0, Math.round(W * 0.42), Math.round(H * 0.32));
+    ctx.restore();
+    // Star field in canton
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    ctx.fillStyle = '#F5F0E8';
+    var sStarFS = Math.round(W * 0.016);
+    ctx.font = 'bold ' + sStarFS + 'px Outfit,sans-serif';
+    ctx.textAlign = 'center';
+    var sCols = 6, sRowsC = 5;
+    var sCellW = Math.round(W * 0.42 / (sCols + 0.5));
+    var sCellH = Math.round(H * 0.32 / (sRowsC + 0.5));
+    for (var sr = 0; sr < sRowsC; sr++) {
+      var sOff = (sr % 2) * sCellW * 0.5;
+      for (var sc2 = 0; sc2 < sCols; sc2++) {
+        ctx.fillText('★', sOff + (sc2 + 0.5) * sCellW, (sr + 0.7) * sCellH);
+      }
+    }
+    ctx.restore();
+    // Eagle silhouette suggestion (faint central glow)
+    ctx.save();
+    var eGlow = ctx.createRadialGradient(W/2, H*0.4, 0, W/2, H*0.4, H*0.45);
+    eGlow.addColorStop(0, 'rgba(245,240,232,0.08)');
+    eGlow.addColorStop(1, 'rgba(245,240,232,0)');
+    ctx.fillStyle = eGlow; ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+    // Top + bottom accent bars (red/white/blue)
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    var barH = Math.round(W * 0.006);
+    ctx.fillStyle = '#B22234'; ctx.fillRect(0, 0, W, barH);
+    ctx.fillStyle = '#F5F0E8'; ctx.fillRect(0, barH, W, barH);
+    ctx.fillStyle = '#3C3F8F'; ctx.fillRect(0, barH*2, W, barH);
+    ctx.fillStyle = '#B22234'; ctx.fillRect(0, H-barH*3, W, barH);
+    ctx.fillStyle = '#F5F0E8'; ctx.fillRect(0, H-barH*2, W, barH);
+    ctx.fillStyle = '#3C3F8F'; ctx.fillRect(0, H-barH, W, barH);
+    ctx.restore();
+  }
+
   else if (t.id === 'america250-official' || t.id === 'america250-family' || t.id === 'america250-parade') {
     // Star field — patriotic constellation
     ctx.save(); ctx.globalAlpha = 0.10; ctx.fillStyle = accent;
@@ -1394,14 +1501,16 @@ function _renderBanner(ctx,W,H){
   if(!S.theme)return;
   var t=S.theme,heroPhoto=S.hero>=0?S.photos[S.hero]:(S.photos[0]||null);
   var others=S.photos.filter(function(_,i){return i!==S.hero;});
-  var name=t.id==='champion'?(S.fields.teamName||''):(S.fields.name||S.fields.name1||S.fields.names||S.fields.petName||'Your Name');
+  var _nameFieldIds2=['name','teamName','name1','names','petName'];
+  var _hasNameField2=t.fields.some(function(f){return _nameFieldIds2.indexOf(f.id)>=0;});
+  var name=t.id==='champion'?(S.fields.teamName||''):(S.fields.name||S.fields.name1||S.fields.names||S.fields.petName||(_hasNameField2?'Your Name':''));
   var sub=S.fields.year||S.fields.date||S.fields.years||S.fields.caption||'';
   var sub2=S.fields.school||S.fields.name2||S.fields.city||'';
   var textH=Math.round(W*0.28),heroSz=Math.round(W*0.55),heroX=Math.round((W-heroSz)/2),heroY=textH+10,heroBot=heroY+heroSz+10;
   ctx.fillStyle=S.bgColor;ctx.fillRect(0,0,W,H);
   drawThemeBackground(ctx,t,W,H,S.accent,S.bgColor);
   var vig=ctx.createRadialGradient(W/2,H*0.35,H*0.08,W/2,H*0.52,H*0.75);
-  vig.addColorStop(0,'rgba(0,0,0,0.12)');vig.addColorStop(1,'rgba(0,0,0,0.55)');
+  vig.addColorStop(0,'rgba(0,0,0,0.08)');vig.addColorStop(1,'rgba(0,0,0,0.38)');
   ctx.fillStyle=vig;ctx.fillRect(0,0,W,H);
   drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,S.accent);
   drawSquareHero(ctx,heroPhoto,heroX,heroY,heroSz,S.accent);
@@ -1979,7 +2088,7 @@ function buildLivePreviewPanel() {
   panel.style.cssText = `
     position: fixed;
     bottom: 24px;
-    right: 24px;
+    left: 24px;
     width: 200px;
     background: var(--obsidian);
     border-radius: var(--r2);
@@ -2089,7 +2198,7 @@ function liveRender() {
 
       // Vignette
       var vig = ctx.createRadialGradient(LW/2, LH*0.35, LH*0.08, LW/2, LH*0.52, LH*0.75);
-      vig.addColorStop(0, 'rgba(0,0,0,0.12)'); vig.addColorStop(1, 'rgba(0,0,0,0.55)');
+      vig.addColorStop(0, 'rgba(0,0,0,0.08)'); vig.addColorStop(1, 'rgba(0,0,0,0.38)');
       ctx.fillStyle = vig; ctx.fillRect(0, 0, LW, LH);
 
       // Text top
@@ -2102,8 +2211,9 @@ function liveRender() {
       ctx.restore();
       drawHeroFrame(ctx, heroX, heroY, heroSz, S.accent || '#C9A84C');
 
-      // Vertical congrats for grad
+      // Vertical text decorations
       if (t.id === 'graduation') drawVerticalCongrats(ctx, heroX, heroY, heroSz, S.accent);
+      if (t.id === 'stars-stripes') drawVerticalStripes(ctx, heroX, heroY, heroSz, S.accent);
 
       // Collage
       drawCollageRow(ctx, others, LW, LH, S.accent, heroBot);
@@ -2237,9 +2347,9 @@ console.log('✓ CelebrateBanner Live Preview loaded');
 
 function _mockupSceneType(themeId) {
   if (themeId === 'wedding' || themeId === 'anniversary') return 'indoor';
-  if (themeId === 'america250-official' || themeId === 'america250-family' || themeId === 'america250-parade') return 'patriotic';
+  if (themeId === 'america250-official' || themeId === 'america250-family' || themeId === 'america250-parade' || themeId === 'stars-stripes') return 'patriotic';
   if (themeId === 'pets') return 'home';
-  return 'outdoor'; // graduation, champion, stars & stripes, default
+  return 'outdoor'; // graduation, champion, default
 }
 
 function _bannerAspect(sz) {
