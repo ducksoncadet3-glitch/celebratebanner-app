@@ -1119,25 +1119,16 @@ function drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,accent) {
   if(t.fixedHeadline){
     var hY = Math.round(textH*0.22);
     if(t.id==='america250-official'){
-      // Split "250TH" and "ANNIVERSARY" so the numeral block is visually balanced
-      var numPart='250TH', txtPart=' ANNIVERSARY';
-      var numFS=Math.round(headlineFS*0.80), txtFS=headlineFS;
-      ctx.save();
-      ctx.textBaseline='alphabetic';
-      ctx.font='bold '+numFS+'px Cormorant Garamond,serif';
+      // Two-line layout: big "250TH" numeral, then "ANNIVERSARY" below
+      var numPart='250TH', txtPart='ANNIVERSARY';
+      var numFS=Math.round(headlineFS*1.0), txtFS=Math.round(headlineFS*0.64);
+      // Scale numPart if too wide
+      ctx.save(); ctx.font='bold '+numFS+'px Cormorant Garamond,serif';
       var nw=ctx.measureText(numPart).width;
-      ctx.font='bold '+txtFS+'px Cormorant Garamond,serif';
-      var tw=ctx.measureText(txtPart).width;
-      var totalW=nw+tw;
-      var lx=W/2-totalW/2;
-      ctx.textAlign='left';
-      ctx.font='bold '+numFS+'px Cormorant Garamond,serif';
-      if(typeof applyTextEffect==='function') applyTextEffect(ctx,numPart,lx+nw/2,hY,numFS,accent);
-      else{ctx.fillStyle=accent;ctx.fillText(numPart,lx,hY);}
-      ctx.font='bold '+txtFS+'px Cormorant Garamond,serif';
-      if(typeof applyTextEffect==='function') applyTextEffect(ctx,txtPart,lx+nw+tw/2,hY,txtFS,accent);
-      else{ctx.fillStyle=accent;ctx.fillText(txtPart,lx+nw,hY);}
+      if(nw>W*0.88) numFS=Math.floor(numFS*(W*0.88/nw));
       ctx.restore();
+      drawTxt(numPart,W/2,hY,'bold '+numFS+'px Cormorant Garamond,serif',accent);
+      drawTxt(txtPart,W/2,hY+Math.round(numFS*0.80),'600 '+txtFS+'px Outfit,sans-serif','rgba(255,255,255,0.85)');
     } else {
       drawTxt(t.fixedHeadline,W/2,hY,'bold '+headlineFS+'px Cormorant Garamond,serif',accent);
     }
@@ -1189,7 +1180,17 @@ function drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,accent) {
   } else if(sub) {
     drawTxt(sub.toUpperCase(),W/2,subY,'700 '+sS+'px Outfit,sans-serif','rgba(255,255,255,0.92)');
   }
-  if(sub2&&!(t.id==='wedding'&&S.fields.name1&&S.fields.name2)) drawTxt(sub2.toUpperCase(),W/2,sub2Y,'500 '+s2S+'px Outfit,sans-serif','rgba(255,255,255,0.70)');
+  if(sub2&&!(t.id==='wedding'&&S.fields.name1&&S.fields.name2)){
+    // For graduation: add a thin rule line above school name
+    if(t.id==='graduation' && sub2) {
+      var rl=Math.round(W*0.12), rY=sub2Y-Math.round(s2S*0.85);
+      ctx.save(); ctx.strokeStyle=accent; ctx.globalAlpha=0.25;
+      ctx.lineWidth=Math.max(1,Math.round(W*0.0012));
+      ctx.beginPath(); ctx.moveTo(W/2-rl,rY); ctx.lineTo(W/2+rl,rY); ctx.stroke();
+      ctx.restore();
+    }
+    drawTxt(sub2.toUpperCase(),W/2,sub2Y,'500 '+s2S+'px Outfit,sans-serif','rgba(255,255,255,0.70)');
+  }
 }
 
 function drawWatermarkText(ctx,text,W,H,accent){
@@ -1650,8 +1651,16 @@ function _renderBanner(ctx,W,H){
   drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,S.accent);
   drawSquareHero(ctx,heroPhoto,heroX,heroY,heroSz,S.accent);
   if(t.id==='graduation')drawVerticalCongrats(ctx,heroX,heroY,heroSz,S.accent);
+  if(t.id==='stars-stripes')drawVerticalStripes(ctx,heroX,heroY,heroSz,S.accent);
+  if(t.id==='champion'){
+    var cpSz2=Math.round(heroSz*0.62),cpY2=heroY+Math.round((heroSz-cpSz2)/2),cpGap2=Math.round(W*0.018);
+    var cpLeft2=Math.max(8,heroX-cpSz2-cpGap2),cpRight2=heroX+heroSz+cpGap2;
+    if(S.cupPhoto){var cpR2=Math.max(8,Math.round(cpSz2*0.06));roundClip(ctx,cpLeft2,cpY2,cpSz2,cpSz2,cpR2);drawImg(ctx,S.cupPhoto,cpLeft2,cpY2,cpSz2,cpSz2);ctx.restore();roundClip(ctx,cpRight2,cpY2,cpSz2,cpSz2,cpR2);drawImg(ctx,S.cupPhoto,cpRight2,cpY2,cpSz2,cpSz2);ctx.restore();}
+    else{var tFS2=Math.round(cpSz2*0.70),tCY2=cpY2+Math.round(cpSz2*0.72);ctx.save();ctx.font=tFS2+'px serif';ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.globalAlpha=0.55;ctx.fillText('🏆',cpLeft2+cpSz2/2,tCY2);ctx.fillText('🏆',cpRight2+cpSz2/2,tCY2);ctx.restore();}
+  }
   drawCollageRow(ctx,others,W,H,S.accent,heroBot);
   if(typeof drawOverlay==='function')drawOverlay(ctx,W,H,S.accent);
+  drawBannerBranding(ctx,W,H,S.accent);
 }
 function adminTab(id,el){
   document.querySelectorAll('.admin-page').forEach(function(p){p.classList.remove('active');});
