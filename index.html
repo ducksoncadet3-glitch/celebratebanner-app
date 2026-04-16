@@ -237,12 +237,21 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
   .h-step-sep { padding: 0 1px; }
   .logo-text { font-size: 18px; }
   .main { padding: 1.5rem 1rem 4rem; }
-  .sec-title { font-size: 28px; }
+  .sec-title { font-size: 26px; }
+  .sec-sub { font-size: 13px; margin-bottom: 1.5rem; }
   .btn { padding: 11px 20px; font-size: 13px; }
   .delivery-cards { grid-template-columns: 1fr; }
   .btn-group { gap: 8px; }
   .photo-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
   .photo-cell .rm-btn, .photo-cell .rot-btn { opacity: 1; }
+  .size-cards { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
+  .size-card { padding: 12px; }
+  .size-dim { font-size: 20px; }
+  .field-card { padding: 1rem; }
+  .themes-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .preview-layout { gap: 16px; }
+  .order-card { padding: 1rem; }
 }
 @media (max-width: 420px) {
   .h-step { display: none; }
@@ -250,6 +259,10 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
   .h-step-sep { display: none; }
   .h-step.active ~ .h-step-sep { display: none; }
   .progress-track { top: 58px; }
+  .size-cards { grid-template-columns: repeat(2, 1fr) !important; }
+  .themes-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .theme-visual { height: 120px; }
+  .tv-emoji { font-size: 30px; }
 }
 </style>
 </head>
@@ -673,6 +686,10 @@ function selectTheme(id, el) {
 var PROG = [8,25,45,65,82,95,100];
 function gotoPage(n) {
   if (n===1 && !S.theme) { showToast('⚠️ Please select a theme first'); return; }
+  if (n===2 && S.photos.length===0 && S.page===1) {
+    showToast('⚠️ Please upload at least one photo first');
+    return;
+  }
   if (n===2) buildCustomizeFields();
   document.getElementById('pg-'+S.page).classList.remove('active');
   S.page = n;
