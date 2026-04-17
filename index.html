@@ -466,10 +466,10 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
         </div>
         <div class="field-group" style="margin-bottom:12px;">
           <label class="field-label">Card number</label>
-          <div class="card-mock">4242 4242 4242 4242</div>
+          <input class="field-input" type="text" id="card-number" placeholder="Card number" maxlength="19" oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/(.{4})/g,'$1 ').trim()">
         </div>
         <div class="card-row">
-          <div class="field-group"><label class="field-label">Expiry</label><div class="card-mock">12 / 28</div></div>
+          <div class="field-group"><label class="field-label">Expiry</label><div class="card-mock">MM / YY</div></div>
           <div class="field-group"><label class="field-label">CVC</label><div class="card-mock">···</div></div>
         </div>
       </div>
@@ -518,10 +518,13 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
     </div>
     <!-- CHANGE 5: Downloads only available AFTER payment (this page is only reached after processPayment completes) -->
     <div class="dl-card">
-      <div class="dl-card-title">Your Files — Unlocked After Payment ✓</div>
-      <div class="dl-row"><span>🖨️ Banner_<span id="dl-name1">Custom</span>_PrintReady.pdf</span><a class="dl-link" onclick="fakeDl('pdf')" style="cursor:pointer;">↓ PDF</a></div>
-      <div class="dl-row"><span>🖼️ Banner_<span id="dl-name2">Custom</span>_HiRes.jpg</span><a class="dl-link" onclick="fakeDl('jpg')" style="cursor:pointer;">↓ JPG</a></div>
-      <div class="dl-row"><span>🗂️ Banner_<span id="dl-name3">Custom</span>_Lossless.png</span><a class="dl-link" onclick="fakeDl('png')" style="cursor:pointer;">↓ PNG</a></div>
+      <div class="dl-card-title" id="dl-card-title">🔒 Complete Payment to Access Your Files</div>
+      <div id="dl-locked-msg" style="text-align:center;padding:1rem 0;color:var(--muted);">Complete payment to access your files.</div>
+      <div id="dl-rows" style="display:none;">
+        <div class="dl-row"><span>🖨️ Banner_<span id="dl-name1">Custom</span>_PrintReady.pdf</span><a class="dl-link" onclick="fakeDl('pdf')" style="cursor:pointer;">↓ PDF</a></div>
+        <div class="dl-row"><span>🖼️ Banner_<span id="dl-name2">Custom</span>_HiRes.jpg</span><a class="dl-link" onclick="fakeDl('jpg')" style="cursor:pointer;">↓ JPG</a></div>
+        <div class="dl-row"><span>🗂️ Banner_<span id="dl-name3">Custom</span>_Lossless.png</span><a class="dl-link" onclick="fakeDl('png')" style="cursor:pointer;">↓ PNG</a></div>
+      </div>
     </div>
     <div class="info-note">📧 Download links also sent to your email · Files are 300 DPI, CMYK, print-ready</div>
     <div class="btn-group" style="justify-content:center;">
@@ -617,11 +620,10 @@ var S = {
   effects: { filter:'none', overlay:'none', frame:'none', textFx:'none' }
 };
 
-// CHANGE 4: Digital Download is $9.99 flat for ALL themes/sizes.
-// Print price varies by size (base vinyl cost).
 var DIGITAL_PRICE = 9.99;
-var PRINT_PRICES = { '18x24':39, '24x36':57, '36x48':67, '48x72':79, '60x96':89 };
-
+var PRINT_PRICES = { '18x24':39, '24x36':49, '36x48':59, '48x72':69, '60x96':79 };
+var PRICES = PRINT_PRICES;
+var _paymentCompleted = false;
 // True 300 DPI canvas dimensions per size (width × height in pixels)
 var CANVAS_DIMS = {
   '18x24':{w:5400, h:7200},
@@ -835,24 +837,17 @@ function buildCustomizeFields() {
   buildEffectsPanel();
 }
 
-function selectSize(sz,el) {
-  S.size=sz;
-  document.querySelectorAll('.size-card').forEach(function(c){c.classList.remove('sel');});
-  el.classList.add('sel');
-  updatePriceDisplay();
-  updateCheckoutSummary();
-  // CHANGE 3: Re-render mockup whenever size changes (if on preview page)
-  if (S.page === 3) { setTimeout(function(){ try { renderMockup(); } catch(e){} }, 100); }
-}
+function selectSize(sz,el) { S.size=sz; document.querySelectorAll('.size-card').forEach(function(c){c.classList.remove('sel');}); el.classList.add('sel'); updatePriceDisplay(); updateCheckoutSummary(); if(S.page===3||S.page===2){try{renderMockup();}catch(e){}} }
 function setAccent(col,el) { S.accent=col; document.querySelectorAll('.pal-swatch').forEach(function(s){s.classList.remove('active');}); el.classList.add('active'); }
 
 function updatePriceDisplay() {
-  // CHANGE 4: All size cards show "From $9.99" for digital
   Object.keys(PRINT_PRICES).forEach(function(sz){
     var el=document.getElementById('szp-'+sz);
-    if(el) el.textContent='From $9.99';
+    if(el) el.textContent='$'+PRINT_PRICES[sz].toFixed(2);
   });
 }
+// Always set correct prices on page load so size cards never show stale values
+updatePriceDisplay();
 
 function buildPreview() {
   if (!S.theme) return;
@@ -1594,9 +1589,8 @@ function selectDelivery(d,el) {
 // CHANGE 4: Digital = $9.99 flat. Print = based on size.
 function updateCheckoutSummary() {
   if (!S.theme) return;
-  var t=S.theme;
-  var printPrice = PRINT_PRICES[S.size] || 57;
-  var finalPrice = S.delivery==='print' ? printPrice : DIGITAL_PRICE;
+  var t=S.theme, printPrice=PRINT_PRICES[S.size]||39;
+  var finalPrice=S.delivery==='print'?printPrice:DIGITAL_PRICE;
   document.getElementById('co-theme').textContent=t.emoji+' '+t.name;
   document.getElementById('co-size').textContent=S.size+'"';
   document.getElementById('co-del').textContent=S.delivery==='print'?'Printed & Shipped':'Digital Download';
@@ -1608,8 +1602,9 @@ function updateCheckoutSummary() {
 
 // CHANGE 5: Payment gate — processPayment sets _paymentCompleted = true
 function processPayment() {
+  var card=document.getElementById('card-number').value.replace(/\s/g,'');
+  if(!card||card.length<13){showToast('⚠️ Please enter your card number');return;}
   var email=document.getElementById('customer-email').value;
-  if(!email){showToast('⚠️ Please enter your email address');return;}
   S.email=email; gotoPage(5);
   var tn=S.theme?S.theme.name:'Custom';
   var steps=[
@@ -1650,16 +1645,20 @@ function processPayment() {
     if(prevCanvas&&prevCanvas.width>0&&prevImg&&prevWrap){
       try{prevImg.src=prevCanvas.toDataURL('image/jpeg',0.80);prevWrap.style.display='block';}catch(e){}
     }
+    _paymentCompleted=true;
+    var dlRows=document.getElementById('dl-rows');
+    var dlLockedMsg=document.getElementById('dl-locked-msg');
+    var dlTitle=document.getElementById('dl-card-title');
+    if(dlRows) dlRows.style.display='block';
+    if(dlLockedMsg) dlLockedMsg.style.display='none';
+    if(dlTitle) dlTitle.textContent='✓ Your Files Are Ready';
     gotoPage(6);
   },5200);
 }
 
 // CHANGE 5: fakeDl — requires payment to have been completed
 function fakeDl(ext) {
-  if (!_paymentCompleted) {
-    showToast('⚠️ Please complete payment first to download your files');
-    return;
-  }
+  if(!_paymentCompleted){ showToast('⚠️ Please complete payment first'); return; }
   var canvas=document.getElementById('preview-canvas');
   if(!canvas||canvas.width===0){ showToast('⚠️ No preview to download — generate a preview first'); return; }
   var nameField=(S.fields.name||S.fields.coupleNames||S.fields.names||S.fields.petName||S.fields.teamName||'Custom').replace(/\s/g,'_');
@@ -1691,6 +1690,13 @@ function resetBuilder() {
   document.querySelectorAll('.theme-card').forEach(function(c){c.classList.remove('selected');});
   var ep = document.getElementById('effects-panel');
   if (ep && ep.parentNode) ep.parentNode.removeChild(ep);
+  _paymentCompleted=false;
+  var dlRows=document.getElementById('dl-rows');
+  var dlLockedMsg=document.getElementById('dl-locked-msg');
+  var dlTitle=document.getElementById('dl-card-title');
+  if(dlRows) dlRows.style.display='none';
+  if(dlLockedMsg) dlLockedMsg.style.display='block';
+  if(dlTitle) dlTitle.textContent='🔒 Complete Payment to Access Your Files';
   gotoPage(0);
 }
 
@@ -2115,12 +2121,14 @@ console.log('✓ CelebrateBanner Live Preview loaded');
 
 // CHANGE 3: Size-specific banner proportions for all 5 sizes
 var _RS_SIZES = {
-  '18x24': {bW:195, bH:260, label:'18×24"'},
-  '24x36': {bW:230, bH:345, label:'24×36"'},
-  '36x48': {bW:260, bH:347, label:'36×48"'},
-  '48x72': {bW:270, bH:405, label:'48×72"'},
-  '60x96': {bW:275, bH:440, label:'60×96"'}
+  '18x24': {bW:210, bH:280, label:'18×24"'},
+  '24x36': {bW:220, bH:330, label:'24×36"'},
+  '36x48': {bW:240, bH:320, label:'36×48"'},
+  '48x72': {bW:250, bH:375, label:'48×72"'},
+  '60x96': {bW:255, bH:408, label:'60×96"'}
 };
+
+function _rsSize(sz) { return _RS_SIZES[sz] || _RS_SIZES['24x36']; }
 
 function _rsEnvColors(themeId) {
   if (themeId === 'wedding' || themeId === 'anniversary')
@@ -2142,232 +2150,145 @@ function renderMockup() {
   var stage = document.getElementById('rs-stage');
   if (!stage || !S.theme) return;
 
-  var sz  = _RS_SIZES[S.size] || _RS_SIZES['24x36'];
-  var bW  = sz.bW, bH = sz.bH;
-  var env = _rsEnvColors(S.theme.id);
+  var sz   = _rsSize(S.size);
+  var bW   = sz.bW, bH = sz.bH;
+  var cols = _rsEnvColors(S.theme.id);
 
-  // Fixed container — always 460×640 so layout is stable
-  var cW = 460, cH = 640;
+  // Container 480×640
+  var cW = 480, cH = 640;
 
-  // Hardware proportions (scaled to feel real)
-  var poleW    = 6;
-  var poleOver = 24;    // pole cap above top bar
-  var topBarH  = 16;
-  var baseW    = Math.round(bW * 1.22);
-  var baseH    = 32;
-  var feetH    = 10;
-  var feetW    = 22;
+  // Banner top at ~12% of container height; horizontally centered
+  var bannerTop = Math.round(cH * 0.12);
+  var bannerL   = Math.round((cW - bW) / 2);
 
-  var totalContentH = poleOver + topBarH + bH + baseH + feetH;
-  var padTop = Math.max(20, Math.round((cH - totalContentH) / 2));
+  // Clip geometry — bottom half overlaps banner top edge
+  var clipW = 14, clipH = 22;
+  var clipY = bannerTop - Math.round(clipH / 2);
 
-  var poleCapY  = padTop;
-  var topBarTop = padTop + poleOver;
-  var bannerTop = topBarTop + topBarH;
-  var baseTop   = bannerTop + bH;
-  var feetTop   = baseTop + baseH;
-  var floorY    = feetTop + feetH + 20;
+  // Wire spans between clips, sits above clips
+  var wireY = clipY - 4;
+  var wireX = bannerL + clipW;
+  var wireW = bW - clipW * 2;
 
-  var bannerL  = Math.round((cW - bW)   / 2);
-  var baseL    = Math.round((cW - baseW)/ 2);
-  var poleX    = Math.round(cW / 2 - poleW / 2);
+  // Floor at 82% of container
+  var floorY = Math.round(cH * 0.82);
 
-  // ── Build scene HTML ──────────────────────────────────────────────────────
+  // Reflection below banner bottom (on floor)
+  var reflTop = bannerTop + bH + 2;
+  var reflH   = Math.min(48, Math.round(bH * 0.11));
+
   var h = '';
 
-  // WALL — subtle vertical paneling texture
-  h += '<div style="position:absolute;inset:0;' +
-       'background:' + env.wall + ';' +
-       'background-image:' +
-         'repeating-linear-gradient(to right,' +
-           'rgba(255,255,255,0) 0px,rgba(255,255,255,0) 36px,' +
-           'rgba(255,255,255,0.022) 36px,rgba(255,255,255,0.022) 38px,' +
-           'rgba(255,255,255,0) 38px,rgba(255,255,255,0) 74px),' +
-         'linear-gradient(to bottom,' +
-           env.wall + ' 0%,' +
-           'rgba(0,0,0,0.08) 100%)' +
-       ';"></div>';
+  // ── Wall ────────────────────────────────────────────────────────────────────
+  h += '<div style="position:absolute;inset:0;background:' + cols.wall + ';' +
+       'background-image:repeating-linear-gradient(to right,' +
+         'rgba(255,255,255,0) 0px,rgba(255,255,255,0) 38px,' +
+         'rgba(255,255,255,0.016) 38px,rgba(255,255,255,0.016) 39px,' +
+         'rgba(255,255,255,0) 39px,rgba(255,255,255,0) 78px);"></div>';
 
-  // FLOOR — tiled reflection surface
+  // ── Floor ───────────────────────────────────────────────────────────────────
   h += '<div style="position:absolute;left:0;right:0;top:' + floorY + 'px;bottom:0;' +
-       'background:' + env.floor + ';' +
-       'background-image:' +
-         'repeating-linear-gradient(90deg,rgba(255,255,255,0) 0px,rgba(255,255,255,0) 24px,rgba(255,255,255,0.03) 24px,rgba(255,255,255,0.03) 25px),' +
-         'repeating-linear-gradient(rgba(255,255,255,0) 0px,rgba(255,255,255,0) 24px,rgba(255,255,255,0.03) 24px,rgba(255,255,255,0.03) 25px)' +
-       ';"></div>';
+       'background:' + cols.floor + ';' +
+       'background-image:repeating-linear-gradient(to bottom,' +
+         'transparent 0px,transparent 22px,' +
+         'rgba(255,255,255,0.03) 22px,rgba(255,255,255,0.03) 23px);"></div>';
 
-  // FLOOR SEAM
-  h += '<div style="position:absolute;left:0;right:0;top:' + floorY + 'px;height:1px;background:rgba(255,255,255,0.06);"></div>';
+  // Floor/wall seam
+  h += '<div style="position:absolute;left:0;right:0;top:' + floorY + 'px;height:1px;' +
+       'background:' + cols.seam + ';z-index:1;"></div>';
 
-  // AMBIENT LIGHT BLOB on wall (behind stand — gives depth)
-  h += '<div style="position:absolute;left:' + (bannerL - 40) + 'px;top:' + (topBarTop - 20) + 'px;' +
-       'width:' + (bW + 80) + 'px;height:' + (bH + 40) + 'px;' +
-       'background:radial-gradient(ellipse at 50% 35%,' + env.shadow + ' 0%,rgba(0,0,0,0) 65%);' +
-       'pointer-events:none;z-index:0;"></div>';
-
-  // FLOOR SHADOW (soft ellipse under base)
+  // ── Drop shadow behind banner ────────────────────────────────────────────────
   h += '<div style="position:absolute;' +
-       'left:' + (baseL - 16) + 'px;top:' + (feetTop + feetH - 4) + 'px;' +
-       'width:' + (baseW + 32) + 'px;height:28px;' +
-       'background:radial-gradient(ellipse at 50% 30%,rgba(0,0,0,0.50) 0%,rgba(0,0,0,0) 70%);' +
-       'z-index:2;filter:blur(4px);"></div>';
-
-  // ── POLE ─────────────────────────────────────────────────────────────────
-  h += '<div style="position:absolute;' +
-       'left:' + poleX + 'px;top:' + poleCapY + 'px;' +
-       'width:' + poleW + 'px;height:' + (poleOver + topBarH + bH) + 'px;' +
-       'background:linear-gradient(to right,' +
-         '#505050 0%,#888888 22%,#d8d8d8 42%,#f0f0f0 52%,#c0c0c0 68%,#909090 80%,#484848 100%);' +
-       'z-index:3;box-shadow:2px 0 4px rgba(0,0,0,0.3);"></div>';
-
-  // POLE CAP (chrome ball)
-  h += '<div style="position:absolute;' +
-       'left:' + (poleX - 4) + 'px;top:' + (poleCapY - 7) + 'px;' +
-       'width:' + (poleW + 8) + 'px;height:' + (poleW + 8) + 'px;' +
-       'border-radius:50%;' +
-       'background:radial-gradient(circle at 35% 28%,#f0f0f0 0%,#a8a8a8 45%,#505050 100%);' +
-       'box-shadow:0 2px 5px rgba(0,0,0,0.55),inset 0 1px 2px rgba(255,255,255,0.5);' +
-       'z-index:4;"></div>';
-
-  // ── BANNER DROP SHADOW ────────────────────────────────────────────────────
-  h += '<div style="position:absolute;' +
-       'left:' + (bannerL + 8) + 'px;top:' + (bannerTop + 6) + 'px;' +
+       'left:' + (bannerL + 14) + 'px;top:' + (bannerTop + 18) + 'px;' +
        'width:' + bW + 'px;height:' + bH + 'px;' +
-       'background:rgba(0,0,0,0.32);filter:blur(10px);border-radius:3px;z-index:3;"></div>';
+       'background:rgba(0,0,0,0.42);filter:blur(20px);border-radius:3px;z-index:1;"></div>';
 
-  // ── BANNER CANVAS WRAPPER ─────────────────────────────────────────────────
-  // CHANGE 1: Banner shows actual canvas art scaled to fill the stand banner area
-  // clip-path gives subtle taper at bottom (just-rolled-out look)
+  // ── Banner wrapper ───────────────────────────────────────────────────────────
   h += '<div id="rs-banner-wrap" style="position:absolute;' +
        'left:' + bannerL + 'px;top:' + bannerTop + 'px;' +
-       'width:' + bW + 'px;height:' + bH + 'px;' +
-       'overflow:hidden;z-index:4;border-radius:1px 1px 0 0;' +
-       'clip-path:polygon(1px 0%,calc(100% - 1px) 0%,calc(100% + 1px) 100%,-1px 100%);">' +
-       // The actual canvas art — fills entire banner area
-       '<canvas id="rs-banner-canvas" ' +
-         'width="' + bW + '" height="' + bH + '" ' +
-         'style="display:block;width:' + bW + 'px;height:' + bH + 'px;image-rendering:crisp-edges;"></canvas>' +
-       // Vinyl highlight (left edge shine strip)
-       '<div style="position:absolute;top:0;left:2px;width:4px;height:100%;' +
-         'background:linear-gradient(to right,rgba(255,255,255,0.18),rgba(255,255,255,0));' +
-         'pointer-events:none;"></div>' +
-       // Bottom curl shadow (banner emerging from cartridge)
-       '<div style="position:absolute;bottom:0;left:0;right:0;height:24px;' +
-         'background:linear-gradient(to top,rgba(0,0,0,0.28),rgba(0,0,0,0));' +
-         'pointer-events:none;"></div>' +
-       // Very subtle right edge shadow
-       '<div style="position:absolute;top:0;right:0;width:6px;height:100%;' +
-         'background:linear-gradient(to left,rgba(0,0,0,0.14),rgba(0,0,0,0));' +
+       'width:' + bW + 'px;height:' + bH + 'px;overflow:hidden;z-index:2;' +
+       'box-shadow:14px 18px 50px rgba(0,0,0,0.45);border-radius:2px;">' +
+       '<canvas id="rs-banner-canvas" width="' + bW + '" height="' + bH + '" ' +
+         'style="display:block;width:100%;height:100%;"></canvas>' +
+       // Left-edge shine
+       '<div style="position:absolute;top:0;left:0;width:3px;height:100%;' +
+         'background:linear-gradient(to right,rgba(255,255,255,0.15),transparent);' +
          'pointer-events:none;"></div>' +
        '</div>';
 
-  // ── TOP BAR (chrome horizontal bar) ───────────────────────────────────────
+  // ── Hanging wire ─────────────────────────────────────────────────────────────
   h += '<div style="position:absolute;' +
-       'left:' + bannerL + 'px;top:' + topBarTop + 'px;' +
-       'width:' + bW + 'px;height:' + topBarH + 'px;' +
-       'background:linear-gradient(to bottom,' +
-         '#e8e8e8 0%,#f8f8f8 25%,#ffffff 40%,#d8d8d8 65%,#b0b0b0 85%,#888888 100%);' +
-       'border-radius:' + Math.round(topBarH / 2) + 'px;' +
-       'box-shadow:0 3px 8px rgba(0,0,0,0.50),inset 0 1px 0 rgba(255,255,255,0.6);' +
-       'z-index:5;"></div>';
+       'left:' + wireX + 'px;top:' + wireY + 'px;' +
+       'width:' + wireW + 'px;height:2px;' +
+       'background:linear-gradient(to right,#aaa,#ddd 50%,#aaa);' +
+       'border-radius:0 0 50% 50%;' +
+       'transform:perspective(100px) rotateX(-2deg);z-index:4;"></div>';
 
-  // TOP BAR LEFT END CAP
+  // ── Mount clips ──────────────────────────────────────────────────────────────
+  // Left clip
+  h += '<div style="position:absolute;left:' + bannerL + 'px;top:' + clipY + 'px;' +
+       'width:' + clipW + 'px;height:' + clipH + 'px;' +
+       'background:radial-gradient(ellipse at 40% 25%,#d8d8d8,#888);' +
+       'border-radius:3px 3px 2px 2px;' +
+       'box-shadow:0 2px 6px rgba(0,0,0,0.45);z-index:5;"></div>';
+  // Right clip
+  h += '<div style="position:absolute;left:' + (bannerL + bW - clipW) + 'px;top:' + clipY + 'px;' +
+       'width:' + clipW + 'px;height:' + clipH + 'px;' +
+       'background:radial-gradient(ellipse at 40% 25%,#d8d8d8,#888);' +
+       'border-radius:3px 3px 2px 2px;' +
+       'box-shadow:0 2px 6px rgba(0,0,0,0.45);z-index:5;"></div>';
+
+  // ── Floor reflection ─────────────────────────────────────────────────────────
   h += '<div style="position:absolute;' +
-       'left:' + (bannerL - 8) + 'px;top:' + (topBarTop - 4) + 'px;' +
-       'width:16px;height:' + (topBarH + 8) + 'px;' +
-       'border-radius:50%;' +
-       'background:radial-gradient(ellipse at 35% 30%,#e8e8e8,#686868);' +
-       'box-shadow:0 2px 5px rgba(0,0,0,0.45);z-index:6;"></div>';
-
-  // TOP BAR RIGHT END CAP
+       'left:' + bannerL + 'px;top:' + reflTop + 'px;' +
+       'width:' + bW + 'px;height:' + reflH + 'px;overflow:hidden;z-index:2;' +
+       'transform:scaleY(-1);transform-origin:top center;opacity:0.06;">' +
+       '<canvas id="rs-refl-canvas" width="' + bW + '" height="' + reflH + '" ' +
+         'style="display:block;width:100%;height:100%;"></canvas>' +
+       '</div>';
+  // Gradient fade over reflection
   h += '<div style="position:absolute;' +
-       'left:' + (bannerL + bW - 8) + 'px;top:' + (topBarTop - 4) + 'px;' +
-       'width:16px;height:' + (topBarH + 8) + 'px;' +
-       'border-radius:50%;' +
-       'background:radial-gradient(ellipse at 65% 30%,#e8e8e8,#686868);' +
-       'box-shadow:0 2px 5px rgba(0,0,0,0.45);z-index:6;"></div>';
+       'left:' + bannerL + 'px;top:' + reflTop + 'px;' +
+       'width:' + bW + 'px;height:' + reflH + 'px;' +
+       'background:linear-gradient(to bottom,transparent 0%,' + cols.floor + ' 100%);' +
+       'z-index:3;pointer-events:none;"></div>';
 
-  // ── BASE (trapezoid, wider at bottom, with chrome finish) ─────────────────
-  h += '<div style="position:absolute;' +
-       'left:' + baseL + 'px;top:' + baseTop + 'px;' +
-       'width:' + baseW + 'px;height:' + baseH + 'px;' +
-       'background:linear-gradient(165deg,' +
-         '#d4d4d4 0%,#ececec 18%,#f4f4f4 32%,#d0d0d0 55%,#aaaaaa 78%,#787878 100%);' +
-       'clip-path:polygon(2% 0%,98% 0%,100% 100%,0% 100%);' +
-       'box-shadow:0 5px 14px rgba(0,0,0,0.50),inset 0 1px 0 rgba(255,255,255,0.6);' +
-       'z-index:5;"></div>';
-
-  // BASE TOP HIGHLIGHT (chrome reflection line)
-  h += '<div style="position:absolute;' +
-       'left:' + (baseL + Math.round(baseW * 0.04)) + 'px;top:' + (baseTop + 3) + 'px;' +
-       'width:' + Math.round(baseW * 0.92) + 'px;height:2px;' +
-       'background:rgba(255,255,255,0.60);border-radius:1px;z-index:6;"></div>';
-
-  // BASE CENTER LOGO NOTCH (subtle branding indent)
-  h += '<div style="position:absolute;' +
-       'left:' + Math.round(cW / 2 - 20) + 'px;top:' + (baseTop + 8) + 'px;' +
-       'width:40px;height:' + (baseH - 14) + 'px;' +
-       'background:rgba(0,0,0,0.10);border-radius:3px;z-index:6;"></div>';
-
-  // BASE FRONT FACE (bottom rim depth)
-  h += '<div style="position:absolute;' +
-       'left:' + baseL + 'px;top:' + (baseTop + baseH - 5) + 'px;' +
-       'width:' + baseW + 'px;height:6px;' +
-       'background:linear-gradient(to bottom,#808080,#505050);' +
-       'z-index:6;border-radius:0 0 2px 2px;"></div>';
-
-  // RUBBER FEET (left and right)
-  var fInset = Math.round(baseW * 0.08);
-  [[baseL + fInset - Math.round(feetW/2), feetTop],
-   [baseL + baseW - fInset - Math.round(feetW/2), feetTop]].forEach(function(ft) {
-    h += '<div style="position:absolute;left:' + ft[0] + 'px;top:' + ft[1] + 'px;' +
-         'width:' + feetW + 'px;height:' + feetH + 'px;border-radius:' + Math.round(feetH/2) + 'px;' +
-         'background:radial-gradient(ellipse at 40% 28%,#686868,#282828);' +
-         'box-shadow:0 2px 4px rgba(0,0,0,0.5);z-index:5;"></div>';
-  });
-
-  // ── WRITE TO DOM ──────────────────────────────────────────────────────────
+  // ── Write to DOM ─────────────────────────────────────────────────────────────
   stage.innerHTML = h;
   stage.style.cssText =
-    'position:relative;' +
-    'width:' + cW + 'px;height:' + cH + 'px;' +
+    'position:relative;width:' + cW + 'px;height:' + cH + 'px;' +
     'overflow:hidden;border-radius:16px;' +
-    'box-shadow:0 32px 80px rgba(0,0,0,0.60),0 10px 28px rgba(0,0,0,0.35);' +
-    'transform:perspective(1400px) rotateY(-1.5deg) rotateX(0.5deg);' +
-    'transform-origin:center center;' +
-    'margin:0 auto;display:block;';
+    'box-shadow:0 32px 80px rgba(0,0,0,0.55);' +
+    'transform:perspective(1400px) rotateY(-1deg);' +
+    'transform-origin:center center;margin:0 auto;display:block;';
 
-  // CHANGE 1: Copy preview canvas art into the banner canvas (fills properly)
+  // ── Copy preview art into banner canvas ──────────────────────────────────────
   var bc = document.getElementById('rs-banner-canvas');
-  if (bc) {
-    if (previewCanvas && previewCanvas.width > 0) {
-      // Draw the full preview canvas scaled into the banner area
-      // This ensures ALL content (text, hero, collage) is visible in proportion
-      bc.width = bW; bc.height = bH;
-      var bCtx = bc.getContext('2d');
-      bCtx.clearRect(0, 0, bW, bH);
+  if (bc && previewCanvas && previewCanvas.width > 0) {
+    bc.width = bW; bc.height = bH;
+    try { bc.getContext('2d').drawImage(previewCanvas, 0, 0, bW, bH); } catch(e) {}
+    // Reflection: draw top slice of banner
+    var rc = document.getElementById('rs-refl-canvas');
+    if (rc) {
+      rc.width = bW; rc.height = reflH;
       try {
-        bCtx.drawImage(previewCanvas, 0, 0, bW, bH);
+        rc.getContext('2d').drawImage(
+          previewCanvas,
+          0, 0, previewCanvas.width, Math.round(previewCanvas.height * 0.13),
+          0, 0, bW, reflH
+        );
       } catch(e) {}
-    } else {
-      // Placeholder — themed dark gradient when no art yet
-      bc.width = bW; bc.height = bH;
-      var bCtx = bc.getContext('2d');
-      var themeColor = S.theme ? S.theme.bg : '#1a1a2e';
-      var accentColor = S.theme ? S.theme.accent : '#C9A84C';
-      var grd = bCtx.createLinearGradient(0, 0, 0, bH);
-      grd.addColorStop(0, themeColor);
-      grd.addColorStop(1, _blendAccent(themeColor, accentColor, 0.15));
-      bCtx.fillStyle = grd; bCtx.fillRect(0, 0, bW, bH);
-      // Placeholder text
-      bCtx.fillStyle = 'rgba(255,255,255,0.10)';
-      bCtx.font = 'bold ' + Math.round(bW * 0.06) + 'px Outfit,sans-serif';
-      bCtx.textAlign = 'center'; bCtx.textBaseline = 'middle';
-      bCtx.fillText('Generate Preview', bW / 2, bH * 0.48);
-      bCtx.font = Math.round(bW * 0.04) + 'px Outfit,sans-serif';
-      bCtx.fillStyle = 'rgba(255,255,255,0.06)';
-      bCtx.fillText('to see your banner →', bW / 2, bH * 0.56);
     }
+  } else if (bc) {
+    bc.width = bW; bc.height = bH;
+    var grd = bc.getContext('2d').createLinearGradient(0, 0, 0, bH);
+    grd.addColorStop(0, '#2a2a3a'); grd.addColorStop(1, '#1a1a28');
+    bc.getContext('2d').fillStyle = grd;
+    bc.getContext('2d').fillRect(0, 0, bW, bH);
+    bc.getContext('2d').fillStyle = 'rgba(255,255,255,0.06)';
+    bc.getContext('2d').font = '12px Outfit,sans-serif';
+    bc.getContext('2d').textAlign = 'center';
+    bc.getContext('2d').fillText('Generate Preview →', bW / 2, bH / 2);
   }
 
   _updateMockupLabels();
