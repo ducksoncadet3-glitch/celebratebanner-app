@@ -2193,176 +2193,362 @@ console.log('✓ CelebrateBanner Live Preview loaded');
 // all sizes supported (CHANGE 3), premium trade-show look
 // ============================================================
 
-// CHANGE 3: Size-specific banner proportions for all 5 sizes
+// ── BANNER SIZES ──────────────────────────────────────────────────────────
 var _RS_SIZES = {
-  '18x24': {bW:210, bH:280, label:'18×24"'},
-  '24x36': {bW:220, bH:330, label:'24×36"'},
-  '36x48': {bW:240, bH:320, label:'36×48"'},
-  '48x72': {bW:250, bH:375, label:'48×72"'},
+  '18x24': {bW:180, bH:240, label:'18×24"'},
+  '24x36': {bW:210, bH:315, label:'24×36"'},
+  '36x48': {bW:235, bH:313, label:'36×48"'},
+  '48x72': {bW:248, bH:372, label:'48×72"'},
   '60x96': {bW:255, bH:408, label:'60×96"'}
 };
 
-function _rsSize(sz) { return _RS_SIZES[sz] || _RS_SIZES['24x36']; }
-
+// ── ROOM ENVIRONMENT PER THEME ────────────────────────────────────────────
 function _rsEnvColors(themeId) {
-  if (themeId === 'wedding' || themeId === 'anniversary')
-    return {wall:'#1e1820', floor:'#28222c', shadow:'rgba(120,60,120,0.18)'};
+  if (themeId === 'graduation') return {
+    wallTop:    '#2a1f0e',
+    wallMid:    '#3a2a14',
+    wallBot:    '#4a3520',
+    floorColor: '#5c3d1e',
+    floorLines: 'rgba(255,220,140,0.06)',
+    floorSheen: 'rgba(255,200,80,0.04)',
+    accentGlow: 'rgba(255,180,60,0.22)',
+    ceilLight:  'rgba(255,200,80,0.18)',
+    moldingCol: '#6b4c2a',
+    props: 'graduation'
+  };
+  if (themeId === 'wedding' || themeId === 'anniversary') return {
+    wallTop:    '#1e1820',
+    wallMid:    '#2a2230',
+    wallBot:    '#332840',
+    floorColor: '#1a1625',
+    floorLines: 'rgba(200,180,255,0.05)',
+    floorSheen: 'rgba(180,150,220,0.06)',
+    accentGlow: 'rgba(220,180,255,0.20)',
+    ceilLight:  'rgba(230,200,255,0.14)',
+    moldingCol: '#4a3860',
+    props: 'elegant'
+  };
   if (themeId === 'america250-official' || themeId === 'america250-family' ||
-      themeId === 'america250-parade'   || themeId === 'stars-stripes')
-    return {wall:'#141a28', floor:'#1c2438', shadow:'rgba(60,63,143,0.20)'};
-  if (themeId === 'graduation')
-    return {wall:'#181510', floor:'#22201a', shadow:'rgba(201,168,76,0.18)'};
-  if (themeId === 'champion')
-    return {wall:'#101520', floor:'#18202e', shadow:'rgba(74,158,204,0.18)'};
-  if (themeId === 'pets')
-    return {wall:'#101810', floor:'#181e18', shadow:'rgba(90,143,106,0.18)'};
-  return {wall:'#181820', floor:'#202028', shadow:'rgba(0,0,0,0.22)'};
+      themeId === 'america250-parade'   || themeId === 'stars-stripes') return {
+    wallTop:    '#0a0e1a',
+    wallMid:    '#0e1428',
+    wallBot:    '#141c38',
+    floorColor: '#0e1220',
+    floorLines: 'rgba(180,200,255,0.06)',
+    floorSheen: 'rgba(100,130,220,0.05)',
+    accentGlow: 'rgba(80,110,200,0.22)',
+    ceilLight:  'rgba(100,140,255,0.14)',
+    moldingCol: '#1e2a50',
+    props: 'civic'
+  };
+  if (themeId === 'champion') return {
+    wallTop:    '#080c14',
+    wallMid:    '#0c1220',
+    wallBot:    '#101828',
+    floorColor: '#0a1018',
+    floorLines: 'rgba(100,180,255,0.06)',
+    floorSheen: 'rgba(80,160,220,0.05)',
+    accentGlow: 'rgba(60,140,200,0.24)',
+    ceilLight:  'rgba(80,160,255,0.16)',
+    moldingCol: '#182038',
+    props: 'sports'
+  };
+  if (themeId === 'pets') return {
+    wallTop:    '#0e1a10',
+    wallMid:    '#142018',
+    wallBot:    '#1a2820',
+    floorColor: '#121e14',
+    floorLines: 'rgba(140,220,140,0.05)',
+    floorSheen: 'rgba(100,180,100,0.04)',
+    accentGlow: 'rgba(80,160,80,0.20)',
+    ceilLight:  'rgba(120,200,120,0.14)',
+    moldingCol: '#1e3020',
+    props: 'cozy'
+  };
+  return {
+    wallTop:    '#141418',
+    wallMid:    '#1a1a20',
+    wallBot:    '#202028',
+    floorColor: '#161618',
+    floorLines: 'rgba(200,160,80,0.05)',
+    floorSheen: 'rgba(180,140,60,0.04)',
+    accentGlow: 'rgba(200,160,80,0.18)',
+    ceilLight:  'rgba(220,180,100,0.12)',
+    moldingCol: '#2a2a35',
+    props: 'modern'
+  };
 }
 
+// ── MAIN RENDER ───────────────────────────────────────────────────────────
 function renderMockup() {
   var previewCanvas = document.getElementById('preview-canvas');
   var stage = document.getElementById('rs-stage');
   if (!stage || !S.theme) return;
 
-  var sz   = _rsSize(S.size);
-  var bW   = sz.bW, bH = sz.bH;
-  var cols = _rsEnvColors(S.theme.id);
+  var sz  = _RS_SIZES[S.size] || _RS_SIZES['24x36'];
+  var bW  = sz.bW, bH = sz.bH;
+  var env = _rsEnvColors(S.theme.id);
 
-  // Container 480×640
-  var cW = 480, cH = 640;
+  var cW = 480, cH = 620;
 
-  // Banner top at ~12% of container height; horizontally centered
-  var bannerTop = Math.round(cH * 0.12);
-  var bannerL   = Math.round((cW - bW) / 2);
+  var poleW        = 7;
+  var topBarH      = 18;
+  var baseW        = Math.round(bW * 1.28);
+  var baseH        = 36;
+  var feetH        = 12;
+  var feetW        = 24;
+  var poleOverhang = 28;
 
-  // Clip geometry — bottom half overlaps banner top edge
-  var clipW = 14, clipH = 22;
-  var clipY = bannerTop - Math.round(clipH / 2);
+  var floorY = Math.round(cH * 0.78);
 
-  // Wire spans between clips, sits above clips
-  var wireY = clipY - 4;
-  var wireX = bannerL + clipW;
-  var wireW = bW - clipW * 2;
+  var poleCapY  = Math.round(cH * 0.05);
+  var topBarTop = poleCapY + poleOverhang;
+  var bannerTop = topBarTop + topBarH;
+  var bannerBot = bannerTop + bH;
+  var baseTop   = Math.min(bannerBot, floorY - baseH - feetH - 4);
+  var feetTop   = baseTop + baseH;
 
-  // Floor at 82% of container
-  var floorY = Math.round(cH * 0.82);
-
-  // Reflection below banner bottom (on floor)
-  var reflTop = bannerTop + bH + 2;
-  var reflH   = Math.min(48, Math.round(bH * 0.11));
+  var cx      = Math.round(cW * 0.50);
+  var bannerL = cx - Math.round(bW / 2);
+  var baseL   = cx - Math.round(baseW / 2);
+  var poleX   = cx - Math.round(poleW / 2);
 
   var h = '';
 
-  // ── Wall ────────────────────────────────────────────────────────────────────
-  h += '<div style="position:absolute;inset:0;background:' + cols.wall + ';' +
-       'background-image:repeating-linear-gradient(to right,' +
-         'rgba(255,255,255,0) 0px,rgba(255,255,255,0) 38px,' +
-         'rgba(255,255,255,0.016) 38px,rgba(255,255,255,0.016) 39px,' +
-         'rgba(255,255,255,0) 39px,rgba(255,255,255,0) 78px);"></div>';
+  // 1. ROOM BACKGROUND
+  h += '<div style="position:absolute;inset:0;background:linear-gradient(to bottom,' +
+       env.wallTop + ' 0%,' + env.wallMid + ' 45%,' + env.wallBot + ' 100%);"></div>';
 
-  // ── Floor ───────────────────────────────────────────────────────────────────
-  h += '<div style="position:absolute;left:0;right:0;top:' + floorY + 'px;bottom:0;' +
-       'background:' + cols.floor + ';' +
-       'background-image:repeating-linear-gradient(to bottom,' +
-         'transparent 0px,transparent 22px,' +
-         'rgba(255,255,255,0.03) 22px,rgba(255,255,255,0.03) 23px);"></div>';
+  h += '<div style="position:absolute;inset:0;opacity:0.04;background-image:' +
+       'repeating-linear-gradient(45deg,rgba(255,255,255,0.8) 0px,rgba(255,255,255,0.8) 1px,transparent 1px,transparent 8px),' +
+       'repeating-linear-gradient(-45deg,rgba(255,255,255,0.8) 0px,rgba(255,255,255,0.8) 1px,transparent 1px,transparent 8px);' +
+       'pointer-events:none;"></div>';
 
-  // Floor/wall seam
-  h += '<div style="position:absolute;left:0;right:0;top:' + floorY + 'px;height:1px;' +
-       'background:' + cols.seam + ';z-index:1;"></div>';
+  h += '<div style="position:absolute;left:0;right:0;top:' + Math.round(cH * 0.62) + 'px;height:3px;' +
+       'background:linear-gradient(to right,transparent,' + env.moldingCol + ' 15%,' + env.moldingCol + ' 85%,transparent);' +
+       'opacity:0.5;"></div>';
+  h += '<div style="position:absolute;left:0;right:0;top:' + (Math.round(cH * 0.62) + 4) + 'px;height:1px;' +
+       'background:linear-gradient(to right,transparent,rgba(255,255,255,0.08) 15%,rgba(255,255,255,0.08) 85%,transparent);"></div>';
 
-  // ── Drop shadow behind banner ────────────────────────────────────────────────
+  // 2. CEILING LIGHT
+  h += '<div style="position:absolute;left:' + (cx - 120) + 'px;top:-60px;' +
+       'width:240px;height:220px;' +
+       'background:radial-gradient(ellipse at 50% 0%,' + env.ceilLight + ' 0%,transparent 70%);' +
+       'pointer-events:none;z-index:1;"></div>';
+
+  // 3. FLOOR
+  h += '<div style="position:absolute;left:-40px;right:-40px;top:' + floorY + 'px;bottom:0;' +
+       'background:' + env.floorColor + ';' +
+       'background-image:' +
+         'repeating-linear-gradient(90deg,' + env.floorLines + ' 0px,' + env.floorLines + ' 1px,transparent 1px,transparent 32px),' +
+         'repeating-linear-gradient(to bottom,transparent 0px,transparent 14px,' + env.floorLines + ' 14px,' + env.floorLines + ' 15px);' +
+       'clip-path:polygon(8% 0%,92% 0%,100% 100%,0% 100%);"></div>';
+
+  h += '<div style="position:absolute;left:0;right:0;top:' + floorY + 'px;height:' + Math.round(cH * 0.14) + 'px;' +
+       'background:linear-gradient(to bottom,' + env.floorSheen + ',transparent);pointer-events:none;"></div>';
+
+  h += '<div style="position:absolute;left:0;right:0;top:' + floorY + 'px;height:2px;' +
+       'background:linear-gradient(to right,transparent 0%,rgba(0,0,0,0.4) 20%,rgba(0,0,0,0.4) 80%,transparent 100%);' +
+       'z-index:2;"></div>';
+
+  // 4. LIFESTYLE PROPS
+  if (env.props === 'graduation') {
+    h += '<div style="position:absolute;left:8px;top:' + Math.round(cH*0.28) + 'px;width:52px;height:' + Math.round(cH*0.50) + 'px;' +
+         'background:linear-gradient(to bottom,#3a2810,#2a1c08);border-radius:2px 2px 0 0;' +
+         'box-shadow:inset -2px 0 6px rgba(0,0,0,0.4);opacity:0.7;z-index:2;"></div>';
+    var bookColors = ['#8B0000','#1a3a6a','#2d6a2d','#8B6914','#4a0e6a','#8B3a00'];
+    for(var bi=0; bi<6; bi++) {
+      h += '<div style="position:absolute;left:' + (10+bi*7) + 'px;top:' + Math.round(cH*0.30+bi*22) + 'px;width:6px;height:18px;' +
+           'background:' + bookColors[bi] + ';border-radius:1px;opacity:0.75;z-index:3;"></div>';
+    }
+    h += '<div style="position:absolute;left:14px;top:' + Math.round(cH*0.26) + 'px;font-size:20px;opacity:0.5;z-index:3;">🎓</div>';
+    h += '<div style="position:absolute;left:0;right:0;top:' + Math.round(cH*0.04) + 'px;height:1px;' +
+         'background:linear-gradient(to right,transparent,rgba(255,220,80,0.3),rgba(255,220,80,0.6),rgba(255,220,80,0.3),transparent);z-index:2;"></div>';
+    for(var li=0; li<8; li++) {
+      h += '<div style="position:absolute;left:' + (40+li*52) + 'px;top:' + Math.round(cH*0.04) + 'px;' +
+           'width:6px;height:6px;border-radius:50%;' +
+           'background:radial-gradient(circle,#ffe066,#ffaa00);' +
+           'box-shadow:0 0 8px 3px rgba(255,200,50,0.6);opacity:0.7;z-index:3;"></div>';
+    }
+    h += '<div style="position:absolute;right:12px;top:' + Math.round(cH*0.30) + 'px;font-size:26px;opacity:0.4;z-index:2;">🏆</div>';
+    h += '<div style="position:absolute;right:10px;top:' + Math.round(cH*0.44) + 'px;font-size:22px;opacity:0.35;z-index:2;">📜</div>';
+  } else if (env.props === 'elegant') {
+    h += '<div style="position:absolute;left:18px;top:' + Math.round(cH*0.18) + 'px;width:3px;height:' + Math.round(cH*0.58) + 'px;' +
+         'background:linear-gradient(to bottom,#c8c0b0,#888070);z-index:2;"></div>';
+    h += '<div style="position:absolute;left:6px;top:' + Math.round(cH*0.18) + 'px;width:27px;height:22px;' +
+         'background:linear-gradient(to bottom,rgba(255,240,200,0.15),rgba(255,240,200,0.05));' +
+         'border-radius:50% 50% 0 0;border:1px solid rgba(255,240,200,0.2);z-index:2;"></div>';
+    h += '<div style="position:absolute;left:-10px;top:' + Math.round(cH*0.20) + 'px;width:80px;height:100px;' +
+         'background:radial-gradient(ellipse at 40% 0%,rgba(255,220,150,0.12),transparent);z-index:1;"></div>';
+    h += '<div style="position:absolute;right:14px;top:' + Math.round(cH*0.38) + 'px;font-size:28px;opacity:0.45;z-index:2;">💐</div>';
+    h += '<div style="position:absolute;right:20px;top:' + Math.round(cH*0.52) + 'px;font-size:18px;opacity:0.4;z-index:2;">🕯️</div>';
+  } else if (env.props === 'sports') {
+    h += '<div style="position:absolute;left:-20px;top:-20px;width:180px;height:' + Math.round(cH*0.7) + 'px;' +
+         'background:linear-gradient(160deg,rgba(74,158,204,0.10) 0%,transparent 55%);z-index:1;pointer-events:none;"></div>';
+    h += '<div style="position:absolute;right:-20px;top:-20px;width:180px;height:' + Math.round(cH*0.7) + 'px;' +
+         'background:linear-gradient(200deg,rgba(201,168,76,0.10) 0%,transparent 55%);z-index:1;pointer-events:none;"></div>';
+    h += '<div style="position:absolute;left:8px;top:' + Math.round(cH*0.25) + 'px;font-size:24px;opacity:0.35;z-index:2;">🏅</div>';
+    h += '<div style="position:absolute;right:10px;top:' + Math.round(cH*0.28) + 'px;font-size:22px;opacity:0.30;z-index:2;">⚽</div>';
+  } else if (env.props === 'cozy') {
+    h += '<div style="position:absolute;left:0;top:' + Math.round(cH*0.50) + 'px;width:40px;height:' + Math.round(cH*0.28) + 'px;' +
+         'background:linear-gradient(to right,#2a3a2a,#1e2e1e);border-radius:4px 0 0 4px;opacity:0.6;z-index:2;"></div>';
+    h += '<div style="position:absolute;left:8px;top:' + Math.round(cH*0.38) + 'px;font-size:22px;opacity:0.40;z-index:2;">🌿</div>';
+    h += '<div style="position:absolute;right:10px;top:' + Math.round(cH*0.35) + 'px;font-size:26px;opacity:0.35;z-index:2;">🐾</div>';
+  } else if (env.props === 'civic') {
+    h += '<div style="position:absolute;left:14px;top:' + Math.round(cH*0.12) + 'px;width:3px;height:' + Math.round(cH*0.55) + 'px;' +
+         'background:linear-gradient(to bottom,#c0c0c0,#808080);z-index:2;"></div>';
+    h += '<div style="position:absolute;left:17px;top:' + Math.round(cH*0.12) + 'px;font-size:22px;opacity:0.45;z-index:3;">🇺🇸</div>';
+    h += '<div style="position:absolute;right:14px;top:' + Math.round(cH*0.22) + 'px;font-size:20px;opacity:0.30;z-index:2;">⭐</div>';
+  } else {
+    h += '<div style="position:absolute;left:4px;top:' + Math.round(cH*0.55) + 'px;width:44px;height:' + Math.round(cH*0.23) + 'px;' +
+         'background:linear-gradient(to bottom,#2a2830,#1e1c24);border-radius:2px;opacity:0.65;z-index:2;"></div>';
+    h += '<div style="position:absolute;left:8px;top:' + Math.round(cH*0.42) + 'px;font-size:26px;opacity:0.45;z-index:3;">🌿</div>';
+    h += '<div style="position:absolute;right:10px;top:' + Math.round(cH*0.30) + 'px;font-size:20px;opacity:0.28;z-index:2;">✨</div>';
+  }
+
+  // 5. STAND FLOOR SHADOW
   h += '<div style="position:absolute;' +
-       'left:' + (bannerL + 14) + 'px;top:' + (bannerTop + 18) + 'px;' +
-       'width:' + bW + 'px;height:' + bH + 'px;' +
-       'background:rgba(0,0,0,0.42);filter:blur(20px);border-radius:3px;z-index:1;"></div>';
+       'left:' + (baseL - 20) + 'px;top:' + (feetTop + feetH - 2) + 'px;' +
+       'width:' + (baseW + 40) + 'px;height:32px;' +
+       'background:radial-gradient(ellipse at 50% 20%,rgba(0,0,0,0.55) 0%,transparent 70%);' +
+       'z-index:4;filter:blur(5px);"></div>';
 
-  // ── Banner wrapper ───────────────────────────────────────────────────────────
+  // 6. AMBIENT GLOW behind banner
+  h += '<div style="position:absolute;' +
+       'left:' + (bannerL - 50) + 'px;top:' + (bannerTop - 30) + 'px;' +
+       'width:' + (bW + 100) + 'px;height:' + (bH + 60) + 'px;' +
+       'background:radial-gradient(ellipse at 50% 40%,' + env.accentGlow + ' 0%,transparent 68%);' +
+       'z-index:2;pointer-events:none;"></div>';
+
+  // 7. POLE
+  h += '<div style="position:absolute;' +
+       'left:' + poleX + 'px;top:' + poleCapY + 'px;' +
+       'width:' + poleW + 'px;' +
+       'height:' + (topBarTop - poleCapY + topBarH + bH) + 'px;' +
+       'background:linear-gradient(to right,' +
+         '#3a3a3a 0%,#707070 18%,#c8c8c8 38%,#efefef 50%,#c0c0c0 64%,#888 80%,#383838 100%);' +
+       'box-shadow:2px 0 6px rgba(0,0,0,0.45);z-index:5;"></div>';
+
+  h += '<div style="position:absolute;' +
+       'left:' + (poleX - 5) + 'px;top:' + (poleCapY - 8) + 'px;' +
+       'width:' + (poleW + 10) + 'px;height:' + (poleW + 10) + 'px;border-radius:50%;' +
+       'background:radial-gradient(circle at 33% 26%,#ffffff 0%,#d0d0d0 30%,#909090 60%,#404040 100%);' +
+       'box-shadow:0 3px 8px rgba(0,0,0,0.6),inset 0 1px 3px rgba(255,255,255,0.5);' +
+       'z-index:6;"></div>';
+
+  // 8. BANNER DROP SHADOW
+  h += '<div style="position:absolute;' +
+       'left:' + (bannerL + 10) + 'px;top:' + (bannerTop + 8) + 'px;' +
+       'width:' + bW + 'px;height:' + bH + 'px;' +
+       'background:rgba(0,0,0,0.35);filter:blur(12px);z-index:3;border-radius:2px;"></div>';
+
+  // 9. BANNER CANVAS
   h += '<div id="rs-banner-wrap" style="position:absolute;' +
        'left:' + bannerL + 'px;top:' + bannerTop + 'px;' +
-       'width:' + bW + 'px;height:' + bH + 'px;overflow:hidden;z-index:2;' +
-       'box-shadow:14px 18px 50px rgba(0,0,0,0.45);border-radius:2px;">' +
+       'width:' + bW + 'px;height:' + bH + 'px;' +
+       'overflow:hidden;z-index:5;' +
+       'clip-path:polygon(0px 0%,100% 0%,calc(100% + 1px) 100%,-1px 100%);">' +
        '<canvas id="rs-banner-canvas" width="' + bW + '" height="' + bH + '" ' +
-         'style="display:block;width:100%;height:100%;"></canvas>' +
-       // Left-edge shine
-       '<div style="position:absolute;top:0;left:0;width:3px;height:100%;' +
-         'background:linear-gradient(to right,rgba(255,255,255,0.15),transparent);' +
-         'pointer-events:none;"></div>' +
+         'style="display:block;width:' + bW + 'px;height:' + bH + 'px;"></canvas>' +
+       '<div style="position:absolute;top:0;left:0;width:5px;height:100%;' +
+         'background:linear-gradient(to right,rgba(255,255,255,0.22),transparent);pointer-events:none;"></div>' +
+       '<div style="position:absolute;top:0;left:0;right:0;height:8px;' +
+         'background:linear-gradient(to bottom,rgba(255,255,255,0.14),transparent);pointer-events:none;"></div>' +
+       '<div style="position:absolute;bottom:0;left:0;right:0;height:20px;' +
+         'background:linear-gradient(to top,rgba(0,0,0,0.30),transparent);pointer-events:none;"></div>' +
+       '<div style="position:absolute;top:0;right:0;width:5px;height:100%;' +
+         'background:linear-gradient(to left,rgba(0,0,0,0.18),transparent);pointer-events:none;"></div>' +
        '</div>';
 
-  // ── Hanging wire ─────────────────────────────────────────────────────────────
+  // 10. TOP BAR
   h += '<div style="position:absolute;' +
-       'left:' + wireX + 'px;top:' + wireY + 'px;' +
-       'width:' + wireW + 'px;height:2px;' +
-       'background:linear-gradient(to right,#aaa,#ddd 50%,#aaa);' +
-       'border-radius:0 0 50% 50%;' +
-       'transform:perspective(100px) rotateX(-2deg);z-index:4;"></div>';
+       'left:' + bannerL + 'px;top:' + topBarTop + 'px;' +
+       'width:' + bW + 'px;height:' + topBarH + 'px;' +
+       'background:linear-gradient(to bottom,' +
+         '#e0e0e0 0%,#f8f8f8 20%,#ffffff 38%,#e0e0e0 58%,#b8b8b8 80%,#808080 100%);' +
+       'border-radius:' + Math.round(topBarH/2) + 'px;' +
+       'box-shadow:0 4px 10px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.7);' +
+       'z-index:6;"></div>';
 
-  // ── Mount clips ──────────────────────────────────────────────────────────────
-  // Left clip
-  h += '<div style="position:absolute;left:' + bannerL + 'px;top:' + clipY + 'px;' +
-       'width:' + clipW + 'px;height:' + clipH + 'px;' +
-       'background:radial-gradient(ellipse at 40% 25%,#d8d8d8,#888);' +
-       'border-radius:3px 3px 2px 2px;' +
-       'box-shadow:0 2px 6px rgba(0,0,0,0.45);z-index:5;"></div>';
-  // Right clip
-  h += '<div style="position:absolute;left:' + (bannerL + bW - clipW) + 'px;top:' + clipY + 'px;' +
-       'width:' + clipW + 'px;height:' + clipH + 'px;' +
-       'background:radial-gradient(ellipse at 40% 25%,#d8d8d8,#888);' +
-       'border-radius:3px 3px 2px 2px;' +
-       'box-shadow:0 2px 6px rgba(0,0,0,0.45);z-index:5;"></div>';
+  [bannerL - 9, bannerL + bW - 7].forEach(function(lx, i) {
+    h += '<div style="position:absolute;left:' + lx + 'px;top:' + (topBarTop - 5) + 'px;' +
+         'width:18px;height:' + (topBarH + 10) + 'px;border-radius:50%;' +
+         'background:radial-gradient(ellipse at ' + (i===0?'36%':'64%') + ' 30%,#ebebeb,#646464);' +
+         'box-shadow:0 3px 7px rgba(0,0,0,0.50);z-index:7;"></div>';
+  });
 
-  // ── Floor reflection ─────────────────────────────────────────────────────────
+  // 11. BASE
   h += '<div style="position:absolute;' +
-       'left:' + bannerL + 'px;top:' + reflTop + 'px;' +
-       'width:' + bW + 'px;height:' + reflH + 'px;overflow:hidden;z-index:2;' +
-       'transform:scaleY(-1);transform-origin:top center;opacity:0.06;">' +
-       '<canvas id="rs-refl-canvas" width="' + bW + '" height="' + reflH + '" ' +
-         'style="display:block;width:100%;height:100%;"></canvas>' +
-       '</div>';
-  // Gradient fade over reflection
-  h += '<div style="position:absolute;' +
-       'left:' + bannerL + 'px;top:' + reflTop + 'px;' +
-       'width:' + bW + 'px;height:' + reflH + 'px;' +
-       'background:linear-gradient(to bottom,transparent 0%,' + cols.floor + ' 100%);' +
-       'z-index:3;pointer-events:none;"></div>';
+       'left:' + baseL + 'px;top:' + baseTop + 'px;' +
+       'width:' + baseW + 'px;height:' + baseH + 'px;' +
+       'background:linear-gradient(160deg,#d8d8d8 0%,#f0f0f0 22%,#fafafa 35%,#d0d0d0 58%,#a8a8a8 78%,#707070 100%);' +
+       'clip-path:polygon(1.5% 0%,98.5% 0%,100% 100%,0% 100%);' +
+       'box-shadow:0 6px 18px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.65);' +
+       'z-index:6;"></div>';
 
-  // ── Write to DOM ─────────────────────────────────────────────────────────────
+  h += '<div style="position:absolute;' +
+       'left:' + (baseL + Math.round(baseW*0.04)) + 'px;top:' + (baseTop+3) + 'px;' +
+       'width:' + Math.round(baseW*0.92) + 'px;height:2px;' +
+       'background:rgba(255,255,255,0.65);border-radius:1px;z-index:7;"></div>';
+
+  h += '<div style="position:absolute;' +
+       'left:' + (cx-22) + 'px;top:' + (baseTop+9) + 'px;' +
+       'width:44px;height:' + (baseH-16) + 'px;' +
+       'background:rgba(0,0,0,0.12);border-radius:3px;z-index:7;"></div>';
+
+  h += '<div style="position:absolute;' +
+       'left:' + baseL + 'px;top:' + (baseTop+baseH-6) + 'px;' +
+       'width:' + baseW + 'px;height:7px;' +
+       'background:linear-gradient(to bottom,#787878,#484848);' +
+       'z-index:7;border-radius:0 0 3px 3px;"></div>';
+
+  var fInset = Math.round(baseW*0.09);
+  [[baseL+fInset-Math.round(feetW/2), feetTop],
+   [baseL+baseW-fInset-Math.round(feetW/2), feetTop]].forEach(function(ft){
+    h += '<div style="position:absolute;left:' + ft[0] + 'px;top:' + ft[1] + 'px;' +
+         'width:' + feetW + 'px;height:' + feetH + 'px;' +
+         'border-radius:' + Math.round(feetH/2) + 'px;' +
+         'background:radial-gradient(ellipse at 38% 25%,#606060,#202020);' +
+         'box-shadow:0 3px 6px rgba(0,0,0,0.55);z-index:6;"></div>';
+  });
+
+  // 12. SCENE VIGNETTE
+  h += '<div style="position:absolute;inset:0;' +
+       'background:radial-gradient(ellipse at 50% 45%,transparent 38%,rgba(0,0,0,0.38) 100%);' +
+       'pointer-events:none;z-index:8;"></div>';
+
+  // WRITE TO DOM
   stage.innerHTML = h;
   stage.style.cssText =
-    'position:relative;width:' + cW + 'px;height:' + cH + 'px;' +
-    'overflow:hidden;border-radius:16px;' +
-    'box-shadow:0 32px 80px rgba(0,0,0,0.55);' +
-    'transform:perspective(1400px) rotateY(-1deg);' +
+    'position:relative;' +
+    'width:' + cW + 'px;height:' + cH + 'px;' +
+    'overflow:hidden;border-radius:18px;' +
+    'box-shadow:0 40px 100px rgba(0,0,0,0.65),0 12px 32px rgba(0,0,0,0.40);' +
+    'transform:perspective(1600px) rotateY(-1.8deg) rotateX(0.6deg);' +
     'transform-origin:center center;margin:0 auto;display:block;';
 
-  // ── Copy preview art into banner canvas ──────────────────────────────────────
+  // PAINT BANNER ART
   var bc = document.getElementById('rs-banner-canvas');
-  if (bc && previewCanvas && previewCanvas.width > 0) {
+  if (bc) {
     bc.width = bW; bc.height = bH;
-    try { bc.getContext('2d').drawImage(previewCanvas, 0, 0, bW, bH); } catch(e) {}
-    // Reflection: draw top slice of banner
-    var rc = document.getElementById('rs-refl-canvas');
-    if (rc) {
-      rc.width = bW; rc.height = reflH;
-      try {
-        rc.getContext('2d').drawImage(
-          previewCanvas,
-          0, 0, previewCanvas.width, Math.round(previewCanvas.height * 0.13),
-          0, 0, bW, reflH
-        );
-      } catch(e) {}
+    var bCtx = bc.getContext('2d');
+    if (previewCanvas && previewCanvas.width > 0) {
+      try { bCtx.drawImage(previewCanvas, 0, 0, bW, bH); } catch(e) {}
+    } else {
+      var themeColor  = S.theme ? S.theme.bg    : '#1a1a2e';
+      var accentColor = S.theme ? S.theme.accent : '#C9A84C';
+      var grd = bCtx.createLinearGradient(0, 0, 0, bH);
+      grd.addColorStop(0, themeColor);
+      grd.addColorStop(1, _blendAccent(themeColor, accentColor, 0.18));
+      bCtx.fillStyle = grd; bCtx.fillRect(0, 0, bW, bH);
+      bCtx.fillStyle = 'rgba(255,255,255,0.10)';
+      bCtx.font = 'bold ' + Math.round(bW*0.065) + 'px Outfit,sans-serif';
+      bCtx.textAlign = 'center'; bCtx.textBaseline = 'middle';
+      bCtx.fillText('Generate Preview', bW/2, bH*0.47);
+      bCtx.font = Math.round(bW*0.042) + 'px Outfit,sans-serif';
+      bCtx.fillStyle = 'rgba(255,255,255,0.06)';
+      bCtx.fillText('to see your banner \u2192', bW/2, bH*0.56);
     }
-  } else if (bc) {
-    bc.width = bW; bc.height = bH;
-    var grd = bc.getContext('2d').createLinearGradient(0, 0, 0, bH);
-    grd.addColorStop(0, '#2a2a3a'); grd.addColorStop(1, '#1a1a28');
-    bc.getContext('2d').fillStyle = grd;
-    bc.getContext('2d').fillRect(0, 0, bW, bH);
-    bc.getContext('2d').fillStyle = 'rgba(255,255,255,0.06)';
-    bc.getContext('2d').font = '12px Outfit,sans-serif';
-    bc.getContext('2d').textAlign = 'center';
-    bc.getContext('2d').fillText('Generate Preview →', bW / 2, bH / 2);
   }
 
   _updateMockupLabels();
@@ -2379,12 +2565,11 @@ function _updateMockupLabels() {
     'CMYK',
     S.photos.length + ' photo' + (S.photos.length !== 1 ? 's' : '')
   ];
-  strip.innerHTML = items.map(function(item) {
+  strip.innerHTML = items.map(function(item){
     return '<span class="mockup-label">' + item + '</span>';
   }).join('');
 }
 
-// Patch buildPreview to trigger mockup render after canvas is ready
 var _previewWithMockup = buildPreview;
 buildPreview = function() {
   _previewWithMockup();
@@ -2393,7 +2578,7 @@ buildPreview = function() {
   }, 280);
 };
 
-console.log('✓ CelebrateBanner Retractable Stand Mockup v3 loaded');
+console.log('\u2713 CelebrateBanner Room Scene Mockup v4 loaded');
 
 </script>
 
