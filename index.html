@@ -2253,83 +2253,89 @@ var _RS_SIZES = {
 };
 
 // ── ROOM ENVIRONMENT PER THEME ────────────────────────────────────────────
+// ── ROOM ENVIRONMENTS ─────────────────────────────────────────────────────
 function _rsEnvColors(themeId) {
   if (themeId === 'graduation') return {
-    wallTop:    '#2a1f0e',
-    wallMid:    '#3a2a14',
-    wallBot:    '#4a3520',
-    floorColor: '#5c3d1e',
-    floorLines: 'rgba(255,220,140,0.06)',
-    floorSheen: 'rgba(255,200,80,0.04)',
-    accentGlow: 'rgba(255,180,60,0.22)',
-    ceilLight:  'rgba(255,200,80,0.18)',
-    moldingCol: '#6b4c2a',
+    wall:        '#f5efe6',
+    wallAccent:  '#ecddd0',
+    floor:       '#c8a97a',
+    floorDark:   '#b8956a',
+    floorLight:  'rgba(255,240,200,0.25)',
+    ceilLight:   'rgba(255,220,140,0.55)',
+    sideLight:   'rgba(255,200,100,0.22)',
+    shadowColor: 'rgba(80,50,20,0.18)',
+    moldingCol:  '#e0cdb8',
+    ambientCol:  'rgba(255,180,60,0.12)',
     props: 'graduation'
   };
   if (themeId === 'wedding' || themeId === 'anniversary') return {
-    wallTop:    '#1e1820',
-    wallMid:    '#2a2230',
-    wallBot:    '#332840',
-    floorColor: '#1a1625',
-    floorLines: 'rgba(200,180,255,0.05)',
-    floorSheen: 'rgba(180,150,220,0.06)',
-    accentGlow: 'rgba(220,180,255,0.20)',
-    ceilLight:  'rgba(230,200,255,0.14)',
-    moldingCol: '#4a3860',
+    wall:        '#f8f4ee',
+    wallAccent:  '#f0e8de',
+    floor:       '#d4c4b0',
+    floorDark:   '#c4b0a0',
+    floorLight:  'rgba(255,245,230,0.30)',
+    ceilLight:   'rgba(255,240,210,0.50)',
+    sideLight:   'rgba(220,200,180,0.20)',
+    shadowColor: 'rgba(60,40,20,0.15)',
+    moldingCol:  '#e8ddd0',
+    ambientCol:  'rgba(220,180,140,0.10)',
     props: 'elegant'
   };
   if (themeId === 'america250-official' || themeId === 'america250-family' ||
       themeId === 'america250-parade'   || themeId === 'stars-stripes') return {
-    wallTop:    '#0a0e1a',
-    wallMid:    '#0e1428',
-    wallBot:    '#141c38',
-    floorColor: '#0e1220',
-    floorLines: 'rgba(180,200,255,0.06)',
-    floorSheen: 'rgba(100,130,220,0.05)',
-    accentGlow: 'rgba(80,110,200,0.22)',
-    ceilLight:  'rgba(100,140,255,0.14)',
-    moldingCol: '#1e2a50',
+    wall:        '#f2f4f8',
+    wallAccent:  '#e8ecf4',
+    floor:       '#b8c0d0',
+    floorDark:   '#a8b0c0',
+    floorLight:  'rgba(220,230,255,0.28)',
+    ceilLight:   'rgba(200,220,255,0.45)',
+    sideLight:   'rgba(180,200,240,0.18)',
+    shadowColor: 'rgba(20,30,60,0.16)',
+    moldingCol:  '#dde2ee',
+    ambientCol:  'rgba(100,130,200,0.08)',
     props: 'civic'
   };
   if (themeId === 'champion') return {
-    wallTop:    '#080c14',
-    wallMid:    '#0c1220',
-    wallBot:    '#101828',
-    floorColor: '#0a1018',
-    floorLines: 'rgba(100,180,255,0.06)',
-    floorSheen: 'rgba(80,160,220,0.05)',
-    accentGlow: 'rgba(60,140,200,0.24)',
-    ceilLight:  'rgba(80,160,255,0.16)',
-    moldingCol: '#182038',
+    wall:        '#eef0f4',
+    wallAccent:  '#e4e8ee',
+    floor:       '#c0c8d0',
+    floorDark:   '#b0b8c4',
+    floorLight:  'rgba(200,220,240,0.28)',
+    ceilLight:   'rgba(180,210,255,0.50)',
+    sideLight:   'rgba(160,200,240,0.20)',
+    shadowColor: 'rgba(20,30,50,0.18)',
+    moldingCol:  '#d8dde8',
+    ambientCol:  'rgba(74,158,204,0.09)',
     props: 'sports'
   };
   if (themeId === 'pets') return {
-    wallTop:    '#0e1a10',
-    wallMid:    '#142018',
-    wallBot:    '#1a2820',
-    floorColor: '#121e14',
-    floorLines: 'rgba(140,220,140,0.05)',
-    floorSheen: 'rgba(100,180,100,0.04)',
-    accentGlow: 'rgba(80,160,80,0.20)',
-    ceilLight:  'rgba(120,200,120,0.14)',
-    moldingCol: '#1e3020',
+    wall:        '#eef4ee',
+    wallAccent:  '#e2ece2',
+    floor:       '#b8c8a8',
+    floorDark:   '#a8b898',
+    floorLight:  'rgba(200,240,200,0.25)',
+    ceilLight:   'rgba(180,230,180,0.45)',
+    sideLight:   'rgba(160,210,160,0.18)',
+    shadowColor: 'rgba(20,50,20,0.14)',
+    moldingCol:  '#d8e8d4',
+    ambientCol:  'rgba(90,143,106,0.08)',
     props: 'cozy'
   };
   return {
-    wallTop:    '#141418',
-    wallMid:    '#1a1a20',
-    wallBot:    '#202028',
-    floorColor: '#161618',
-    floorLines: 'rgba(200,160,80,0.05)',
-    floorSheen: 'rgba(180,140,60,0.04)',
-    accentGlow: 'rgba(200,160,80,0.18)',
-    ceilLight:  'rgba(220,180,100,0.12)',
-    moldingCol: '#2a2a35',
+    wall:        '#f4f4f6',
+    wallAccent:  '#ebebee',
+    floor:       '#c8c0b0',
+    floorDark:   '#b8b0a0',
+    floorLight:  'rgba(255,250,240,0.28)',
+    ceilLight:   'rgba(255,245,220,0.50)',
+    sideLight:   'rgba(240,220,180,0.18)',
+    shadowColor: 'rgba(40,30,20,0.15)',
+    moldingCol:  '#e0ddd8',
+    ambientCol:  'rgba(201,168,76,0.07)',
     props: 'modern'
   };
 }
 
-// ── MAIN RENDER ───────────────────────────────────────────────────────────
 function renderMockup() {
   var previewCanvas = document.getElementById('preview-canvas');
   var stage = document.getElementById('rs-stage');
@@ -2339,23 +2345,22 @@ function renderMockup() {
   var bW  = sz.bW, bH = sz.bH;
   var env = _rsEnvColors(S.theme.id);
 
-  var cW = 480, cH = 620;
+  var cW = 480, cH = 580;
 
   var poleW        = 7;
-  var topBarH      = 18;
-  var baseW        = Math.round(bW * 1.28);
-  var baseH        = 36;
-  var feetH        = 12;
-  var feetW        = 24;
-  var poleOverhang = 28;
+  var topBarH      = 16;
+  var poleOverhang = 26;
+  var baseW        = Math.round(bW * 1.30);
+  var baseH        = 34;
+  var feetH        = 11;
+  var feetW        = 26;
 
-  var floorY = Math.round(cH * 0.78);
-
-  var poleCapY  = Math.round(cH * 0.05);
+  var floorY    = Math.round(cH * 0.76);
+  var poleCapY  = Math.round(cH * 0.04);
   var topBarTop = poleCapY + poleOverhang;
   var bannerTop = topBarTop + topBarH;
   var bannerBot = bannerTop + bH;
-  var baseTop   = Math.min(bannerBot, floorY - baseH - feetH - 4);
+  var baseTop   = Math.min(bannerBot + 2, floorY - baseH - feetH - 2);
   var feetTop   = baseTop + baseH;
 
   var cx      = Math.round(cW * 0.50);
@@ -2365,192 +2370,254 @@ function renderMockup() {
 
   var h = '';
 
-  // 1. ROOM BACKGROUND
-  h += '<div style="position:absolute;inset:0;background:linear-gradient(to bottom,' +
-       env.wallTop + ' 0%,' + env.wallMid + ' 45%,' + env.wallBot + ' 100%);"></div>';
+  // ROOM WALL — bright, clean
+  h += '<div style="position:absolute;inset:0;' +
+       'background:linear-gradient(160deg,' + env.wall + ' 0%,' + env.wallAccent + ' 60%,' +
+       env.wallAccent + ' 100%);"></div>';
 
-  h += '<div style="position:absolute;inset:0;opacity:0.04;background-image:' +
-       'repeating-linear-gradient(45deg,rgba(255,255,255,0.8) 0px,rgba(255,255,255,0.8) 1px,transparent 1px,transparent 8px),' +
-       'repeating-linear-gradient(-45deg,rgba(255,255,255,0.8) 0px,rgba(255,255,255,0.8) 1px,transparent 1px,transparent 8px);' +
+  // Wall texture — very subtle linen
+  h += '<div style="position:absolute;inset:0;opacity:0.035;' +
+       'background-image:repeating-linear-gradient(0deg,rgba(0,0,0,0.5) 0px,rgba(0,0,0,0.5) 1px,transparent 1px,transparent 4px),' +
+       'repeating-linear-gradient(90deg,rgba(0,0,0,0.5) 0px,rgba(0,0,0,0.5) 1px,transparent 1px,transparent 4px);' +
        'pointer-events:none;"></div>';
 
-  h += '<div style="position:absolute;left:0;right:0;top:' + Math.round(cH * 0.62) + 'px;height:3px;' +
-       'background:linear-gradient(to right,transparent,' + env.moldingCol + ' 15%,' + env.moldingCol + ' 85%,transparent);' +
-       'opacity:0.5;"></div>';
-  h += '<div style="position:absolute;left:0;right:0;top:' + (Math.round(cH * 0.62) + 4) + 'px;height:1px;' +
-       'background:linear-gradient(to right,transparent,rgba(255,255,255,0.08) 15%,rgba(255,255,255,0.08) 85%,transparent);"></div>';
-
-  // 2. CEILING LIGHT
-  h += '<div style="position:absolute;left:' + (cx - 120) + 'px;top:-60px;' +
-       'width:240px;height:220px;' +
-       'background:radial-gradient(ellipse at 50% 0%,' + env.ceilLight + ' 0%,transparent 70%);' +
+  // Window light — warm sunlight from upper right
+  h += '<div style="position:absolute;right:-40px;top:-40px;width:320px;height:380px;' +
+       'background:radial-gradient(ellipse at 90% 10%,' + env.ceilLight + ' 0%,transparent 65%);' +
        'pointer-events:none;z-index:1;"></div>';
 
-  // 3. FLOOR
-  h += '<div style="position:absolute;left:-40px;right:-40px;top:' + floorY + 'px;bottom:0;' +
-       'background:' + env.floorColor + ';' +
-       'background-image:' +
-         'repeating-linear-gradient(90deg,' + env.floorLines + ' 0px,' + env.floorLines + ' 1px,transparent 1px,transparent 32px),' +
-         'repeating-linear-gradient(to bottom,transparent 0px,transparent 14px,' + env.floorLines + ' 14px,' + env.floorLines + ' 15px);' +
-       'clip-path:polygon(8% 0%,92% 0%,100% 100%,0% 100%);"></div>';
+  // Secondary fill light from left
+  h += '<div style="position:absolute;left:-20px;top:0;width:200px;height:300px;' +
+       'background:radial-gradient(ellipse at 0% 20%,rgba(200,220,255,0.18) 0%,transparent 70%);' +
+       'pointer-events:none;z-index:1;"></div>';
 
-  h += '<div style="position:absolute;left:0;right:0;top:' + floorY + 'px;height:' + Math.round(cH * 0.14) + 'px;' +
-       'background:linear-gradient(to bottom,' + env.floorSheen + ',transparent);pointer-events:none;"></div>';
+  // Crown molding (ceiling trim)
+  h += '<div style="position:absolute;left:0;right:0;top:0;height:18px;' +
+       'background:linear-gradient(to bottom,' + env.moldingCol + ',rgba(0,0,0,0));' +
+       'opacity:0.4;z-index:1;"></div>';
+  h += '<div style="position:absolute;left:0;right:0;top:17px;height:2px;' +
+       'background:linear-gradient(to right,transparent,' + env.moldingCol + ' 10%,' + env.moldingCol + ' 90%,transparent);' +
+       'opacity:0.6;z-index:1;"></div>';
 
-  h += '<div style="position:absolute;left:0;right:0;top:' + floorY + 'px;height:2px;' +
-       'background:linear-gradient(to right,transparent 0%,rgba(0,0,0,0.4) 20%,rgba(0,0,0,0.4) 80%,transparent 100%);' +
-       'z-index:2;"></div>';
+  // Baseboard
+  h += '<div style="position:absolute;left:0;right:0;top:' + (floorY-14) + 'px;height:14px;' +
+       'background:linear-gradient(to bottom,' + env.moldingCol + ',rgba(0,0,0,0.05));' +
+       'opacity:0.55;z-index:2;"></div>';
+  h += '<div style="position:absolute;left:0;right:0;top:' + (floorY-15) + 'px;height:1.5px;' +
+       'background:linear-gradient(to right,transparent,' + env.moldingCol + ' 8%,' + env.moldingCol + ' 92%,transparent);' +
+       'opacity:0.7;z-index:2;"></div>';
 
-  // 4. LIFESTYLE PROPS
-  if (env.props === 'graduation') {
-    h += '<div style="position:absolute;left:8px;top:' + Math.round(cH*0.28) + 'px;width:52px;height:' + Math.round(cH*0.50) + 'px;' +
-         'background:linear-gradient(to bottom,#3a2810,#2a1c08);border-radius:2px 2px 0 0;' +
-         'box-shadow:inset -2px 0 6px rgba(0,0,0,0.4);opacity:0.7;z-index:2;"></div>';
-    var bookColors = ['#8B0000','#1a3a6a','#2d6a2d','#8B6914','#4a0e6a','#8B3a00'];
-    for(var bi=0; bi<6; bi++) {
-      h += '<div style="position:absolute;left:' + (10+bi*7) + 'px;top:' + Math.round(cH*0.30+bi*22) + 'px;width:6px;height:18px;' +
-           'background:' + bookColors[bi] + ';border-radius:1px;opacity:0.75;z-index:3;"></div>';
-    }
-    h += '<div style="position:absolute;left:14px;top:' + Math.round(cH*0.26) + 'px;font-size:20px;opacity:0.5;z-index:3;">🎓</div>';
-    h += '<div style="position:absolute;left:0;right:0;top:' + Math.round(cH*0.04) + 'px;height:1px;' +
-         'background:linear-gradient(to right,transparent,rgba(255,220,80,0.3),rgba(255,220,80,0.6),rgba(255,220,80,0.3),transparent);z-index:2;"></div>';
-    for(var li=0; li<8; li++) {
-      h += '<div style="position:absolute;left:' + (40+li*52) + 'px;top:' + Math.round(cH*0.04) + 'px;' +
-           'width:6px;height:6px;border-radius:50%;' +
-           'background:radial-gradient(circle,#ffe066,#ffaa00);' +
-           'box-shadow:0 0 8px 3px rgba(255,200,50,0.6);opacity:0.7;z-index:3;"></div>';
-    }
-    h += '<div style="position:absolute;right:12px;top:' + Math.round(cH*0.30) + 'px;font-size:26px;opacity:0.4;z-index:2;">🏆</div>';
-    h += '<div style="position:absolute;right:10px;top:' + Math.round(cH*0.44) + 'px;font-size:22px;opacity:0.35;z-index:2;">📜</div>';
-  } else if (env.props === 'elegant') {
-    h += '<div style="position:absolute;left:18px;top:' + Math.round(cH*0.18) + 'px;width:3px;height:' + Math.round(cH*0.58) + 'px;' +
-         'background:linear-gradient(to bottom,#c8c0b0,#888070);z-index:2;"></div>';
-    h += '<div style="position:absolute;left:6px;top:' + Math.round(cH*0.18) + 'px;width:27px;height:22px;' +
-         'background:linear-gradient(to bottom,rgba(255,240,200,0.15),rgba(255,240,200,0.05));' +
-         'border-radius:50% 50% 0 0;border:1px solid rgba(255,240,200,0.2);z-index:2;"></div>';
-    h += '<div style="position:absolute;left:-10px;top:' + Math.round(cH*0.20) + 'px;width:80px;height:100px;' +
-         'background:radial-gradient(ellipse at 40% 0%,rgba(255,220,150,0.12),transparent);z-index:1;"></div>';
-    h += '<div style="position:absolute;right:14px;top:' + Math.round(cH*0.38) + 'px;font-size:28px;opacity:0.45;z-index:2;">💐</div>';
-    h += '<div style="position:absolute;right:20px;top:' + Math.round(cH*0.52) + 'px;font-size:18px;opacity:0.4;z-index:2;">🕯️</div>';
-  } else if (env.props === 'sports') {
-    h += '<div style="position:absolute;left:-20px;top:-20px;width:180px;height:' + Math.round(cH*0.7) + 'px;' +
-         'background:linear-gradient(160deg,rgba(74,158,204,0.10) 0%,transparent 55%);z-index:1;pointer-events:none;"></div>';
-    h += '<div style="position:absolute;right:-20px;top:-20px;width:180px;height:' + Math.round(cH*0.7) + 'px;' +
-         'background:linear-gradient(200deg,rgba(201,168,76,0.10) 0%,transparent 55%);z-index:1;pointer-events:none;"></div>';
-    h += '<div style="position:absolute;left:8px;top:' + Math.round(cH*0.25) + 'px;font-size:24px;opacity:0.35;z-index:2;">🏅</div>';
-    h += '<div style="position:absolute;right:10px;top:' + Math.round(cH*0.28) + 'px;font-size:22px;opacity:0.30;z-index:2;">⚽</div>';
-  } else if (env.props === 'cozy') {
-    h += '<div style="position:absolute;left:0;top:' + Math.round(cH*0.50) + 'px;width:40px;height:' + Math.round(cH*0.28) + 'px;' +
-         'background:linear-gradient(to right,#2a3a2a,#1e2e1e);border-radius:4px 0 0 4px;opacity:0.6;z-index:2;"></div>';
-    h += '<div style="position:absolute;left:8px;top:' + Math.round(cH*0.38) + 'px;font-size:22px;opacity:0.40;z-index:2;">🌿</div>';
-    h += '<div style="position:absolute;right:10px;top:' + Math.round(cH*0.35) + 'px;font-size:26px;opacity:0.35;z-index:2;">🐾</div>';
-  } else if (env.props === 'civic') {
-    h += '<div style="position:absolute;left:14px;top:' + Math.round(cH*0.12) + 'px;width:3px;height:' + Math.round(cH*0.55) + 'px;' +
-         'background:linear-gradient(to bottom,#c0c0c0,#808080);z-index:2;"></div>';
-    h += '<div style="position:absolute;left:17px;top:' + Math.round(cH*0.12) + 'px;font-size:22px;opacity:0.45;z-index:3;">🇺🇸</div>';
-    h += '<div style="position:absolute;right:14px;top:' + Math.round(cH*0.22) + 'px;font-size:20px;opacity:0.30;z-index:2;">⭐</div>';
-  } else {
-    h += '<div style="position:absolute;left:4px;top:' + Math.round(cH*0.55) + 'px;width:44px;height:' + Math.round(cH*0.23) + 'px;' +
-         'background:linear-gradient(to bottom,#2a2830,#1e1c24);border-radius:2px;opacity:0.65;z-index:2;"></div>';
-    h += '<div style="position:absolute;left:8px;top:' + Math.round(cH*0.42) + 'px;font-size:26px;opacity:0.45;z-index:3;">🌿</div>';
-    h += '<div style="position:absolute;right:10px;top:' + Math.round(cH*0.30) + 'px;font-size:20px;opacity:0.28;z-index:2;">✨</div>';
+  // Hardwood floor
+  h += '<div style="position:absolute;left:-60px;right:-60px;top:' + floorY + 'px;bottom:0;' +
+       'background:linear-gradient(to bottom,' + env.floor + ' 0%,' + env.floorDark + ' 100%);' +
+       'clip-path:polygon(6% 0%,94% 0%,100% 100%,0% 100%);"></div>';
+
+  for (var pl = 0; pl < 6; pl++) {
+    var plY = floorY + pl * Math.round((cH - floorY) / 5);
+    var plOpacity = 0.12 + pl * 0.04;
+    h += '<div style="position:absolute;left:0;right:0;top:' + plY + 'px;height:1px;' +
+         'background:linear-gradient(to right,transparent,' + env.floorDark + ' 15%,' + env.floorDark + ' 85%,transparent);' +
+         'opacity:' + plOpacity + ';z-index:2;"></div>';
   }
 
-  // 5. STAND FLOOR SHADOW
-  h += '<div style="position:absolute;' +
-       'left:' + (baseL - 20) + 'px;top:' + (feetTop + feetH - 2) + 'px;' +
-       'width:' + (baseW + 40) + 'px;height:32px;' +
-       'background:radial-gradient(ellipse at 50% 20%,rgba(0,0,0,0.55) 0%,transparent 70%);' +
-       'z-index:4;filter:blur(5px);"></div>';
+  h += '<div style="position:absolute;left:0;right:0;top:' + floorY + 'px;height:' + Math.round(cH*0.12) + 'px;' +
+       'background:linear-gradient(to bottom,' + env.floorLight + ',transparent);' +
+       'pointer-events:none;z-index:2;"></div>';
 
-  // 6. AMBIENT GLOW behind banner
-  h += '<div style="position:absolute;' +
-       'left:' + (bannerL - 50) + 'px;top:' + (bannerTop - 30) + 'px;' +
-       'width:' + (bW + 100) + 'px;height:' + (bH + 60) + 'px;' +
-       'background:radial-gradient(ellipse at 50% 40%,' + env.accentGlow + ' 0%,transparent 68%);' +
-       'z-index:2;pointer-events:none;"></div>';
+  // LIFESTYLE PROPS
+  if (env.props === 'graduation') {
+    h += '<div style="position:absolute;left:0;top:' + Math.round(cH*0.22) + 'px;' +
+         'width:58px;height:' + Math.round(cH*0.54) + 'px;' +
+         'background:linear-gradient(to right,#d4a870,#c89a60);' +
+         'border-radius:0 3px 3px 0;' +
+         'box-shadow:inset -4px 0 12px rgba(0,0,0,0.15);z-index:2;opacity:0.85;"></div>';
+    for(var sh=0;sh<4;sh++){
+      h += '<div style="position:absolute;left:0;top:' + (Math.round(cH*0.22)+40+sh*44) + 'px;' +
+           'width:58px;height:2px;background:rgba(0,0,0,0.12);z-index:3;"></div>';
+    }
+    var bkC=['#c0392b','#2471a3','#1e8449','#d4ac0d','#7d3c98','#ca6f1e'];
+    for(var bk=0;bk<6;bk++){
+      h += '<div style="position:absolute;left:' + (4+bk*8) + 'px;' +
+           'top:' + (Math.round(cH*0.25)+bk*20) + 'px;' +
+           'width:7px;height:' + (20+bk%3*6) + 'px;' +
+           'background:' + bkC[bk] + ';border-radius:1px;z-index:4;opacity:0.9;"></div>';
+    }
+    h += '<div style="position:absolute;right:8px;top:' + Math.round(cH*0.20) + 'px;' +
+         'width:52px;height:40px;' +
+         'background:linear-gradient(135deg,#f8f4e8,#ede8d4);' +
+         'border:3px solid #b8960c;border-radius:3px;' +
+         'box-shadow:2px 3px 10px rgba(0,0,0,0.18);z-index:3;"></div>';
+    h += '<div style="position:absolute;right:12px;top:' + (Math.round(cH*0.20)+4) + 'px;' +
+         'width:44px;height:32px;border:1px solid rgba(184,150,12,0.4);' +
+         'border-radius:2px;z-index:4;display:flex;align-items:center;justify-content:center;">' +
+         '<span style="font-size:14px;">🎓</span></div>';
+    h += '<div style="position:absolute;left:0;right:0;top:20px;height:2px;' +
+         'background:linear-gradient(to right,rgba(255,200,50,0),rgba(255,200,50,0.4),rgba(255,200,50,0.7),rgba(255,200,50,0.4),rgba(255,200,50,0));' +
+         'z-index:2;"></div>';
+    for(var lg=0;lg<9;lg++){
+      h += '<div style="position:absolute;left:' + (30+lg*48) + 'px;top:18px;' +
+           'width:7px;height:7px;border-radius:50%;' +
+           'background:radial-gradient(circle,#fff5a0,#ffcc00);' +
+           'box-shadow:0 0 10px 4px rgba(255,200,0,0.50);' +
+           'z-index:3;opacity:0.85;"></div>';
+    }
+    h += '<div style="position:absolute;right:14px;top:' + (floorY-52) + 'px;' +
+         'font-size:36px;z-index:3;opacity:0.75;">🌿</div>';
+  }
+  else if (env.props === 'elegant') {
+    h += '<div style="position:absolute;left:22px;top:' + Math.round(cH*0.15) + 'px;' +
+         'width:4px;height:' + Math.round(cH*0.60) + 'px;' +
+         'background:linear-gradient(to bottom,#d4c8a8,#a89878);z-index:3;"></div>';
+    h += '<div style="position:absolute;left:8px;top:' + Math.round(cH*0.12) + 'px;' +
+         'width:32px;height:28px;' +
+         'background:linear-gradient(to bottom,rgba(255,240,200,0.6),rgba(255,240,200,0.1));' +
+         'border-radius:50% 50% 0 0;border:2px solid rgba(200,180,140,0.5);z-index:3;"></div>';
+    h += '<div style="position:absolute;left:-10px;top:' + Math.round(cH*0.08) + 'px;' +
+         'width:120px;height:160px;' +
+         'background:radial-gradient(ellipse at 30% 0%,rgba(255,220,140,0.30),transparent);' +
+         'z-index:1;pointer-events:none;"></div>';
+    h += '<div style="position:absolute;right:16px;top:' + (floorY-68) + 'px;' +
+         'font-size:44px;z-index:3;opacity:0.80;">💐</div>';
+    h += '<div style="position:absolute;right:8px;top:' + (floorY-20) + 'px;' +
+         'width:54px;height:20px;' +
+         'background:linear-gradient(to bottom,#c8b898,#b8a888);' +
+         'border-radius:2px;box-shadow:2px 4px 8px rgba(0,0,0,0.12);z-index:3;"></div>';
+  }
+  else if (env.props === 'sports') {
+    h += '<div style="position:absolute;left:-30px;top:-10px;width:220px;height:' + Math.round(cH*0.65) + 'px;' +
+         'background:linear-gradient(155deg,rgba(255,240,180,0.16) 0%,transparent 50%);' +
+         'pointer-events:none;z-index:1;"></div>';
+    h += '<div style="position:absolute;right:-30px;top:-10px;width:220px;height:' + Math.round(cH*0.65) + 'px;' +
+         'background:linear-gradient(205deg,rgba(255,240,180,0.16) 0%,transparent 50%);' +
+         'pointer-events:none;z-index:1;"></div>';
+    h += '<div style="position:absolute;left:12px;top:' + (floorY-70) + 'px;' +
+         'font-size:48px;z-index:3;opacity:0.75;">🏆</div>';
+    h += '<div style="position:absolute;right:14px;top:' + (floorY-58) + 'px;' +
+         'font-size:40px;z-index:3;opacity:0.70;">🥇</div>';
+  }
+  else if (env.props === 'cozy') {
+    h += '<div style="position:absolute;left:0;top:' + Math.round(cH*0.48) + 'px;' +
+         'width:52px;height:' + Math.round(cH*0.28) + 'px;' +
+         'background:linear-gradient(to right,#8faa80,#7a9470);' +
+         'border-radius:0 8px 0 0;' +
+         'box-shadow:3px 0 12px rgba(0,0,0,0.12);z-index:3;opacity:0.80;"></div>';
+    h += '<div style="position:absolute;left:4px;top:' + Math.round(cH*0.44) + 'px;' +
+         'width:44px;height:36px;' +
+         'background:linear-gradient(135deg,#d4b896,#c4a886);' +
+         'border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,0.10);z-index:4;opacity:0.85;"></div>';
+    h += '<div style="position:absolute;right:12px;top:' + (floorY-64) + 'px;' +
+         'font-size:44px;z-index:3;opacity:0.78;">🌿</div>';
+    h += '<div style="position:absolute;right:20px;top:' + (floorY-28) + 'px;' +
+         'font-size:22px;z-index:3;opacity:0.50;">🐾</div>';
+  }
+  else if (env.props === 'civic') {
+    h += '<div style="position:absolute;left:14px;top:' + Math.round(cH*0.10) + 'px;' +
+         'width:4px;height:' + Math.round(cH*0.60) + 'px;' +
+         'background:linear-gradient(to bottom,#c0c0b8,#909088);z-index:3;"></div>';
+    h += '<div style="position:absolute;left:18px;top:' + Math.round(cH*0.10) + 'px;' +
+         'font-size:34px;z-index:4;opacity:0.70;">\uD83C\uDDFA\uD83C\uDDF8</div>';
+    h += '<div style="position:absolute;right:14px;top:' + Math.round(cH*0.22) + 'px;' +
+         'font-size:36px;z-index:3;opacity:0.55;">\uD83E\uDD85</div>';
+  }
+  else {
+    h += '<div style="position:absolute;left:0;top:' + (floorY-40) + 'px;' +
+         'width:52px;height:40px;' +
+         'background:linear-gradient(to bottom,#d8d0c4,#c8c0b4);' +
+         'border-radius:0 4px 4px 0;' +
+         'box-shadow:2px 0 8px rgba(0,0,0,0.10);z-index:3;opacity:0.80;"></div>';
+    h += '<div style="position:absolute;left:8px;top:' + (floorY-76) + 'px;' +
+         'font-size:36px;z-index:4;opacity:0.72;">\uD83C\uDF3F</div>';
+    h += '<div style="position:absolute;right:14px;top:' + (floorY-58) + 'px;' +
+         'font-size:38px;z-index:3;opacity:0.65;">\uD83C\uDF3A</div>';
+  }
 
-  // 7. POLE
+  // STAND FLOOR SHADOW
+  h += '<div style="position:absolute;' +
+       'left:' + (baseL-18) + 'px;top:' + (feetTop+feetH-4) + 'px;' +
+       'width:' + (baseW+36) + 'px;height:28px;' +
+       'background:radial-gradient(ellipse at 50% 15%,' + env.shadowColor + ' 0%,transparent 70%);' +
+       'filter:blur(6px);z-index:4;"></div>';
+
+  // POLE
   h += '<div style="position:absolute;' +
        'left:' + poleX + 'px;top:' + poleCapY + 'px;' +
        'width:' + poleW + 'px;' +
        'height:' + (topBarTop - poleCapY + topBarH + bH) + 'px;' +
        'background:linear-gradient(to right,' +
-         '#3a3a3a 0%,#707070 18%,#c8c8c8 38%,#efefef 50%,#c0c0c0 64%,#888 80%,#383838 100%);' +
-       'box-shadow:2px 0 6px rgba(0,0,0,0.45);z-index:5;"></div>';
+         '#909090 0%,#c8c8c8 22%,#f0f0f0 42%,#ffffff 52%,#e0e0e0 64%,#b0b0b0 80%,#808080 100%);' +
+       'box-shadow:2px 0 6px rgba(0,0,0,0.20);z-index:6;"></div>';
 
+  // Pole cap
   h += '<div style="position:absolute;' +
-       'left:' + (poleX - 5) + 'px;top:' + (poleCapY - 8) + 'px;' +
-       'width:' + (poleW + 10) + 'px;height:' + (poleW + 10) + 'px;border-radius:50%;' +
-       'background:radial-gradient(circle at 33% 26%,#ffffff 0%,#d0d0d0 30%,#909090 60%,#404040 100%);' +
-       'box-shadow:0 3px 8px rgba(0,0,0,0.6),inset 0 1px 3px rgba(255,255,255,0.5);' +
-       'z-index:6;"></div>';
+       'left:' + (poleX-5) + 'px;top:' + (poleCapY-9) + 'px;' +
+       'width:' + (poleW+10) + 'px;height:' + (poleW+10) + 'px;border-radius:50%;' +
+       'background:radial-gradient(circle at 32% 24%,#ffffff 0%,#e0e0e0 28%,#b0b0b0 55%,#606060 100%);' +
+       'box-shadow:0 3px 8px rgba(0,0,0,0.28),inset 0 1px 3px rgba(255,255,255,0.7);' +
+       'z-index:7;"></div>';
 
-  // 8. BANNER DROP SHADOW
+  // BANNER SHADOW (cast on wall)
   h += '<div style="position:absolute;' +
-       'left:' + (bannerL + 10) + 'px;top:' + (bannerTop + 8) + 'px;' +
+       'left:' + (bannerL+12) + 'px;top:' + (bannerTop+10) + 'px;' +
        'width:' + bW + 'px;height:' + bH + 'px;' +
-       'background:rgba(0,0,0,0.35);filter:blur(12px);z-index:3;border-radius:2px;"></div>';
+       'background:' + env.shadowColor + ';' +
+       'filter:blur(14px);z-index:4;border-radius:3px;"></div>';
 
-  // 9. BANNER CANVAS
+  // BANNER CANVAS
   h += '<div id="rs-banner-wrap" style="position:absolute;' +
        'left:' + bannerL + 'px;top:' + bannerTop + 'px;' +
        'width:' + bW + 'px;height:' + bH + 'px;' +
-       'overflow:hidden;z-index:5;' +
-       'clip-path:polygon(0px 0%,100% 0%,calc(100% + 1px) 100%,-1px 100%);">' +
+       'overflow:hidden;z-index:6;border-radius:1px;' +
+       'box-shadow:0 4px 20px rgba(0,0,0,0.22);">' +
        '<canvas id="rs-banner-canvas" width="' + bW + '" height="' + bH + '" ' +
          'style="display:block;width:' + bW + 'px;height:' + bH + 'px;"></canvas>' +
-       '<div style="position:absolute;top:0;left:0;width:5px;height:100%;' +
-         'background:linear-gradient(to right,rgba(255,255,255,0.22),transparent);pointer-events:none;"></div>' +
-       '<div style="position:absolute;top:0;left:0;right:0;height:8px;' +
-         'background:linear-gradient(to bottom,rgba(255,255,255,0.14),transparent);pointer-events:none;"></div>' +
-       '<div style="position:absolute;bottom:0;left:0;right:0;height:20px;' +
-         'background:linear-gradient(to top,rgba(0,0,0,0.30),transparent);pointer-events:none;"></div>' +
-       '<div style="position:absolute;top:0;right:0;width:5px;height:100%;' +
-         'background:linear-gradient(to left,rgba(0,0,0,0.18),transparent);pointer-events:none;"></div>' +
+       '<div style="position:absolute;top:0;left:0;width:6px;height:100%;' +
+         'background:linear-gradient(to right,rgba(255,255,255,0.28),transparent);pointer-events:none;"></div>' +
+       '<div style="position:absolute;top:0;left:0;right:0;height:6px;' +
+         'background:linear-gradient(to bottom,rgba(255,255,255,0.20),transparent);pointer-events:none;"></div>' +
+       '<div style="position:absolute;bottom:0;left:0;right:0;height:18px;' +
+         'background:linear-gradient(to top,rgba(0,0,0,0.18),transparent);pointer-events:none;"></div>' +
        '</div>';
 
-  // 10. TOP BAR
+  // TOP BAR
   h += '<div style="position:absolute;' +
        'left:' + bannerL + 'px;top:' + topBarTop + 'px;' +
        'width:' + bW + 'px;height:' + topBarH + 'px;' +
        'background:linear-gradient(to bottom,' +
-         '#e0e0e0 0%,#f8f8f8 20%,#ffffff 38%,#e0e0e0 58%,#b8b8b8 80%,#808080 100%);' +
+         '#d8d8d8 0%,#f4f4f4 18%,#ffffff 36%,#e8e8e8 56%,#c0c0c0 78%,#909090 100%);' +
        'border-radius:' + Math.round(topBarH/2) + 'px;' +
-       'box-shadow:0 4px 10px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.7);' +
-       'z-index:6;"></div>';
+       'box-shadow:0 3px 10px rgba(0,0,0,0.25),inset 0 1px 0 rgba(255,255,255,0.8);' +
+       'z-index:7;"></div>';
 
-  [bannerL - 9, bannerL + bW - 7].forEach(function(lx, i) {
-    h += '<div style="position:absolute;left:' + lx + 'px;top:' + (topBarTop - 5) + 'px;' +
-         'width:18px;height:' + (topBarH + 10) + 'px;border-radius:50%;' +
-         'background:radial-gradient(ellipse at ' + (i===0?'36%':'64%') + ' 30%,#ebebeb,#646464);' +
-         'box-shadow:0 3px 7px rgba(0,0,0,0.50);z-index:7;"></div>';
+  [bannerL-9, bannerL+bW-7].forEach(function(lx, i){
+    h += '<div style="position:absolute;left:' + lx + 'px;top:' + (topBarTop-5) + 'px;' +
+         'width:18px;height:' + (topBarH+10) + 'px;border-radius:50%;' +
+         'background:radial-gradient(ellipse at ' + (i===0?'35%':'65%') + ' 28%,#ffffff,#909090);' +
+         'box-shadow:0 2px 8px rgba(0,0,0,0.22);z-index:8;"></div>';
   });
 
-  // 11. BASE
+  // BASE
   h += '<div style="position:absolute;' +
        'left:' + baseL + 'px;top:' + baseTop + 'px;' +
        'width:' + baseW + 'px;height:' + baseH + 'px;' +
-       'background:linear-gradient(160deg,#d8d8d8 0%,#f0f0f0 22%,#fafafa 35%,#d0d0d0 58%,#a8a8a8 78%,#707070 100%);' +
+       'background:linear-gradient(160deg,' +
+         '#d8d8d8 0%,#f0f0f0 20%,#f8f8f8 34%,#d4d4d4 55%,#b0b0b0 76%,#808080 100%);' +
        'clip-path:polygon(1.5% 0%,98.5% 0%,100% 100%,0% 100%);' +
-       'box-shadow:0 6px 18px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.65);' +
-       'z-index:6;"></div>';
+       'box-shadow:0 6px 20px rgba(0,0,0,0.22),inset 0 1px 0 rgba(255,255,255,0.7);' +
+       'z-index:7;"></div>';
 
   h += '<div style="position:absolute;' +
-       'left:' + (baseL + Math.round(baseW*0.04)) + 'px;top:' + (baseTop+3) + 'px;' +
+       'left:' + (baseL+Math.round(baseW*0.04)) + 'px;top:' + (baseTop+3) + 'px;' +
        'width:' + Math.round(baseW*0.92) + 'px;height:2px;' +
-       'background:rgba(255,255,255,0.65);border-radius:1px;z-index:7;"></div>';
+       'background:rgba(255,255,255,0.70);border-radius:1px;z-index:8;"></div>';
+
+  h += '<div style="position:absolute;left:' + (cx-24) + 'px;top:' + (baseTop+9) + 'px;' +
+       'width:48px;height:' + (baseH-16) + 'px;' +
+       'background:rgba(0,0,0,0.08);border-radius:3px;z-index:8;"></div>';
 
   h += '<div style="position:absolute;' +
-       'left:' + (cx-22) + 'px;top:' + (baseTop+9) + 'px;' +
-       'width:44px;height:' + (baseH-16) + 'px;' +
-       'background:rgba(0,0,0,0.12);border-radius:3px;z-index:7;"></div>';
-
-  h += '<div style="position:absolute;' +
-       'left:' + baseL + 'px;top:' + (baseTop+baseH-6) + 'px;' +
-       'width:' + baseW + 'px;height:7px;' +
-       'background:linear-gradient(to bottom,#787878,#484848);' +
-       'z-index:7;border-radius:0 0 3px 3px;"></div>';
+       'left:' + baseL + 'px;top:' + (baseTop+baseH-5) + 'px;' +
+       'width:' + baseW + 'px;height:6px;' +
+       'background:linear-gradient(to bottom,#909090,#606060);z-index:8;border-radius:0 0 3px 3px;"></div>';
 
   var fInset = Math.round(baseW*0.09);
   [[baseL+fInset-Math.round(feetW/2), feetTop],
@@ -2558,23 +2625,23 @@ function renderMockup() {
     h += '<div style="position:absolute;left:' + ft[0] + 'px;top:' + ft[1] + 'px;' +
          'width:' + feetW + 'px;height:' + feetH + 'px;' +
          'border-radius:' + Math.round(feetH/2) + 'px;' +
-         'background:radial-gradient(ellipse at 38% 25%,#606060,#202020);' +
-         'box-shadow:0 3px 6px rgba(0,0,0,0.55);z-index:6;"></div>';
+         'background:radial-gradient(ellipse at 38% 25%,#808080,#303030);' +
+         'box-shadow:0 2px 6px rgba(0,0,0,0.25);z-index:7;"></div>';
   });
 
-  // 12. SCENE VIGNETTE
+  // Scene vignette (bright center)
   h += '<div style="position:absolute;inset:0;' +
-       'background:radial-gradient(ellipse at 50% 45%,transparent 38%,rgba(0,0,0,0.38) 100%);' +
-       'pointer-events:none;z-index:8;"></div>';
+       'background:radial-gradient(ellipse at 50% 40%,transparent 30%,rgba(0,0,0,0.12) 100%);' +
+       'pointer-events:none;z-index:9;"></div>';
 
   // WRITE TO DOM
   stage.innerHTML = h;
   stage.style.cssText =
     'position:relative;' +
     'width:' + cW + 'px;height:' + cH + 'px;' +
-    'overflow:hidden;border-radius:18px;' +
-    'box-shadow:0 40px 100px rgba(0,0,0,0.65),0 12px 32px rgba(0,0,0,0.40);' +
-    'transform:perspective(1600px) rotateY(-1.8deg) rotateX(0.6deg);' +
+    'overflow:hidden;border-radius:20px;' +
+    'box-shadow:0 30px 80px rgba(0,0,0,0.30),0 8px 24px rgba(0,0,0,0.18);' +
+    'transform:perspective(1800px) rotateY(-2deg) rotateX(0.8deg);' +
     'transform-origin:center center;margin:0 auto;display:block;';
 
   // PAINT BANNER ART
@@ -2587,10 +2654,10 @@ function renderMockup() {
     } else {
       var themeColor  = S.theme ? S.theme.bg    : '#1a1a2e';
       var accentColor = S.theme ? S.theme.accent : '#C9A84C';
-      var grd = bCtx.createLinearGradient(0, 0, 0, bH);
+      var grd = bCtx.createLinearGradient(0,0,0,bH);
       grd.addColorStop(0, themeColor);
       grd.addColorStop(1, _blendAccent(themeColor, accentColor, 0.18));
-      bCtx.fillStyle = grd; bCtx.fillRect(0, 0, bW, bH);
+      bCtx.fillStyle = grd; bCtx.fillRect(0,0,bW,bH);
       bCtx.fillStyle = 'rgba(255,255,255,0.10)';
       bCtx.font = 'bold ' + Math.round(bW*0.065) + 'px Outfit,sans-serif';
       bCtx.textAlign = 'center'; bCtx.textBaseline = 'middle';
@@ -2604,65 +2671,7 @@ function renderMockup() {
   _updateMockupLabels();
 }
 
-function _updateMockupLabels() {
-  var strip = document.getElementById('mockup-labels');
-  if (!strip || !S.theme) return;
-  var sz = _RS_SIZES[S.size] || _RS_SIZES['24x36'];
-  var items = [
-    S.theme.emoji + ' ' + S.theme.name,
-    sz.label,
-    '300 DPI',
-    'CMYK',
-    S.photos.length + ' photo' + (S.photos.length !== 1 ? 's' : '')
-  ];
-  strip.innerHTML = items.map(function(item){
-    return '<span class="mockup-label">' + item + '</span>';
-  }).join('');
-}
-
-function syncDisplayCanvas() {
-  var src = document.getElementById('preview-canvas');
-  var dst = document.getElementById('display-canvas');
-  var label = document.getElementById('full-preview-size-label');
-  if (!src || !dst || src.width === 0) return;
-  dst.width  = src.width;
-  dst.height = src.height;
-  try { dst.getContext('2d').drawImage(src, 0, 0); } catch(e) {}
-  if (label && S.theme) {
-    label.textContent = S.size + '" · ' + S.theme.name;
-  }
-}
-
-function openBannerZoom() {
-  var src = document.getElementById('preview-canvas');
-  var dst = document.getElementById('zoom-canvas');
-  if (!src || src.width === 0) { showToast('⚠️ Generate a preview first'); return; }
-  dst.width  = src.width;
-  dst.height = src.height;
-  try { dst.getContext('2d').drawImage(src, 0, 0); } catch(e) {}
-  document.getElementById('banner-zoom-overlay').style.display = 'block';
-  document.body.style.overflow = 'hidden';
-}
-
-function closeBannerZoom() {
-  document.getElementById('banner-zoom-overlay').style.display = 'none';
-  document.body.style.overflow = '';
-}
-
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') closeBannerZoom();
-});
-
-var _previewWithMockup = buildPreview;
-buildPreview = function() {
-  _previewWithMockup();
-  setTimeout(function() {
-    try { renderMockup(); } catch(e) { console.warn('[Mockup]', e); }
-    syncDisplayCanvas();
-  }, 300);
-};
-
-console.log('\u2713 CelebrateBanner Room Scene Mockup v4 loaded');
+console.log('\u2713 CelebrateBanner Bright Room Scene Mockup v5 loaded');
 
 </script>
 
