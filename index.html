@@ -403,6 +403,49 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
     <div>
       <!-- Hidden canvas kept off-screen — used only for file downloads after payment -->
       <div id="banner-preview" style="position:fixed;left:-9999px;top:0;width:320px;pointer-events:none;overflow:hidden;"><canvas id="preview-canvas"></canvas></div>
+      <!-- Full-size banner preview -->
+      <div id="full-banner-preview-wrap" style="margin-bottom:28px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:2.5px;
+          text-transform:uppercase;color:var(--gold-dark);margin-bottom:10px;
+          display:flex;align-items:center;justify-content:space-between;">
+          <span>⭐ Your Final Banner — Exactly As Printed</span>
+          <span id="full-preview-size-label" style="color:var(--muted);font-size:10px;"></span>
+        </div>
+        <div id="full-banner-display" style="
+          width:100%;
+          border-radius:12px;
+          overflow:hidden;
+          box-shadow:0 8px 40px rgba(0,0,0,0.28);
+          border:2px solid rgba(201,168,76,0.30);
+          background:var(--obsidian);
+          cursor:zoom-in;
+          position:relative;"
+          onclick="openBannerZoom()"
+          title="Click to zoom in">
+          <canvas id="display-canvas" style="width:100%;height:auto;display:block;"></canvas>
+          <div style="position:absolute;bottom:10px;right:10px;
+            background:rgba(12,14,20,0.75);color:var(--gold2);
+            font-size:11px;font-weight:600;padding:5px 12px;
+            border-radius:20px;backdrop-filter:blur(4px);
+            border:1px solid rgba(201,168,76,0.25);pointer-events:none;">
+            🔍 Click to zoom
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+          <span style="background:rgba(90,143,106,0.12);color:var(--sage);
+            font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;
+            border:1px solid rgba(90,143,106,0.25);">✓ 300 DPI Print-Ready</span>
+          <span style="background:rgba(74,158,204,0.10);color:var(--sky);
+            font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;
+            border:1px solid rgba(74,158,204,0.22);">✓ CMYK Color Profile</span>
+          <span style="background:rgba(201,168,76,0.10);color:var(--gold-dark);
+            font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;
+            border:1px solid rgba(201,168,76,0.25);">✓ Bleed & Safe Margins</span>
+          <span style="background:rgba(201,168,76,0.10);color:var(--gold-dark);
+            font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;
+            border:1px solid rgba(201,168,76,0.25);">✓ PDF + JPG + PNG Included</span>
+        </div>
+      </div>
       <!-- 3D Mockup Display -->
       <div id="mockup-container" style="max-width:500px;margin:0 auto;">
         <div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
@@ -420,6 +463,13 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
         <div class="order-row"><span class="order-key">Size</span><span class="order-val" id="sum-size">—</span></div>
         <div class="order-row"><span class="order-key">Photos</span><span class="order-val" id="sum-photos">—</span></div>
         <div class="order-row"><span class="order-key">Name</span><span class="order-val" id="sum-name">—</span></div>
+        <div style="margin-top:14px;padding:12px;
+          background:linear-gradient(135deg,rgba(201,168,76,0.10),rgba(201,168,76,0.05));
+          border:1px solid rgba(201,168,76,0.25);border-radius:10px;
+          font-size:12px;color:var(--gold-dark);line-height:1.6;text-align:center;">
+          👆 <strong>Review your banner above</strong> before ordering.<br>
+          Zoom in to check every detail — name, photos, colors.
+        </div>
       </div>
       <div class="spec-badge">📋 300 DPI · CMYK · PDF + JPG · Bleed/safe margins included</div>
       <button class="btn btn-primary" style="width:100%;margin-bottom:10px;" onclick="gotoPage(4)">Choose Delivery →</button>
@@ -2570,12 +2620,46 @@ function _updateMockupLabels() {
   }).join('');
 }
 
+function syncDisplayCanvas() {
+  var src = document.getElementById('preview-canvas');
+  var dst = document.getElementById('display-canvas');
+  var label = document.getElementById('full-preview-size-label');
+  if (!src || !dst || src.width === 0) return;
+  dst.width  = src.width;
+  dst.height = src.height;
+  try { dst.getContext('2d').drawImage(src, 0, 0); } catch(e) {}
+  if (label && S.theme) {
+    label.textContent = S.size + '" · ' + S.theme.name;
+  }
+}
+
+function openBannerZoom() {
+  var src = document.getElementById('preview-canvas');
+  var dst = document.getElementById('zoom-canvas');
+  if (!src || src.width === 0) { showToast('⚠️ Generate a preview first'); return; }
+  dst.width  = src.width;
+  dst.height = src.height;
+  try { dst.getContext('2d').drawImage(src, 0, 0); } catch(e) {}
+  document.getElementById('banner-zoom-overlay').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeBannerZoom() {
+  document.getElementById('banner-zoom-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeBannerZoom();
+});
+
 var _previewWithMockup = buildPreview;
 buildPreview = function() {
   _previewWithMockup();
   setTimeout(function() {
     try { renderMockup(); } catch(e) { console.warn('[Mockup]', e); }
-  }, 280);
+    syncDisplayCanvas();
+  }, 300);
 };
 
 console.log('\u2713 CelebrateBanner Room Scene Mockup v4 loaded');
@@ -2585,5 +2669,25 @@ console.log('\u2713 CelebrateBanner Room Scene Mockup v4 loaded');
 <footer style="text-align:center;padding:20px 16px;font-size:12px;color:rgba(201,168,76,0.5);font-family:'Outfit',sans-serif;border-top:1px solid rgba(201,168,76,0.1);margin-top:2rem;">
   &copy; 2026 CelebrateBanner &mdash; West Palm Beach, FL &mdash; CDN4 LLC
 </footer>
+
+<div id="banner-zoom-overlay" onclick="closeBannerZoom()" style="
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,0.92);z-index:9000;
+  overflow:auto;cursor:zoom-out;
+  padding:20px;box-sizing:border-box;">
+  <div style="text-align:center;margin-bottom:12px;">
+    <span style="color:var(--gold2);font-size:12px;font-weight:600;
+      letter-spacing:2px;text-transform:uppercase;">
+      Full Resolution Preview — Click anywhere to close
+    </span>
+  </div>
+  <div style="display:flex;justify-content:center;">
+    <canvas id="zoom-canvas" style="
+      max-width:100%;height:auto;display:block;
+      border-radius:8px;
+      box-shadow:0 20px 80px rgba(0,0,0,0.8);
+      border:1px solid rgba(201,168,76,0.3);"></canvas>
+  </div>
+</div>
 </body>
 </html>
