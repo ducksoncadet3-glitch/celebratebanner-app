@@ -265,6 +265,7 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
   .tv-emoji { font-size: 30px; }
 }
 </style>
+<script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
 
@@ -1606,63 +1607,114 @@ function updateCheckoutSummary() {
   var dpp=document.getElementById('dp-print'); if(dpp) dpp.textContent='$'+printPrice.toFixed(2);
 }
 
-// CHANGE 5: Payment gate — processPayment sets _paymentCompleted = true
-function processPayment() {
-  var card=document.getElementById('card-number').value.replace(/\s/g,'');
-  if(!card||card.length<13){showToast('⚠️ Please enter your card number');return;}
-  var expiry=document.getElementById('card-expiry').value.trim();
-  var cvc=document.getElementById('card-cvc').value.trim();
-  if(!expiry||expiry.length<4){showToast('⚠️ Please enter card expiry date');return;}
-  if(!cvc||cvc.length<3){showToast('⚠️ Please enter your security code');return;}
+async function processPayment() {
+  var card = document.getElementById('card-number').value.replace(/\s/g,'');
+  var expiry = document.getElementById('card-expiry').value.trim();
+  var cvc = document.getElementById('card-cvc').value.trim();
+  if(!card || card.length < 13){ showToast('⚠️ Please enter your card number'); return; }
+  if(!expiry || expiry.length < 4){ showToast('⚠️ Please enter card expiry date'); return; }
+  if(!cvc || cvc.length < 3){ showToast('⚠️ Please enter your security code'); return; }
+
   gotoPage(5);
-  var tn=S.theme?S.theme.name:'Custom';
-  var steps=[
-    {title:'Payment confirmed ✓', sub:'Securing your order…', pct:10},
-    {title:'Initializing '+tn+' template…', sub:'Loading design assets', pct:25},
-    {title:'Compositing your photos…', sub:'Applying collage layout', pct:42},
-    {title:'Rendering at 300 DPI…', sub:'This takes a few seconds', pct:58},
-    {title:'Adding CMYK color profile…', sub:'Optimizing for print', pct:72},
-    {title:'Generating PDF + JPG + PNG…', sub:'Preparing download links', pct:88},
-    {title:'Files ready!', sub:'Almost there…', pct:97}
-  ];
-  var i=0;
-  var titleEl=document.getElementById('proc-title');
-  var subEl=document.getElementById('proc-sub');
-  var barEl=document.getElementById('proc-bar');
-  var stepEl=document.getElementById('proc-step');
-  function advance(){
-    if(i<steps.length){
-      var s=steps[i];
-      if(titleEl) titleEl.textContent=s.title;
-      if(subEl) subEl.textContent=s.sub;
-      if(barEl) barEl.style.width=s.pct+'%';
-      if(stepEl) stepEl.textContent='Step '+(i+1)+' of '+steps.length;
-      i++; setTimeout(advance, i===1?600:700);
+  var titleEl = document.getElementById('proc-title');
+  var subEl   = document.getElementById('proc-sub');
+  var barEl   = document.getElementById('proc-bar');
+  var stepEl  = document.getElementById('proc-step');
+  if(titleEl) titleEl.textContent = 'Contacting Stripe…';
+  if(subEl)   subEl.textContent   = 'Securing payment. Please wait.';
+  if(barEl)   barEl.style.width   = '15%';
+  if(stepEl)  stepEl.textContent  = 'Step 1 of 3';
+
+  try {
+    if(barEl) barEl.style.width = '30%';
+    if(titleEl) titleEl.textContent = 'Creating secure payment session…';
+
+    var amount = S.delivery === 'print'
+      ? (PRINT_PRICES[S.size] || 49) * 100
+      : DIGITAL_PRICE * 100;
+
+    var intentRes = await fetch('https://api.celebratebanner.com/create-payment-intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: Math.round(amount),
+        currency: 'usd',
+        metadata: {
+          theme: S.theme ? S.theme.id : 'unknown',
+          size: S.size,
+          delivery: S.delivery
+        }
+      })
+    });
+
+    if (!intentRes.ok) throw new Error('Could not create payment session');
+    var intentData = await intentRes.json();
+    var clientSecret = intentData.clientSecret;
+
+    if(barEl) barEl.style.width = '55%';
+    if(titleEl) titleEl.textContent = 'Confirming payment with Stripe…';
+    if(stepEl)  stepEl.textContent  = 'Step 2 of 3';
+
+    var stripe = Stripe('pk_live_51QfJX8GxLiW3eALy7WE0Kx4IFRvvD5w3RWMpnBlvaCHxWVlUNO8z4obbJjl5TLpPFJerX4Z6kF8qUvV0Lws5hm00L3jcf4oS');
+
+    var expiryParts = expiry.replace(/\s/g,'').split('/');
+    var expMonth = parseInt(expiryParts[0]);
+    var expYear  = parseInt('20' + (expiryParts[1]||'').trim());
+
+    var result = await stripe.confirmCardPayment(clientSecret, {
+      payment_method: {
+        card: {
+          number: card,
+          exp_month: expMonth,
+          exp_year:  expYear,
+          cvc: cvc
+        }
+      }
+    });
+
+    if (result.error) {
+      gotoPage(4);
+      showToast('❌ ' + result.error.message);
+      return;
     }
+
+    if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
+      if(barEl) barEl.style.width = '80%';
+      if(titleEl) titleEl.textContent = 'Payment confirmed ✓ Rendering your banner…';
+      if(stepEl)  stepEl.textContent  = 'Step 3 of 3';
+
+      setTimeout(function() {
+        if(barEl) barEl.style.width = '100%';
+        _paymentCompleted = true;
+
+        var n = (S.fields.name||S.fields.coupleNames||S.fields.names||S.fields.petName||S.fields.teamName||'Custom').replace(/\s/g,'_');
+        document.getElementById('dl-name1').textContent = n;
+        document.getElementById('dl-name2').textContent = n;
+        document.getElementById('dl-name3').textContent = n;
+
+        var dlRows   = document.getElementById('dl-rows');
+        var dlLocked = document.getElementById('dl-locked-msg');
+        var dlTitle  = document.getElementById('dl-card-title');
+        if(dlRows)   dlRows.style.display   = 'block';
+        if(dlLocked) dlLocked.style.display = 'none';
+        if(dlTitle)  dlTitle.textContent    = '✓ Your Files Are Ready';
+
+        var prevCanvas = document.getElementById('preview-canvas');
+        var prevImg    = document.getElementById('success-preview-img');
+        var prevWrap   = document.getElementById('success-preview-wrap');
+        if(prevCanvas && prevCanvas.width > 0 && prevImg && prevWrap){
+          try{ prevImg.src = prevCanvas.toDataURL('image/jpeg', 0.80); prevWrap.style.display = 'block'; } catch(e){}
+        }
+
+        gotoPage(6);
+      }, 1200);
+    }
+
+  } catch(err) {
+    console.error('Payment error:', err);
+    gotoPage(4);
+    showToast('❌ Payment failed: ' + (err.message || 'Please try again'));
   }
-  advance();
-  setTimeout(function(){
-    if(barEl) barEl.style.width='100%';
-    _paymentCompleted = true; // CHANGE 5: unlock downloads
-    var n=(S.fields.name||S.fields.coupleNames||S.fields.names||S.fields.petName||S.fields.teamName||'Custom').replace(/\s/g,'_');
-    document.getElementById('dl-name1').textContent=n;
-    document.getElementById('dl-name2').textContent=n;
-    document.getElementById('dl-name3').textContent=n;
-    var prevCanvas=document.getElementById('preview-canvas');
-    var prevImg=document.getElementById('success-preview-img');
-    var prevWrap=document.getElementById('success-preview-wrap');
-    if(prevCanvas&&prevCanvas.width>0&&prevImg&&prevWrap){
-      try{prevImg.src=prevCanvas.toDataURL('image/jpeg',0.80);prevWrap.style.display='block';}catch(e){}
-    }
-    _paymentCompleted=true;
-    var dlRows=document.getElementById('dl-rows');
-    var dlLockedMsg=document.getElementById('dl-locked-msg');
-    var dlTitle=document.getElementById('dl-card-title');
-    if(dlRows) dlRows.style.display='block';
-    if(dlLockedMsg) dlLockedMsg.style.display='none';
-    if(dlTitle) dlTitle.textContent='✓ Your Files Are Ready';
-    gotoPage(6);
-  },5200);
 }
 
 // CHANGE 5: fakeDl — requires payment to have been completed
