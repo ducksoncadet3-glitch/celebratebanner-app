@@ -422,7 +422,7 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
           position:relative;"
           onclick="openBannerZoom()"
           title="Click to zoom in">
-          <canvas id="display-canvas" style="width:100%;height:auto;display:block;"></canvas>
+          <canvas id="display-canvas" style="width:100%;height:auto;display:block;min-height:200px;background:var(--obsidian2);"></canvas>
           <div style="position:absolute;bottom:10px;right:10px;
             background:rgba(12,14,20,0.75);color:var(--gold2);
             font-size:11px;font-weight:600;padding:5px 12px;
@@ -430,6 +430,9 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
             border:1px solid rgba(201,168,76,0.25);pointer-events:none;">
             🔍 Click to zoom
           </div>
+        </div>
+        <div id="sync-retry-wrap" style="text-align:center;margin-top:8px;display:none;">
+          <button onclick="syncDisplayCanvas()" style="background:var(--obsidian);color:var(--gold2);border:1px solid var(--border);padding:8px 20px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;">↻ Refresh Preview</button>
         </div>
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
           <span style="background:rgba(90,143,106,0.12);color:var(--sage);
@@ -846,6 +849,7 @@ function gotoPage(n) {
     else if(i<n) el.classList.add('done');
   });
   window.scrollTo({top:0,behavior:'smooth'});
+  if (n === 3) { setTimeout(syncDisplayCanvas, 600); }
 }
 
 function getExifRotation(file, cb) {
@@ -1065,6 +1069,8 @@ function buildPreview() {
   drawBannerBranding(ctx,W,H,S.accent);
   updateCheckoutSummary();
   gotoPage(3);
+  // Sync the visible display-canvas after a short tick to let gotoPage settle
+  setTimeout(syncDisplayCanvas, 150);
 }
 
 function drawImg(ctx, photo, x, y, w, h) {
@@ -2746,6 +2752,62 @@ function renderMockup() {
 }
 
 console.log('\u2713 CelebrateBanner Bright Room Scene Mockup v5 loaded');
+
+// ── DISPLAY CANVAS SYNC ───────────────────────────────────────────────────
+function syncDisplayCanvas() {
+  var src   = document.getElementById('preview-canvas');
+  var dst   = document.getElementById('display-canvas');
+  var label = document.getElementById('full-preview-size-label');
+
+  if (!src || src.width === 0 || src.height === 0) {
+    var attempts = (syncDisplayCanvas._attempts || 0) + 1;
+    syncDisplayCanvas._attempts = attempts;
+    if (attempts < 10) { setTimeout(syncDisplayCanvas, 300); }
+    return;
+  }
+  syncDisplayCanvas._attempts = 0;
+  if (!dst) return;
+
+  dst.width  = src.width;
+  dst.height = src.height;
+  var ctx = dst.getContext('2d');
+  ctx.clearRect(0, 0, dst.width, dst.height);
+  try {
+    ctx.drawImage(src, 0, 0, src.width, src.height, 0, 0, dst.width, dst.height);
+  } catch(e) {
+    console.warn('syncDisplayCanvas error:', e);
+  }
+
+  if (label && S.theme) {
+    label.textContent = S.size + '" · ' + S.theme.name + ' · ' + src.width + '×' + src.height + 'px';
+  }
+
+  var wrap = document.getElementById('full-banner-preview-wrap');
+  if (wrap) wrap.style.display = 'block';
+
+  var retryWrap = document.getElementById('sync-retry-wrap');
+  if (retryWrap) retryWrap.style.display = 'none';
+
+  console.log('[sync] Copied canvas', src.width, 'x', src.height, '→ display-canvas');
+
+  // Show refresh button as fallback if canvas width is still 0 after 3s
+  setTimeout(function() {
+    var d = document.getElementById('display-canvas');
+    var r = document.getElementById('sync-retry-wrap');
+    if (d && d.width === 0 && r) r.style.display = 'block';
+  }, 3000);
+}
+
+// Also hook renderMockup so room-composite gets updated after sync
+var _origRenderMockup = (typeof renderMockup === 'function') ? renderMockup : null;
+var _previewWithMockup = buildPreview;
+buildPreview = function() {
+  _previewWithMockup();
+  setTimeout(function() {
+    try { if (typeof renderMockup === 'function') renderMockup(); } catch(e) { console.warn('[Mockup]', e); }
+    setTimeout(syncDisplayCanvas, 500);
+  }, 300);
+};
 
 // ── ROOM MOCKUP GENERATOR ─────────────────────────────────────────────────
 var _roomPhoto = null;
