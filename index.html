@@ -446,14 +446,88 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
             border:1px solid rgba(201,168,76,0.25);">✓ PDF + JPG + PNG Included</span>
         </div>
       </div>
-      <!-- 3D Mockup Display -->
+      <!-- Mockup Tab Switcher + Views -->
       <div id="mockup-container" style="max-width:500px;margin:0 auto;">
-        <div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
-          <span>Banner Stand Preview</span>
-          <span id="preview-spec" style="color:var(--light);">24×36" · 300 DPI · CMYK</span>
+
+        <!-- Tab switcher -->
+        <div style="display:flex;gap:0;margin-bottom:20px;border-radius:12px;overflow:hidden;border:1px solid var(--border2);background:var(--ivory2);">
+          <button id="tab-stand" onclick="switchMockupTab('stand')" style="flex:1;padding:11px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all 0.2s;background:var(--obsidian);color:var(--gold2);">🖼️ Banner Stand</button>
+          <button id="tab-room" onclick="switchMockupTab('room')" style="flex:1;padding:11px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all 0.2s;background:transparent;color:var(--muted);">📸 Your Room</button>
         </div>
-        <div id="rs-stage"></div>
-        <div id="mockup-labels" style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap;"></div>
+
+        <!-- STAND VIEW (existing) -->
+        <div id="mockup-stand-view">
+          <div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
+            <span>Banner Stand Preview</span>
+            <span id="preview-spec" style="color:var(--light);">24×36" · 300 DPI · CMYK</span>
+          </div>
+          <div id="rs-stage"></div>
+          <div id="mockup-labels" style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap;"></div>
+        </div>
+
+        <!-- ROOM PHOTO MOCKUP VIEW -->
+        <div id="mockup-room-view" style="display:none;">
+
+          <!-- Step 1: Upload room photo -->
+          <div id="room-upload-step" style="border:2px dashed rgba(201,168,76,0.35);border-radius:16px;background:var(--white);padding:2.5rem 1.5rem;text-align:center;cursor:pointer;position:relative;transition:all 0.25s;"
+            onclick="document.getElementById('room-photo-input').click()"
+            ondragover="event.preventDefault();this.style.borderColor='var(--gold)'"
+            ondragleave="this.style.borderColor='rgba(201,168,76,0.35)'"
+            ondrop="event.preventDefault();handleRoomPhoto(event.dataTransfer.files[0])">
+            <input type="file" id="room-photo-input" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleRoomPhoto(this.files[0])">
+            <div style="font-size:42px;margin-bottom:12px;">📸</div>
+            <div style="font-size:16px;font-weight:600;margin-bottom:6px;">Upload a photo of your room or wall</div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">We'll place your banner realistically in your actual space</div>
+            <div style="display:inline-flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+              <span style="font-size:11px;background:rgba(201,168,76,0.10);color:var(--gold-dark);padding:4px 12px;border-radius:20px;border:1px solid rgba(201,168,76,0.25);">Living Room</span>
+              <span style="font-size:11px;background:rgba(201,168,76,0.10);color:var(--gold-dark);padding:4px 12px;border-radius:20px;border:1px solid rgba(201,168,76,0.25);">Bedroom</span>
+              <span style="font-size:11px;background:rgba(201,168,76,0.10);color:var(--gold-dark);padding:4px 12px;border-radius:20px;border:1px solid rgba(201,168,76,0.25);">Backyard</span>
+              <span style="font-size:11px;background:rgba(201,168,76,0.10);color:var(--gold-dark);padding:4px 12px;border-radius:20px;border:1px solid rgba(201,168,76,0.25);">Event Venue</span>
+              <span style="font-size:11px;background:rgba(201,168,76,0.10);color:var(--gold-dark);padding:4px 12px;border-radius:20px;border:1px solid rgba(201,168,76,0.25);">Office</span>
+            </div>
+          </div>
+
+          <!-- Step 2: Composite editor (shown after room photo uploaded) -->
+          <div id="room-editor" style="display:none;">
+
+            <div style="font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+              <span>Position your banner</span>
+              <button onclick="resetRoomMockup()" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;">Change photo</button>
+            </div>
+
+            <!-- Composite canvas -->
+            <div style="position:relative;border-radius:14px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.20);margin-bottom:14px;">
+              <canvas id="room-composite-canvas" style="width:100%;height:auto;display:block;border-radius:14px;cursor:move;touch-action:none;"></canvas>
+              <div id="drag-hint" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(12,14,20,0.75);color:var(--gold2);font-size:11px;font-weight:600;padding:5px 14px;border-radius:20px;backdrop-filter:blur(4px);border:1px solid rgba(201,168,76,0.25);pointer-events:none;white-space:nowrap;">↕↔ Drag banner to position · Pinch or scroll to resize</div>
+            </div>
+
+            <!-- Controls -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+              <div>
+                <label style="font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px;">Banner Size</label>
+                <input type="range" id="room-banner-scale" min="10" max="80" value="35" oninput="updateRoomComposite()" style="width:100%;">
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--light);"><span>Small</span><span>Large</span></div>
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px;">Shadow Intensity</label>
+                <input type="range" id="room-shadow-strength" min="0" max="60" value="25" oninput="updateRoomComposite()" style="width:100%;">
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--light);"><span>None</span><span>Strong</span></div>
+              </div>
+            </div>
+
+            <!-- Perspective toggle -->
+            <div style="display:flex;gap:8px;margin-bottom:14px;">
+              <button onclick="setRoomPerspective('flat')" id="persp-flat" style="flex:1;padding:8px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;border:1.5px solid var(--gold);border-radius:8px;background:rgba(201,168,76,0.10);color:var(--gold-dark);cursor:pointer;">Flat Wall</button>
+              <button onclick="setRoomPerspective('slight')" id="persp-slight" style="flex:1;padding:8px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;border:1.5px solid var(--border2);border-radius:8px;background:transparent;color:var(--muted);cursor:pointer;">Slight Angle</button>
+              <button onclick="setRoomPerspective('stand')" id="persp-stand" style="flex:1;padding:8px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;border:1.5px solid var(--border2);border-radius:8px;background:transparent;color:var(--muted);cursor:pointer;">On Stand</button>
+            </div>
+
+            <!-- Save mockup -->
+            <button onclick="downloadRoomMockup()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--obsidian),var(--obsidian3));color:var(--gold2);border:1px solid var(--border);border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">↓ Save Mockup Photo</button>
+
+          </div>
+        </div>
+
       </div>
     </div>
     <div class="sidebar-panel">
@@ -2672,6 +2746,203 @@ function renderMockup() {
 }
 
 console.log('\u2713 CelebrateBanner Bright Room Scene Mockup v5 loaded');
+
+// ── ROOM MOCKUP GENERATOR ─────────────────────────────────────────────────
+var _roomPhoto = null;
+var _roomBannerX = 0.35;
+var _roomBannerY = 0.15;
+var _roomPerspective = 'flat';
+var _roomDragging = false;
+var _roomDragStartX = 0;
+var _roomDragStartY = 0;
+
+function switchMockupTab(tab) {
+  var standView = document.getElementById('mockup-stand-view');
+  var roomView  = document.getElementById('mockup-room-view');
+  var tabStand  = document.getElementById('tab-stand');
+  var tabRoom   = document.getElementById('tab-room');
+  if (tab === 'stand') {
+    standView.style.display = 'block';
+    roomView.style.display  = 'none';
+    tabStand.style.background = 'var(--obsidian)';
+    tabStand.style.color      = 'var(--gold2)';
+    tabRoom.style.background  = 'transparent';
+    tabRoom.style.color       = 'var(--muted)';
+  } else {
+    standView.style.display = 'none';
+    roomView.style.display  = 'block';
+    tabStand.style.background = 'transparent';
+    tabStand.style.color      = 'var(--muted)';
+    tabRoom.style.background  = 'var(--obsidian)';
+    tabRoom.style.color       = 'var(--gold2)';
+  }
+}
+
+function handleRoomPhoto(file) {
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      _roomPhoto = img;
+      _roomBannerX = 0.35;
+      _roomBannerY = 0.15;
+      document.getElementById('room-upload-step').style.display = 'none';
+      document.getElementById('room-editor').style.display = 'block';
+      setTimeout(function() { updateRoomComposite(); setupRoomDrag(); }, 100);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateRoomComposite() {
+  var canvas = document.getElementById('room-composite-canvas');
+  if (!canvas || !_roomPhoto) return;
+  var ctx = canvas.getContext('2d');
+  var maxW = 520;
+  var scale = Math.min(maxW / _roomPhoto.width, 1);
+  var cW = Math.round(_roomPhoto.width  * scale);
+  var cH = Math.round(_roomPhoto.height * scale);
+  canvas.width  = cW;
+  canvas.height = cH;
+  ctx.drawImage(_roomPhoto, 0, 0, cW, cH);
+  var pct = parseInt(document.getElementById('room-banner-scale').value) / 100;
+  var bannerSz = _RS_SIZES[S.size] || _RS_SIZES['24x36'];
+  var bDispW = Math.round(cW * pct);
+  var bAspect = bannerSz.bH / bannerSz.bW;
+  var bDispH = Math.round(bDispW * bAspect);
+  var bX = Math.round(_roomBannerX * cW - bDispW / 2);
+  var bY = Math.round(_roomBannerY * cH);
+  bX = Math.max(0, Math.min(bX, cW - bDispW));
+  bY = Math.max(0, Math.min(bY, cH - bDispH));
+  var shadowStr = parseInt(document.getElementById('room-shadow-strength').value);
+  if (shadowStr > 0) {
+    ctx.save();
+    ctx.shadowColor   = 'rgba(0,0,0,' + (shadowStr / 100) + ')';
+    ctx.shadowBlur    = Math.round(bDispW * 0.06);
+    ctx.shadowOffsetX = Math.round(bDispW * 0.02);
+    ctx.shadowOffsetY = Math.round(bDispH * 0.03);
+    ctx.fillStyle = 'rgba(0,0,0,0.01)';
+    ctx.fillRect(bX, bY, bDispW, bDispH);
+    ctx.restore();
+  }
+  var src = document.getElementById('preview-canvas');
+  if (!src || src.width === 0) {
+    ctx.fillStyle = 'rgba(201,168,76,0.3)';
+    ctx.fillRect(bX, bY, bDispW, bDispH);
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.font = 'bold ' + Math.round(bDispW * 0.08) + 'px Outfit,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('Generate preview first', bX + bDispW / 2, bY + bDispH / 2);
+    return;
+  }
+  ctx.save();
+  if (_roomPerspective === 'slight') {
+    ctx.transform(1, 0, -0.03, 0.97, bX + bDispW * 0.03, bY + bDispH * 0.015);
+    ctx.drawImage(src, 0, 0, bDispW, bDispH);
+  } else if (_roomPerspective === 'stand') {
+    ctx.transform(0.96, 0.02, -0.02, 0.98, bX + bDispW * 0.02, bY);
+    ctx.drawImage(src, 0, 0, bDispW, bDispH);
+  } else {
+    ctx.drawImage(src, bX, bY, bDispW, bDispH);
+  }
+  ctx.restore();
+  ctx.save();
+  var shineGrd = ctx.createLinearGradient(bX, bY, bX + bDispW * 0.25, bY);
+  shineGrd.addColorStop(0, 'rgba(255,255,255,0.14)');
+  shineGrd.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = shineGrd;
+  ctx.fillRect(bX, bY, bDispW, bDispH);
+  ctx.restore();
+  var hint = document.getElementById('drag-hint');
+  if (hint) setTimeout(function() { hint.style.opacity = '0.5'; }, 2000);
+}
+
+function setupRoomDrag() {
+  var canvas = document.getElementById('room-composite-canvas');
+  if (!canvas) return;
+  canvas.addEventListener('mousedown', function(e) {
+    _roomDragging = true;
+    _roomDragStartX = e.offsetX;
+    _roomDragStartY = e.offsetY;
+  });
+  canvas.addEventListener('mousemove', function(e) {
+    if (!_roomDragging) return;
+    var dx = (e.offsetX - _roomDragStartX) / canvas.width;
+    var dy = (e.offsetY - _roomDragStartY) / canvas.height;
+    _roomBannerX = Math.max(0.05, Math.min(0.95, _roomBannerX + dx));
+    _roomBannerY = Math.max(0.02, Math.min(0.85, _roomBannerY + dy));
+    _roomDragStartX = e.offsetX;
+    _roomDragStartY = e.offsetY;
+    updateRoomComposite();
+  });
+  canvas.addEventListener('mouseup',    function() { _roomDragging = false; });
+  canvas.addEventListener('mouseleave', function() { _roomDragging = false; });
+  canvas.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    var t = e.touches[0];
+    var r = canvas.getBoundingClientRect();
+    _roomDragging = true;
+    _roomDragStartX = t.clientX - r.left;
+    _roomDragStartY = t.clientY - r.top;
+  }, {passive: false});
+  canvas.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+    if (!_roomDragging) return;
+    var t = e.touches[0];
+    var r = canvas.getBoundingClientRect();
+    var cx = t.clientX - r.left;
+    var cy = t.clientY - r.top;
+    var dx = (cx - _roomDragStartX) / canvas.width;
+    var dy = (cy - _roomDragStartY) / canvas.height;
+    _roomBannerX = Math.max(0.05, Math.min(0.95, _roomBannerX + dx));
+    _roomBannerY = Math.max(0.02, Math.min(0.85, _roomBannerY + dy));
+    _roomDragStartX = cx;
+    _roomDragStartY = cy;
+    updateRoomComposite();
+  }, {passive: false});
+  canvas.addEventListener('touchend', function() { _roomDragging = false; });
+  canvas.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    var slider = document.getElementById('room-banner-scale');
+    var val = parseInt(slider.value) - Math.sign(e.deltaY) * 2;
+    slider.value = Math.max(10, Math.min(80, val));
+    updateRoomComposite();
+  }, {passive: false});
+}
+
+function setRoomPerspective(mode) {
+  _roomPerspective = mode;
+  ['flat', 'slight', 'stand'].forEach(function(m) {
+    var btn = document.getElementById('persp-' + m);
+    if (btn) {
+      btn.style.borderColor = m === mode ? 'var(--gold)'            : 'var(--border2)';
+      btn.style.background  = m === mode ? 'rgba(201,168,76,0.10)'  : 'transparent';
+      btn.style.color       = m === mode ? 'var(--gold-dark)'       : 'var(--muted)';
+    }
+  });
+  updateRoomComposite();
+}
+
+function resetRoomMockup() {
+  _roomPhoto = null;
+  document.getElementById('room-editor').style.display      = 'none';
+  document.getElementById('room-upload-step').style.display = 'block';
+  document.getElementById('room-photo-input').value         = '';
+}
+
+function downloadRoomMockup() {
+  var canvas = document.getElementById('room-composite-canvas');
+  if (!canvas || !_roomPhoto) { showToast('⚠️ Create a room mockup first'); return; }
+  var name = (S.fields.name || S.fields.coupleNames || S.fields.names ||
+              S.fields.petName || S.fields.teamName || 'Banner').replace(/\s/g, '_');
+  var a = document.createElement('a');
+  a.href     = canvas.toDataURL('image/jpeg', 0.94);
+  a.download = 'CelebrateBanner_RoomMockup_' + name + '.jpg';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  showToast('✓ Room mockup saved!');
+}
 
 </script>
 
