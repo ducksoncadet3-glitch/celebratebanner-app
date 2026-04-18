@@ -2437,7 +2437,7 @@ function renderMockup() {
   var bW  = sz.bW, bH = sz.bH;
   var env = _rsEnvColors(S.theme.id);
 
-  var cW = 480, cH = 620;
+  var cW = 500, cH = 660;
 
   var poleW        = 7;
   var topBarH      = 16;
@@ -2447,7 +2447,7 @@ function renderMockup() {
   var feetH        = 11;
   var feetW        = 26;
 
-  var floorY    = Math.round(cH * 0.76);
+  var floorY    = Math.round(cH * 0.82);
   var poleCapY  = Math.round(cH * 0.04);
   var topBarTop = poleCapY + poleOverhang;
   var bannerTop = topBarTop + topBarH;
@@ -2515,148 +2515,6 @@ function renderMockup() {
   h += '<div style="position:absolute;left:0;right:0;top:' + floorY + 'px;height:' + Math.round(cH*0.12) + 'px;' +
        'background:linear-gradient(to bottom,' + env.floorLight + ',transparent);' +
        'pointer-events:none;z-index:2;"></div>';
-
-  // LIFESTYLE PROPS
-  if (env.props === 'graduation') {
-    h += '<div style="position:absolute;left:0;top:' + Math.round(cH*0.22) + 'px;' +
-         'width:58px;height:' + Math.round(cH*0.54) + 'px;' +
-         'background:linear-gradient(to right,#d4a870,#c89a60);' +
-         'border-radius:0 3px 3px 0;' +
-         'box-shadow:inset -4px 0 12px rgba(0,0,0,0.15);z-index:2;opacity:0.85;"></div>';
-    for(var sh=0;sh<4;sh++){
-      h += '<div style="position:absolute;left:0;top:' + (Math.round(cH*0.22)+40+sh*44) + 'px;' +
-           'width:58px;height:2px;background:rgba(0,0,0,0.12);z-index:3;"></div>';
-    }
-    var bkC=['#c0392b','#2471a3','#1e8449','#d4ac0d','#7d3c98','#ca6f1e'];
-    for(var bk=0;bk<6;bk++){
-      h += '<div style="position:absolute;left:' + (4+bk*8) + 'px;' +
-           'top:' + (Math.round(cH*0.25)+bk*20) + 'px;' +
-           'width:7px;height:' + (20+bk%3*6) + 'px;' +
-           'background:' + bkC[bk] + ';border-radius:1px;z-index:4;opacity:0.9;"></div>';
-    }
-    h += '<div style="position:absolute;right:8px;top:' + Math.round(cH*0.20) + 'px;' +
-         'width:52px;height:40px;' +
-         'background:linear-gradient(135deg,#f8f4e8,#ede8d4);' +
-         'border:3px solid #b8960c;border-radius:3px;' +
-         'box-shadow:2px 3px 10px rgba(0,0,0,0.18);z-index:3;"></div>';
-    h += '<div style="position:absolute;right:12px;top:' + (Math.round(cH*0.20)+4) + 'px;' +
-         'width:44px;height:32px;border:1px solid rgba(184,150,12,0.4);' +
-         'border-radius:2px;z-index:4;' +
-         'background:linear-gradient(135deg,rgba(201,168,76,0.25),rgba(201,168,76,0.08));"></div>';
-    h += '<div style="position:absolute;left:0;right:0;top:20px;height:2px;' +
-         'background:linear-gradient(to right,rgba(255,200,50,0),rgba(255,200,50,0.4),rgba(255,200,50,0.7),rgba(255,200,50,0.4),rgba(255,200,50,0));' +
-         'z-index:2;"></div>';
-    h += '<div style="position:absolute;right:16px;top:' + (floorY-64) + 'px;' +
-         'width:28px;height:44px;' +
-         'background:radial-gradient(ellipse,#6aaa60,#3d7a38);' +
-         'border-radius:50% 50% 40% 40%;opacity:0.72;z-index:3;"></div>';
-    h += '<div style="position:absolute;right:22px;top:' + (floorY-44) + 'px;' +
-         'width:18px;height:32px;' +
-         'background:radial-gradient(ellipse,#78bb6e,#4a8844);' +
-         'border-radius:50%;opacity:0.65;z-index:3;"></div>';
-  }
-  else if (env.props === 'elegant') {
-    h += '<div style="position:absolute;left:22px;top:' + Math.round(cH*0.15) + 'px;' +
-         'width:4px;height:' + Math.round(cH*0.60) + 'px;' +
-         'background:linear-gradient(to bottom,#d4c8a8,#a89878);z-index:3;"></div>';
-    h += '<div style="position:absolute;left:8px;top:' + Math.round(cH*0.12) + 'px;' +
-         'width:32px;height:28px;' +
-         'background:linear-gradient(to bottom,rgba(255,240,200,0.6),rgba(255,240,200,0.1));' +
-         'border-radius:50% 50% 0 0;border:2px solid rgba(200,180,140,0.5);z-index:3;"></div>';
-    h += '<div style="position:absolute;left:-10px;top:' + Math.round(cH*0.08) + 'px;' +
-         'width:120px;height:160px;' +
-         'background:radial-gradient(ellipse at 30% 0%,rgba(255,220,140,0.30),transparent);' +
-         'z-index:1;pointer-events:none;"></div>';
-    h += '<div style="position:absolute;right:16px;top:' + (floorY-72) + 'px;' +
-         'width:36px;height:56px;' +
-         'background:radial-gradient(ellipse,#e8a0b0,#c06080);' +
-         'border-radius:50% 50% 40% 40%;opacity:0.72;z-index:3;"></div>';
-    h += '<div style="position:absolute;right:24px;top:' + (floorY-60) + 'px;' +
-         'width:20px;height:38px;' +
-         'background:radial-gradient(ellipse,#f0b8c8,#d07090);' +
-         'border-radius:50%;opacity:0.60;z-index:3;"></div>';
-    h += '<div style="position:absolute;right:8px;top:' + (floorY-20) + 'px;' +
-         'width:54px;height:20px;' +
-         'background:linear-gradient(to bottom,#c8b898,#b8a888);' +
-         'border-radius:2px;box-shadow:2px 4px 8px rgba(0,0,0,0.12);z-index:3;"></div>';
-  }
-  else if (env.props === 'sports') {
-    h += '<div style="position:absolute;left:-30px;top:-10px;width:220px;height:' + Math.round(cH*0.65) + 'px;' +
-         'background:linear-gradient(155deg,rgba(255,240,180,0.16) 0%,transparent 50%);' +
-         'pointer-events:none;z-index:1;"></div>';
-    h += '<div style="position:absolute;right:-30px;top:-10px;width:220px;height:' + Math.round(cH*0.65) + 'px;' +
-         'background:linear-gradient(205deg,rgba(255,240,180,0.16) 0%,transparent 50%);' +
-         'pointer-events:none;z-index:1;"></div>';
-    h += '<div style="position:absolute;left:10px;top:' + (floorY-64) + 'px;' +
-         'width:42px;height:42px;border-radius:50%;' +
-         'background:radial-gradient(circle at 35% 30%,#ffe066,#c9a84c,#7a6020);' +
-         'box-shadow:0 4px 12px rgba(201,168,76,0.4);opacity:0.82;z-index:3;"></div>';
-    h += '<div style="position:absolute;left:16px;top:' + (floorY-22) + 'px;' +
-         'width:30px;height:4px;background:#c9a84c;border-radius:2px;opacity:0.70;z-index:3;"></div>';
-    h += '<div style="position:absolute;right:12px;top:' + (floorY-54) + 'px;' +
-         'width:34px;height:34px;border-radius:50%;' +
-         'background:radial-gradient(circle at 35% 30%,#e8e8e8,#c0c0c0,#808080);' +
-         'box-shadow:0 3px 8px rgba(0,0,0,0.25);opacity:0.75;z-index:3;"></div>';
-  }
-  else if (env.props === 'cozy') {
-    h += '<div style="position:absolute;left:0;top:' + Math.round(cH*0.48) + 'px;' +
-         'width:52px;height:' + Math.round(cH*0.28) + 'px;' +
-         'background:linear-gradient(to right,#8faa80,#7a9470);' +
-         'border-radius:0 8px 0 0;' +
-         'box-shadow:3px 0 12px rgba(0,0,0,0.12);z-index:3;opacity:0.80;"></div>';
-    h += '<div style="position:absolute;left:4px;top:' + Math.round(cH*0.44) + 'px;' +
-         'width:44px;height:36px;' +
-         'background:linear-gradient(135deg,#d4b896,#c4a886);' +
-         'border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,0.10);z-index:4;opacity:0.85;"></div>';
-    h += '<div style="position:absolute;right:14px;top:' + (floorY-68) + 'px;' +
-         'width:30px;height:48px;' +
-         'background:radial-gradient(ellipse,#6aaa60,#3d7a38);' +
-         'border-radius:50% 50% 40% 40%;opacity:0.75;z-index:3;"></div>';
-    h += '<div style="position:absolute;right:20px;top:' + (floorY-50) + 'px;' +
-         'width:20px;height:34px;' +
-         'background:radial-gradient(ellipse,#78bb6e,#4a8844);' +
-         'border-radius:50%;opacity:0.65;z-index:3;"></div>';
-    h += '<div style="position:absolute;right:26px;top:' + (floorY-36) + 'px;' +
-         'width:14px;height:24px;' +
-         'background:radial-gradient(ellipse,#8acc7a,#559950);' +
-         'border-radius:50%;opacity:0.60;z-index:3;"></div>';
-  }
-  else if (env.props === 'civic') {
-    h += '<div style="position:absolute;left:14px;top:' + Math.round(cH*0.10) + 'px;' +
-         'width:4px;height:' + Math.round(cH*0.60) + 'px;' +
-         'background:linear-gradient(to bottom,#c0c0b8,#909088);z-index:3;"></div>';
-    h += '<div style="position:absolute;left:18px;top:' + Math.round(cH*0.10) + 'px;' +
-         'width:44px;height:6px;background:#B22234;border-radius:1px;opacity:0.80;z-index:4;"></div>';
-    h += '<div style="position:absolute;left:18px;top:' + (Math.round(cH*0.10)+7) + 'px;' +
-         'width:44px;height:6px;background:#FFFFFF;border-radius:1px;opacity:0.80;z-index:4;"></div>';
-    h += '<div style="position:absolute;left:18px;top:' + (Math.round(cH*0.10)+14) + 'px;' +
-         'width:44px;height:6px;background:#B22234;border-radius:1px;opacity:0.80;z-index:4;"></div>';
-    h += '<div style="position:absolute;left:18px;top:' + (Math.round(cH*0.10)+21) + 'px;' +
-         'width:20px;height:18px;background:#3C3B6E;border-radius:1px;opacity:0.80;z-index:5;"></div>';
-  }
-  else {
-    h += '<div style="position:absolute;left:0;top:' + (floorY-40) + 'px;' +
-         'width:52px;height:40px;' +
-         'background:linear-gradient(to bottom,#d8d0c4,#c8c0b4);' +
-         'border-radius:0 4px 4px 0;' +
-         'box-shadow:2px 0 8px rgba(0,0,0,0.10);z-index:3;opacity:0.80;"></div>';
-    h += '<div style="position:absolute;left:10px;top:' + (floorY-72) + 'px;' +
-         'width:26px;height:44px;' +
-         'background:radial-gradient(ellipse,#6aaa60,#3d7a38);' +
-         'border-radius:50% 50% 40% 40%;opacity:0.72;z-index:4;"></div>';
-    h += '<div style="position:absolute;left:18px;top:' + (floorY-52) + 'px;' +
-         'width:16px;height:30px;' +
-         'background:radial-gradient(ellipse,#78bb6e,#4a8844);' +
-         'border-radius:50%;opacity:0.65;z-index:4;"></div>';
-    h += '<div style="position:absolute;right:14px;top:' + (floorY-54) + 'px;' +
-         'width:30px;height:30px;border-radius:50%;' +
-         'background:radial-gradient(circle at 35% 30%,#ff8fa0,#d04060);' +
-         'opacity:0.68;z-index:3;"></div>';
-    h += '<div style="position:absolute;right:20px;top:' + (floorY-36) + 'px;' +
-         'width:18px;height:18px;border-radius:50%;' +
-         'background:radial-gradient(circle at 35% 30%,#ffb0c0,#e06080);' +
-         'opacity:0.58;z-index:3;"></div>';
-  }
 
   // STAND FLOOR SHADOW
   h += '<div style="position:absolute;' +
