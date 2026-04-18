@@ -1715,7 +1715,7 @@ function drawCollageRow(ctx,photos,W,H,accent,startY,cols){
   for(var i=0;i<photos.length;i++){
     var col=i%n,row=Math.floor(i/n);
     var x=margin+col*(cw+pad),y=startY+row*(ch+pad);
-    roundClip(ctx,x,y,cw,ch,cornerR); drawImg(ctx,photos[i],x,y,cw,ch); ctx.restore();
+    _drawCollageCell(ctx,photos[i],x,y,cw,ch,cornerR,accent);
   }
 }
 
@@ -1980,6 +1980,21 @@ init();
 // ============================================================
 S.effects = { filter:'none', overlay:'none', frame:'none', textFx:'none' };
 
+var selectedPhotoFrame = 'none';
+
+var COLLAGE_FRAMES = [
+  { id:'none',          label:'None' },
+  { id:'classic-white', label:'Classic White' },
+  { id:'classic-black', label:'Classic Black' },
+  { id:'gold-foil',     label:'Gold Foil' },
+  { id:'rounded',       label:'Rounded' },
+  { id:'circle',        label:'Circle' },
+  { id:'polaroid',      label:'Polaroid' },
+  { id:'neon-glow',     label:'Neon Glow' },
+  { id:'film-strip',    label:'Film Strip' },
+  { id:'vintage',       label:'Vintage' },
+];
+
 var FILTERS = [
   { id:'none',     label:'Original',  icon:'🌅', css:'' },
   { id:'warm',     label:'Warm',      icon:'🔆', css:'sepia(0.25) saturate(1.4) brightness(1.05)' },
@@ -2055,6 +2070,10 @@ function buildEffectsPanel() {
       </div>
     </div>
     <div style="margin-bottom:1.25rem;">
+      <div class="field-label" style="margin-bottom:8px;">🖼️ Collage Photo Frame</div>
+      <div style="display:flex;gap:10px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;" id="collage-frame-swatches"></div>
+    </div>
+    <div style="margin-bottom:1.25rem;">
       <div class="field-label" style="margin-bottom:8px;">🖼️ Hero Photo Frame</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;" id="frame-swatches">
         ${FRAMES.map(f => `<div onclick="setEffect('frame','${f.id}',this)" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 10px;border-radius:10px;border:2px solid var(--border2);background:var(--ivory);transition:all 0.2s;min-width:56px;"><span style="font-size:18px;">${f.icon}</span><span style="font-size:10px;font-weight:500;color:var(--muted);">${f.label}</span></div>`).join('')}
@@ -2068,6 +2087,7 @@ function buildEffectsPanel() {
     </div>`;
   var grid = document.querySelector('.customize-grid');
   if (grid) { var wrapper = document.createElement('div'); wrapper.style.gridColumn = '1 / -1'; wrapper.appendChild(panel); grid.appendChild(wrapper); }
+  setTimeout(initCollageThumbnails, 0);
 }
 
 function _syncEffectsPanelUI() {
@@ -2092,6 +2112,178 @@ function setEffect(type, value, el) {
   document.querySelectorAll('#'+groupId+' > div').forEach(function(d) { d.style.borderColor = 'var(--border2)'; d.style.background = 'var(--ivory)'; });
   el.style.borderColor = 'var(--gold)'; el.style.background = 'rgba(201,168,76,0.08)';
   showToast('✓ ' + type.replace('textFx','Text style') + ' updated');
+}
+
+function setCollageFrame(id, el) {
+  selectedPhotoFrame = id;
+  document.querySelectorAll('#collage-frame-swatches > div canvas').forEach(function(cv) {
+    cv.style.borderColor = 'rgba(201,168,76,0.2)';
+  });
+  var cv = el.querySelector('canvas');
+  if (cv) cv.style.borderColor = '#C9A84C';
+  showToast('\u2713 Collage frame updated');
+  if (typeof buildPreview === 'function') { try { buildPreview(); } catch(e) {} }
+}
+
+function initCollageThumbnails() {
+  var container = document.getElementById('collage-frame-swatches');
+  if (!container || typeof COLLAGE_FRAMES === 'undefined') return;
+  container.innerHTML = '';
+  var accent = (S && S.accent) ? S.accent : '#C9A84C';
+  COLLAGE_FRAMES.forEach(function(f) {
+    var wrap = document.createElement('div');
+    wrap.id = 'cfs-' + f.id;
+    wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;flex-shrink:0;padding:4px;border-radius:8px;transition:background 0.2s;';
+    wrap.onmouseenter = function() { this.style.background = 'rgba(201,168,76,0.06)'; };
+    wrap.onmouseleave = function() { this.style.background = ''; };
+    wrap.onclick = function() { setCollageFrame(f.id, wrap); };
+    var cv = document.createElement('canvas');
+    cv.width = 60; cv.height = 60;
+    cv.style.cssText = 'display:block;border-radius:6px;border:2px solid ' + (f.id === selectedPhotoFrame ? '#C9A84C' : 'rgba(201,168,76,0.2)') + ';';
+    var lbl = document.createElement('span');
+    lbl.style.cssText = 'font-size:10px;font-weight:500;color:var(--muted);text-align:center;max-width:72px;line-height:1.2;';
+    lbl.textContent = f.label;
+    wrap.appendChild(cv); wrap.appendChild(lbl);
+    container.appendChild(wrap);
+    _drawCollageThumbnail(cv.getContext('2d'), accent, f.id);
+  });
+}
+
+function _drawCollageThumbnail(tc, accent, frameId) {
+  var W=60, H=60;
+  var ph = tc.createLinearGradient(0,0,W,H);
+  ph.addColorStop(0,'#667eea'); ph.addColorStop(1,'#764ba2');
+  if (frameId === 'polaroid') {
+    tc.fillStyle='#fff'; tc.fillRect(0,0,W,H);
+    tc.fillStyle=ph; tc.fillRect(4,4,W-8,H-18);
+    tc.save(); tc.shadowColor='rgba(0,0,0,0.2)'; tc.shadowOffsetY=1; tc.shadowBlur=3;
+    tc.strokeStyle='#ccc'; tc.lineWidth=1; tc.strokeRect(0.5,0.5,W-1,H-1); tc.restore();
+    return;
+  }
+  if (frameId === 'circle') {
+    tc.fillStyle='#1a1a2e'; tc.fillRect(0,0,W,H);
+    tc.save(); tc.beginPath(); tc.arc(W/2,H/2,W/2-4,0,Math.PI*2); tc.clip();
+    tc.fillStyle=ph; tc.fillRect(0,0,W,H); tc.restore();
+    tc.strokeStyle='#fff'; tc.lineWidth=2;
+    tc.beginPath(); tc.arc(W/2,H/2,W/2-4,0,Math.PI*2); tc.stroke();
+    return;
+  }
+  if (frameId === 'vintage') {
+    tc.fillStyle=ph; tc.fillRect(0,0,W,H);
+    var vg=tc.createRadialGradient(W/2,H/2,W*0.15,W/2,H/2,W*0.72);
+    vg.addColorStop(0,'rgba(101,67,33,0)'); vg.addColorStop(1,'rgba(101,67,33,0.5)');
+    tc.fillStyle=vg; tc.fillRect(0,0,W,H);
+    tc.strokeStyle='#8B6914'; tc.lineWidth=3; tc.strokeRect(1.5,1.5,W-3,H-3);
+    return;
+  }
+  if (frameId === 'rounded') {
+    tc.save(); roundPath(tc,3,3,W-6,H-6,8); tc.clip(); tc.fillStyle=ph; tc.fillRect(0,0,W,H); tc.restore();
+    tc.strokeStyle='#fff'; tc.lineWidth=3; roundPath(tc,1.5,1.5,W-3,H-3,8); tc.stroke();
+    return;
+  }
+  tc.fillStyle=ph; tc.fillRect(0,0,W,H);
+  if (frameId === 'none') return;
+  if (frameId === 'classic-white') {
+    tc.strokeStyle='#fff'; tc.lineWidth=4; tc.strokeRect(2,2,W-4,H-4);
+    var ig=tc.createLinearGradient(0,0,0,10); ig.addColorStop(0,'rgba(0,0,0,0.2)'); ig.addColorStop(1,'rgba(0,0,0,0)');
+    tc.fillStyle=ig; tc.fillRect(0,0,W,10);
+  } else if (frameId === 'classic-black') {
+    tc.strokeStyle='#111'; tc.lineWidth=4; tc.strokeRect(2,2,W-4,H-4);
+    var ig2=tc.createLinearGradient(0,0,0,10); ig2.addColorStop(0,'rgba(255,255,255,0.08)'); ig2.addColorStop(1,'rgba(0,0,0,0)');
+    tc.fillStyle=ig2; tc.fillRect(0,0,W,10);
+  } else if (frameId === 'gold-foil') {
+    var grd=tc.createLinearGradient(0,0,W,H);
+    grd.addColorStop(0,'#BF953F'); grd.addColorStop(0.25,'#FCF6BA'); grd.addColorStop(0.5,'#B38728'); grd.addColorStop(0.75,'#FBF5B7'); grd.addColorStop(1,'#AA771C');
+    tc.strokeStyle=grd; tc.lineWidth=3; tc.strokeRect(1.5,1.5,W-3,H-3);
+    tc.strokeStyle='rgba(255,215,0,0.3)'; tc.lineWidth=1; tc.strokeRect(5,5,W-10,H-10);
+  } else if (frameId === 'neon-glow') {
+    tc.shadowColor=accent; tc.shadowBlur=10; tc.strokeStyle=accent; tc.lineWidth=2;
+    tc.strokeRect(1,1,W-2,H-2); tc.shadowBlur=0;
+  } else if (frameId === 'film-strip') {
+    tc.fillStyle='#111'; tc.fillRect(0,0,10,H);
+    tc.fillStyle='#fff';
+    tc.beginPath(); tc.arc(5,Math.round(H*0.2),3,0,Math.PI*2); tc.fill();
+    tc.beginPath(); tc.arc(5,Math.round(H*0.7),3,0,Math.PI*2); tc.fill();
+  }
+}
+
+// Draws a decorative frame on a collage cell after the photo has been drawn
+function _drawCollageCellFrame(ctx, x, y, w, h, accent) {
+  var frame = selectedPhotoFrame || 'none';
+  if (!frame || frame === 'none' || frame === 'polaroid' || frame === 'circle' || frame === 'rounded' || frame === 'vintage') return;
+  ctx.save();
+  if (frame === 'classic-white') {
+    ctx.strokeStyle='#ffffff'; ctx.lineWidth=4; ctx.strokeRect(x+2,y+2,w-4,h-4);
+    var ig=ctx.createLinearGradient(x,y,x,y+Math.min(12,h*0.12));
+    ig.addColorStop(0,'rgba(0,0,0,0.2)'); ig.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=ig; ctx.fillRect(x,y,w,Math.min(12,h*0.12));
+  } else if (frame === 'classic-black') {
+    ctx.strokeStyle='#111111'; ctx.lineWidth=4; ctx.strokeRect(x+2,y+2,w-4,h-4);
+    var ig2=ctx.createLinearGradient(x,y,x,y+Math.min(12,h*0.12));
+    ig2.addColorStop(0,'rgba(255,255,255,0.08)'); ig2.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=ig2; ctx.fillRect(x,y,w,Math.min(12,h*0.12));
+  } else if (frame === 'gold-foil') {
+    var grd=ctx.createLinearGradient(x,y,x+w,y+h);
+    grd.addColorStop(0,'#BF953F'); grd.addColorStop(0.25,'#FCF6BA'); grd.addColorStop(0.5,'#B38728'); grd.addColorStop(0.75,'#FBF5B7'); grd.addColorStop(1,'#AA771C');
+    ctx.strokeStyle=grd; ctx.lineWidth=3; ctx.strokeRect(x+1.5,y+1.5,w-3,h-3);
+    ctx.strokeStyle='rgba(255,215,0,0.3)'; ctx.lineWidth=1; ctx.strokeRect(x+5,y+5,w-10,h-10);
+  } else if (frame === 'neon-glow') {
+    ctx.shadowColor=accent; ctx.shadowBlur=8; ctx.strokeStyle=accent; ctx.lineWidth=2;
+    ctx.strokeRect(x+1,y+1,w-2,h-2); ctx.shadowBlur=0; ctx.shadowColor='transparent';
+  } else if (frame === 'film-strip') {
+    ctx.fillStyle='#111111'; ctx.fillRect(x,y,10,h);
+    ctx.fillStyle='#ffffff';
+    ctx.beginPath(); ctx.arc(x+5,y+Math.round(h*0.2),3,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x+5,y+Math.round(h*0.7),3,0,Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Unified collage cell draw — handles clip, photo, frame in correct order for each frame type
+function _drawCollageCell(ctx, photo, x, y, w, h, cornerR, accent) {
+  var frame = selectedPhotoFrame || 'none';
+
+  if (frame === 'polaroid') {
+    ctx.save();
+    ctx.shadowColor='rgba(0,0,0,0.25)'; ctx.shadowOffsetX=0; ctx.shadowOffsetY=2; ctx.shadowBlur=4;
+    ctx.fillStyle='#ffffff'; ctx.fillRect(x,y,w,h);
+    ctx.shadowBlur=0; ctx.shadowColor='transparent'; ctx.restore();
+    var pl=Math.round(w*0.06), pt=Math.round(w*0.06), pr=Math.round(w*0.06), pb=Math.round(w*0.22);
+    var px=x+pl, py=y+pt, pw=w-pl-pr, ph2=h-pt-pb;
+    if (pw>4 && ph2>4) { roundClip(ctx,px,py,pw,ph2,Math.max(2,cornerR-2)); drawImg(ctx,photo,px,py,pw,ph2); ctx.restore(); }
+    return;
+  }
+
+  if (frame === 'circle') {
+    var r=Math.min(w,h)/2;
+    ctx.save(); ctx.beginPath(); ctx.arc(x+w/2,y+h/2,r,0,Math.PI*2); ctx.clip();
+    drawImg(ctx,photo,x,y,w,h); ctx.restore();
+    ctx.save(); ctx.strokeStyle='#ffffff'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(x+w/2,y+h/2,r-1,0,Math.PI*2); ctx.stroke(); ctx.restore();
+    return;
+  }
+
+  if (frame === 'rounded') {
+    roundClip(ctx,x,y,w,h,8); drawImg(ctx,photo,x,y,w,h); ctx.restore();
+    ctx.save(); ctx.strokeStyle='#ffffff'; ctx.lineWidth=3;
+    roundPath(ctx,x+1.5,y+1.5,w-3,h-3,8); ctx.stroke(); ctx.restore();
+    return;
+  }
+
+  if (frame === 'vintage') {
+    roundClip(ctx,x,y,w,h,cornerR); drawImg(ctx,photo,x,y,w,h);
+    ctx.save();
+    var vg=ctx.createRadialGradient(x+w/2,y+h/2,Math.min(w,h)*0.2,x+w/2,y+h/2,Math.max(w,h)*0.75);
+    vg.addColorStop(0,'rgba(101,67,33,0)'); vg.addColorStop(1,'rgba(101,67,33,0.45)');
+    ctx.fillStyle=vg; ctx.fillRect(x,y,w,h); ctx.restore();
+    ctx.restore();
+    ctx.save(); ctx.strokeStyle='#8B6914'; ctx.lineWidth=3; ctx.strokeRect(x+1.5,y+1.5,w-3,h-3); ctx.restore();
+    return;
+  }
+
+  // All other frames: standard rounded clip + photo, then overlay frame
+  roundClip(ctx,x,y,w,h,cornerR); drawImg(ctx,photo,x,y,w,h); ctx.restore();
+  _drawCollageCellFrame(ctx,x,y,w,h,accent);
 }
 
 function drawHeroFrame(ctx, x, y, sz, accent) {
