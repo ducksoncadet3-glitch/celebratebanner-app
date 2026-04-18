@@ -464,8 +464,11 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
             <span>Banner Stand Preview</span>
             <span id="preview-spec" style="color:var(--light);">24×36" · 300 DPI · CMYK</span>
           </div>
-          <div id="rs-stage"></div>
+          <div id="rs-stage" style="line-height:0;"></div>
           <div id="mockup-labels" style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap;"></div>
+          <div style="text-align:center;margin-top:12px;">
+            <button onclick="downloadStandMockup()" style="background:var(--obsidian);color:var(--gold2);border:1px solid var(--border);padding:9px 22px;border-radius:10px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">⬇ Download Mockup (PNG)</button>
+          </div>
         </div>
 
         <!-- ROOM PHOTO MOCKUP VIEW -->
@@ -2429,7 +2432,6 @@ function _rsEnvColors(themeId) {
 }
 
 function renderMockup() {
-  var previewCanvas = document.getElementById('preview-canvas');
   var stage = document.getElementById('rs-stage');
   if (!stage || !S.theme) return;
 
@@ -2437,224 +2439,193 @@ function renderMockup() {
   var bW  = sz.bW, bH = sz.bH;
   var env = _rsEnvColors(S.theme.id);
 
+  // ── Single canvas replaces all the div soup ───────────────
   var cW = 500, cH = 660;
 
-  var poleW        = 7;
-  var topBarH      = 16;
-  var poleOverhang = 26;
-  var baseW        = Math.round(bW * 1.30);
-  var baseH        = 34;
-  var feetH        = 11;
-  var feetW        = 26;
-
-  var floorY    = Math.round(cH * 0.82);
-  var poleCapY  = Math.round(cH * 0.04);
+  var poleW = 7, topBarH = 16, poleOverhang = 26;
+  var baseW = Math.round(bW * 1.30), baseH = 34, feetH = 11, feetW = 26;
+  var floorY   = Math.round(cH * 0.82);
+  var poleCapY = Math.round(cH * 0.04);
   var topBarTop = poleCapY + poleOverhang;
   var bannerTop = topBarTop + topBarH;
   var bannerBot = bannerTop + bH;
   var baseTop   = Math.min(bannerBot + 2, floorY - baseH - feetH - 2);
   var feetTop   = baseTop + baseH;
-
   var cx      = Math.round(cW * 0.50);
   var bannerL = cx - Math.round(bW / 2);
   var baseL   = cx - Math.round(baseW / 2);
   var poleX   = cx - Math.round(poleW / 2);
+  var fInset  = Math.round(baseW * 0.09);
 
-  var h = '';
-
-  // ROOM WALL — bright, clean
-  h += '<div style="position:absolute;inset:0;' +
-       'background:linear-gradient(160deg,' + env.wall + ' 0%,' + env.wallAccent + ' 60%,' +
-       env.wallAccent + ' 100%);"></div>';
-
-  // Wall texture — very subtle linen
-  h += '<div style="position:absolute;inset:0;opacity:0.035;' +
-       'background-image:repeating-linear-gradient(0deg,rgba(0,0,0,0.5) 0px,rgba(0,0,0,0.5) 1px,transparent 1px,transparent 4px),' +
-       'repeating-linear-gradient(90deg,rgba(0,0,0,0.5) 0px,rgba(0,0,0,0.5) 1px,transparent 1px,transparent 4px);' +
-       'pointer-events:none;"></div>';
-
-  // Window light — warm sunlight from upper right
-  h += '<div style="position:absolute;right:-40px;top:-40px;width:320px;height:380px;' +
-       'background:radial-gradient(ellipse at 90% 10%,' + env.ceilLight + ' 0%,transparent 65%);' +
-       'pointer-events:none;z-index:1;"></div>';
-
-  // Secondary fill light from left
-  h += '<div style="position:absolute;left:-20px;top:0;width:200px;height:300px;' +
-       'background:radial-gradient(ellipse at 0% 20%,rgba(200,220,255,0.18) 0%,transparent 70%);' +
-       'pointer-events:none;z-index:1;"></div>';
-
-  // Crown molding (ceiling trim)
-  h += '<div style="position:absolute;left:0;right:0;top:0;height:18px;' +
-       'background:linear-gradient(to bottom,' + env.moldingCol + ',rgba(0,0,0,0));' +
-       'opacity:0.4;z-index:1;"></div>';
-  h += '<div style="position:absolute;left:0;right:0;top:17px;height:2px;' +
-       'background:linear-gradient(to right,transparent,' + env.moldingCol + ' 10%,' + env.moldingCol + ' 90%,transparent);' +
-       'opacity:0.6;z-index:1;"></div>';
-
-  // Baseboard
-  h += '<div style="position:absolute;left:0;right:0;top:' + (floorY-14) + 'px;height:14px;' +
-       'background:linear-gradient(to bottom,' + env.moldingCol + ',rgba(0,0,0,0.05));' +
-       'opacity:0.55;z-index:2;"></div>';
-  h += '<div style="position:absolute;left:0;right:0;top:' + (floorY-15) + 'px;height:1.5px;' +
-       'background:linear-gradient(to right,transparent,' + env.moldingCol + ' 8%,' + env.moldingCol + ' 92%,transparent);' +
-       'opacity:0.7;z-index:2;"></div>';
-
-  // Hardwood floor
-  h += '<div style="position:absolute;left:-60px;right:-60px;top:' + floorY + 'px;bottom:0;' +
-       'background:linear-gradient(to bottom,' + env.floor + ' 0%,' + env.floorDark + ' 100%);' +
-       'clip-path:polygon(6% 0%,94% 0%,100% 100%,0% 100%);"></div>';
-
-  for (var pl = 0; pl < 6; pl++) {
-    var plY = floorY + pl * Math.round((cH - floorY) / 5);
-    var plOpacity = 0.12 + pl * 0.04;
-    h += '<div style="position:absolute;left:0;right:0;top:' + plY + 'px;height:1px;' +
-         'background:linear-gradient(to right,transparent,' + env.floorDark + ' 15%,' + env.floorDark + ' 85%,transparent);' +
-         'opacity:' + plOpacity + ';z-index:2;"></div>';
+  // Create/reuse single canvas — fully exportable as PNG
+  var mc = document.getElementById('mockup-stand-canvas');
+  if (!mc) {
+    stage.innerHTML = '<canvas id="mockup-stand-canvas" style="display:block;width:100%;height:auto;border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,0.30),0 8px 24px rgba(0,0,0,0.18);transform:perspective(1800px) rotateY(-2deg) rotateX(0.8deg);transform-origin:center center;margin:0 auto;max-width:' + cW + 'px;"></canvas>';
+    mc = document.getElementById('mockup-stand-canvas');
   }
+  mc.width = cW; mc.height = cH;
+  var ctx = mc.getContext('2d');
 
-  h += '<div style="position:absolute;left:0;right:0;top:' + floorY + 'px;height:' + Math.round(cH*0.12) + 'px;' +
-       'background:linear-gradient(to bottom,' + env.floorLight + ',transparent);' +
-       'pointer-events:none;z-index:2;"></div>';
+  // 1 — ROOM WALL
+  var wg = ctx.createLinearGradient(0, 0, cW * 0.7, floorY);
+  wg.addColorStop(0, env.wall); wg.addColorStop(1, env.wallAccent);
+  ctx.fillStyle = wg; ctx.fillRect(0, 0, cW, floorY);
+  // warm light bloom upper-right
+  var lg = ctx.createRadialGradient(cW * 1.0, 0, 0, cW * 0.75, cH * 0.08, cW * 0.85);
+  lg.addColorStop(0, env.ceilLight); lg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = lg; ctx.fillRect(0, 0, cW, floorY);
+  // baseboard
+  var bg2 = ctx.createLinearGradient(0, floorY - 14, 0, floorY);
+  bg2.addColorStop(0, env.moldingCol); bg2.addColorStop(1, 'rgba(0,0,0,0.04)');
+  ctx.globalAlpha = 0.55; ctx.fillStyle = bg2; ctx.fillRect(0, floorY - 14, cW, 14);
+  ctx.globalAlpha = 1;
 
-  // STAND FLOOR SHADOW
-  h += '<div style="position:absolute;' +
-       'left:' + (baseL-18) + 'px;top:' + (feetTop+feetH-4) + 'px;' +
-       'width:' + (baseW+36) + 'px;height:28px;' +
-       'background:radial-gradient(ellipse at 50% 15%,' + env.shadowColor + ' 0%,transparent 70%);' +
-       'filter:blur(6px);z-index:4;"></div>';
+  // 2 — FLOOR
+  var fg = ctx.createLinearGradient(0, floorY, 0, cH);
+  fg.addColorStop(0, env.floor); fg.addColorStop(1, env.floorDark);
+  ctx.fillStyle = fg;
+  ctx.beginPath(); ctx.moveTo(-60, floorY); ctx.lineTo(cW + 60, floorY);
+  ctx.lineTo(cW, cH); ctx.lineTo(0, cH); ctx.closePath(); ctx.fill();
+  for (var pl = 1; pl < 6; pl++) {
+    var plY2 = floorY + pl * Math.round((cH - floorY) / 6);
+    ctx.strokeStyle = 'rgba(0,0,0,' + (0.05 + pl * 0.02) + ')';
+    ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, plY2); ctx.lineTo(cW, plY2); ctx.stroke();
+  }
+  // floor reflection glow
+  var frg = ctx.createLinearGradient(0, floorY, 0, floorY + cH * 0.12);
+  frg.addColorStop(0, env.floorLight); frg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = frg; ctx.fillRect(0, floorY, cW, cH * 0.12);
 
-  // POLE
-  h += '<div style="position:absolute;' +
-       'left:' + poleX + 'px;top:' + poleCapY + 'px;' +
-       'width:' + poleW + 'px;' +
-       'height:' + (topBarTop - poleCapY + topBarH + bH) + 'px;' +
-       'background:linear-gradient(to right,' +
-         '#909090 0%,#c8c8c8 22%,#f0f0f0 42%,#ffffff 52%,#e0e0e0 64%,#b0b0b0 80%,#808080 100%);' +
-       'box-shadow:2px 0 6px rgba(0,0,0,0.20);z-index:6;"></div>';
+  // 3 — STAND FLOOR SHADOW (ellipse under base)
+  var sg = ctx.createRadialGradient(cx, feetTop + feetH + 6, 2, cx, feetTop + feetH + 6, baseW * 0.68);
+  sg.addColorStop(0, 'rgba(0,0,0,0.22)'); sg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = sg;
+  ctx.beginPath(); ctx.ellipse(cx, feetTop + feetH + 6, baseW * 0.64, 16, 0, 0, Math.PI * 2); ctx.fill();
 
-  // Pole cap
-  h += '<div style="position:absolute;' +
-       'left:' + (poleX-5) + 'px;top:' + (poleCapY-9) + 'px;' +
-       'width:' + (poleW+10) + 'px;height:' + (poleW+10) + 'px;border-radius:50%;' +
-       'background:radial-gradient(circle at 32% 24%,#ffffff 0%,#e0e0e0 28%,#b0b0b0 55%,#606060 100%);' +
-       'box-shadow:0 3px 8px rgba(0,0,0,0.28),inset 0 1px 3px rgba(255,255,255,0.7);' +
-       'z-index:7;"></div>';
+  // 4 — POLE
+  var pg2 = ctx.createLinearGradient(poleX, 0, poleX + poleW, 0);
+  ['#909090','#c8c8c8','#f0f0f0','#ffffff','#e0e0e0','#b0b0b0','#808080'].forEach(function(c, i) {
+    pg2.addColorStop(i / 6, c);
+  });
+  ctx.fillStyle = pg2; ctx.fillRect(poleX, poleCapY, poleW, topBarTop - poleCapY + topBarH + bH);
 
-  // BANNER SHADOW (cast on wall)
-  h += '<div style="position:absolute;' +
-       'left:' + (bannerL+12) + 'px;top:' + (bannerTop+10) + 'px;' +
-       'width:' + bW + 'px;height:' + bH + 'px;' +
-       'background:' + env.shadowColor + ';' +
-       'filter:blur(14px);z-index:4;border-radius:3px;"></div>';
+  // 5 — BANNER WALL SHADOW
+  var bsg = ctx.createLinearGradient(bannerL + 14, 0, bannerL + 14 + 30, 0);
+  bsg.addColorStop(0, 'rgba(0,0,0,0.16)'); bsg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = bsg; ctx.fillRect(bannerL + 14, bannerTop + 8, 40, bH);
 
-  // BANNER CANVAS
-  h += '<div id="rs-banner-wrap" style="position:absolute;' +
-       'left:' + bannerL + 'px;top:' + bannerTop + 'px;' +
-       'width:' + bW + 'px;height:' + bH + 'px;' +
-       'overflow:hidden;z-index:6;border-radius:1px;' +
-       'box-shadow:0 4px 20px rgba(0,0,0,0.22);">' +
-       '<canvas id="rs-banner-canvas" width="' + bW + '" height="' + bH + '" ' +
-         'style="display:block;width:' + bW + 'px;height:' + bH + 'px;"></canvas>' +
-       '<div style="position:absolute;top:0;left:0;width:6px;height:100%;' +
-         'background:linear-gradient(to right,rgba(255,255,255,0.28),transparent);pointer-events:none;"></div>' +
-       '<div style="position:absolute;top:0;left:0;right:0;height:6px;' +
-         'background:linear-gradient(to bottom,rgba(255,255,255,0.20),transparent);pointer-events:none;"></div>' +
-       '<div style="position:absolute;bottom:0;left:0;right:0;height:18px;' +
-         'background:linear-gradient(to top,rgba(0,0,0,0.18),transparent);pointer-events:none;"></div>' +
-       '</div>';
+  // 6 — BANNER ART with subtle trapezoid perspective
+  var src = document.getElementById('preview-canvas');
+  ctx.save();
+  var skew = Math.round(bW * 0.025); // top edge pulled in 2.5% each side
+  ctx.beginPath();
+  ctx.moveTo(bannerL + skew, bannerTop);
+  ctx.lineTo(bannerL + bW - skew, bannerTop);
+  ctx.lineTo(bannerL + bW, bannerTop + bH);
+  ctx.lineTo(bannerL, bannerTop + bH);
+  ctx.closePath(); ctx.clip();
+  // slight shear so stand looks 3D
+  ctx.transform(1, 0, 0.012, 1, -(bannerTop * 0.012), 0);
+  if (src && src.width > 0) {
+    try { ctx.drawImage(src, bannerL, bannerTop, bW, bH); } catch(e) {}
+  } else {
+    var phg = ctx.createLinearGradient(bannerL, bannerTop, bannerL, bannerTop + bH);
+    phg.addColorStop(0, S.theme.bg || '#1a1a2e');
+    phg.addColorStop(1, _blendAccent(S.theme.bg || '#1a1a2e', S.theme.accent || '#C9A84C', 0.18));
+    ctx.fillStyle = phg; ctx.fillRect(bannerL, bannerTop, bW, bH);
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.font = 'bold ' + Math.round(bW * 0.065) + 'px Outfit,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('Generate Preview', bannerL + bW / 2, bannerTop + bH * 0.47);
+  }
+  ctx.restore();
 
-  // TOP BAR
-  h += '<div style="position:absolute;' +
-       'left:' + bannerL + 'px;top:' + topBarTop + 'px;' +
-       'width:' + bW + 'px;height:' + topBarH + 'px;' +
-       'background:linear-gradient(to bottom,' +
-         '#d8d8d8 0%,#f4f4f4 18%,#ffffff 36%,#e8e8e8 56%,#c0c0c0 78%,#909090 100%);' +
-       'border-radius:' + Math.round(topBarH/2) + 'px;' +
-       'box-shadow:0 3px 10px rgba(0,0,0,0.25),inset 0 1px 0 rgba(255,255,255,0.8);' +
-       'z-index:7;"></div>';
+  // 7 — BANNER SHEEN (vertical gradient + left gloss strip)
+  var sheen = ctx.createLinearGradient(bannerL, bannerTop, bannerL, bannerTop + bH);
+  sheen.addColorStop(0, 'rgba(255,255,255,0.13)');
+  sheen.addColorStop(0.35, 'rgba(255,255,255,0.04)');
+  sheen.addColorStop(1, 'rgba(0,0,0,0.09)');
+  ctx.fillStyle = sheen; ctx.fillRect(bannerL, bannerTop, bW, bH);
+  var gloss = ctx.createLinearGradient(bannerL, 0, bannerL + 7, 0);
+  gloss.addColorStop(0, 'rgba(255,255,255,0.22)'); gloss.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = gloss; ctx.fillRect(bannerL, bannerTop, 7, bH);
 
-  [bannerL-9, bannerL+bW-7].forEach(function(lx, i){
-    h += '<div style="position:absolute;left:' + lx + 'px;top:' + (topBarTop-5) + 'px;' +
-         'width:18px;height:' + (topBarH+10) + 'px;border-radius:50%;' +
-         'background:radial-gradient(ellipse at ' + (i===0?'35%':'65%') + ' 28%,#ffffff,#909090);' +
-         'box-shadow:0 2px 8px rgba(0,0,0,0.22);z-index:8;"></div>';
+  // 8 — TOP BAR
+  var tbg = ctx.createLinearGradient(0, topBarTop, 0, topBarTop + topBarH);
+  tbg.addColorStop(0, '#d8d8d8'); tbg.addColorStop(0.35, '#ffffff'); tbg.addColorStop(1, '#909090');
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 3;
+  ctx.fillStyle = tbg;
+  var tbr = Math.round(topBarH / 2);
+  ctx.beginPath();
+  ctx.moveTo(bannerL + tbr, topBarTop); ctx.lineTo(bannerL + bW - tbr, topBarTop);
+  ctx.arcTo(bannerL + bW, topBarTop, bannerL + bW, topBarTop + tbr, tbr);
+  ctx.arcTo(bannerL + bW, topBarTop + topBarH, bannerL + bW - tbr, topBarTop + topBarH, tbr);
+  ctx.lineTo(bannerL + tbr, topBarTop + topBarH);
+  ctx.arcTo(bannerL, topBarTop + topBarH, bannerL, topBarTop + topBarH - tbr, tbr);
+  ctx.arcTo(bannerL, topBarTop, bannerL + tbr, topBarTop, tbr);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+  // end cap knobs
+  [bannerL - 9, bannerL + bW - 7].forEach(function(lx, i) {
+    var kg = ctx.createRadialGradient(lx + (i === 0 ? 6 : 12), topBarTop + 4, 0, lx + 9, topBarTop + (topBarH + 10) / 2, 13);
+    kg.addColorStop(0, '#ffffff'); kg.addColorStop(1, '#909090');
+    ctx.fillStyle = kg;
+    ctx.beginPath(); ctx.ellipse(lx + 9, topBarTop + (topBarH + 10) / 2, 9, (topBarH + 10) / 2, 0, 0, Math.PI * 2); ctx.fill();
   });
 
-  // BASE
-  h += '<div style="position:absolute;' +
-       'left:' + baseL + 'px;top:' + baseTop + 'px;' +
-       'width:' + baseW + 'px;height:' + baseH + 'px;' +
-       'background:linear-gradient(160deg,' +
-         '#d8d8d8 0%,#f0f0f0 20%,#f8f8f8 34%,#d4d4d4 55%,#b0b0b0 76%,#808080 100%);' +
-       'clip-path:polygon(1.5% 0%,98.5% 0%,100% 100%,0% 100%);' +
-       'box-shadow:0 6px 20px rgba(0,0,0,0.22),inset 0 1px 0 rgba(255,255,255,0.7);' +
-       'z-index:7;"></div>';
+  // 9 — POLE CAP
+  ctx.save();
+  var pcg = ctx.createRadialGradient(cx - 2, poleCapY - 5, 0, cx, poleCapY - 4, poleW + 4);
+  pcg.addColorStop(0, '#ffffff'); pcg.addColorStop(0.3, '#e0e0e0'); pcg.addColorStop(0.6, '#b0b0b0'); pcg.addColorStop(1, '#606060');
+  ctx.fillStyle = pcg;
+  ctx.shadowColor = 'rgba(0,0,0,0.28)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 3;
+  ctx.beginPath(); ctx.arc(cx, poleCapY - 4, poleW + 3, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
 
-  h += '<div style="position:absolute;' +
-       'left:' + (baseL+Math.round(baseW*0.04)) + 'px;top:' + (baseTop+3) + 'px;' +
-       'width:' + Math.round(baseW*0.92) + 'px;height:2px;' +
-       'background:rgba(255,255,255,0.70);border-radius:1px;z-index:8;"></div>';
-
-  h += '<div style="position:absolute;left:' + (cx-24) + 'px;top:' + (baseTop+9) + 'px;' +
-       'width:48px;height:' + (baseH-16) + 'px;' +
-       'background:rgba(0,0,0,0.08);border-radius:3px;z-index:8;"></div>';
-
-  h += '<div style="position:absolute;' +
-       'left:' + baseL + 'px;top:' + (baseTop+baseH-5) + 'px;' +
-       'width:' + baseW + 'px;height:6px;' +
-       'background:linear-gradient(to bottom,#909090,#606060);z-index:8;border-radius:0 0 3px 3px;"></div>';
-
-  var fInset = Math.round(baseW*0.09);
-  [[baseL+fInset-Math.round(feetW/2), feetTop],
-   [baseL+baseW-fInset-Math.round(feetW/2), feetTop]].forEach(function(ft){
-    h += '<div style="position:absolute;left:' + ft[0] + 'px;top:' + ft[1] + 'px;' +
-         'width:' + feetW + 'px;height:' + feetH + 'px;' +
-         'border-radius:' + Math.round(feetH/2) + 'px;' +
-         'background:radial-gradient(ellipse at 38% 25%,#808080,#303030);' +
-         'box-shadow:0 2px 6px rgba(0,0,0,0.25);z-index:7;"></div>';
+  // 10 — BASE
+  ctx.save();
+  var bag = ctx.createLinearGradient(baseL, baseTop, baseL + baseW, baseTop + baseH);
+  bag.addColorStop(0, '#d8d8d8'); bag.addColorStop(0.34, '#f8f8f8'); bag.addColorStop(0.76, '#b0b0b0'); bag.addColorStop(1, '#808080');
+  ctx.shadowColor = 'rgba(0,0,0,0.22)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 6;
+  ctx.fillStyle = bag;
+  ctx.beginPath();
+  ctx.moveTo(baseL + baseW * 0.015, baseTop); ctx.lineTo(baseL + baseW * 0.985, baseTop);
+  ctx.lineTo(baseL + baseW, baseTop + baseH); ctx.lineTo(baseL, baseTop + baseH); ctx.closePath(); ctx.fill();
+  ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+  ctx.fillStyle = 'rgba(255,255,255,0.70)';
+  ctx.fillRect(baseL + Math.round(baseW * 0.04), baseTop + 3, Math.round(baseW * 0.92), 2);
+  // feet
+  [[baseL + fInset - Math.round(feetW / 2), feetTop], [baseL + baseW - fInset - Math.round(feetW / 2), feetTop]].forEach(function(ft) {
+    var ftg = ctx.createRadialGradient(ft[0] + feetW * 0.38, ft[1] + feetH * 0.25, 0, ft[0] + feetW / 2, ft[1] + feetH / 2, feetW);
+    ftg.addColorStop(0, '#808080'); ftg.addColorStop(1, '#303030');
+    ctx.fillStyle = ftg;
+    ctx.beginPath(); ctx.ellipse(ft[0] + feetW / 2, ft[1] + feetH / 2, feetW / 2, feetH / 2, 0, 0, Math.PI * 2); ctx.fill();
   });
+  ctx.restore();
 
-  // Scene vignette (bright center)
-  h += '<div style="position:absolute;inset:0;' +
-       'background:radial-gradient(ellipse at 50% 40%,transparent 30%,rgba(0,0,0,0.12) 100%);' +
-       'pointer-events:none;z-index:9;"></div>';
+  // 11 — VIGNETTE
+  var vg = ctx.createRadialGradient(cW / 2, cH * 0.4, cH * 0.1, cW / 2, cH * 0.5, cH * 0.75);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.13)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, cW, cH);
 
-  // WRITE TO DOM
-  stage.innerHTML = h;
-  stage.style.cssText =
-    'position:relative;' +
-    'width:' + cW + 'px;height:' + cH + 'px;' +
-    'max-width:100%;' +
-    'overflow:hidden;border-radius:20px;' +
-    'box-shadow:0 30px 80px rgba(0,0,0,0.30),0 8px 24px rgba(0,0,0,0.18);' +
-    'transform:perspective(1800px) rotateY(-2deg) rotateX(0.8deg);' +
-    'transform-origin:center center;margin:0 auto;display:block;';
-
-  // PAINT BANNER ART
-  var bc = document.getElementById('rs-banner-canvas');
-  if (bc) {
-    bc.width = bW; bc.height = bH;
-    var bCtx = bc.getContext('2d');
-    if (previewCanvas && previewCanvas.width > 0) {
-      try { bCtx.drawImage(previewCanvas, 0, 0, bW, bH); } catch(e) {}
-    } else {
-      var themeColor  = S.theme ? S.theme.bg    : '#1a1a2e';
-      var accentColor = S.theme ? S.theme.accent : '#C9A84C';
-      var grd = bCtx.createLinearGradient(0,0,0,bH);
-      grd.addColorStop(0, themeColor);
-      grd.addColorStop(1, _blendAccent(themeColor, accentColor, 0.18));
-      bCtx.fillStyle = grd; bCtx.fillRect(0,0,bW,bH);
-      bCtx.fillStyle = 'rgba(255,255,255,0.10)';
-      bCtx.font = 'bold ' + Math.round(bW*0.065) + 'px Outfit,sans-serif';
-      bCtx.textAlign = 'center'; bCtx.textBaseline = 'middle';
-      bCtx.fillText('Generate Preview', bW/2, bH*0.47);
-      bCtx.font = Math.round(bW*0.042) + 'px Outfit,sans-serif';
-      bCtx.fillStyle = 'rgba(255,255,255,0.06)';
-      bCtx.fillText('to see your banner \u2192', bW/2, bH*0.56);
-    }
+  // update spec label
+  var lbl = document.getElementById('mockup-labels');
+  if (lbl) {
+    var szLabel = _RS_SIZES[S.size] ? _RS_SIZES[S.size].label : S.size + '"';
+    lbl.innerHTML = '<span class="mockup-label">Retractable Banner Stand Preview · ' + szLabel + '</span>';
   }
+}
 
-  _updateMockupLabels();
+function downloadStandMockup() {
+  var mc = document.getElementById('mockup-stand-canvas');
+  if (!mc) { showToast('⚠️ Generate a preview first'); return; }
+  var name = (S.fields && (S.fields.name || S.fields.coupleNames || S.fields.names || S.fields.petName || S.fields.teamName) || 'Banner').replace(/\s/g, '_');
+  var a = document.createElement('a');
+  a.href = mc.toDataURL('image/png');
+  a.download = 'CelebrateBanner_StandMockup_' + name + '.png';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  showToast('✓ Stand mockup saved!');
 }
 
 console.log('\u2713 CelebrateBanner Bright Room Scene Mockup v5 loaded');
@@ -2795,7 +2766,8 @@ function updateRoomComposite() {
     ctx.fillRect(bX, bY, bDispW, bDispH);
     ctx.restore();
   }
-  var src = document.getElementById('display-canvas');
+  // prefer the stand mockup canvas — gives room view the full stand visual
+  var src = document.getElementById('mockup-stand-canvas') || document.getElementById('display-canvas');
   if (!src || src.width === 0) {
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.fillRect(0, 0, cW, cH);
