@@ -1706,7 +1706,11 @@ function drawCollageRow(ctx,photos,W,H,accent,startY,cols){
   ctx.restore();
   var n=cols||4;
   var pad=Math.max(4,Math.round(W*0.003)), margin=Math.max(6,Math.round(W*0.003));
-  var cw=Math.floor((W-margin*2-(n-1)*pad)/n),ch=cw;
+  var cw=Math.floor((W-margin*2-(n-1)*pad)/n);
+  // Fill available vertical space — no blank strip at the bottom
+  var rowCount=Math.ceil(photos.length/n);
+  var availH=H-startY-Math.round(W*0.02);
+  var ch=rowCount>0 ? Math.max(cw, Math.floor((availH-(rowCount-1)*pad)/rowCount)) : cw;
   var cornerR=Math.max(4,Math.round(cw*0.025));
   for(var i=0;i<photos.length;i++){
     var col=i%n,row=Math.floor(i/n);
@@ -2431,101 +2435,69 @@ function _rsEnvColors(themeId) {
   };
 }
 
+function _rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y); ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath();
+}
+
 function renderMockup() {
   var stage = document.getElementById('rs-stage');
   if (!stage || !S.theme) return;
 
-  var sz  = _RS_SIZES[S.size] || _RS_SIZES['24x36'];
-  var bW  = sz.bW, bH = sz.bH;
-  var env = _rsEnvColors(S.theme.id);
+  var sz = _RS_SIZES[S.size] || _RS_SIZES['24x36'];
+  var bW = sz.bW, bH = sz.bH;
 
-  // ── Single canvas replaces all the div soup ───────────────
-  var cW = 500, cH = 660;
-
-  var poleW = 7, topBarH = 16, poleOverhang = 26;
-  var baseW = Math.round(bW * 1.30), baseH = 34, feetH = 11, feetW = 26;
-  var floorY   = Math.round(cH * 0.82);
-  var poleCapY = Math.round(cH * 0.04);
-  var topBarTop = poleCapY + poleOverhang;
+  // ── Canvas geometry ──────────────────────────────────────
+  var topPad=24, topBarH=10, cassH=16, baseGap=14, baseH=22, footH=5, bottomPad=24;
+  var cW = bW + 80; // 30px left, 30+poleW right breathing room
+  var cH = topPad + topBarH + bH + cassH + baseGap + baseH + footH + 10 + bottomPad;
+  var bannerL = 30;
+  var topBarTop = topPad;
   var bannerTop = topBarTop + topBarH;
-  var bannerBot = bannerTop + bH;
-  var baseTop   = Math.min(bannerBot + 2, floorY - baseH - feetH - 2);
-  var feetTop   = baseTop + baseH;
-  var cx      = Math.round(cW * 0.50);
-  var bannerL = cx - Math.round(bW / 2);
-  var baseL   = cx - Math.round(baseW / 2);
-  var poleX   = cx - Math.round(poleW / 2);
-  var fInset  = Math.round(baseW * 0.09);
+  var cassetteY = bannerTop + bH; // top of roll cassette
+  var poleX = bannerL + bW + 2;  // pole sits right of banner
+  var poleW2 = 10;
+  var tbX = bannerL - 2, tbW = bW + poleW2 + 4; // top bar covers banner + pole
+  var baseWidth = bW + 40;
+  var baseL = Math.round((cW - baseWidth) / 2);
+  var baseTop = cassetteY + cassH + baseGap;
+  var shadowCY = baseTop + baseH + footH + 4;
 
-  // Create/reuse single canvas — fully exportable as PNG
+  // Create/reuse single canvas
   var mc = document.getElementById('mockup-stand-canvas');
   if (!mc) {
-    stage.innerHTML = '<canvas id="mockup-stand-canvas" style="display:block;width:100%;height:auto;border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,0.30),0 8px 24px rgba(0,0,0,0.18);transform:perspective(1800px) rotateY(-2deg) rotateX(0.8deg);transform-origin:center center;margin:0 auto;max-width:' + cW + 'px;"></canvas>';
+    stage.innerHTML = '<canvas id="mockup-stand-canvas" style="display:block;width:100%;height:auto;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,0.18);margin:0 auto;max-width:' + cW + 'px;"></canvas>';
     mc = document.getElementById('mockup-stand-canvas');
   }
   mc.width = cW; mc.height = cH;
   var ctx = mc.getContext('2d');
 
-  // 1 — ROOM WALL
-  var wg = ctx.createLinearGradient(0, 0, cW * 0.7, floorY);
-  wg.addColorStop(0, env.wall); wg.addColorStop(1, env.wallAccent);
-  ctx.fillStyle = wg; ctx.fillRect(0, 0, cW, floorY);
-  // warm light bloom upper-right
-  var lg = ctx.createRadialGradient(cW * 1.0, 0, 0, cW * 0.75, cH * 0.08, cW * 0.85);
-  lg.addColorStop(0, env.ceilLight); lg.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = lg; ctx.fillRect(0, 0, cW, floorY);
-  // baseboard
-  var bg2 = ctx.createLinearGradient(0, floorY - 14, 0, floorY);
-  bg2.addColorStop(0, env.moldingCol); bg2.addColorStop(1, 'rgba(0,0,0,0.04)');
-  ctx.globalAlpha = 0.55; ctx.fillStyle = bg2; ctx.fillRect(0, floorY - 14, cW, 14);
-  ctx.globalAlpha = 1;
+  // 1 — BACKGROUND (warm off-white studio surface)
+  ctx.fillStyle = '#f5f2ed'; ctx.fillRect(0, 0, cW, cH);
+  // subtle gradient: top slightly lighter
+  var bgGrd = ctx.createLinearGradient(0, 0, 0, cH);
+  bgGrd.addColorStop(0, 'rgba(255,255,255,0.18)'); bgGrd.addColorStop(1, 'rgba(0,0,0,0.06)');
+  ctx.fillStyle = bgGrd; ctx.fillRect(0, 0, cW, cH);
 
-  // 2 — FLOOR
-  var fg = ctx.createLinearGradient(0, floorY, 0, cH);
-  fg.addColorStop(0, env.floor); fg.addColorStop(1, env.floorDark);
-  ctx.fillStyle = fg;
-  ctx.beginPath(); ctx.moveTo(-60, floorY); ctx.lineTo(cW + 60, floorY);
-  ctx.lineTo(cW, cH); ctx.lineTo(0, cH); ctx.closePath(); ctx.fill();
-  for (var pl = 1; pl < 6; pl++) {
-    var plY2 = floorY + pl * Math.round((cH - floorY) / 6);
-    ctx.strokeStyle = 'rgba(0,0,0,' + (0.05 + pl * 0.02) + ')';
-    ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, plY2); ctx.lineTo(cW, plY2); ctx.stroke();
-  }
-  // floor reflection glow
-  var frg = ctx.createLinearGradient(0, floorY, 0, floorY + cH * 0.12);
-  frg.addColorStop(0, env.floorLight); frg.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = frg; ctx.fillRect(0, floorY, cW, cH * 0.12);
+  // 2 — POLE (right side, chrome, behind banner)
+  var poleGrd = ctx.createLinearGradient(poleX, 0, poleX + poleW2, 0);
+  poleGrd.addColorStop(0, '#b0b0b0'); poleGrd.addColorStop(0.4, '#f5f5f5'); poleGrd.addColorStop(1, '#a0a0a0');
+  ctx.fillStyle = poleGrd;
+  ctx.fillRect(poleX, topBarTop, poleW2, bH + cassH + 2);
 
-  // 3 — STAND FLOOR SHADOW (ellipse under base)
-  var sg = ctx.createRadialGradient(cx, feetTop + feetH + 6, 2, cx, feetTop + feetH + 6, baseW * 0.68);
-  sg.addColorStop(0, 'rgba(0,0,0,0.22)'); sg.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = sg;
-  ctx.beginPath(); ctx.ellipse(cx, feetTop + feetH + 6, baseW * 0.64, 16, 0, 0, Math.PI * 2); ctx.fill();
-
-  // 4 — POLE
-  var pg2 = ctx.createLinearGradient(poleX, 0, poleX + poleW, 0);
-  ['#909090','#c8c8c8','#f0f0f0','#ffffff','#e0e0e0','#b0b0b0','#808080'].forEach(function(c, i) {
-    pg2.addColorStop(i / 6, c);
-  });
-  ctx.fillStyle = pg2; ctx.fillRect(poleX, poleCapY, poleW, topBarTop - poleCapY + topBarH + bH);
-
-  // 5 — BANNER WALL SHADOW
-  var bsg = ctx.createLinearGradient(bannerL + 14, 0, bannerL + 14 + 30, 0);
-  bsg.addColorStop(0, 'rgba(0,0,0,0.16)'); bsg.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = bsg; ctx.fillRect(bannerL + 14, bannerTop + 8, 40, bH);
-
-  // 6 — BANNER ART with subtle trapezoid perspective
+  // 3 — BANNER ART (trapezoid: top 4% narrower than bottom)
+  var skew = Math.round(bW * 0.02); // 2% each side = 4% total
   var src = document.getElementById('preview-canvas');
   ctx.save();
-  var skew = Math.round(bW * 0.025); // top edge pulled in 2.5% each side
   ctx.beginPath();
   ctx.moveTo(bannerL + skew, bannerTop);
   ctx.lineTo(bannerL + bW - skew, bannerTop);
   ctx.lineTo(bannerL + bW, bannerTop + bH);
   ctx.lineTo(bannerL, bannerTop + bH);
   ctx.closePath(); ctx.clip();
-  // slight shear so stand looks 3D
-  ctx.transform(1, 0, 0.012, 1, -(bannerTop * 0.012), 0);
   if (src && src.width > 0) {
     try { ctx.drawImage(src, bannerL, bannerTop, bW, bH); } catch(e) {}
   } else {
@@ -2533,88 +2505,82 @@ function renderMockup() {
     phg.addColorStop(0, S.theme.bg || '#1a1a2e');
     phg.addColorStop(1, _blendAccent(S.theme.bg || '#1a1a2e', S.theme.accent || '#C9A84C', 0.18));
     ctx.fillStyle = phg; ctx.fillRect(bannerL, bannerTop, bW, bH);
-    ctx.fillStyle = 'rgba(255,255,255,0.18)';
-    ctx.font = 'bold ' + Math.round(bW * 0.065) + 'px Outfit,sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.20)';
+    ctx.font = 'bold ' + Math.round(bW * 0.07) + 'px Outfit,sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('Generate Preview', bannerL + bW / 2, bannerTop + bH * 0.47);
   }
   ctx.restore();
 
-  // 7 — BANNER SHEEN (vertical gradient + left gloss strip)
-  var sheen = ctx.createLinearGradient(bannerL, bannerTop, bannerL, bannerTop + bH);
-  sheen.addColorStop(0, 'rgba(255,255,255,0.13)');
-  sheen.addColorStop(0.35, 'rgba(255,255,255,0.04)');
-  sheen.addColorStop(1, 'rgba(0,0,0,0.09)');
+  // 4 — BANNER EDGE EFFECTS & SHEEN
+  // Left-edge darker strip (12px, simulates wrap depth)
+  var leftWrap = ctx.createLinearGradient(bannerL, 0, bannerL + 12, 0);
+  leftWrap.addColorStop(0, 'rgba(0,0,0,0.30)'); leftWrap.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = leftWrap; ctx.fillRect(bannerL, bannerTop, 12, bH);
+  // Right-edge lighter strip (8px)
+  var rightWrap = ctx.createLinearGradient(bannerL + bW - 8, 0, bannerL + bW, 0);
+  rightWrap.addColorStop(0, 'rgba(0,0,0,0)'); rightWrap.addColorStop(1, 'rgba(255,255,255,0.20)');
+  ctx.fillStyle = rightWrap; ctx.fillRect(bannerL + bW - 8, bannerTop, 8, bH);
+  // Top-to-bottom lighting sheen
+  var sheen = ctx.createLinearGradient(0, bannerTop, 0, bannerTop + bH);
+  sheen.addColorStop(0, 'rgba(255,255,255,0.06)'); sheen.addColorStop(1, 'rgba(0,0,0,0.18)');
   ctx.fillStyle = sheen; ctx.fillRect(bannerL, bannerTop, bW, bH);
-  var gloss = ctx.createLinearGradient(bannerL, 0, bannerL + 7, 0);
-  gloss.addColorStop(0, 'rgba(255,255,255,0.22)'); gloss.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = gloss; ctx.fillRect(bannerL, bannerTop, 7, bH);
 
-  // 8 — TOP BAR
-  var tbg = ctx.createLinearGradient(0, topBarTop, 0, topBarTop + topBarH);
-  tbg.addColorStop(0, '#d8d8d8'); tbg.addColorStop(0.35, '#ffffff'); tbg.addColorStop(1, '#909090');
+  // 5 — TOP BAR (3D: main bar + highlight + shadow + endcaps)
+  // Main bar
+  ctx.fillStyle = '#c8c8c8';
+  ctx.fillRect(tbX, topBarTop, tbW, topBarH);
+  // Highlight strip (top 3px)
+  ctx.fillStyle = '#efefef';
+  ctx.fillRect(tbX, topBarTop, tbW, 3);
+  // Shadow strip (bottom 2px)
+  ctx.fillStyle = '#909090';
+  ctx.fillRect(tbX, topBarTop + topBarH - 2, tbW, 2);
+  // Left endcap
+  ctx.fillStyle = '#aaaaaa';
+  _rrect(ctx, tbX - 4, topBarTop - 1, 8, topBarH + 2, 3); ctx.fill();
+  // Right endcap
+  _rrect(ctx, tbX + tbW - 4, topBarTop - 1, 8, topBarH + 2, 3); ctx.fill();
+
+  // 6 — ROLL CASSETTE (cylinder at bottom of banner)
+  var cassRY = 7; // half-height of ellipse end cap
+  var cassY  = cassetteY + cassH / 2;
+  // Barrel body (rectangle between top and bottom ellipse centers)
+  ctx.fillStyle = '#4a4a4a';
+  ctx.fillRect(bannerL, cassetteY, bW, cassH);
+  // Bottom ellipse (dark — mostly hidden)
+  ctx.fillStyle = '#333333';
+  ctx.beginPath(); ctx.ellipse(bannerL + bW/2, cassetteY + cassH, bW/2, cassRY, 0, 0, Math.PI*2); ctx.fill();
+  // Top face (lighter — 3D top of cylinder)
+  ctx.fillStyle = '#6a6a6a';
+  ctx.beginPath(); ctx.ellipse(bannerL + bW/2, cassetteY, bW/2, cassRY, 0, 0, Math.PI*2); ctx.fill();
+  // Highlight arc on top face
+  ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.ellipse(bannerL + bW/2, cassetteY - 1, bW/2 - 8, Math.round(cassRY * 0.4), 0, Math.PI, 0); ctx.stroke();
+
+  // 7 — BASE (dark, low-profile, rounded rect)
   ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 3;
-  ctx.fillStyle = tbg;
-  var tbr = Math.round(topBarH / 2);
-  ctx.beginPath();
-  ctx.moveTo(bannerL + tbr, topBarTop); ctx.lineTo(bannerL + bW - tbr, topBarTop);
-  ctx.arcTo(bannerL + bW, topBarTop, bannerL + bW, topBarTop + tbr, tbr);
-  ctx.arcTo(bannerL + bW, topBarTop + topBarH, bannerL + bW - tbr, topBarTop + topBarH, tbr);
-  ctx.lineTo(bannerL + tbr, topBarTop + topBarH);
-  ctx.arcTo(bannerL, topBarTop + topBarH, bannerL, topBarTop + topBarH - tbr, tbr);
-  ctx.arcTo(bannerL, topBarTop, bannerL + tbr, topBarTop, tbr);
-  ctx.closePath(); ctx.fill();
+  ctx.shadowColor = 'rgba(0,0,0,0.28)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 5;
+  var baseGrd = ctx.createLinearGradient(0, baseTop, 0, baseTop + baseH);
+  baseGrd.addColorStop(0, '#3a3a3a'); baseGrd.addColorStop(1, '#1a1a1a');
+  ctx.fillStyle = baseGrd;
+  _rrect(ctx, baseL, baseTop, baseWidth, baseH, 5); ctx.fill();
   ctx.restore();
-  // end cap knobs
-  [bannerL - 9, bannerL + bW - 7].forEach(function(lx, i) {
-    var kg = ctx.createRadialGradient(lx + (i === 0 ? 6 : 12), topBarTop + 4, 0, lx + 9, topBarTop + (topBarH + 10) / 2, 13);
-    kg.addColorStop(0, '#ffffff'); kg.addColorStop(1, '#909090');
-    ctx.fillStyle = kg;
-    ctx.beginPath(); ctx.ellipse(lx + 9, topBarTop + (topBarH + 10) / 2, 9, (topBarH + 10) / 2, 0, 0, Math.PI * 2); ctx.fill();
-  });
+  // Highlight line on base top
+  ctx.fillStyle = 'rgba(255,255,255,0.10)';
+  ctx.fillRect(baseL + 6, baseTop + 2, baseWidth - 12, 2);
+  // Rubber feet
+  ctx.fillStyle = '#111111';
+  var footW = 20;
+  _rrect(ctx, baseL + Math.round(baseWidth * 0.15) - footW/2, baseTop + baseH, footW, footH, 2); ctx.fill();
+  _rrect(ctx, baseL + Math.round(baseWidth * 0.85) - footW/2, baseTop + baseH, footW, footH, 2); ctx.fill();
+  // Floor shadow ellipse
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.beginPath(); ctx.ellipse(cW/2, shadowCY, baseWidth * 0.4, 6, 0, 0, Math.PI*2); ctx.fill();
 
-  // 9 — POLE CAP
-  ctx.save();
-  var pcg = ctx.createRadialGradient(cx - 2, poleCapY - 5, 0, cx, poleCapY - 4, poleW + 4);
-  pcg.addColorStop(0, '#ffffff'); pcg.addColorStop(0.3, '#e0e0e0'); pcg.addColorStop(0.6, '#b0b0b0'); pcg.addColorStop(1, '#606060');
-  ctx.fillStyle = pcg;
-  ctx.shadowColor = 'rgba(0,0,0,0.28)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 3;
-  ctx.beginPath(); ctx.arc(cx, poleCapY - 4, poleW + 3, 0, Math.PI * 2); ctx.fill();
-  ctx.restore();
-
-  // 10 — BASE
-  ctx.save();
-  var bag = ctx.createLinearGradient(baseL, baseTop, baseL + baseW, baseTop + baseH);
-  bag.addColorStop(0, '#d8d8d8'); bag.addColorStop(0.34, '#f8f8f8'); bag.addColorStop(0.76, '#b0b0b0'); bag.addColorStop(1, '#808080');
-  ctx.shadowColor = 'rgba(0,0,0,0.22)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 6;
-  ctx.fillStyle = bag;
-  ctx.beginPath();
-  ctx.moveTo(baseL + baseW * 0.015, baseTop); ctx.lineTo(baseL + baseW * 0.985, baseTop);
-  ctx.lineTo(baseL + baseW, baseTop + baseH); ctx.lineTo(baseL, baseTop + baseH); ctx.closePath(); ctx.fill();
-  ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-  ctx.fillStyle = 'rgba(255,255,255,0.70)';
-  ctx.fillRect(baseL + Math.round(baseW * 0.04), baseTop + 3, Math.round(baseW * 0.92), 2);
-  // feet
-  [[baseL + fInset - Math.round(feetW / 2), feetTop], [baseL + baseW - fInset - Math.round(feetW / 2), feetTop]].forEach(function(ft) {
-    var ftg = ctx.createRadialGradient(ft[0] + feetW * 0.38, ft[1] + feetH * 0.25, 0, ft[0] + feetW / 2, ft[1] + feetH / 2, feetW);
-    ftg.addColorStop(0, '#808080'); ftg.addColorStop(1, '#303030');
-    ctx.fillStyle = ftg;
-    ctx.beginPath(); ctx.ellipse(ft[0] + feetW / 2, ft[1] + feetH / 2, feetW / 2, feetH / 2, 0, 0, Math.PI * 2); ctx.fill();
-  });
-  ctx.restore();
-
-  // 11 — VIGNETTE
-  var vg = ctx.createRadialGradient(cW / 2, cH * 0.4, cH * 0.1, cW / 2, cH * 0.5, cH * 0.75);
-  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.13)');
-  ctx.fillStyle = vg; ctx.fillRect(0, 0, cW, cH);
-
-  // update spec label
+  // update label
   var lbl = document.getElementById('mockup-labels');
-  if (lbl) {
-    var szLabel = _RS_SIZES[S.size] ? _RS_SIZES[S.size].label : S.size + '"';
-    lbl.innerHTML = '<span class="mockup-label">Retractable Banner Stand Preview · ' + szLabel + '</span>';
-  }
+  if (lbl) lbl.innerHTML = '<span class="mockup-label" style="color:var(--muted);font-size:12px;">Retractable Banner Stand Preview · ' + sz.label + '</span>';
 }
 
 function downloadStandMockup() {
@@ -2629,6 +2595,25 @@ function downloadStandMockup() {
 }
 
 console.log('\u2713 CelebrateBanner Bright Room Scene Mockup v5 loaded');
+
+// ── BANNER ZOOM LIGHTBOX ──────────────────────────────────────────────────
+function openBannerZoom() {
+  var src = document.getElementById('display-canvas');
+  var zc  = document.getElementById('zoom-canvas');
+  var ov  = document.getElementById('banner-zoom-overlay');
+  if (!src || src.width === 0 || !zc || !ov) return;
+  zc.width  = src.width;
+  zc.height = src.height;
+  zc.getContext('2d').drawImage(src, 0, 0);
+  ov.style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+function closeBannerZoom() {
+  var ov = document.getElementById('banner-zoom-overlay');
+  if (ov) ov.style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeBannerZoom(); });
 
 // ── DISPLAY CANVAS SYNC ───────────────────────────────────────────────────
 function syncDisplayCanvas() {
