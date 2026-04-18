@@ -2425,7 +2425,7 @@ function renderMockup() {
   var bW  = sz.bW, bH = sz.bH;
   var env = _rsEnvColors(S.theme.id);
 
-  var cW = 480, cH = 580;
+  var cW = 480, cH = 620;
 
   var poleW        = 7;
   var topBarH      = 16;
@@ -2529,8 +2529,8 @@ function renderMockup() {
          'box-shadow:2px 3px 10px rgba(0,0,0,0.18);z-index:3;"></div>';
     h += '<div style="position:absolute;right:12px;top:' + (Math.round(cH*0.20)+4) + 'px;' +
          'width:44px;height:32px;border:1px solid rgba(184,150,12,0.4);' +
-         'border-radius:2px;z-index:4;display:flex;align-items:center;justify-content:center;">' +
-         '<span style="font-size:14px;">🎓</span></div>';
+         'border-radius:2px;z-index:4;' +
+         'background:linear-gradient(135deg,rgba(201,168,76,0.25),rgba(201,168,76,0.08));"></div>';
     h += '<div style="position:absolute;left:0;right:0;top:20px;height:2px;' +
          'background:linear-gradient(to right,rgba(255,200,50,0),rgba(255,200,50,0.4),rgba(255,200,50,0.7),rgba(255,200,50,0.4),rgba(255,200,50,0));' +
          'z-index:2;"></div>';
@@ -2541,8 +2541,14 @@ function renderMockup() {
            'box-shadow:0 0 10px 4px rgba(255,200,0,0.50);' +
            'z-index:3;opacity:0.85;"></div>';
     }
-    h += '<div style="position:absolute;right:14px;top:' + (floorY-52) + 'px;' +
-         'font-size:36px;z-index:3;opacity:0.75;">🌿</div>';
+    h += '<div style="position:absolute;right:16px;top:' + (floorY-64) + 'px;' +
+         'width:28px;height:44px;' +
+         'background:radial-gradient(ellipse,#6aaa60,#3d7a38);' +
+         'border-radius:50% 50% 40% 40%;opacity:0.72;z-index:3;"></div>';
+    h += '<div style="position:absolute;right:22px;top:' + (floorY-44) + 'px;' +
+         'width:18px;height:32px;' +
+         'background:radial-gradient(ellipse,#78bb6e,#4a8844);' +
+         'border-radius:50%;opacity:0.65;z-index:3;"></div>';
   }
   else if (env.props === 'elegant') {
     h += '<div style="position:absolute;left:22px;top:' + Math.round(cH*0.15) + 'px;' +
@@ -2556,8 +2562,14 @@ function renderMockup() {
          'width:120px;height:160px;' +
          'background:radial-gradient(ellipse at 30% 0%,rgba(255,220,140,0.30),transparent);' +
          'z-index:1;pointer-events:none;"></div>';
-    h += '<div style="position:absolute;right:16px;top:' + (floorY-68) + 'px;' +
-         'font-size:44px;z-index:3;opacity:0.80;">💐</div>';
+    h += '<div style="position:absolute;right:16px;top:' + (floorY-72) + 'px;' +
+         'width:36px;height:56px;' +
+         'background:radial-gradient(ellipse,#e8a0b0,#c06080);' +
+         'border-radius:50% 50% 40% 40%;opacity:0.72;z-index:3;"></div>';
+    h += '<div style="position:absolute;right:24px;top:' + (floorY-60) + 'px;' +
+         'width:20px;height:38px;' +
+         'background:radial-gradient(ellipse,#f0b8c8,#d07090);' +
+         'border-radius:50%;opacity:0.60;z-index:3;"></div>';
     h += '<div style="position:absolute;right:8px;top:' + (floorY-20) + 'px;' +
          'width:54px;height:20px;' +
          'background:linear-gradient(to bottom,#c8b898,#b8a888);' +
@@ -2570,10 +2582,16 @@ function renderMockup() {
     h += '<div style="position:absolute;right:-30px;top:-10px;width:220px;height:' + Math.round(cH*0.65) + 'px;' +
          'background:linear-gradient(205deg,rgba(255,240,180,0.16) 0%,transparent 50%);' +
          'pointer-events:none;z-index:1;"></div>';
-    h += '<div style="position:absolute;left:12px;top:' + (floorY-70) + 'px;' +
-         'font-size:48px;z-index:3;opacity:0.75;">🏆</div>';
-    h += '<div style="position:absolute;right:14px;top:' + (floorY-58) + 'px;' +
-         'font-size:40px;z-index:3;opacity:0.70;">🥇</div>';
+    h += '<div style="position:absolute;left:10px;top:' + (floorY-64) + 'px;' +
+         'width:42px;height:42px;border-radius:50%;' +
+         'background:radial-gradient(circle at 35% 30%,#ffe066,#c9a84c,#7a6020);' +
+         'box-shadow:0 4px 12px rgba(201,168,76,0.4);opacity:0.82;z-index:3;"></div>';
+    h += '<div style="position:absolute;left:16px;top:' + (floorY-22) + 'px;' +
+         'width:30px;height:4px;background:#c9a84c;border-radius:2px;opacity:0.70;z-index:3;"></div>';
+    h += '<div style="position:absolute;right:12px;top:' + (floorY-54) + 'px;' +
+         'width:34px;height:34px;border-radius:50%;' +
+         'background:radial-gradient(circle at 35% 30%,#e8e8e8,#c0c0c0,#808080);' +
+         'box-shadow:0 3px 8px rgba(0,0,0,0.25);opacity:0.75;z-index:3;"></div>';
   }
   else if (env.props === 'cozy') {
     h += '<div style="position:absolute;left:0;top:' + Math.round(cH*0.48) + 'px;' +
@@ -2585,19 +2603,31 @@ function renderMockup() {
          'width:44px;height:36px;' +
          'background:linear-gradient(135deg,#d4b896,#c4a886);' +
          'border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,0.10);z-index:4;opacity:0.85;"></div>';
-    h += '<div style="position:absolute;right:12px;top:' + (floorY-64) + 'px;' +
-         'font-size:44px;z-index:3;opacity:0.78;">🌿</div>';
-    h += '<div style="position:absolute;right:20px;top:' + (floorY-28) + 'px;' +
-         'font-size:22px;z-index:3;opacity:0.50;">🐾</div>';
+    h += '<div style="position:absolute;right:14px;top:' + (floorY-68) + 'px;' +
+         'width:30px;height:48px;' +
+         'background:radial-gradient(ellipse,#6aaa60,#3d7a38);' +
+         'border-radius:50% 50% 40% 40%;opacity:0.75;z-index:3;"></div>';
+    h += '<div style="position:absolute;right:20px;top:' + (floorY-50) + 'px;' +
+         'width:20px;height:34px;' +
+         'background:radial-gradient(ellipse,#78bb6e,#4a8844);' +
+         'border-radius:50%;opacity:0.65;z-index:3;"></div>';
+    h += '<div style="position:absolute;right:26px;top:' + (floorY-36) + 'px;' +
+         'width:14px;height:24px;' +
+         'background:radial-gradient(ellipse,#8acc7a,#559950);' +
+         'border-radius:50%;opacity:0.60;z-index:3;"></div>';
   }
   else if (env.props === 'civic') {
     h += '<div style="position:absolute;left:14px;top:' + Math.round(cH*0.10) + 'px;' +
          'width:4px;height:' + Math.round(cH*0.60) + 'px;' +
          'background:linear-gradient(to bottom,#c0c0b8,#909088);z-index:3;"></div>';
     h += '<div style="position:absolute;left:18px;top:' + Math.round(cH*0.10) + 'px;' +
-         'font-size:34px;z-index:4;opacity:0.70;">\uD83C\uDDFA\uD83C\uDDF8</div>';
-    h += '<div style="position:absolute;right:14px;top:' + Math.round(cH*0.22) + 'px;' +
-         'font-size:36px;z-index:3;opacity:0.55;">\uD83E\uDD85</div>';
+         'width:44px;height:6px;background:#B22234;border-radius:1px;opacity:0.80;z-index:4;"></div>';
+    h += '<div style="position:absolute;left:18px;top:' + (Math.round(cH*0.10)+7) + 'px;' +
+         'width:44px;height:6px;background:#FFFFFF;border-radius:1px;opacity:0.80;z-index:4;"></div>';
+    h += '<div style="position:absolute;left:18px;top:' + (Math.round(cH*0.10)+14) + 'px;' +
+         'width:44px;height:6px;background:#B22234;border-radius:1px;opacity:0.80;z-index:4;"></div>';
+    h += '<div style="position:absolute;left:18px;top:' + (Math.round(cH*0.10)+21) + 'px;' +
+         'width:20px;height:18px;background:#3C3B6E;border-radius:1px;opacity:0.80;z-index:5;"></div>';
   }
   else {
     h += '<div style="position:absolute;left:0;top:' + (floorY-40) + 'px;' +
@@ -2605,10 +2635,22 @@ function renderMockup() {
          'background:linear-gradient(to bottom,#d8d0c4,#c8c0b4);' +
          'border-radius:0 4px 4px 0;' +
          'box-shadow:2px 0 8px rgba(0,0,0,0.10);z-index:3;opacity:0.80;"></div>';
-    h += '<div style="position:absolute;left:8px;top:' + (floorY-76) + 'px;' +
-         'font-size:36px;z-index:4;opacity:0.72;">\uD83C\uDF3F</div>';
-    h += '<div style="position:absolute;right:14px;top:' + (floorY-58) + 'px;' +
-         'font-size:38px;z-index:3;opacity:0.65;">\uD83C\uDF3A</div>';
+    h += '<div style="position:absolute;left:10px;top:' + (floorY-72) + 'px;' +
+         'width:26px;height:44px;' +
+         'background:radial-gradient(ellipse,#6aaa60,#3d7a38);' +
+         'border-radius:50% 50% 40% 40%;opacity:0.72;z-index:4;"></div>';
+    h += '<div style="position:absolute;left:18px;top:' + (floorY-52) + 'px;' +
+         'width:16px;height:30px;' +
+         'background:radial-gradient(ellipse,#78bb6e,#4a8844);' +
+         'border-radius:50%;opacity:0.65;z-index:4;"></div>';
+    h += '<div style="position:absolute;right:14px;top:' + (floorY-54) + 'px;' +
+         'width:30px;height:30px;border-radius:50%;' +
+         'background:radial-gradient(circle at 35% 30%,#ff8fa0,#d04060);' +
+         'opacity:0.68;z-index:3;"></div>';
+    h += '<div style="position:absolute;right:20px;top:' + (floorY-36) + 'px;' +
+         'width:18px;height:18px;border-radius:50%;' +
+         'background:radial-gradient(circle at 35% 30%,#ffb0c0,#e06080);' +
+         'opacity:0.58;z-index:3;"></div>';
   }
 
   // STAND FLOOR SHADOW
@@ -2719,6 +2761,7 @@ function renderMockup() {
   stage.style.cssText =
     'position:relative;' +
     'width:' + cW + 'px;height:' + cH + 'px;' +
+    'max-width:100%;' +
     'overflow:hidden;border-radius:20px;' +
     'box-shadow:0 30px 80px rgba(0,0,0,0.30),0 8px 24px rgba(0,0,0,0.18);' +
     'transform:perspective(1800px) rotateY(-2deg) rotateX(0.8deg);' +
@@ -2889,14 +2932,15 @@ function updateRoomComposite() {
     ctx.fillRect(bX, bY, bDispW, bDispH);
     ctx.restore();
   }
-  var src = document.getElementById('preview-canvas');
+  var src = document.getElementById('display-canvas');
   if (!src || src.width === 0) {
-    ctx.fillStyle = 'rgba(201,168,76,0.3)';
-    ctx.fillRect(bX, bY, bDispW, bDispH);
-    ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.font = 'bold ' + Math.round(bDispW * 0.08) + 'px Outfit,sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(0, 0, cW, cH);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 16px Outfit,sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('Generate preview first', bX + bDispW / 2, bY + bDispH / 2);
+    ctx.fillText('Go back to Step 3 and click', cW / 2, cH / 2 - 10);
+    ctx.fillText('"Generate Preview" first', cW / 2, cH / 2 + 14);
     return;
   }
   ctx.save();
