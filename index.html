@@ -754,7 +754,8 @@ var S = {
   page:0, theme:null, photos:[], hero:-1,
   fields:{}, size:'24x36', accent:'#C9A84C',
   bgColor:'#ffffff', delivery:'digital', email:'',
-  effects: { filter:'none', overlay:'none', frame:'none', textFx:'none' }
+  effects: { filter:'none', overlay:'none', frame:'none', textFx:'none' },
+  heroFit:'contain', heroZoom:1.0, heroAlign:'center'
 };
 
 var DIGITAL_PRICE = 9.99;
@@ -1106,6 +1107,73 @@ function drawImg(ctx, photo, x, y, w, h) {
   ctx.restore();
 }
 
+// Draws hero photo with contain/cover fit, zoom, and alignment — used for both preview and export
+function drawHeroImg(ctx, photo, x, y, w, h, bgColor) {
+  if (!photo) { drawImg(ctx, photo, x, y, w, h); return; }
+  var img = (photo._img&&photo._img.complete&&photo._img.naturalWidth)?photo._img:(function(){var i=new Image();i.src=photo.src;return i;})();
+  var nw=img.naturalWidth||w, nh=img.naturalHeight||h;
+  if (!nw||!nh) { drawImg(ctx,photo,x,y,w,h); return; }
+  var rot=photo.rotation||0;
+  var fit=S.heroFit||'contain';
+  var zoom=Math.max(0.5,Math.min(2.0,parseFloat(S.heroZoom)||1.0));
+  var align=S.heroAlign||'center';
+  var f=(typeof FILTERS!=='undefined')?FILTERS.find(function(fi){return fi.id===S.effects.filter;}):null;
+  // Visual dimensions (after rotation)
+  var vw=(rot===90||rot===270)?nh:nw, vh=(rot===90||rot===270)?nw:nh;
+  var base=fit==='cover'?Math.max(w/vw,h/vh):Math.min(w/vw,h/vh);
+  var scale=base*zoom;
+  var dw=vw*scale, dh=vh*scale;
+  // drawImage dimensions (natural orientation, swapped back for rotation)
+  var sw=(rot===90||rot===270)?dh:dw, sh=(rot===90||rot===270)?dw:dh;
+  // Alignment offsets
+  var ax=0.5,ay=0.5;
+  if(align==='top-left'){ax=0;ay=0;}else if(align==='top-center'){ax=0.5;ay=0;}else if(align==='top-right'){ax=1;ay=0;}
+  else if(align==='middle-left'){ax=0;ay=0.5;}else if(align==='middle-right'){ax=1;ay=0.5;}
+  else if(align==='bottom-left'){ax=0;ay=1;}else if(align==='bottom-center'){ax=0.5;ay=1;}else if(align==='bottom-right'){ax=1;ay=1;}
+  var ox=(w-dw)*ax, oy=(h-dh)*ay; // top-left corner of image within cell
+  var cx=x+ox+dw/2, cy=y+oy+dh/2; // image center in canvas coords
+  ctx.save();
+  if(f&&f.css) ctx.filter=f.css;
+  if(fit==='contain'){ctx.fillStyle=bgColor||S.bgColor||'#111';ctx.fillRect(x,y,w,h);}
+  ctx.translate(cx,cy);
+  if(rot) ctx.rotate(rot*Math.PI/180);
+  try{ctx.drawImage(img,-sw/2,-sh/2,sw,sh);}catch(e){}
+  ctx.restore();
+}
+
+function setHeroFit(mode,el) {
+  S.heroFit=mode;
+  ['contain','cover'].forEach(function(m){
+    var b=document.getElementById('hfit-'+m); if(!b) return;
+    if(m===mode){b.style.borderColor='var(--gold)';b.style.background='rgba(201,168,76,0.08)';}
+    else{b.style.borderColor='var(--border2)';b.style.background='var(--ivory)';}
+  });
+  showToast('\u2713 Hero fit: '+(mode==='contain'?'Full Photo':'Crop to Frame'));
+  _heroRedraw();
+}
+
+function setHeroZoom(val) {
+  S.heroZoom=parseFloat(val);
+  var d=document.getElementById('hero-zoom-display'); if(d) d.textContent=parseFloat(val).toFixed(1)+'\u00d7';
+  _heroRedraw();
+}
+
+function setHeroAlign(pos,el) {
+  S.heroAlign=pos;
+  document.querySelectorAll('.ha-btn').forEach(function(b){b.style.borderColor='var(--border2)';b.style.background='var(--ivory)';b.style.color='var(--muted)';});
+  if(el){el.style.borderColor='var(--gold)';el.style.background='rgba(201,168,76,0.08)';el.style.color='var(--gold)';}
+  showToast('\u2713 Focus: '+pos.replace(/-/g,' '));
+  _heroRedraw();
+}
+
+function _heroRedraw() {
+  if(typeof liveRender==='function') liveRender();
+  if(S.page===3&&typeof buildPreview==='function'){
+    clearTimeout(_heroRedraw._t);
+    _heroRedraw._t=setTimeout(function(){try{buildPreview();}catch(e){}},280);
+  }
+}
+
 function drawSquareHero(ctx,photo,x,y,sz,accent) {
   var r=Math.max(8,Math.round(sz*0.03));
   roundClip(ctx,x,y,sz,sz,r);
@@ -1141,7 +1209,7 @@ function drawSquareHero(ctx,photo,x,y,sz,accent) {
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText('Add Hero Photo',x+sz*0.5,y+sz*0.87);
   } else {
-    drawImg(ctx,photo,x,y,sz,sz);
+    drawHeroImg(ctx,photo,x,y,sz,sz,S.bgColor);
   }
   ctx.restore();
   if(typeof drawHeroFrame==='function') drawHeroFrame(ctx,x,y,sz,accent);
@@ -1902,7 +1970,7 @@ function sendFilesToEmail() {
 }
 
 function resetBuilder() {
-  S={page:0,theme:null,photos:[],hero:-1,fields:{},size:'24x36',accent:'#C9A84C',bgColor:'#ffffff',delivery:'digital',email:'',effects:{filter:'none',overlay:'none',frame:'none',textFx:'none'}};
+  S={page:0,theme:null,photos:[],hero:-1,fields:{},size:'24x36',accent:'#C9A84C',bgColor:'#ffffff',delivery:'digital',email:'',effects:{filter:'none',overlay:'none',frame:'none',textFx:'none'},heroFit:'contain',heroZoom:1.0,heroAlign:'center'};
   _paymentCompleted = false; // CHANGE 5: reset payment gate on new order
   document.getElementById('photo-grid').innerHTML='';
   document.getElementById('upload-stats-wrap').style.display='none';
@@ -2079,10 +2147,41 @@ function buildEffectsPanel() {
         ${FRAMES.map(f => `<div onclick="setEffect('frame','${f.id}',this)" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 10px;border-radius:10px;border:2px solid var(--border2);background:var(--ivory);transition:all 0.2s;min-width:56px;"><span style="font-size:18px;">${f.icon}</span><span style="font-size:10px;font-weight:500;color:var(--muted);">${f.label}</span></div>`).join('')}
       </div>
     </div>
-    <div>
+    <div style="margin-bottom:1.25rem;">
       <div class="field-label" style="margin-bottom:8px;">✍️ Text Style</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;" id="textfx-swatches">
         ${TEXT_FX.map(t => `<div onclick="setEffect('textFx','${t.id}',this)" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 10px;border-radius:10px;border:2px solid var(--border2);background:var(--ivory);transition:all 0.2s;min-width:56px;"><span style="font-size:18px;">${t.icon}</span><span style="font-size:10px;font-weight:500;color:var(--muted);">${t.label}</span></div>`).join('')}
+      </div>
+    </div>
+    <div style="padding-top:1rem;border-top:1px solid var(--border);">
+      <div class="field-card-title" style="font-size:12px;margin-bottom:12px;">🎯 Hero Photo Controls</div>
+      <div style="margin-bottom:12px;">
+        <div class="field-label" style="margin-bottom:6px;">Fit Mode</div>
+        <div style="display:flex;gap:8px;">
+          <button id="hfit-contain" onclick="setHeroFit('contain',this)" style="flex:1;padding:7px;border-radius:8px;border:2px solid var(--gold);background:rgba(201,168,76,0.08);color:var(--text);font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;">Fit · Full Photo</button>
+          <button id="hfit-cover" onclick="setHeroFit('cover',this)" style="flex:1;padding:7px;border-radius:8px;border:2px solid var(--border2);background:var(--ivory);color:var(--text);font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;">Fill · Crop to Frame</button>
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div class="field-label" style="margin-bottom:0;">Zoom</div>
+          <span id="hero-zoom-display" style="font-size:11px;color:var(--gold);font-weight:600;">1.0&times;</span>
+        </div>
+        <input type="range" id="hero-zoom-range" min="0.5" max="2.0" step="0.1" value="1.0" oninput="setHeroZoom(this.value)" style="width:100%;accent-color:#C9A84C;">
+      </div>
+      <div>
+        <div class="field-label" style="margin-bottom:8px;">Focus Point</div>
+        <div style="display:grid;grid-template-columns:repeat(3,32px);gap:4px;">
+          <button id="ha-top-left" onclick="setHeroAlign('top-left',this)" class="ha-btn" style="width:32px;height:32px;border-radius:6px;border:2px solid var(--border2);background:var(--ivory);color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#8598;</button>
+          <button id="ha-top-center" onclick="setHeroAlign('top-center',this)" class="ha-btn" style="width:32px;height:32px;border-radius:6px;border:2px solid var(--border2);background:var(--ivory);color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#8593;</button>
+          <button id="ha-top-right" onclick="setHeroAlign('top-right',this)" class="ha-btn" style="width:32px;height:32px;border-radius:6px;border:2px solid var(--border2);background:var(--ivory);color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#8599;</button>
+          <button id="ha-middle-left" onclick="setHeroAlign('middle-left',this)" class="ha-btn" style="width:32px;height:32px;border-radius:6px;border:2px solid var(--border2);background:var(--ivory);color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#8592;</button>
+          <button id="ha-center" onclick="setHeroAlign('center',this)" class="ha-btn" style="width:32px;height:32px;border-radius:6px;border:2px solid var(--gold);background:rgba(201,168,76,0.08);color:var(--gold);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#183;</button>
+          <button id="ha-middle-right" onclick="setHeroAlign('middle-right',this)" class="ha-btn" style="width:32px;height:32px;border-radius:6px;border:2px solid var(--border2);background:var(--ivory);color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#8594;</button>
+          <button id="ha-bottom-left" onclick="setHeroAlign('bottom-left',this)" class="ha-btn" style="width:32px;height:32px;border-radius:6px;border:2px solid var(--border2);background:var(--ivory);color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#8601;</button>
+          <button id="ha-bottom-center" onclick="setHeroAlign('bottom-center',this)" class="ha-btn" style="width:32px;height:32px;border-radius:6px;border:2px solid var(--border2);background:var(--ivory);color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#8595;</button>
+          <button id="ha-bottom-right" onclick="setHeroAlign('bottom-right',this)" class="ha-btn" style="width:32px;height:32px;border-radius:6px;border:2px solid var(--border2);background:var(--ivory);color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#8600;</button>
+        </div>
       </div>
     </div>`;
   var grid = document.querySelector('.customize-grid');
@@ -2104,6 +2203,21 @@ function _syncEffectsPanelUI() {
       else { d.style.borderColor = 'var(--border2)'; d.style.background = 'var(--ivory)'; }
     });
   });
+  // Sync hero controls
+  var fit = S.heroFit || 'contain';
+  ['contain','cover'].forEach(function(m) {
+    var b = document.getElementById('hfit-'+m); if(!b) return;
+    if(m===fit){b.style.borderColor='var(--gold)';b.style.background='rgba(201,168,76,0.08)';}
+    else{b.style.borderColor='var(--border2)';b.style.background='var(--ivory)';}
+  });
+  var hzr = document.getElementById('hero-zoom-range');
+  var hzd = document.getElementById('hero-zoom-display');
+  if(hzr) hzr.value = S.heroZoom || 1.0;
+  if(hzd) hzd.textContent = ((S.heroZoom||1.0).toFixed(1)) + '\u00d7';
+  var halign = S.heroAlign || 'center';
+  document.querySelectorAll('.ha-btn').forEach(function(b){b.style.borderColor='var(--border2)';b.style.background='var(--ivory)';b.style.color='var(--muted)';});
+  var hab = document.getElementById('ha-'+halign);
+  if(hab){hab.style.borderColor='var(--gold)';hab.style.background='rgba(201,168,76,0.08)';hab.style.color='var(--gold)';}
 }
 
 function setEffect(type, value, el) {
@@ -2111,7 +2225,12 @@ function setEffect(type, value, el) {
   var groupId = { filter:'filter-swatches', overlay:'overlay-swatches', frame:'frame-swatches', textFx:'textfx-swatches' }[type];
   document.querySelectorAll('#'+groupId+' > div').forEach(function(d) { d.style.borderColor = 'var(--border2)'; d.style.background = 'var(--ivory)'; });
   el.style.borderColor = 'var(--gold)'; el.style.background = 'rgba(201,168,76,0.08)';
-  showToast('✓ ' + type.replace('textFx','Text style') + ' updated');
+  showToast('\u2713 ' + type.replace('textFx','Text style') + ' updated');
+  if (typeof liveRender === 'function') liveRender();
+  if (S.page === 3 && typeof buildPreview === 'function') {
+    clearTimeout(setEffect._rt);
+    setEffect._rt = setTimeout(function() { try { buildPreview(); } catch(e) {} }, 300);
+  }
 }
 
 function setCollageFrame(id, el) {
@@ -2473,7 +2592,7 @@ function liveRender() {
       if (typeof drawThemeBackground === 'function') drawThemeBackground(ctx, t, LW, LH, S.accent||'#C9A84C', S.bgColor||t.bg||'#0B0D18');
       var vig = ctx.createRadialGradient(LW/2, LH*0.35, LH*0.08, LW/2, LH*0.52, LH*0.75); vig.addColorStop(0, 'rgba(0,0,0,0.08)'); vig.addColorStop(1, 'rgba(0,0,0,0.38)'); ctx.fillStyle = vig; ctx.fillRect(0, 0, LW, LH);
       drawBannerTextTop(ctx, t, LW, textH, name, sub, sub2, S.accent || '#C9A84C');
-      var r2 = 8; roundClip(ctx, heroX, heroY, heroSz, heroSz, r2); drawImg(ctx, heroPhoto, heroX, heroY, heroSz, heroSz); ctx.restore();
+      var r2 = 8; roundClip(ctx, heroX, heroY, heroSz, heroSz, r2); drawHeroImg(ctx, heroPhoto, heroX, heroY, heroSz, heroSz, S.bgColor||t.bg||'#0B0D18'); ctx.restore();
       drawHeroFrame(ctx, heroX, heroY, heroSz, S.accent || '#C9A84C');
       if (t.id === 'graduation') { drawVerticalCongrats(ctx, heroX, heroY, heroSz, S.accent); drawGradDiploma(ctx, LW, heroY, heroSz, S.accent); }
       if (t.id === 'stars-stripes') drawVerticalStripes(ctx, heroX, heroY, heroSz, S.accent);
@@ -2494,7 +2613,7 @@ function hookLivePreviewInputs() {
   document.addEventListener('click', function(e) {
     if (e.target.classList.contains('pal-swatch')) setTimeout(liveRender, 50);
     if (e.target.closest('.size-card')) setTimeout(liveRender, 50);
-    if (e.target.closest('#filter-swatches, #overlay-swatches, #frame-swatches, #textfx-swatches')) setTimeout(liveRender, 50);
+    if (e.target.closest('#filter-swatches, #overlay-swatches, #frame-swatches, #textfx-swatches, #collage-frame-swatches')) setTimeout(liveRender, 50);
   });
   var bgPicker = document.getElementById('bg-color-picker');
   if (bgPicker) bgPicker.addEventListener('input', function() { liveRender(); });
