@@ -83,7 +83,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--ivory); color: var(-
 .hero-label { position: absolute; bottom: 0; left: 0; right: 0; background: var(--gold); color: var(--obsidian); font-size: 9px; font-weight: 700; text-align: center; padding: 3px 0; letter-spacing: 1.5px; text-transform: uppercase; }
 .photo-cell .rm-btn { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(12,14,20,0.75); color: var(--white); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; opacity: 0; transition: opacity 0.15s; }
 .photo-cell .rot-btn { position: absolute; top: 4px; left: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(201,168,76,0.85); color: var(--obsidian); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; opacity: 0; transition: opacity 0.15s; }
-.photo-cell:hover .rm-btn, .photo-cell:hover .rot-btn { opacity: 1; }
+.photo-cell:hover .rm-btn, .photo-cell:hover .rot-btn, .photo-cell:hover .frame-btn { opacity: 1; }
 .customize-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 2rem; }
 @media (max-width: 700px) { .customize-grid { grid-template-columns: 1fr; } }
 .field-card { background: var(--white); border-radius: var(--r2); padding: 1.5rem; border: 0.5px solid var(--border2); box-shadow: var(--shadow-sm); }
@@ -243,7 +243,7 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
   .delivery-cards { grid-template-columns: 1fr; }
   .btn-group { gap: 8px; }
   .photo-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
-  .photo-cell .rm-btn, .photo-cell .rot-btn { opacity: 1; }
+  .photo-cell .rm-btn, .photo-cell .rot-btn, .photo-cell .frame-btn { opacity: 1; }
   .size-cards { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
   .size-card { padding: 12px; }
   .size-dim { font-size: 20px; }
@@ -898,7 +898,7 @@ function handleFiles(files) {
   arr.forEach(function(f){
     getExifRotation(f, function(rot) {
       var r = new FileReader();
-      r.onload = function(e){ var imgObj=new Image(); imgObj.src=e.target.result; S.photos.push({src:e.target.result,name:f.name,rotation:rot,_img:imgObj}); renderPhotoGrid(); };
+      r.onload = function(e){ var imgObj=new Image(); imgObj.src=e.target.result; S.photos.push({src:e.target.result,name:f.name,rotation:rot,_img:imgObj,frame:'none'}); renderPhotoGrid(); };
       r.readAsDataURL(f);
     });
   });
@@ -916,11 +916,21 @@ function renderPhotoGrid() {
       (i===S.hero?'<div class="hero-label">Hero</div>':'')+
       '<button class="rot-btn" onclick="rotatePhoto('+i+');event.stopPropagation()" title="Rotate">↻</button>'+
       '<button class="rm-btn" onclick="removePhoto('+i+');event.stopPropagation()">✕</button>'+
+      '<button class="frame-btn" onclick="cyclePhotoFrame('+i+');event.stopPropagation()" title="Change frame" style="position:absolute;bottom:4px;left:4px;width:22px;height:22px;border-radius:50%;background:rgba(12,14,20,0.75);color:var(--gold2);border:none;cursor:pointer;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.15s;">▢</button>'+
       '</div>';
   }).join('');
 }
 
 function rotatePhoto(i) { S.photos[i].rotation = ((S.photos[i].rotation||0)+90)%360; renderPhotoGrid(); }
+function cyclePhotoFrame(i) {
+  var frameIds = ['none','classic','double','rounded','polaroid','film','stars','neon'];
+  var current = S.photos[i].frame || 'none';
+  var idx = frameIds.indexOf(current);
+  var next = frameIds[(idx + 1) % frameIds.length];
+  S.photos[i].frame = next;
+  renderPhotoGrid();
+  showToast('Photo ' + (i+1) + ' frame: ' + next);
+}
 function handleUrlPhoto() {
   var url = document.getElementById('url-input').value.trim();
   if (!url) { showToast('⚠️ Please paste an image URL first'); return; }
@@ -935,7 +945,7 @@ function handleUrlPhoto() {
     var tCtx=tc.getContext('2d'); tCtx.drawImage(img,0,0);
     var src = tc.toDataURL('image/jpeg',0.92);
     var cached=new Image(); cached.src=src;
-    S.photos.push({src:src,name:'web-photo.jpg',rotation:0,_img:cached});
+    S.photos.push({src:src,name:'web-photo.jpg',rotation:0,_img:cached,frame:'none'});
     renderPhotoGrid();
     document.getElementById('url-input').value='';
     showToast('✓ Photo added from web');
@@ -1764,7 +1774,7 @@ function drawCollageRow(ctx,photos,W,H,accent,startY,cols){
     ctx.restore();
     return;
   }
-  var ruleY=startY-Math.round(W*0.012);
+  var ruleY=startY-Math.round(W*0.018);
   var ruleMargin=Math.round(W*0.06);
   ctx.save(); ctx.strokeStyle=accent; ctx.globalAlpha=0.35;
   ctx.lineWidth=Math.max(1,Math.round(W*0.0015));
@@ -1784,6 +1794,14 @@ function drawCollageRow(ctx,photos,W,H,accent,startY,cols){
     var col=i%n,row=Math.floor(i/n);
     var x=margin+col*(cw+pad),y=startY+row*(ch+pad);
     _drawCollageCell(ctx,photos[i],x,y,cw,ch,cornerR,accent);
+    // Draw per-photo frame if set
+    var photoFrame = photos[i] && photos[i].frame ? photos[i].frame : 'none';
+    if (photoFrame !== 'none') {
+      var _savedFrame = S.effects.frame;
+      S.effects.frame = photoFrame;
+      drawHeroFrame(ctx, x, y, cw, accent);
+      S.effects.frame = _savedFrame;
+    }
   }
 }
 
@@ -2090,16 +2108,16 @@ var OVERLAYS = [
 ];
 
 var FRAMES = [
-  { id:'none',      label:'None',        icon:'○' },
-  { id:'classic',   label:'Classic',     icon:'□' },
-  { id:'double',    label:'Double',      icon:'◫' },
-  { id:'rounded',   label:'Rounded',     icon:'◯' },
-  { id:'polaroid',  label:'Polaroid',    icon:'▭' },
-  { id:'film',      label:'Film Strip',  icon:'▤' },
-  { id:'stars',     label:'Star Border', icon:'✦' },
-  { id:'patriotic', label:'Flag Border', icon:'▦' },
-  { id:'floral',    label:'Floral',      icon:'✿' },
-  { id:'neon',      label:'Neon Glow',   icon:'◈' },
+  { id:'none',      label:'None',     icon:'—'  },
+  { id:'classic',   label:'Classic',  icon:'▢'  },
+  { id:'double',    label:'Double',   icon:'▣'  },
+  { id:'rounded',   label:'Round',    icon:'▭'  },
+  { id:'polaroid',  label:'Polaroid', icon:'▯'  },
+  { id:'film',      label:'Film',     icon:'▤'  },
+  { id:'stars',     label:'Stars',    icon:'✦'  },
+  { id:'patriotic', label:'Flag',     icon:'☰'  },
+  { id:'floral',    label:'Floral',   icon:'✾'  },
+  { id:'neon',      label:'Neon',     icon:'◈'  },
 ];
 
 var TEXT_FX = [
@@ -2138,14 +2156,8 @@ function buildEffectsPanel() {
       </div>
     </div>
     <div style="margin-bottom:1.25rem;">
-      <div class="field-label" style="margin-bottom:8px;">🖼️ Collage Photo Frame</div>
+      <div class="field-label" style="margin-bottom:8px;">🖼️ Hero Photo Frame</div>
       <div style="display:flex;gap:10px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;" id="collage-frame-swatches"></div>
-    </div>
-    <div style="margin-bottom:1.25rem;">
-      <div class="field-label" style="margin-bottom:8px;">🖼️ Photo Frame Style</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="frame-swatches">
-        ${FRAMES.map(f => `<div onclick="setEffect('frame','${f.id}',this)" onmouseover="if(!this.style.borderColor.includes('201,168'))this.style.background='rgba(201,168,76,0.06)'" onmouseout="if(!this.style.borderColor.includes('201,168'))this.style.background='var(--ivory)'" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 10px;border-radius:10px;border:2px solid var(--border2);background:var(--ivory);transition:all 0.18s;min-width:62px;"><span style="font-size:16px;font-weight:700;color:var(--gold);font-family:serif;">${f.icon}</span><span style="font-size:10px;font-weight:500;color:var(--muted);">${f.label}</span></div>`).join('')}
-      </div>
     </div>
     <div style="margin-bottom:1.25rem;">
       <div class="field-label" style="margin-bottom:8px;">✍️ Text Style</div>
@@ -2711,7 +2723,7 @@ function liveRender() {
       var name = t.id === 'champion' ? (S.fields.teamName || '') : t.id === 'wedding' ? (S.fields.coupleNames || '') : (S.fields.name || S.fields.coupleNames || S.fields.names || S.fields.petName || '');
       var sub = S.fields.year || S.fields.date || S.fields.years || (t.id !== 'stars-stripes' ? S.fields.caption : '') || '';
       var sub2 = S.fields.school || S.fields.city || (t.id === 'stars-stripes' ? S.fields.caption : '') || '';
-      var textH = Math.round(LW * 0.28); var heroSz = Math.round(LW * 0.55); var heroX = Math.round((LW - heroSz) / 2); var heroY = textH + 6; var heroBot = heroY + heroSz + 6;
+      var textH = Math.round(LW * 0.28); var heroSz = Math.round(LW * 0.55); var heroX = Math.round((LW - heroSz) / 2); var heroY = textH + 6; var heroBot = heroY + heroSz + Math.round(LW * 0.06);
       var n = 6, pad = 2, cw = Math.floor((LW - 10 - (n-1)*pad) / n);
       var oc = S.photos.length > 0 ? S.photos.length - 1 : 0; var rows = Math.max(1, Math.ceil(oc / n));
       var LH = Math.max(Math.round(LW * 1.5), heroBot + rows*(cw+pad) + 14);
