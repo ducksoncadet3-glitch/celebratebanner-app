@@ -1051,7 +1051,8 @@ function buildPreview() {
   }
 
   var textH=Math.round(W*0.28), heroSz=Math.round(W*0.55);
-  var heroX=Math.round((W-heroSz)/2), heroY=textH+10, heroBot=heroY+heroSz+10;
+  var heroX=Math.round((W-heroSz)/2), heroY=textH+10;
+  var heroBot = heroY + heroSz + Math.round(W * 0.08);
   var pad=Math.max(6,Math.round(W*0.003)), margin=Math.max(8,Math.round(W*0.003));
   var cw=Math.floor((W-margin*2-(cols-1)*pad)/cols), ch=cw;
   var rows=Math.max(1,Math.ceil(totalDrawn/cols));
