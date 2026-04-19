@@ -1794,13 +1794,12 @@ function drawCollageRow(ctx,photos,W,H,accent,startY,cols){
     var col=i%n,row=Math.floor(i/n);
     var x=margin+col*(cw+pad),y=startY+row*(ch+pad);
     _drawCollageCell(ctx,photos[i],x,y,cw,ch,cornerR,accent);
-    // Draw per-photo frame if set
-    var photoFrame = photos[i] && photos[i].frame ? photos[i].frame : 'none';
-    if (photoFrame !== 'none') {
-      var _savedFrame = S.effects.frame;
-      S.effects.frame = photoFrame;
+    var _pf = (photos[i] && photos[i].frame && photos[i].frame !== 'none') ? photos[i].frame : null;
+    if (_pf) {
+      var _savedF = S.effects.frame;
+      S.effects.frame = _pf;
       drawHeroFrame(ctx, x, y, cw, accent);
-      S.effects.frame = _savedFrame;
+      S.effects.frame = _savedF;
     }
   }
 }
