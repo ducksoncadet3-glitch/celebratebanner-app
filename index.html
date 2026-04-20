@@ -1794,13 +1794,7 @@ function drawCollageRow(ctx,photos,W,H,accent,startY,cols){
     var col=i%n,row=Math.floor(i/n);
     var x=margin+col*(cw+pad),y=startY+row*(ch+pad);
     _drawCollageCell(ctx,photos[i],x,y,cw,ch,cornerR,accent);
-    var _pf = (photos[i] && photos[i].frame && photos[i].frame !== 'none') ? photos[i].frame : null;
-    if (_pf) {
-      var _savedF = S.effects.frame;
-      S.effects.frame = _pf;
-      drawHeroFrame(ctx, x, y, cw, accent);
-      S.effects.frame = _savedF;
-    }
+    // Per-photo frame already handled inside _drawCollageCell — no double-draw needed
   }
 }
 
@@ -2341,8 +2335,8 @@ function _drawCollageThumbnail(tc, accent, frameId) {
 }
 
 // Draws a decorative frame on a collage cell after the photo has been drawn
-function _drawCollageCellFrame(ctx, x, y, w, h, accent) {
-  var frame = selectedPhotoFrame || 'none';
+function _drawCollageCellFrame(ctx, x, y, w, h, accent, photoFrame) {
+  var frame = photoFrame || 'none';
   if (!frame || frame === 'none' || frame === 'polaroid' || frame === 'circle' || frame === 'rounded' || frame === 'vintage') return;
   ctx.save();
   if (frame === 'classic-white') {
@@ -2374,7 +2368,7 @@ function _drawCollageCellFrame(ctx, x, y, w, h, accent) {
 
 // Unified collage cell draw — handles clip, photo, frame in correct order for each frame type
 function _drawCollageCell(ctx, photo, x, y, w, h, cornerR, accent) {
-  var frame = selectedPhotoFrame || 'none';
+  var frame = (photo && photo.frame && photo.frame !== 'none') ? photo.frame : 'none';
 
   if (frame === 'polaroid') {
     ctx.save();
@@ -2416,7 +2410,7 @@ function _drawCollageCell(ctx, photo, x, y, w, h, cornerR, accent) {
 
   // All other frames: standard rounded clip + photo, then overlay frame
   roundClip(ctx,x,y,w,h,cornerR); drawImg(ctx,photo,x,y,w,h); ctx.restore();
-  _drawCollageCellFrame(ctx,x,y,w,h,accent);
+  _drawCollageCellFrame(ctx,x,y,w,h,accent,frame);
 }
 
 function drawHeroFrame(ctx, x, y, sz, accent) {
@@ -2673,8 +2667,11 @@ drawSquareHero = function(ctx, photo, x, y, sz, accent) {
   roundClip(ctx, x, y, sz, sz, r);
   drawImg(ctx, photo, x, y, sz, sz);
   ctx.restore();
-  // Hero frame uses S.effects.frame
-  var _hf = (S.effects && S.effects.frame) ? S.effects.frame : 'none';
+  // Hero frame: use hero photo's own .frame property first, fallback to S.effects.frame
+  var heroPhoto = S.hero >= 0 ? S.photos[S.hero] : (S.photos[0] || null);
+  var _hf = (heroPhoto && heroPhoto.frame && heroPhoto.frame !== 'none')
+    ? heroPhoto.frame
+    : ((S.effects && S.effects.frame && S.effects.frame !== 'none') ? S.effects.frame : 'none');
   if (_hf !== 'none') {
     var _saved = S.effects.frame;
     S.effects.frame = _hf;
