@@ -755,7 +755,7 @@ var S = {
   page:0, theme:null, photos:[], hero:-1,
   fields:{}, size:'24x36', accent:'#C9A84C',
   bgColor:'#ffffff', delivery:'digital', email:'',
-  effects: { filter:'none', overlay:'none', frame:'none', textFx:'none' },
+  effects: { filter:'none', overlay:'none', frame:'none', heroFrame:'none', textFx:'none' },
   heroFit:'contain', heroZoom:1.0, heroAlign:'center'
 };
 
@@ -1222,14 +1222,14 @@ function drawSquareHero(ctx,photo,x,y,sz,accent) {
     drawHeroImg(ctx,photo,x,y,sz,sz,S.bgColor);
   }
   ctx.restore();
-  var _heroRef = S.hero >= 0 ? S.photos[S.hero] : (S.photos[0] || null);
-  var _hasFrame = (_heroRef && _heroRef.frame && _heroRef.frame !== 'none')
-    || (S.effects && S.effects.frame && S.effects.frame !== 'none');
-  if (!_hasFrame) {
+  var _hf = S.effects ? S.effects.heroFrame : 'none';
+  if (!_hf || _hf === 'none') {
     var lw=Math.max(4,Math.round(sz*0.007));
     ctx.save(); ctx.strokeStyle=accent; ctx.lineWidth=lw;
     roundPath(ctx,x-Math.round(lw/2),y-Math.round(lw/2),sz+lw,sz+lw,r+Math.round(lw/2));
     ctx.stroke(); ctx.restore();
+  } else {
+    drawHeroFrame(ctx,x,y,sz,accent);
   }
 }
 
@@ -1983,7 +1983,7 @@ function sendFilesToEmail() {
 }
 
 function resetBuilder() {
-  S={page:0,theme:null,photos:[],hero:-1,fields:{},size:'24x36',accent:'#C9A84C',bgColor:'#ffffff',delivery:'digital',email:'',effects:{filter:'none',overlay:'none',frame:'none',textFx:'none'},heroFit:'contain',heroZoom:1.0,heroAlign:'center'};
+  S={page:0,theme:null,photos:[],hero:-1,fields:{},size:'24x36',accent:'#C9A84C',bgColor:'#ffffff',delivery:'digital',email:'',effects:{filter:'none',overlay:'none',frame:'none',heroFrame:'none',textFx:'none'},heroFit:'contain',heroZoom:1.0,heroAlign:'center'};
   _paymentCompleted = false; // CHANGE 5: reset payment gate on new order
   document.getElementById('photo-grid').innerHTML='';
   document.getElementById('upload-stats-wrap').style.display='none';
@@ -2155,8 +2155,8 @@ function buildEffectsPanel() {
       <div style="font-size:11px;color:var(--muted);margin-top:-8px;margin-bottom:10px;pointer-events:none;">
         To frame individual collage photos, tap the <strong>F</strong> button on each photo in Step 2
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="frame-swatches">
-        ${FRAMES.map(f => `<div onclick="setEffect('frame','${f.id}',this)" onmouseover="if(!this.style.borderColor.includes('201,168'))this.style.background='rgba(201,168,76,0.06)'" onmouseout="if(!this.style.borderColor.includes('201,168'))this.style.background='var(--ivory)'" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 10px;border-radius:10px;border:2px solid ${f.id==='none'?'var(--gold)':'var(--border2)'};background:var(--ivory);transition:all 0.18s;min-width:62px;"><span style="font-size:12px;font-weight:700;color:var(--gold);font-family:monospace;">${f.icon}</span><span style="font-size:10px;font-weight:500;color:var(--muted);">${f.label}</span></div>`).join('')}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="hero-frame-swatches">
+        ${FRAMES.map(f => `<div onclick="setEffect('heroFrame','${f.id}',this)" onmouseover="if(!this.style.borderColor.includes('201,168'))this.style.background='rgba(201,168,76,0.06)'" onmouseout="if(!this.style.borderColor.includes('201,168'))this.style.background='var(--ivory)'" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 10px;border-radius:10px;border:2px solid ${f.id==='none'?'var(--gold)':'var(--border2)'};background:var(--ivory);transition:all 0.18s;min-width:62px;"><span style="font-size:12px;font-weight:700;color:var(--gold);font-family:monospace;">${f.icon}</span><span style="font-size:10px;font-weight:500;color:var(--muted);">${f.label}</span></div>`).join('')}
       </div>
     </div>
     <div style="margin-bottom:1.25rem;">
@@ -2201,8 +2201,8 @@ function buildEffectsPanel() {
 }
 
 function _syncEffectsPanelUI() {
-  var map = {filter:'filter-swatches',overlay:'overlay-swatches',frame:'frame-swatches',textFx:'textfx-swatches'};
-  var dataMap = {filter:FILTERS,overlay:OVERLAYS,frame:FRAMES,textFx:TEXT_FX};
+  var map = {filter:'filter-swatches',overlay:'overlay-swatches',heroFrame:'hero-frame-swatches',textFx:'textfx-swatches'};
+  var dataMap = {filter:FILTERS,overlay:OVERLAYS,heroFrame:FRAMES,textFx:TEXT_FX};
   Object.keys(map).forEach(function(type) {
     var groupEl = document.getElementById(map[type]);
     if (!groupEl) return;
@@ -2233,8 +2233,7 @@ function _syncEffectsPanelUI() {
 
 function setEffect(type, value, el) {
   S.effects[type] = value;
-  if (type === 'frame' && S.hero >= 0 && S.photos[S.hero]) { S.photos[S.hero].frame = value; }
-  var groupId = { filter:'filter-swatches', overlay:'overlay-swatches', frame:'frame-swatches', textFx:'textfx-swatches' }[type];
+  var groupId = { filter:'filter-swatches', overlay:'overlay-swatches', heroFrame:'hero-frame-swatches', textFx:'textfx-swatches' }[type];
   document.querySelectorAll('#'+groupId+' > div').forEach(function(d) { d.style.borderColor = 'var(--border2)'; d.style.background = 'var(--ivory)'; });
   el.style.borderColor = 'var(--gold)'; el.style.background = 'rgba(201,168,76,0.08)';
   showToast('\u2713 ' + type.replace('textFx','Text style') + ' updated');
@@ -2418,7 +2417,7 @@ function _drawCollageCell(ctx, photo, x, y, w, h, cornerR, accent) {
 }
 
 function drawHeroFrame(ctx, x, y, sz, accent) {
-  var frame = S.effects ? S.effects.frame : 'none';
+  var frame = S.effects ? S.effects.heroFrame : 'none';
   if (!frame || frame === 'none') return;
 
   var u  = Math.max(2, Math.round(sz * 0.007));
