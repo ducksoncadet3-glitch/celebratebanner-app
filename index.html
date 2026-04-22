@@ -2238,7 +2238,7 @@ function setEffect(type, value, el) {
   el.style.borderColor = 'var(--gold)'; el.style.background = 'rgba(201,168,76,0.08)';
   showToast('\u2713 ' + type.replace('textFx','Text style') + ' updated');
   if (typeof liveRender === 'function') liveRender();
-  if (S.page === 3 && typeof buildPreview === 'function') {
+  if ((S.page === 3 || S.page === 2) && typeof buildPreview === 'function') {
     clearTimeout(setEffect._rt);
     setEffect._rt = setTimeout(function() { try { buildPreview(); } catch(e) {} }, 300);
   }
