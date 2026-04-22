@@ -2152,12 +2152,14 @@ function buildEffectsPanel() {
     </div>
     <div style="margin-bottom:1.25rem;">
       <div class="field-label" style="margin-bottom:8px;">🖼️ Hero Frame — applies to center photo only</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:-8px;margin-bottom:10px;pointer-events:none;">
-        To frame individual collage photos, tap the <strong>F</strong> button on each photo in Step 2
-      </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;" id="hero-frame-swatches">
         ${FRAMES.map(f => `<div onclick="setEffect('heroFrame','${f.id}',this)" onmouseover="if(!this.style.borderColor.includes('201,168'))this.style.background='rgba(201,168,76,0.06)'" onmouseout="if(!this.style.borderColor.includes('201,168'))this.style.background='var(--ivory)'" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 10px;border-radius:10px;border:2px solid ${f.id==='none'?'var(--gold)':'var(--border2)'};background:var(--ivory);transition:all 0.18s;min-width:62px;"><span style="font-size:12px;font-weight:700;color:var(--gold);font-family:monospace;">${f.icon}</span><span style="font-size:10px;font-weight:500;color:var(--muted);">${f.label}</span></div>`).join('')}
       </div>
+    </div>
+    <div style="margin-bottom:1.25rem;">
+      <div class="field-label" style="margin-bottom:8px;">🎞️ Collage Photo Frames — set a frame for each photo</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:-8px;margin-bottom:10px;">Click any thumbnail to cycle through frames</div>
+      <div id="collage-frame-thumbs-row" style="display:flex;gap:8px;flex-wrap:wrap;overflow-x:auto;min-height:32px;"></div>
     </div>
     <div style="margin-bottom:1.25rem;">
       <div class="field-label" style="margin-bottom:8px;">✍️ Text Style</div>
@@ -2197,7 +2199,7 @@ function buildEffectsPanel() {
       </div>
     </div>`;
   var grid = document.querySelector('.customize-grid');
-  if (grid) { var wrapper = document.createElement('div'); wrapper.style.gridColumn = '1 / -1'; wrapper.appendChild(panel); grid.appendChild(wrapper); }
+  if (grid) { var wrapper = document.createElement('div'); wrapper.style.gridColumn = '1 / -1'; wrapper.appendChild(panel); grid.appendChild(wrapper); _buildCollageFrameThumbs(); }
 }
 
 function _syncEffectsPanelUI() {
@@ -2229,6 +2231,68 @@ function _syncEffectsPanelUI() {
   document.querySelectorAll('.ha-btn').forEach(function(b){b.style.borderColor='var(--border2)';b.style.background='var(--ivory)';b.style.color='var(--muted)';});
   var hab = document.getElementById('ha-'+halign);
   if(hab){hab.style.borderColor='var(--gold)';hab.style.background='rgba(201,168,76,0.08)';hab.style.color='var(--gold)';}
+  _buildCollageFrameThumbs();
+}
+
+function _buildCollageFrameThumbs() {
+  var row = document.getElementById('collage-frame-thumbs-row');
+  if (!row) return;
+  var collagePics = S.photos.filter(function(p, i) { return i !== S.hero; });
+  if (collagePics.length === 0) {
+    row.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:8px 0;">No collage photos yet — upload photos in Step 1</div>';
+    return;
+  }
+  row.innerHTML = '';
+  collagePics.forEach(function(photo, ci) {
+    var actualIdx = S.photos.indexOf(photo);
+    var frameName = (photo.frame && photo.frame !== 'none') ? photo.frame : 'none';
+    var frameLabel = (FRAMES.find(function(f) { return f.id === frameName; }) || FRAMES[0]).label;
+    var item = document.createElement('div');
+    item.id = 'cft-' + actualIdx;
+    item.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px;border-radius:10px;border:2px solid ' + (frameName !== 'none' ? 'var(--gold)' : 'var(--border2)') + ';background:var(--ivory);transition:all 0.18s;min-width:70px;';
+    item.setAttribute('onclick', 'cycleCollageFrame(' + actualIdx + ')');
+    var cv = document.createElement('canvas');
+    cv.width = 60; cv.height = 60;
+    cv.style.cssText = 'width:60px;height:60px;border-radius:6px;display:block;';
+    var cx2 = cv.getContext('2d');
+    if (photo && photo.img) {
+      try {
+        var iw = photo.img.naturalWidth || photo.img.width || 60;
+        var ih = photo.img.naturalHeight || photo.img.height || 60;
+        var scale = Math.max(60/iw, 60/ih);
+        var dw = iw*scale, dh = ih*scale;
+        cx2.drawImage(photo.img, (60-dw)/2, (60-dh)/2, dw, dh);
+      } catch(e) { cx2.fillStyle='#1a1c24'; cx2.fillRect(0,0,60,60); }
+    } else {
+      cx2.fillStyle = '#1a1c24'; cx2.fillRect(0,0,60,60);
+      cx2.fillStyle = 'rgba(255,255,255,0.2)'; cx2.font = '20px sans-serif'; cx2.textAlign = 'center'; cx2.textBaseline = 'middle';
+      cx2.fillText(String(ci+1), 30, 30);
+    }
+    var num = document.createElement('div');
+    num.style.cssText = 'font-size:8px;color:rgba(201,168,76,0.7);font-weight:700;';
+    num.textContent = 'Photo ' + (ci + 1);
+    var lbl = document.createElement('div');
+    lbl.style.cssText = 'font-size:9px;font-weight:600;color:var(--muted);text-align:center;max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+    lbl.textContent = frameLabel;
+    item.appendChild(cv); item.appendChild(num); item.appendChild(lbl);
+    row.appendChild(item);
+  });
+}
+
+function cycleCollageFrame(idx) {
+  var photo = S.photos[idx];
+  if (!photo) return;
+  var cur = photo.frame || 'none';
+  var fi = FRAMES.findIndex(function(f) { return f.id === cur; });
+  fi = (fi + 1) % FRAMES.length;
+  photo.frame = FRAMES[fi].id;
+  _buildCollageFrameThumbs();
+  if (typeof liveRender === 'function') liveRender();
+  if ((S.page === 3 || S.page === 2) && typeof buildPreview === 'function') {
+    clearTimeout(cycleCollageFrame._rt);
+    cycleCollageFrame._rt = setTimeout(function() { try { buildPreview(); } catch(e) {} }, 200);
+  }
+  showToast('✓ Photo ' + (idx+1) + ': ' + FRAMES[fi].label);
 }
 
 function setEffect(type, value, el) {
