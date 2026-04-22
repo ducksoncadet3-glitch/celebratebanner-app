@@ -2233,6 +2233,7 @@ function _syncEffectsPanelUI() {
 
 function setEffect(type, value, el) {
   S.effects[type] = value;
+  if (type === 'frame' && S.hero >= 0 && S.photos[S.hero]) { S.photos[S.hero].frame = value; }
   var groupId = { filter:'filter-swatches', overlay:'overlay-swatches', frame:'frame-swatches', textFx:'textfx-swatches' }[type];
   document.querySelectorAll('#'+groupId+' > div').forEach(function(d) { d.style.borderColor = 'var(--border2)'; d.style.background = 'var(--ivory)'; });
   el.style.borderColor = 'var(--gold)'; el.style.background = 'rgba(201,168,76,0.08)';
@@ -2664,23 +2665,6 @@ drawImg = function(ctx, photo, x, y, w, h) {
   ctx.restore();
 };
 
-var _origDrawSquareHero = drawSquareHero;
-drawSquareHero = function(ctx, photo, x, y, sz, accent) {
-  var r = 14;
-  roundClip(ctx, x, y, sz, sz, r);
-  drawImg(ctx, photo, x, y, sz, sz);
-  ctx.restore();
-  var heroRef = S.hero >= 0 ? S.photos[S.hero] : (S.photos[0] || null);
-  var _hf = (heroRef && heroRef.frame && heroRef.frame !== 'none')
-    ? heroRef.frame
-    : ((S.effects && S.effects.frame && S.effects.frame !== 'none') ? S.effects.frame : 'none');
-  if (_hf !== 'none') {
-    var _saved = S.effects.frame;
-    S.effects.frame = _hf;
-    drawHeroFrame(ctx, x, y, sz, accent);
-    S.effects.frame = _saved;
-  }
-};
 
 console.log('✓ CelebrateBanner Effects Module loaded');
 
