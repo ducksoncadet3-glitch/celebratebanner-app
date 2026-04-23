@@ -2163,16 +2163,16 @@ S.effects = { filter:'none', overlay:'none', frame:'none', heroFrame:'none', tex
 var selectedPhotoFrame = 'none';
 
 var COLLAGE_FRAMES = [
-  { id:'none',          label:'None' },
-  { id:'classic-white', label:'Classic White' },
-  { id:'classic-black', label:'Classic Black' },
-  { id:'gold-foil',     label:'Gold Foil' },
-  { id:'rounded',       label:'Rounded' },
-  { id:'circle',        label:'Circle' },
-  { id:'polaroid',      label:'Polaroid' },
-  { id:'neon-glow',     label:'Neon Glow' },
-  { id:'film-strip',    label:'Film Strip' },
-  { id:'vintage',       label:'Vintage' },
+  { id:'none',          label:'None',         icon:'—'   },
+  { id:'classic-white', label:'Classic',      icon:'[ ]' },
+  { id:'classic-black', label:'Black',        icon:'[■]' },
+  { id:'gold-foil',     label:'Gold',         icon:'[✦]' },
+  { id:'rounded',       label:'Rounded',      icon:'( )' },
+  { id:'circle',        label:'Circle',       icon:'◯'   },
+  { id:'polaroid',      label:'Polaroid',     icon:'[_]' },
+  { id:'neon-glow',     label:'Neon',         icon:':O:' },
+  { id:'film-strip',    label:'Film',         icon:'|||' },
+  { id:'vintage',       label:'Vintage',      icon:'◉'   },
 ];
 
 var FILTERS = [
@@ -2257,7 +2257,10 @@ function buildEffectsPanel() {
     </div>
     <div style="margin-bottom:1.25rem;">
       <div class="field-label" style="margin-bottom:8px;">🎞️ Collage Photo Frames — set a frame for each photo</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:-8px;margin-bottom:10px;">Click any thumbnail to cycle through frames</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;" id="collage-frame-tabs">
+        ${COLLAGE_FRAMES.map(f => `<div onclick="setCollageFrameAll('${f.id}',this)" onmouseover="if(!this.style.borderColor.includes('201,168'))this.style.background='rgba(201,168,76,0.06)'" onmouseout="if(!this.style.borderColor.includes('201,168'))this.style.background='var(--ivory)'" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 10px;border-radius:10px;border:2px solid ${f.id==='none'?'var(--gold)':'var(--border2)'};background:var(--ivory);transition:all 0.18s;min-width:62px;"><span style="font-size:12px;font-weight:700;color:var(--gold);font-family:monospace;">${f.icon}</span><span style="font-size:10px;font-weight:500;color:var(--muted);">${f.label}</span></div>`).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Click a tab above to apply a frame to all photos, or click a thumbnail to customize individually</div>
       <div id="collage-frame-thumbs-row" style="display:flex;gap:8px;flex-wrap:wrap;overflow-x:auto;min-height:32px;"></div>
     </div>
     <div style="margin-bottom:1.25rem;">
@@ -2378,6 +2381,15 @@ function _buildCollageFrameThumbs() {
     item.appendChild(cv); item.appendChild(num); item.appendChild(lbl);
     row.appendChild(item);
   });
+  // Sync tab active state to reflect current frames
+  var allSameFrame = collagePics.length > 0 && collagePics.every(function(p) { return (p.frame || 'none') === (collagePics[0].frame || 'none'); });
+  var activeFrame = collagePics.length === 0 ? 'none' : (allSameFrame ? (collagePics[0].frame || 'none') : null);
+  var tabs = document.querySelectorAll('#collage-frame-tabs > div');
+  COLLAGE_FRAMES.forEach(function(f, i) {
+    if (!tabs[i]) return;
+    if (f.id === activeFrame) { tabs[i].style.borderColor = 'var(--gold)'; tabs[i].style.background = 'rgba(201,168,76,0.08)'; }
+    else { tabs[i].style.borderColor = 'var(--border2)'; tabs[i].style.background = 'var(--ivory)'; }
+  });
 }
 
 function cycleCollageFrame(idx) {
@@ -2394,6 +2406,23 @@ function cycleCollageFrame(idx) {
     cycleCollageFrame._rt = setTimeout(function() { try { buildPreview(); } catch(e) {} }, 200);
   }
   showToast('✓ Collage photo ' + idx + ': ' + COLLAGE_FRAMES[fi].label);
+}
+
+function setCollageFrameAll(frameId, el) {
+  var effectiveHero = S.hero >= 0 ? S.hero : 0;
+  S.photos.forEach(function(p, i) { if (i !== effectiveHero) p.frame = frameId; });
+  document.querySelectorAll('#collage-frame-tabs > div').forEach(function(d) {
+    d.style.borderColor = 'var(--border2)'; d.style.background = 'var(--ivory)';
+  });
+  el.style.borderColor = 'var(--gold)'; el.style.background = 'rgba(201,168,76,0.08)';
+  _buildCollageFrameThumbs();
+  var label = (COLLAGE_FRAMES.find(function(f) { return f.id === frameId; }) || COLLAGE_FRAMES[0]).label;
+  showToast('✓ All collage photos: ' + label);
+  if (typeof liveRender === 'function') liveRender();
+  if ((S.page === 3 || S.page === 2) && typeof buildPreview === 'function') {
+    clearTimeout(setCollageFrameAll._rt);
+    setCollageFrameAll._rt = setTimeout(function() { try { buildPreview(); } catch(e) {} }, 200);
+  }
 }
 
 function setEffect(type, value, el) {
