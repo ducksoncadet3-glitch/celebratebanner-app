@@ -1030,7 +1030,7 @@ function buildPreview() {
   var isSmallTheme = SMALL_COLLAGE_THEMES.indexOf(t.id) >= 0;
   var targetSlots = isSmallTheme ? 24 : (COLLAGE_CAPS[S.size] || 45);
   var defaultCols  = COLLAGE_COLS[targetSlots] || 9;
-  var baseList     = S.photos.filter(function(_,i){return i!==S.hero;});
+  var baseList     = S.photos.filter(function(_,i){return i!==(S.hero>=0?S.hero:0);});
   var actualCount  = baseList.length;
 
   var drawList = [];
@@ -2882,7 +2882,7 @@ function liveRender() {
       var LW = 184;
       var t = S.theme;
       var heroPhoto = S.hero >= 0 ? S.photos[S.hero] : (S.photos[0] || null);
-      var others = S.photos.filter(function(_, i) { return i !== S.hero; });
+      var others = S.photos.filter(function(_, i) { return i !== (S.hero >= 0 ? S.hero : 0); });
       var name = t.id === 'champion' ? (S.fields.teamName || '') : t.id === 'wedding' ? (S.fields.coupleNames || '') : (S.fields.name || S.fields.coupleNames || S.fields.names || S.fields.petName || '');
       var sub = S.fields.year || S.fields.date || S.fields.years || (t.id !== 'stars-stripes' ? S.fields.caption : '') || '';
       var sub2 = S.fields.school || S.fields.city || (t.id === 'stars-stripes' ? S.fields.caption : '') || '';
