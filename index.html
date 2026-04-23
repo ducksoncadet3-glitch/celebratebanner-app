@@ -2336,7 +2336,9 @@ function _syncEffectsPanelUI() {
 function _buildCollageFrameThumbs() {
   var row = document.getElementById('collage-frame-thumbs-row');
   if (!row) return;
-  var collagePics = S.photos.filter(function(p, i) { return i !== S.hero; });
+  // Exclude the effective hero (S.hero >= 0 picks explicitly; -1 falls back to index 0 in preview)
+  var effectiveHero = S.hero >= 0 ? S.hero : 0;
+  var collagePics = S.photos.filter(function(p, i) { return i !== effectiveHero; });
   if (collagePics.length === 0) {
     row.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:8px 0;">No collage photos yet — upload photos in Step 1</div>';
     return;
@@ -2345,7 +2347,7 @@ function _buildCollageFrameThumbs() {
   collagePics.forEach(function(photo, ci) {
     var actualIdx = S.photos.indexOf(photo);
     var frameName = (photo.frame && photo.frame !== 'none') ? photo.frame : 'none';
-    var frameLabel = (FRAMES.find(function(f) { return f.id === frameName; }) || FRAMES[0]).label;
+    var frameLabel = (COLLAGE_FRAMES.find(function(f) { return f.id === frameName; }) || COLLAGE_FRAMES[0]).label;
     var item = document.createElement('div');
     item.id = 'cft-' + actualIdx;
     item.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px;border-radius:10px;border:2px solid ' + (frameName !== 'none' ? 'var(--gold)' : 'var(--border2)') + ';background:var(--ivory);transition:all 0.18s;min-width:70px;';
@@ -2354,13 +2356,13 @@ function _buildCollageFrameThumbs() {
     cv.width = 60; cv.height = 60;
     cv.style.cssText = 'width:60px;height:60px;border-radius:6px;display:block;';
     var cx2 = cv.getContext('2d');
-    if (photo && photo.img) {
+    if (photo && photo._img && photo._img.complete && photo._img.naturalWidth) {
       try {
-        var iw = photo.img.naturalWidth || photo.img.width || 60;
-        var ih = photo.img.naturalHeight || photo.img.height || 60;
+        var iw = photo._img.naturalWidth || 60;
+        var ih = photo._img.naturalHeight || 60;
         var scale = Math.max(60/iw, 60/ih);
         var dw = iw*scale, dh = ih*scale;
-        cx2.drawImage(photo.img, (60-dw)/2, (60-dh)/2, dw, dh);
+        cx2.drawImage(photo._img, (60-dw)/2, (60-dh)/2, dw, dh);
       } catch(e) { cx2.fillStyle='#1a1c24'; cx2.fillRect(0,0,60,60); }
     } else {
       cx2.fillStyle = '#1a1c24'; cx2.fillRect(0,0,60,60);
@@ -2382,16 +2384,16 @@ function cycleCollageFrame(idx) {
   var photo = S.photos[idx];
   if (!photo) return;
   var cur = photo.frame || 'none';
-  var fi = FRAMES.findIndex(function(f) { return f.id === cur; });
-  fi = (fi + 1) % FRAMES.length;
-  photo.frame = FRAMES[fi].id;
+  var fi = COLLAGE_FRAMES.findIndex(function(f) { return f.id === cur; });
+  fi = (fi < 0 ? 0 : fi + 1) % COLLAGE_FRAMES.length;
+  photo.frame = COLLAGE_FRAMES[fi].id;
   _buildCollageFrameThumbs();
   if (typeof liveRender === 'function') liveRender();
   if ((S.page === 3 || S.page === 2) && typeof buildPreview === 'function') {
     clearTimeout(cycleCollageFrame._rt);
     cycleCollageFrame._rt = setTimeout(function() { try { buildPreview(); } catch(e) {} }, 200);
   }
-  showToast('✓ Photo ' + (idx+1) + ': ' + FRAMES[fi].label);
+  showToast('✓ Collage photo ' + idx + ': ' + COLLAGE_FRAMES[fi].label);
 }
 
 function setEffect(type, value, el) {
