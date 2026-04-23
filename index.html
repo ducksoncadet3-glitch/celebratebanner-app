@@ -691,7 +691,7 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
     <div class="stat-grid">
       <div class="stat-box"><div class="stat-box-label">Orders Today</div><div class="stat-box-val">24</div><div class="stat-box-delta delta-up">↑ +8 vs yesterday</div></div>
       <div class="stat-box"><div class="stat-box-label">Revenue (MTD)</div><div class="stat-box-val">$1,284</div><div class="stat-box-delta delta-up">↑ +14%</div></div>
-      <div class="stat-box"><div class="stat-box-label">Active Themes</div><div class="stat-box-val" id="adm-active-themes">9</div><div class="stat-box-delta">of 9 enabled</div></div>
+      <div class="stat-box"><div class="stat-box-label">Active Themes</div><div class="stat-box-val" id="adm-active-themes">10</div><div class="stat-box-delta">of 10 enabled</div></div>
       <div class="stat-box"><div class="stat-box-label">Avg Render</div><div class="stat-box-val">18s</div><div class="stat-box-delta delta-up">↓ 4s faster</div></div>
     </div>
     <div class="admin-card">
@@ -786,7 +786,8 @@ var THEMES = [
   { id:'america250-official', emoji:'🇺🇸', name:'America 250 — Official', desc:'Navy & gold patriotic design. Perfect for government agencies, municipalities & official July 4th events.', maxPhotos:24, tags:['Patriotic','America250','Government'], tagBg:'rgba(10,22,40,0.12)', tagC:'#0A1628', bg:'#0A1628', accent:'#C9A84C', fixedHeadline:'250TH ANNIVERSARY', fields:[ {id:'city',label:'City or Agency Name',ph:'Your City or Agency Name',req:false}, {id:'date',label:'Event Date',ph:'e.g. July 4, 2026',req:false} ], palettes:['#C9A84C','#F5F0E8','#FFFFFF','#B22234','#3C3F8F'] },
   { id:'america250-family', emoji:'🎆', name:'America 250 — Family', desc:'Warm & festive for families, neighborhoods and community July 4th events. Happy Birthday, America!', maxPhotos:24, tags:['Festive','Family','July4th'], tagBg:'rgba(178,34,52,0.1)', tagC:'#8B1020', bg:'#0C0E14', accent:'#B22234', fixedHeadline:'HAPPY BIRTHDAY AMERICA', fields:[ {id:'name',label:'Family or Group Name',ph:'e.g. The Rivera Family',req:false}, {id:'caption',label:'Caption',ph:'e.g. Celebrating 250 Years!',req:false}, {id:'city',label:'City or Organization',ph:'Your City or Organization',req:false} ], palettes:['#B22234','#C9A84C','#F5F0E8','#3C3F8F','#FFFFFF'] },
   { id:'america250-parade', emoji:'🥁', name:'America 250 — Parade', desc:'Bold red, white & blue for parades, street festivals and community celebrations.', maxPhotos:24, tags:['Parade','Bold','Community'], tagBg:'rgba(60,63,143,0.1)', tagC:'#2A2D8F', bg:'#0A1628', accent:'#F5F0E8', fixedHeadline:'STARS & STRIPES', fields:[ {id:'city',label:'City or Organization',ph:'Your City or Organization',req:false}, {id:'date',label:'Event Date',ph:'e.g. July 4, 2026',req:false} ], palettes:['#F5F0E8','#C9A84C','#B22234','#3C3F8F','#0A1628'] },
-  { id:'stars-stripes', emoji:'🦅', name:'Stars & Stripes', desc:'Classic Americana — red, white & blue for veterans, patriotic milestones, and national pride.', maxPhotos:55, tags:['Patriotic','Americana','Classic'], tagBg:'rgba(178,34,52,0.1)', tagC:'#8B1020', bg:'#0A1628', accent:'#F5F0E8', fields:[ {id:'name',label:'Honoree or Group Name',ph:'e.g. The Johnson Family',req:false}, {id:'date',label:'Event or Date',ph:'e.g. July 4, 2026',req:false}, {id:'caption',label:'Caption (optional)',ph:'e.g. Proud to be an American',req:false} ], palettes:['#F5F0E8','#B22234','#3C3F8F','#C9A84C','#FFFFFF'] }
+  { id:'stars-stripes', emoji:'🦅', name:'Stars & Stripes', desc:'Classic Americana — red, white & blue for veterans, patriotic milestones, and national pride.', maxPhotos:55, tags:['Patriotic','Americana','Classic'], tagBg:'rgba(178,34,52,0.1)', tagC:'#8B1020', bg:'#0A1628', accent:'#F5F0E8', fields:[ {id:'name',label:'Honoree or Group Name',ph:'e.g. The Johnson Family',req:false}, {id:'date',label:'Event or Date',ph:'e.g. July 4, 2026',req:false}, {id:'caption',label:'Caption (optional)',ph:'e.g. Proud to be an American',req:false} ], palettes:['#F5F0E8','#B22234','#3C3F8F','#C9A84C','#FFFFFF'] },
+  { id:'worldcup2026', emoji:'⚽', name:'World Cup 2026', desc:'Watch party banner for the biggest tournament on the planet. Stadium lights, sky blue & gold.', maxPhotos:10, tags:['Soccer','Watch Party','Sports'], tagBg:'rgba(74,158,204,0.1)', tagC:'#0C4F75', bg:'#080E1A', accent:'#4A9ECC', fixedHeadline:'WATCH PARTY', fields:[ {id:'groupName',label:'Group or Family Name',ph:'e.g. The Rivera Squad',req:false}, {id:'caption',label:'Tagline (optional)',ph:"e.g. Let's Go! · USA 2026",req:false}, {id:'city',label:'City / Country (optional)',ph:'e.g. Miami, FL',req:false} ], palettes:['#4A9ECC','#C9A84C','#FFFFFF','#E8C97A','#1A3A5C'] }
 ];
 
 function init() { buildThemeGrid(); buildAdminThemes(); buildFunnelChart(); buildThemeMix(); }
@@ -805,6 +806,7 @@ function buildThemeGrid() {
     else if (t.id==='champion') themeDecor = '<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% -10%,'+t.accent+'22 0%,transparent 65%);"></div>';
     else if (t.id==='pets') themeDecor = '<div style="position:absolute;top:6px;left:6px;font-size:12px;opacity:0.18">🐾</div><div style="position:absolute;bottom:12px;right:8px;font-size:10px;opacity:0.18">🐾</div>';
     else if (t.id.startsWith('america250') || t.id==='stars-stripes') themeDecor = '<div style="position:absolute;top:6px;right:8px;font-size:14px;opacity:0.22">★</div><div style="position:absolute;bottom:12px;left:8px;font-size:11px;opacity:0.20">★</div>';
+    else if (t.id==='worldcup2026') themeDecor = '<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% -10%,rgba(74,158,204,0.22) 0%,transparent 65%);"></div><div style="position:absolute;top:6px;left:8px;font-size:13px;opacity:0.22">⚽</div><div style="position:absolute;bottom:10px;right:8px;font-size:11px;opacity:0.22">⚽</div>';
     return '<div class="theme-card" data-id="'+t.id+'" onclick="selectTheme(\''+t.id+'\',this)">'+
       '<div class="theme-visual" style="background:'+cardBg+';">'+
       themeDecor+glow+
@@ -1001,11 +1003,12 @@ function buildPreview() {
   if (!S.theme) return;
   var t = S.theme;
   var heroPhoto = S.hero>=0 ? S.photos[S.hero] : (S.photos[0]||null);
-  var _nameFieldIds = ['name','teamName','coupleNames','names','petName'];
+  var _nameFieldIds = ['name','teamName','coupleNames','names','petName','groupName'];
   var _hasNameField = t.fields.some(function(f){ return _nameFieldIds.indexOf(f.id)>=0; });
   // CHANGE 7: coupleNames used for wedding
   var name = t.id==='champion' ? (S.fields.teamName||'')
             : t.id==='wedding' ? (S.fields.coupleNames||'')
+            : t.id==='worldcup2026' ? (S.fields.groupName||'')
             : (S.fields.name||S.fields.coupleNames||S.fields.names||S.fields.petName||(_hasNameField?'Your Name':''));
   var sub  = S.fields.year||S.fields.date||S.fields.years||(t.id!=='stars-stripes'?S.fields.caption:'')||'';
   var sub2 = S.fields.school||S.fields.city||(t.id==='stars-stripes'?S.fields.caption:'')||'';
@@ -1328,6 +1331,36 @@ function drawBannerTextTop(ctx,t,W,textH,name,sub,sub2,accent) {
       drawTxt(name.toUpperCase(),W/2,topY+champFS*0.95,'700 '+teamFS+'px Outfit,sans-serif','rgba(255,255,255,0.92)');
     }
     if(sub) drawTxt(sub.toUpperCase(),W/2,topY+champFS*0.95+(name?teamFS*1.15:0),'600 '+yearFS+'px Outfit,sans-serif','rgba(255,255,255,0.68)');
+    return;
+  }
+
+  if(t.id==='worldcup2026'){
+    var wcHL=t.fixedHeadline||'WATCH PARTY';
+    var wcSubHL='WORLD CUP 2026';
+    var wcFS=Math.round(W*0.11),wcSubFS=Math.round(W*0.038),wcTeamFS=Math.round(W*0.060),wcTagFS=Math.round(W*0.030),wcTopY=Math.round(textH*0.24);
+    ctx.save();ctx.font='bold '+wcFS+'px Cormorant Garamond,serif';
+    var wcW=ctx.measureText(wcHL).width;
+    if(wcW>W*0.88){wcFS=Math.floor(wcFS*(W*0.88/wcW));}
+    ctx.restore();
+    // "WATCH PARTY" — sky blue main headline
+    drawTxt(wcHL,W/2,wcTopY,'bold '+wcFS+'px Cormorant Garamond,serif',accent);
+    // decorative rule
+    ctx.save();ctx.globalAlpha=0.35;ctx.strokeStyle=accent;
+    ctx.lineWidth=Math.max(1,Math.round(W*0.0013));
+    var wcRuleY=wcTopY+Math.round(wcFS*0.20);
+    ctx.beginPath();ctx.moveTo(Math.round(W*0.20),wcRuleY);ctx.lineTo(Math.round(W*0.80),wcRuleY);ctx.stroke();
+    ctx.restore();
+    // "WORLD CUP 2026" sub-headline in gold
+    drawTxt(wcSubHL,W/2,wcTopY+wcFS*0.92,'600 '+wcSubFS+'px Outfit,sans-serif','#C9A84C');
+    // group name
+    if(name){
+      ctx.save();ctx.font='700 '+wcTeamFS+'px Outfit,sans-serif';
+      var wcTW=ctx.measureText(name.toUpperCase()).width;
+      if(wcTW>W*0.86){wcTeamFS=Math.floor(wcTeamFS*(W*0.86/wcTW));}
+      ctx.restore();
+      drawTxt(name.toUpperCase(),W/2,wcTopY+wcFS*0.92+wcSubFS*1.30,'700 '+wcTeamFS+'px Outfit,sans-serif','rgba(255,255,255,0.92)');
+    }
+    if(sub) drawTxt(sub,W/2,wcTopY+wcFS*0.92+wcSubFS*1.30+(name?wcTeamFS*1.15:0),'600 '+wcTagFS+'px Outfit,sans-serif','rgba(255,255,255,0.60)');
     return;
   }
 
@@ -1756,6 +1789,72 @@ function drawThemeBackground(ctx, t, W, H, accent, bgColor) {
       ctx.beginPath(); ctx.moveTo(Math.round(W*0.06), Math.round(W*0.033)); ctx.lineTo(Math.round(W*0.94), Math.round(W*0.033)); ctx.stroke();
       ctx.restore();
     }
+  }
+  else if (t.id === 'worldcup2026') {
+    // Stadium spotlight rays from four corners (like a real match night)
+    ctx.save();
+    var wcLights = [[W*0.12, -H*0.05],[W*0.88, -H*0.05],[W*0.05, H*1.05],[W*0.95, H*1.05]];
+    wcLights.forEach(function(ls) {
+      ctx.globalAlpha = 0.035;
+      var rayCount = 7;
+      for (var r = 0; r < rayCount; r++) {
+        var angle = ((r / rayCount) - 0.5) * Math.PI * 1.1;
+        var grd = ctx.createLinearGradient(ls[0], ls[1], ls[0] + Math.sin(angle)*W*1.4, ls[1] > H*0.5 ? 0 : H);
+        grd.addColorStop(0, 'rgba(255,245,200,0.85)');
+        grd.addColorStop(0.3, 'rgba(255,245,200,0.22)');
+        grd.addColorStop(1, 'rgba(255,245,200,0)');
+        ctx.fillStyle = grd;
+        var halfAng = Math.PI / rayCount * 0.45;
+        ctx.beginPath(); ctx.moveTo(ls[0], ls[1]);
+        ctx.lineTo(ls[0] + Math.sin(angle - halfAng) * W * 2.2, ls[1] > H*0.5 ? -H*0.1 : H*1.1);
+        ctx.lineTo(ls[0] + Math.sin(angle + halfAng) * W * 2.2, ls[1] > H*0.5 ? -H*0.1 : H*1.1);
+        ctx.closePath(); ctx.fill();
+      }
+    });
+    ctx.restore();
+    // Sky blue central glow — stadium floodlight feel
+    ctx.save();
+    var wcSkyGlow = ctx.createRadialGradient(W/2, -H*0.05, 0, W/2, -H*0.05, H*0.75);
+    wcSkyGlow.addColorStop(0, 'rgba(74,158,204,0.20)');
+    wcSkyGlow.addColorStop(0.5, 'rgba(74,158,204,0.07)');
+    wcSkyGlow.addColorStop(1, 'rgba(74,158,204,0)');
+    ctx.fillStyle = wcSkyGlow; ctx.fillRect(0, 0, W, H); ctx.restore();
+    // Scattered ⚽ symbols at very low opacity
+    ctx.save(); ctx.globalAlpha = 0.07;
+    var wcBallFS = Math.round(W * 0.022);
+    ctx.font = wcBallFS + 'px serif'; ctx.textAlign = 'center';
+    for (var wb = 0; wb < 55; wb++) {
+      var wbx = (Math.sin(wb * 163.4) * 0.5 + 0.5) * W;
+      var wby = (Math.cos(wb * 119.7) * 0.5 + 0.5) * H;
+      ctx.fillText('⚽', wbx, wby);
+    }
+    ctx.restore();
+    // Gold bottom glow
+    ctx.save();
+    var wcBGlow = ctx.createRadialGradient(W/2, H, 0, W/2, H, H*0.42);
+    wcBGlow.addColorStop(0, 'rgba(201,168,76,0.14)');
+    wcBGlow.addColorStop(1, 'rgba(201,168,76,0)');
+    ctx.fillStyle = wcBGlow; ctx.fillRect(0, 0, W, H); ctx.restore();
+    // Sky blue + gold accent bars (top and bottom)
+    ctx.save(); ctx.globalAlpha = 0.42;
+    var wcBarH = Math.max(3, Math.round(W * 0.005));
+    ctx.fillStyle = '#4A9ECC'; ctx.fillRect(0, 0, W, wcBarH);
+    ctx.fillStyle = '#C9A84C'; ctx.fillRect(0, wcBarH, W, Math.round(wcBarH * 0.55));
+    ctx.fillStyle = '#4A9ECC'; ctx.fillRect(0, H - wcBarH, W, wcBarH);
+    ctx.fillStyle = '#C9A84C'; ctx.fillRect(0, H - wcBarH - Math.round(wcBarH*0.55), W, Math.round(wcBarH*0.55));
+    ctx.restore();
+    // Stars pattern (same intensity as champion)
+    ctx.save(); ctx.globalAlpha = 0.07;
+    var wcStarFS = Math.round(W * 0.018);
+    ctx.font = 'bold ' + wcStarFS + 'px Outfit,sans-serif'; ctx.textAlign = 'center';
+    for (var sy = wcStarFS*1.5; sy < H; sy += wcStarFS*3.2) {
+      var sOff = (Math.floor(sy/(wcStarFS*3.2))%2) * wcStarFS*1.6;
+      for (var sx = sOff; sx < W+wcStarFS; sx += wcStarFS*3.2) {
+        ctx.fillStyle = (Math.floor(sx/(wcStarFS*3.2)+sy/(wcStarFS*3.2))%2) ? '#4A9ECC' : '#C9A84C';
+        ctx.fillText('★', sx, sy);
+      }
+    }
+    ctx.restore();
   }
 }
 
