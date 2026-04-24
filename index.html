@@ -1130,7 +1130,6 @@ function drawHeroImg(ctx, photo, x, y, w, h, bgColor) {
   var fit=S.heroFit||'contain';
   var zoom=Math.max(0.5,Math.min(2.0,parseFloat(S.heroZoom)||1.0));
   var align=S.heroAlign||'center';
-  var f=(typeof FILTERS!=='undefined')?FILTERS.find(function(fi){return fi.id===S.effects.filter;}):null;
   // Visual dimensions (after rotation)
   var vw=(rot===90||rot===270)?nh:nw, vh=(rot===90||rot===270)?nw:nh;
   var base=fit==='cover'?Math.max(w/vw,h/vh):Math.min(w/vw,h/vh);
@@ -1146,7 +1145,8 @@ function drawHeroImg(ctx, photo, x, y, w, h, bgColor) {
   var ox=(w-dw)*ax, oy=(h-dh)*ay; // top-left corner of image within cell
   var cx=x+ox+dw/2, cy=y+oy+dh/2; // image center in canvas coords
   ctx.save();
-  if(f&&f.css) ctx.filter=f.css;
+  var _heroFlt = (typeof _buildHeroFilterCSS === 'function') ? _buildHeroFilterCSS() : '';
+  if(_heroFlt) ctx.filter=_heroFlt;
   if(fit==='contain'){ctx.fillStyle=bgColor||S.bgColor||'#111';ctx.fillRect(x,y,w,h);}
   ctx.translate(cx,cy);
   if(rot) ctx.rotate(rot*Math.PI/180);
@@ -2158,21 +2158,21 @@ init();
 // ============================================================
 // PHOTO EFFECTS MODULE
 // ============================================================
-S.effects = { filter:'none', overlay:'none', frame:'none', heroFrame:'none', textFx:'none' };
+S.effects = { filter:'none', overlay:'none', frame:'none', heroFrame:'none', textFx:'none', brightness:0, contrast:0, saturation:0, bw:false, temp:'none' };
 
 var selectedPhotoFrame = 'none';
 
 var COLLAGE_FRAMES = [
-  { id:'none',          label:'None',         icon:'—'   },
-  { id:'classic-white', label:'Classic',      icon:'[ ]' },
-  { id:'classic-black', label:'Black',        icon:'[■]' },
-  { id:'gold-foil',     label:'Gold',         icon:'[✦]' },
-  { id:'rounded',       label:'Rounded',      icon:'( )' },
-  { id:'circle',        label:'Circle',       icon:'◯'   },
-  { id:'polaroid',      label:'Polaroid',     icon:'[_]' },
-  { id:'neon-glow',     label:'Neon',         icon:':O:' },
-  { id:'film-strip',    label:'Film',         icon:'|||' },
-  { id:'vintage',       label:'Vintage',      icon:'◉'   },
+  { id:'none',     label:'None',    icon:'—'   },
+  { id:'classic',  label:'Classic', icon:'[ ]' },
+  { id:'black',    label:'Black',   icon:'[■]' },
+  { id:'gold',     label:'Gold',    icon:'[✦]' },
+  { id:'rounded',  label:'Rounded', icon:'( )' },
+  { id:'circle',   label:'Circle',  icon:'◯'   },
+  { id:'polaroid', label:'Polaroid',icon:'[_]' },
+  { id:'neon',     label:'Neon',    icon:':O:' },
+  { id:'film',     label:'Film',    icon:'|||' },
+  { id:'vintage',  label:'Vintage', icon:'◉'   },
 ];
 
 var FILTERS = [
@@ -2256,11 +2256,11 @@ function buildEffectsPanel() {
       </div>
     </div>
     <div style="margin-bottom:1.25rem;">
-      <div class="field-label" style="margin-bottom:8px;">🎞️ Collage Photo Frames — set a frame for each photo</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;" id="collage-frame-tabs">
-        ${COLLAGE_FRAMES.map(f => `<div onclick="setCollageFrameAll('${f.id}',this)" onmouseover="if(!this.style.borderColor.includes('201,168'))this.style.background='rgba(201,168,76,0.06)'" onmouseout="if(!this.style.borderColor.includes('201,168'))this.style.background='var(--ivory)'" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 10px;border-radius:10px;border:2px solid ${f.id==='none'?'var(--gold)':'var(--border2)'};background:var(--ivory);transition:all 0.18s;min-width:62px;"><span style="font-size:12px;font-weight:700;color:var(--gold);font-family:monospace;">${f.icon}</span><span style="font-size:10px;font-weight:500;color:var(--muted);">${f.label}</span></div>`).join('')}
+      <div class="field-label" style="margin-bottom:8px;">🎞️ Collage Photo Frames — apply to all or per photo</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding:6px;background:var(--ivory2);border-radius:12px;" id="collage-frame-tabs">
+        ${COLLAGE_FRAMES.map(f => `<div id="cft-${f.id}" onclick="setCollageFrameAll('${f.id}',this)" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;padding:5px 11px;border-radius:20px;border:2px solid ${f.id==='none'?'var(--gold)':'transparent'};background:${f.id==='none'?'rgba(201,168,76,0.12)':'transparent'};font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;color:${f.id==='none'?'var(--gold-dark)':'var(--muted)'};transition:all 0.18s;white-space:nowrap;">${f.label}</div>`).join('')}
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Click a tab above to apply a frame to all photos, or click a thumbnail to customize individually</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Click a tab above to apply a frame to all collage photos · Click a thumbnail below to customize individually</div>
       <div id="collage-frame-thumbs-row" style="display:flex;gap:8px;flex-wrap:wrap;overflow-x:auto;min-height:32px;"></div>
     </div>
     <div style="margin-bottom:1.25rem;">
@@ -2268,6 +2268,41 @@ function buildEffectsPanel() {
       <div style="display:flex;gap:8px;flex-wrap:wrap;" id="textfx-swatches">
         ${TEXT_FX.map(t => `<div onclick="setEffect('textFx','${t.id}',this)" onmouseover="if(!this.style.borderColor.includes('201,168'))this.style.background='rgba(201,168,76,0.06)'" onmouseout="if(!this.style.borderColor.includes('201,168'))this.style.background='var(--ivory)'" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 10px;border-radius:10px;border:2px solid var(--border2);background:var(--ivory);transition:all 0.18s;min-width:62px;"><span style="font-size:16px;font-weight:700;color:var(--gold);font-family:serif;">${t.icon}</span><span style="font-size:10px;font-weight:500;color:var(--muted);">${t.label}</span></div>`).join('')}
       </div>
+    </div>
+    <div style="margin-bottom:1.25rem;padding:1rem;background:rgba(201,168,76,0.04);border-radius:12px;border:1px solid rgba(201,168,76,0.15);">
+      <div class="field-card-title" style="font-size:12px;margin-bottom:14px;">🎨 Photo Shop — Hero Photo Adjustments</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+            <label style="font-size:11px;font-weight:600;color:var(--muted);">Brightness</label>
+            <span id="ps-br-val" style="font-size:11px;font-weight:700;color:var(--gold);">0</span>
+          </div>
+          <input type="range" id="ps-brightness" min="-50" max="50" value="0" step="1" oninput="setPhotoShop('brightness',parseInt(this.value))" style="width:100%;accent-color:#C9A84C;">
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+            <label style="font-size:11px;font-weight:600;color:var(--muted);">Contrast</label>
+            <span id="ps-co-val" style="font-size:11px;font-weight:700;color:var(--gold);">0</span>
+          </div>
+          <input type="range" id="ps-contrast" min="-50" max="50" value="0" step="1" oninput="setPhotoShop('contrast',parseInt(this.value))" style="width:100%;accent-color:#C9A84C;">
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+            <label style="font-size:11px;font-weight:600;color:var(--muted);">Saturation</label>
+            <span id="ps-sa-val" style="font-size:11px;font-weight:700;color:var(--gold);">0</span>
+          </div>
+          <input type="range" id="ps-saturation" min="-100" max="100" value="0" step="1" oninput="setPhotoShop('saturation',parseInt(this.value))" style="width:100%;accent-color:#C9A84C;">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;justify-content:center;">
+          <button id="ps-bw-btn" onclick="togglePhotoShopBW()" style="padding:7px 10px;border-radius:8px;border:2px solid var(--border2);background:var(--ivory);color:var(--text);font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;">B&amp;W Off</button>
+          <div style="display:flex;gap:6px;">
+            <button id="ps-temp-warm" onclick="setPhotoShopTemp('warm')" style="flex:1;padding:6px 4px;border-radius:8px;border:2px solid var(--border2);background:var(--ivory);color:var(--text);font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.2s;">🌅 Warm</button>
+            <button id="ps-temp-none" onclick="setPhotoShopTemp('none')" style="flex:1;padding:6px 4px;border-radius:8px;border:2px solid var(--gold);background:rgba(201,168,76,0.08);color:var(--text);font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.2s;">Normal</button>
+            <button id="ps-temp-cool" onclick="setPhotoShopTemp('cool')" style="flex:1;padding:6px 4px;border-radius:8px;border:2px solid var(--border2);background:var(--ivory);color:var(--text);font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.2s;">❄️ Cool</button>
+          </div>
+        </div>
+      </div>
+      <button onclick="resetPhotoShop()" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;padding:0;">↺ Reset all adjustments</button>
     </div>
     <div style="padding-top:1rem;border-top:1px solid var(--border);">
       <div class="field-card-title" style="font-size:12px;margin-bottom:12px;">🎯 Hero Photo Controls</div>
@@ -2333,7 +2368,83 @@ function _syncEffectsPanelUI() {
   document.querySelectorAll('.ha-btn').forEach(function(b){b.style.borderColor='var(--border2)';b.style.background='var(--ivory)';b.style.color='var(--muted)';});
   var hab = document.getElementById('ha-'+halign);
   if(hab){hab.style.borderColor='var(--gold)';hab.style.background='rgba(201,168,76,0.08)';hab.style.color='var(--gold)';}
+  // Sync photo shop sliders
+  var psBr = document.getElementById('ps-brightness');
+  var psCo = document.getElementById('ps-contrast');
+  var psSa = document.getElementById('ps-saturation');
+  if (psBr) { psBr.value = S.effects.brightness || 0; var brv = document.getElementById('ps-br-val'); if(brv) brv.textContent = S.effects.brightness || 0; }
+  if (psCo) { psCo.value = S.effects.contrast || 0; var cov = document.getElementById('ps-co-val'); if(cov) cov.textContent = S.effects.contrast || 0; }
+  if (psSa) { psSa.value = S.effects.saturation || 0; var sav = document.getElementById('ps-sa-val'); if(sav) sav.textContent = S.effects.saturation || 0; }
+  var bwBtn = document.getElementById('ps-bw-btn');
+  if (bwBtn) { bwBtn.textContent = S.effects.bw ? 'B&W On' : 'B&W Off'; bwBtn.style.borderColor = S.effects.bw ? 'var(--gold)' : 'var(--border2)'; bwBtn.style.background = S.effects.bw ? 'rgba(201,168,76,0.08)' : 'var(--ivory)'; }
+  ['warm','none','cool'].forEach(function(t) {
+    var b = document.getElementById('ps-temp-'+t); if (!b) return;
+    b.style.borderColor = (S.effects.temp||'none') === t ? 'var(--gold)' : 'var(--border2)';
+    b.style.background  = (S.effects.temp||'none') === t ? 'rgba(201,168,76,0.08)' : 'var(--ivory)';
+  });
+  // Sync collage frame pill tabs — highlight the tab matching the most common photo frame
+  var tabsRoot = document.getElementById('collage-frame-tabs');
+  if (tabsRoot) {
+    var effH = S.hero >= 0 ? S.hero : 0;
+    var counts = {};
+    S.photos.forEach(function(p,i){ if(i===effH) return; var k = p.frame||'none'; counts[k]=(counts[k]||0)+1; });
+    var dominant = 'none', max = 0;
+    Object.keys(counts).forEach(function(k){ if(counts[k]>max){max=counts[k];dominant=k;} });
+    tabsRoot.querySelectorAll(':scope > div').forEach(function(d){
+      var isActive = d.id === 'cft-'+dominant;
+      d.style.borderColor = isActive ? 'var(--gold)' : 'transparent';
+      d.style.background  = isActive ? 'rgba(201,168,76,0.12)' : 'transparent';
+      d.style.color       = isActive ? 'var(--gold-dark)' : 'var(--muted)';
+    });
+  }
   _buildCollageFrameThumbs();
+}
+
+function setPhotoShop(prop, val) {
+  S.effects[prop] = val;
+  var valEl = document.getElementById('ps-' + prop.substring(0,2) + '-val');
+  if (valEl) valEl.textContent = val;
+  _heroRedraw();
+}
+
+function togglePhotoShopBW() {
+  S.effects.bw = !S.effects.bw;
+  var btn = document.getElementById('ps-bw-btn');
+  if (btn) { btn.textContent = S.effects.bw ? 'B&W On' : 'B&W Off'; btn.style.borderColor = S.effects.bw ? 'var(--gold)' : 'var(--border2)'; btn.style.background = S.effects.bw ? 'rgba(201,168,76,0.08)' : 'var(--ivory)'; }
+  _heroRedraw();
+}
+
+function setPhotoShopTemp(t) {
+  S.effects.temp = t;
+  ['warm','none','cool'].forEach(function(m) {
+    var b = document.getElementById('ps-temp-'+m); if (!b) return;
+    b.style.borderColor = m === t ? 'var(--gold)' : 'var(--border2)';
+    b.style.background  = m === t ? 'rgba(201,168,76,0.08)' : 'var(--ivory)';
+  });
+  _heroRedraw();
+}
+
+function resetPhotoShop() {
+  S.effects.brightness = 0; S.effects.contrast = 0; S.effects.saturation = 0; S.effects.bw = false; S.effects.temp = 'none';
+  _syncEffectsPanelUI();
+  _heroRedraw();
+  showToast('↺ Photo adjustments reset');
+}
+
+function _buildHeroFilterCSS() {
+  var f = (typeof FILTERS !== 'undefined') ? FILTERS.find(function(fi) { return fi.id === (S.effects && S.effects.filter || 'none'); }) : null;
+  var parts = [];
+  if (f && f.css) parts.push(f.css);
+  var br = S.effects && S.effects.brightness ? S.effects.brightness : 0;
+  var co = S.effects && S.effects.contrast ? S.effects.contrast : 0;
+  var sa = S.effects && S.effects.saturation ? S.effects.saturation : 0;
+  if (br !== 0) parts.push('brightness(' + Math.max(0.01, 1 + br / 100) + ')');
+  if (co !== 0) parts.push('contrast(' + Math.max(0.01, 1 + co / 100) + ')');
+  if (sa !== 0) parts.push('saturate(' + Math.max(0, 1 + sa / 100) + ')');
+  if (S.effects && S.effects.bw) parts.push('grayscale(1)');
+  if (S.effects && S.effects.temp === 'warm') parts.push('sepia(0.22) saturate(1.35)');
+  else if (S.effects && S.effects.temp === 'cool') parts.push('hue-rotate(20deg) saturate(0.88)');
+  return parts.join(' ');
 }
 
 function _buildCollageFrameThumbs() {
@@ -2387,8 +2498,8 @@ function _buildCollageFrameThumbs() {
   var tabs = document.querySelectorAll('#collage-frame-tabs > div');
   COLLAGE_FRAMES.forEach(function(f, i) {
     if (!tabs[i]) return;
-    if (f.id === activeFrame) { tabs[i].style.borderColor = 'var(--gold)'; tabs[i].style.background = 'rgba(201,168,76,0.08)'; }
-    else { tabs[i].style.borderColor = 'var(--border2)'; tabs[i].style.background = 'var(--ivory)'; }
+    if (f.id === activeFrame) { tabs[i].style.borderColor = 'var(--gold)'; tabs[i].style.background = 'rgba(201,168,76,0.12)'; tabs[i].style.color = 'var(--gold-dark)'; }
+    else { tabs[i].style.borderColor = 'transparent'; tabs[i].style.background = 'transparent'; tabs[i].style.color = 'var(--muted)'; }
   });
 }
 
@@ -2412,9 +2523,9 @@ function setCollageFrameAll(frameId, el) {
   var effectiveHero = S.hero >= 0 ? S.hero : 0;
   S.photos.forEach(function(p, i) { if (i !== effectiveHero) p.frame = frameId; });
   document.querySelectorAll('#collage-frame-tabs > div').forEach(function(d) {
-    d.style.borderColor = 'var(--border2)'; d.style.background = 'var(--ivory)';
+    d.style.borderColor = 'transparent'; d.style.background = 'transparent'; d.style.color = 'var(--muted)';
   });
-  el.style.borderColor = 'var(--gold)'; el.style.background = 'rgba(201,168,76,0.08)';
+  if (el) { el.style.borderColor = 'var(--gold)'; el.style.background = 'rgba(201,168,76,0.12)'; el.style.color = 'var(--gold-dark)'; }
   _buildCollageFrameThumbs();
   var label = (COLLAGE_FRAMES.find(function(f) { return f.id === frameId; }) || COLLAGE_FRAMES[0]).label;
   showToast('✓ All collage photos: ' + label);
@@ -2507,27 +2618,33 @@ function _drawCollageThumbnail(tc, accent, frameId) {
   }
   tc.fillStyle=ph; tc.fillRect(0,0,W,H);
   if (frameId === 'none') return;
-  if (frameId === 'classic-white') {
+  if (frameId === 'classic') {
     tc.strokeStyle='#fff'; tc.lineWidth=4; tc.strokeRect(2,2,W-4,H-4);
-    var ig=tc.createLinearGradient(0,0,0,10); ig.addColorStop(0,'rgba(0,0,0,0.2)'); ig.addColorStop(1,'rgba(0,0,0,0)');
-    tc.fillStyle=ig; tc.fillRect(0,0,W,10);
-  } else if (frameId === 'classic-black') {
-    tc.strokeStyle='#111'; tc.lineWidth=4; tc.strokeRect(2,2,W-4,H-4);
-    var ig2=tc.createLinearGradient(0,0,0,10); ig2.addColorStop(0,'rgba(255,255,255,0.08)'); ig2.addColorStop(1,'rgba(0,0,0,0)');
-    tc.fillStyle=ig2; tc.fillRect(0,0,W,10);
-  } else if (frameId === 'gold-foil') {
+    tc.strokeStyle='rgba(255,255,255,0.45)'; tc.lineWidth=1; tc.strokeRect(6,6,W-12,H-12);
+    tc.fillStyle='#fff'; tc.fillRect(0,0,4,4); tc.fillRect(W-4,0,4,4); tc.fillRect(0,H-4,4,4); tc.fillRect(W-4,H-4,4,4);
+  } else if (frameId === 'black') {
+    tc.strokeStyle='#111'; tc.lineWidth=5; tc.strokeRect(2.5,2.5,W-5,H-5);
+    tc.strokeStyle='rgba(255,255,255,0.15)'; tc.lineWidth=1; tc.strokeRect(7,7,W-14,H-14);
+  } else if (frameId === 'gold') {
     var grd=tc.createLinearGradient(0,0,W,H);
     grd.addColorStop(0,'#BF953F'); grd.addColorStop(0.25,'#FCF6BA'); grd.addColorStop(0.5,'#B38728'); grd.addColorStop(0.75,'#FBF5B7'); grd.addColorStop(1,'#AA771C');
-    tc.strokeStyle=grd; tc.lineWidth=3; tc.strokeRect(1.5,1.5,W-3,H-3);
-    tc.strokeStyle='rgba(255,215,0,0.3)'; tc.lineWidth=1; tc.strokeRect(5,5,W-10,H-10);
-  } else if (frameId === 'neon-glow') {
-    tc.shadowColor=accent; tc.shadowBlur=10; tc.strokeStyle=accent; tc.lineWidth=2;
-    tc.strokeRect(1,1,W-2,H-2); tc.shadowBlur=0;
-  } else if (frameId === 'film-strip') {
-    tc.fillStyle='#111'; tc.fillRect(0,0,10,H);
+    tc.strokeStyle=grd; tc.lineWidth=4; tc.strokeRect(2,2,W-4,H-4);
+    tc.strokeStyle='rgba(255,215,0,0.35)'; tc.lineWidth=1; tc.strokeRect(6,6,W-12,H-12);
+  } else if (frameId === 'neon') {
+    tc.shadowColor='#ff00ff'; tc.shadowBlur=12; tc.strokeStyle='#ff00ff'; tc.lineWidth=3;
+    tc.strokeRect(1.5,1.5,W-3,H-3);
+    tc.shadowColor='#00ffff'; tc.shadowBlur=6; tc.strokeStyle='rgba(255,255,255,0.9)'; tc.lineWidth=1;
+    tc.strokeRect(4.5,4.5,W-9,H-9); tc.shadowBlur=0;
+  } else if (frameId === 'film') {
+    tc.fillStyle='#111'; tc.fillRect(0,0,10,H); tc.fillRect(W-10,0,10,H);
     tc.fillStyle='#fff';
-    tc.beginPath(); tc.arc(5,Math.round(H*0.2),3,0,Math.PI*2); tc.fill();
-    tc.beginPath(); tc.arc(5,Math.round(H*0.7),3,0,Math.PI*2); tc.fill();
+    tc.beginPath(); tc.arc(5,Math.round(H*0.2),2.5,0,Math.PI*2); tc.fill();
+    tc.beginPath(); tc.arc(5,Math.round(H*0.5),2.5,0,Math.PI*2); tc.fill();
+    tc.beginPath(); tc.arc(5,Math.round(H*0.8),2.5,0,Math.PI*2); tc.fill();
+    tc.beginPath(); tc.arc(W-5,Math.round(H*0.2),2.5,0,Math.PI*2); tc.fill();
+    tc.beginPath(); tc.arc(W-5,Math.round(H*0.5),2.5,0,Math.PI*2); tc.fill();
+    tc.beginPath(); tc.arc(W-5,Math.round(H*0.8),2.5,0,Math.PI*2); tc.fill();
+    tc.strokeStyle=accent; tc.lineWidth=1.5; tc.strokeRect(11,2,W-22,H-4);
   }
 }
 
@@ -2535,30 +2652,41 @@ function _drawCollageThumbnail(tc, accent, frameId) {
 function _drawCollageCellFrame(ctx, x, y, w, h, accent, photoFrame) {
   var frame = photoFrame || 'none';
   if (!frame || frame === 'none' || frame === 'polaroid' || frame === 'circle' || frame === 'rounded' || frame === 'vintage') return;
+  var lw = Math.max(2, Math.round(Math.min(w,h) * 0.03));
   ctx.save();
-  if (frame === 'classic-white') {
-    ctx.strokeStyle='#ffffff'; ctx.lineWidth=4; ctx.strokeRect(x+2,y+2,w-4,h-4);
-    var ig=ctx.createLinearGradient(x,y,x,y+Math.min(12,h*0.12));
-    ig.addColorStop(0,'rgba(0,0,0,0.2)'); ig.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=ig; ctx.fillRect(x,y,w,Math.min(12,h*0.12));
-  } else if (frame === 'classic-black') {
-    ctx.strokeStyle='#111111'; ctx.lineWidth=4; ctx.strokeRect(x+2,y+2,w-4,h-4);
-    var ig2=ctx.createLinearGradient(x,y,x,y+Math.min(12,h*0.12));
-    ig2.addColorStop(0,'rgba(255,255,255,0.08)'); ig2.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=ig2; ctx.fillRect(x,y,w,Math.min(12,h*0.12));
-  } else if (frame === 'gold-foil') {
+  if (frame === 'classic') {
+    // White double-line with corner accents
+    ctx.strokeStyle='#ffffff'; ctx.lineWidth=lw; ctx.strokeRect(x+lw*0.5,y+lw*0.5,w-lw,h-lw);
+    ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.lineWidth=Math.max(1,lw*0.4); ctx.strokeRect(x+lw*1.8,y+lw*1.8,w-lw*3.6,h-lw*3.6);
+    ctx.fillStyle='#ffffff'; var cs=lw*1.5;
+    ctx.fillRect(x,y,cs,cs); ctx.fillRect(x+w-cs,y,cs,cs); ctx.fillRect(x,y+h-cs,cs,cs); ctx.fillRect(x+w-cs,y+h-cs,cs,cs);
+  } else if (frame === 'black') {
+    ctx.strokeStyle='#111111'; ctx.lineWidth=lw*1.2; ctx.strokeRect(x+lw*0.6,y+lw*0.6,w-lw*1.2,h-lw*1.2);
+    ctx.strokeStyle='rgba(255,255,255,0.12)'; ctx.lineWidth=Math.max(1,lw*0.4); ctx.strokeRect(x+lw*2,y+lw*2,w-lw*4,h-lw*4);
+  } else if (frame === 'gold') {
     var grd=ctx.createLinearGradient(x,y,x+w,y+h);
     grd.addColorStop(0,'#BF953F'); grd.addColorStop(0.25,'#FCF6BA'); grd.addColorStop(0.5,'#B38728'); grd.addColorStop(0.75,'#FBF5B7'); grd.addColorStop(1,'#AA771C');
-    ctx.strokeStyle=grd; ctx.lineWidth=3; ctx.strokeRect(x+1.5,y+1.5,w-3,h-3);
-    ctx.strokeStyle='rgba(255,215,0,0.3)'; ctx.lineWidth=1; ctx.strokeRect(x+5,y+5,w-10,h-10);
-  } else if (frame === 'neon-glow') {
-    ctx.shadowColor=accent; ctx.shadowBlur=8; ctx.strokeStyle=accent; ctx.lineWidth=2;
-    ctx.strokeRect(x+1,y+1,w-2,h-2); ctx.shadowBlur=0; ctx.shadowColor='transparent';
-  } else if (frame === 'film-strip') {
-    ctx.fillStyle='#111111'; ctx.fillRect(x,y,10,h);
+    ctx.strokeStyle=grd; ctx.lineWidth=lw*1.1; ctx.strokeRect(x+lw*0.55,y+lw*0.55,w-lw*1.1,h-lw*1.1);
+    ctx.strokeStyle='rgba(255,215,0,0.35)'; ctx.lineWidth=Math.max(1,lw*0.4); ctx.strokeRect(x+lw*2,y+lw*2,w-lw*4,h-lw*4);
+  } else if (frame === 'neon') {
+    var neonCol='#ff00ff';
+    ctx.shadowColor=neonCol; ctx.shadowBlur=lw*4; ctx.strokeStyle=neonCol; ctx.lineWidth=lw*1.2;
+    ctx.strokeRect(x+lw*0.6,y+lw*0.6,w-lw*1.2,h-lw*1.2);
+    ctx.shadowColor='rgba(255,255,255,0.8)'; ctx.shadowBlur=lw*1.5; ctx.strokeStyle='rgba(255,255,255,0.85)'; ctx.lineWidth=Math.max(1,lw*0.4);
+    ctx.strokeRect(x+lw*0.6,y+lw*0.6,w-lw*1.2,h-lw*1.2);
+    ctx.shadowBlur=0; ctx.shadowColor='transparent';
+  } else if (frame === 'film') {
+    var fw=Math.max(6, Math.round(w*0.07));
+    ctx.fillStyle='#111111'; ctx.fillRect(x,y,fw,h); ctx.fillRect(x+w-fw,y,fw,h);
     ctx.fillStyle='#ffffff';
-    ctx.beginPath(); ctx.arc(x+5,y+Math.round(h*0.2),3,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(x+5,y+Math.round(h*0.7),3,0,Math.PI*2); ctx.fill();
+    var holeR=Math.max(2,Math.round(fw*0.28)), holeCount=Math.max(3,Math.floor(h/(holeR*5)));
+    var hSpacing=h/(holeCount+1);
+    for(var i=1;i<=holeCount;i++){
+      var hy=y+hSpacing*i;
+      ctx.beginPath(); ctx.arc(x+fw/2,hy,holeR,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+w-fw/2,hy,holeR,0,Math.PI*2); ctx.fill();
+    }
+    ctx.strokeStyle=accent; ctx.lineWidth=Math.max(1,lw*0.5); ctx.strokeRect(x+fw,y+2,w-fw*2,h-4);
   }
   ctx.restore();
 }
@@ -2615,68 +2743,64 @@ function drawHeroFrame(ctx, x, y, sz, accent) {
   var frame = S.effects ? S.effects.heroFrame : 'none';
   if (!frame || frame === 'none') return;
 
-  var u  = Math.max(2, Math.round(sz * 0.007));
-  var r  = Math.max(6, Math.round(sz * 0.022));
+  // u = base unit: 2.5% of hero size, min 8px — ensures frames are clearly visible at banner scale
+  var u = Math.max(8, Math.round(sz * 0.025));
+  var r = Math.max(6, Math.round(sz * 0.02));
 
   ctx.save();
+  ctx.lineJoin = 'miter';
 
   if (frame === 'classic') {
-    ctx.strokeStyle = accent;
-    ctx.lineWidth   = u * 2.5;
-    ctx.lineJoin    = 'round';
-    roundPath(ctx, x - u, y - u, sz + u*2, sz + u*2, r);
-    ctx.stroke();
+    // Thick gold outer border + thinner inner line + filled corner squares
+    var pad = u * 2;
+    ctx.strokeStyle = accent; ctx.lineWidth = u * 2.5;
+    ctx.strokeRect(x - pad, y - pad, sz + pad*2, sz + pad*2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = u * 0.7;
+    ctx.strokeRect(x - pad*0.35, y - pad*0.35, sz + pad*0.7, sz + pad*0.7);
+    var sq = u * 2.8; ctx.fillStyle = accent;
+    ctx.fillRect(x - pad - sq/2, y - pad - sq/2, sq, sq);
+    ctx.fillRect(x + sz + pad - sq/2, y - pad - sq/2, sq, sq);
+    ctx.fillRect(x - pad - sq/2, y + sz + pad - sq/2, sq, sq);
+    ctx.fillRect(x + sz + pad - sq/2, y + sz + pad - sq/2, sq, sq);
   }
 
   else if (frame === 'double') {
-    ctx.strokeStyle = accent;
-    ctx.lineWidth   = u * 2;
-    ctx.lineJoin    = 'round';
-    roundPath(ctx, x - u, y - u, sz + u*2, sz + u*2, r);
-    ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
-    ctx.lineWidth   = u;
-    roundPath(ctx, x - u*3.5, y - u*3.5, sz + u*7, sz + u*7, r + u*2);
-    ctx.stroke();
+    // Two concentric gold rectangles with white gap between
+    var outerPad = u * 2.5;
+    ctx.strokeStyle = accent; ctx.lineWidth = u * 2.2;
+    ctx.strokeRect(x - outerPad, y - outerPad, sz + outerPad*2, sz + outerPad*2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = u * 0.9;
+    ctx.strokeRect(x - outerPad + u*1.5, y - outerPad + u*1.5, sz + (outerPad - u*1.5)*2, sz + (outerPad - u*1.5)*2);
+    ctx.strokeStyle = accent; ctx.lineWidth = u * 1.6;
+    ctx.strokeRect(x - u*0.5, y - u*0.5, sz + u, sz + u);
   }
 
   else if (frame === 'rounded') {
-    ctx.strokeStyle = accent;
-    ctx.lineWidth   = u * 3;
-    ctx.lineJoin    = 'round';
-    roundPath(ctx, x - u, y - u, sz + u*2, sz + u*2, sz * 0.5);
+    // Thick rounded gold border with soft glow
+    ctx.shadowColor = accent; ctx.shadowBlur = u * 3.5;
+    ctx.strokeStyle = accent; ctx.lineWidth = u * 3; ctx.lineJoin = 'round';
+    roundPath(ctx, x - u*1.5, y - u*1.5, sz + u*3, sz + u*3, sz * 0.08);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = u * 0.8;
+    roundPath(ctx, x - u*0.4, y - u*0.4, sz + u*0.8, sz + u*0.8, sz * 0.06);
     ctx.stroke();
   }
 
   else if (frame === 'polaroid') {
-    var padSide   = Math.round(sz * 0.06);
-    var padTop    = Math.round(sz * 0.06);
-    var padBottom = Math.round(sz * 0.18);
-
+    var padSide   = Math.round(sz * 0.07);
+    var padTop    = Math.round(sz * 0.07);
+    var padBottom = Math.round(sz * 0.22);
+    ctx.shadowColor   = 'rgba(0,0,0,0.30)';
+    ctx.shadowBlur    = Math.round(sz * 0.045);
+    ctx.shadowOffsetX = Math.round(sz * 0.012);
+    ctx.shadowOffsetY = Math.round(sz * 0.018);
     ctx.fillStyle     = '#ffffff';
-    ctx.shadowColor   = 'rgba(0,0,0,0.22)';
-    ctx.shadowBlur    = Math.round(sz * 0.04);
-    ctx.shadowOffsetX = Math.round(sz * 0.01);
-    ctx.shadowOffsetY = Math.round(sz * 0.015);
-    ctx.fillRect(
-      x - padSide,
-      y - padTop,
-      sz + padSide * 2,
-      sz + padTop + padBottom
-    );
-    ctx.shadowColor = 'transparent';
-    ctx.shadowBlur  = 0;
-
-    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+    ctx.fillRect(x - padSide, y - padTop, sz + padSide*2, sz + padTop + padBottom);
+    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(0,0,0,0.07)';
     ctx.lineWidth   = Math.max(1, Math.round(sz * 0.003));
-    ctx.strokeRect(
-      x - padSide + 2,
-      y - padTop  + 2,
-      sz + padSide * 2 - 4,
-      sz + padTop + padBottom - 4
-    );
-
-    // Redraw photo on top of white frame
+    ctx.strokeRect(x - padSide + 2, y - padTop + 2, sz + padSide*2 - 4, sz + padTop + padBottom - 4);
     roundClip(ctx, x, y, sz, sz, r);
     var photo = (S.hero >= 0 ? S.photos[S.hero] : S.photos[0]) || null;
     if (photo) drawImg(ctx, photo, x, y, sz, sz);
@@ -2685,100 +2809,96 @@ function drawHeroFrame(ctx, x, y, sz, accent) {
   }
 
   else if (frame === 'film') {
+    // Dark film strips on BOTH sides with sprocket holes
     var strip = u * 5;
     ctx.fillStyle = '#111111';
-    ctx.fillRect(x - strip - u, y - u*2, strip, sz + u*4);
-    ctx.fillRect(x + sz + u, y - u*2, strip, sz + u*4);
+    ctx.fillRect(x - strip - u, y - u*2, strip + u*0.5, sz + u*4);
+    ctx.fillRect(x + sz + u*0.5, y - u*2, strip + u*0.5, sz + u*4);
     ctx.fillStyle = '#ffffff';
-    var holeH  = u * 2;
-    var holeW  = strip - u * 2;
-    var holeCount = Math.floor((sz + u*4) / (holeH * 3));
-    for (var i = 0; i < holeCount; i++) {
-      var hy = y - u*2 + i * holeH * 3 + holeH * 0.5;
-      ctx.fillRect(x - strip, hy, holeW, holeH);
-      ctx.fillRect(x + sz + u*2, hy, holeW, holeH);
+    var holeH = u * 1.8, holeCount = Math.max(3, Math.floor((sz + u*4) / (u * 6)));
+    var hSpacing = (sz + u*4) / (holeCount + 1);
+    for (var i = 1; i <= holeCount; i++) {
+      var hy = y - u*2 + hSpacing * i - holeH/2;
+      ctx.fillRect(x - strip - u*0.5 + u*0.5, hy, strip - u, holeH);
+      ctx.fillRect(x + sz + u*1.2, hy, strip - u, holeH);
     }
-    ctx.strokeStyle = accent;
-    ctx.lineWidth   = u;
-    roundPath(ctx, x - u*0.5, y - u*0.5, sz + u, sz + u, r * 0.5);
+    ctx.strokeStyle = accent; ctx.lineWidth = u * 0.9;
+    roundPath(ctx, x - u*0.5, y - u*0.5, sz + u, sz + u, r * 0.4);
     ctx.stroke();
   }
 
   else if (frame === 'stars') {
-    ctx.strokeStyle = accent;
-    ctx.lineWidth   = u * 2;
-    roundPath(ctx, x - u, y - u, sz + u*2, sz + u*2, r);
-    ctx.stroke();
-    ctx.fillStyle    = accent;
-    ctx.font         = 'bold ' + Math.round(sz * 0.055) + 'px serif';
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.shadowColor  = 'rgba(0,0,0,0.35)';
-    ctx.shadowBlur   = 4;
-    var starCount = 16;
-    var radius    = sz * 0.5 + u * 5;
-    for (var s = 0; s < starCount; s++) {
-      var angle = (s / starCount) * Math.PI * 2 - Math.PI / 2;
-      ctx.fillText('★',
-        x + sz/2 + radius * Math.cos(angle),
-        y + sz/2 + radius * Math.sin(angle)
-      );
-    }
+    // Gold border + ★ at all 8 anchor points
+    ctx.strokeStyle = accent; ctx.lineWidth = u * 2.5;
+    ctx.strokeRect(x - u*2, y - u*2, sz + u*4, sz + u*4);
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = u * 0.6;
+    ctx.strokeRect(x - u*0.5, y - u*0.5, sz + u, sz + u);
+    ctx.fillStyle = accent;
+    ctx.font = 'bold ' + Math.round(u * 3.5) + 'px serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = u;
+    var sOff = u * 3.5, mid = sz / 2;
+    [[x - sOff, y - sOff], [x + mid, y - sOff], [x + sz + sOff, y - sOff],
+     [x - sOff, y + mid],                         [x + sz + sOff, y + mid],
+     [x - sOff, y + sz + sOff], [x + mid, y + sz + sOff], [x + sz + sOff, y + sz + sOff]
+    ].forEach(function(pt) { ctx.fillText('★', pt[0], pt[1]); });
+    ctx.shadowBlur = 0;
   }
 
   else if (frame === 'patriotic') {
-    var pColors = ['#B22234', '#FFFFFF', '#3C3F8F'];
+    // Red/white/blue concentric stripe borders + stars at corners
+    var stripW = u * 2.2;
+    var pColors = ['#B22234', '#FFFFFF', '#3C3B8F'];
     for (var c = 0; c < 3; c++) {
-      ctx.strokeStyle = pColors[c];
-      ctx.lineWidth   = u * 1.2;
-      ctx.lineJoin    = 'round';
-      roundPath(ctx,
-        x - u - c*u*2.5,
-        y - u - c*u*2.5,
-        sz + (u + c*u*2.5)*2,
-        sz + (u + c*u*2.5)*2,
-        r + c*u*2
-      );
-      ctx.stroke();
+      ctx.strokeStyle = pColors[c]; ctx.lineWidth = stripW;
+      var pOff = stripW * (c + 0.5);
+      ctx.strokeRect(x - pOff, y - pOff, sz + pOff*2, sz + pOff*2);
     }
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold ' + Math.round(u * 2.5) + 'px serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    var starOff = stripW * 3.8;
+    [x - starOff, x + sz + starOff].forEach(function(px) {
+      [y - starOff, y + sz + starOff].forEach(function(py) { ctx.fillText('★', px, py); });
+    });
   }
 
   else if (frame === 'floral') {
-    ctx.strokeStyle = accent;
-    ctx.lineWidth   = u * 1.5;
+    // Thin gold border + large floral ornaments at corners + diamonds at midpoints
+    ctx.strokeStyle = accent; ctx.lineWidth = u * 2;
     roundPath(ctx, x - u, y - u, sz + u*2, sz + u*2, r);
     ctx.stroke();
-    var petals   = ['\u273f','\u2740','\u273e','\u2741'];
-    var fSize    = Math.round(sz * 0.075);
-    var fRadius  = sz * 0.5 + u * 5;
-    ctx.font         = fSize + 'px serif';
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle    = accent;
-    for (var p = 0; p < 12; p++) {
-      var pa = (p / 12) * Math.PI * 2 - Math.PI / 2;
-      ctx.fillText(
-        petals[p % petals.length],
-        x + sz/2 + fRadius * Math.cos(pa),
-        y + sz/2 + fRadius * Math.sin(pa)
-      );
-    }
+    var florals = ['✿', '❀', '✾', '❁'];
+    var fSize = Math.round(u * 4.2);
+    var fOff  = u * 2.8;
+    ctx.font = fSize + 'px serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = accent;
+    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = u * 1.2;
+    [[x - fOff, y - fOff], [x + sz + fOff, y - fOff],
+     [x - fOff, y + sz + fOff], [x + sz + fOff, y + sz + fOff]
+    ].forEach(function(pt, i) { ctx.fillText(florals[i], pt[0], pt[1]); });
+    ctx.font = Math.round(u * 2.5) + 'px serif';
+    ctx.fillText('✦', x + sz/2, y - fOff*0.8);
+    ctx.fillText('✦', x + sz/2, y + sz + fOff*0.8);
+    ctx.fillText('✦', x - fOff*0.8, y + sz/2);
+    ctx.fillText('✦', x + sz + fOff*0.8, y + sz/2);
+    ctx.shadowBlur = 0;
   }
 
   else if (frame === 'neon') {
-    ctx.shadowColor  = accent;
-    ctx.shadowBlur   = Math.round(sz * 0.025);
-    ctx.strokeStyle  = accent;
-    ctx.lineWidth    = u * 1.5;
-    roundPath(ctx, x - u, y - u, sz + u*2, sz + u*2, r);
-    ctx.stroke();
-    ctx.shadowColor = '#ffffff';
-    ctx.shadowBlur  = Math.round(sz * 0.010);
-    ctx.strokeStyle = 'rgba(255,255,255,0.90)';
-    ctx.lineWidth   = u * 0.6;
-    roundPath(ctx, x - u, y - u, sz + u*2, sz + u*2, r);
-    ctx.stroke();
-    ctx.shadowBlur  = 0;
+    // Glowing neon border — multiple glow passes
+    var neonPairs = ['#ff00ff', '#00ffff'];
+    ctx.lineJoin = 'round';
+    for (var gi = 4; gi >= 0; gi--) {
+      var nc = neonPairs[gi % 2];
+      ctx.shadowColor = nc; ctx.shadowBlur = u * (gi * 3 + 2);
+      ctx.strokeStyle = gi === 0 ? 'rgba(255,255,255,0.95)' : nc;
+      ctx.lineWidth = gi === 0 ? u * 0.7 : u * 2.5;
+      roundPath(ctx, x - u*1.5, y - u*1.5, sz + u*3, sz + u*3, r);
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
   }
 
   ctx.restore();
@@ -3095,137 +3215,168 @@ function renderMockup() {
   var sz = _RS_SIZES[S.size] || _RS_SIZES['24x36'];
   var bW = sz.bW, bH = sz.bH;
 
-  // ── Canvas geometry ──────────────────────────────────────
-  var topPad=24, topBarH=10, cassH=16, baseGap=14, baseH=22, footH=5, bottomPad=24;
-  var cW = bW + 80; // 30px left, 30+poleW right breathing room
-  var cH = topPad + topBarH + bH + cassH + baseGap + baseH + footH + 10 + bottomPad;
-  var bannerL = 30;
-  var topBarTop = topPad;
-  var bannerTop = topBarTop + topBarH;
-  var cassetteY = bannerTop + bH; // top of roll cassette
-  var poleX = bannerL + bW + 2;  // pole sits right of banner
-  var poleW2 = 10;
-  var tbX = bannerL - 2, tbW = bW + poleW2 + 4; // top bar covers banner + pole
-  var baseWidth = bW + 40;
+  // ── Layout geometry — modern retractable stand ──
+  var tilt = 0.05;                // slight 3D tilt (≈ 3°)
+  var topBarH = 6;                // slim silver top bar
+  var topPad  = 30;
+  var bottomPad = 70;             // room for base + shadow + label
+  var poleW = 4;                  // slim chrome pole on right
+  var baseH = 14;                 // flat base plate height
+  var baseWidth = Math.round(bW * 1.45);
+  var sideBreath = Math.round(bW * 0.18);
+  var cW = bW + sideBreath * 2;
+  var bannerL = sideBreath;
+  var bannerTop = topPad + topBarH;
+  var baseTop = bannerTop + bH + 8;
+  var cH = baseTop + baseH + bottomPad;
   var baseL = Math.round((cW - baseWidth) / 2);
-  var baseTop = cassetteY + cassH + baseGap;
-  var shadowCY = baseTop + baseH + footH + 4;
 
   // Create/reuse single canvas
   var mc = document.getElementById('mockup-stand-canvas');
   if (!mc) {
-    stage.innerHTML = '<canvas id="mockup-stand-canvas" style="display:block;width:100%;height:auto;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,0.18);margin:0 auto;max-width:' + cW + 'px;"></canvas>';
+    stage.innerHTML = '<canvas id="mockup-stand-canvas" style="display:block;width:100%;height:auto;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,0.14);margin:0 auto;max-width:' + cW + 'px;"></canvas>';
     mc = document.getElementById('mockup-stand-canvas');
   }
   mc.width = cW; mc.height = cH;
   var ctx = mc.getContext('2d');
 
-  // 1 — BACKGROUND (warm off-white studio surface)
-  ctx.fillStyle = '#f5f2ed'; ctx.fillRect(0, 0, cW, cH);
-  // subtle gradient: top slightly lighter
+  // 1 — CLEAN STUDIO BACKGROUND (white → light gray)
   var bgGrd = ctx.createLinearGradient(0, 0, 0, cH);
-  bgGrd.addColorStop(0, 'rgba(255,255,255,0.18)'); bgGrd.addColorStop(1, 'rgba(0,0,0,0.06)');
+  bgGrd.addColorStop(0, '#ffffff');
+  bgGrd.addColorStop(0.7, '#f4f5f7');
+  bgGrd.addColorStop(1, '#e8eaee');
   ctx.fillStyle = bgGrd; ctx.fillRect(0, 0, cW, cH);
 
-  // 2 — POLE (right side, chrome, behind banner)
-  var poleGrd = ctx.createLinearGradient(poleX, 0, poleX + poleW2, 0);
-  poleGrd.addColorStop(0, '#b0b0b0'); poleGrd.addColorStop(0.4, '#f5f5f5'); poleGrd.addColorStop(1, '#a0a0a0');
-  ctx.fillStyle = poleGrd;
-  ctx.fillRect(poleX, topBarTop, poleW2, bH + cassH + 2);
+  // Soft wall/floor seam
+  var seamY = baseTop + baseH + 2;
+  var floorGrd = ctx.createLinearGradient(0, seamY, 0, cH);
+  floorGrd.addColorStop(0, 'rgba(210,213,220,0.40)');
+  floorGrd.addColorStop(1, 'rgba(180,186,198,0.0)');
+  ctx.fillStyle = floorGrd; ctx.fillRect(0, seamY, cW, cH - seamY);
 
-  // 3 — BANNER ART (trapezoid: top 4% narrower than bottom)
-  var skew = Math.round(bW * 0.02); // 2% each side = 4% total
+  // 2 — DROP SHADOW beneath entire stand
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.28)';
+  ctx.filter = 'blur(10px)';
+  ctx.beginPath();
+  ctx.ellipse(cW / 2, baseTop + baseH + 6, baseWidth * 0.48, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // 3 — SLIM CHROME POLE (right side, behind banner)
+  var poleX = bannerL + bW + 4;
+  var poleGrd = ctx.createLinearGradient(poleX, 0, poleX + poleW, 0);
+  poleGrd.addColorStop(0, '#8a8d93');
+  poleGrd.addColorStop(0.5, '#e8eaee');
+  poleGrd.addColorStop(1, '#7e8288');
+  ctx.fillStyle = poleGrd;
+  ctx.fillRect(poleX, topPad, poleW, baseTop - topPad - 1);
+  // Pole highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.fillRect(poleX + poleW * 0.35, topPad, poleW * 0.2, baseTop - topPad - 1);
+
+  // 4 — THIN SILVER TOP BAR across banner top
+  var tbX = bannerL - 4, tbW = bW + 14;
+  var tbGrd = ctx.createLinearGradient(0, topPad, 0, topPad + topBarH);
+  tbGrd.addColorStop(0, '#f5f6f8');
+  tbGrd.addColorStop(0.5, '#c7cbd1');
+  tbGrd.addColorStop(1, '#8f9299');
+  ctx.fillStyle = tbGrd;
+  _rrect(ctx, tbX, topPad, tbW, topBarH, 2); ctx.fill();
+  // End caps
+  ctx.fillStyle = '#9a9da3';
+  ctx.beginPath(); ctx.arc(tbX, topPad + topBarH / 2, topBarH * 0.6, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(tbX + tbW, topPad + topBarH / 2, topBarH * 0.6, 0, Math.PI * 2); ctx.fill();
+
+  // 5 — BANNER ART with slight 3D perspective tilt (~5–6°)
   var src = document.getElementById('preview-canvas');
   ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(bannerL + skew, bannerTop);
-  ctx.lineTo(bannerL + bW - skew, bannerTop);
-  ctx.lineTo(bannerL + bW, bannerTop + bH);
-  ctx.lineTo(bannerL, bannerTop + bH);
-  ctx.closePath(); ctx.clip();
+  // Shadow BEHIND banner
+  ctx.shadowColor = 'rgba(0,0,0,0.22)';
+  ctx.shadowBlur = 20;
+  ctx.shadowOffsetX = 4;
+  ctx.shadowOffsetY = 6;
+  // Apply a mild horizontal skew transform for subtle 3D feel (top leans slightly left)
+  var skewX = -0.03;
+  ctx.transform(1, 0, skewX, 1, -skewX * (bannerTop + bH / 2), 0);
+
   if (src && src.width > 0) {
     try { ctx.drawImage(src, bannerL, bannerTop, bW, bH); } catch(e) {}
   } else {
     var phg = ctx.createLinearGradient(bannerL, bannerTop, bannerL, bannerTop + bH);
     phg.addColorStop(0, S.theme.bg || '#1a1a2e');
-    phg.addColorStop(1, _blendAccent(S.theme.bg || '#1a1a2e', S.theme.accent || '#C9A84C', 0.18));
+    phg.addColorStop(1, (typeof _blendAccent === 'function') ? _blendAccent(S.theme.bg || '#1a1a2e', S.theme.accent || '#C9A84C', 0.18) : '#2a2a3e');
     ctx.fillStyle = phg; ctx.fillRect(bannerL, bannerTop, bW, bH);
-    ctx.fillStyle = 'rgba(255,255,255,0.20)';
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
     ctx.font = 'bold ' + Math.round(bW * 0.07) + 'px Outfit,sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('Generate Preview', bannerL + bW / 2, bannerTop + bH * 0.47);
   }
   ctx.restore();
 
-  // 4 — BANNER EDGE EFFECTS & SHEEN
-  // Left-edge darker strip (12px, simulates wrap depth)
-  var leftWrap = ctx.createLinearGradient(bannerL, 0, bannerL + 12, 0);
-  leftWrap.addColorStop(0, 'rgba(0,0,0,0.30)'); leftWrap.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = leftWrap; ctx.fillRect(bannerL, bannerTop, 12, bH);
-  // Right-edge lighter strip (8px)
-  var rightWrap = ctx.createLinearGradient(bannerL + bW - 8, 0, bannerL + bW, 0);
-  rightWrap.addColorStop(0, 'rgba(0,0,0,0)'); rightWrap.addColorStop(1, 'rgba(255,255,255,0.20)');
-  ctx.fillStyle = rightWrap; ctx.fillRect(bannerL + bW - 8, bannerTop, 8, bH);
-  // Top-to-bottom lighting sheen
-  var sheen = ctx.createLinearGradient(0, bannerTop, 0, bannerTop + bH);
-  sheen.addColorStop(0, 'rgba(255,255,255,0.06)'); sheen.addColorStop(1, 'rgba(0,0,0,0.18)');
-  ctx.fillStyle = sheen; ctx.fillRect(bannerL, bannerTop, bW, bH);
-
-  // 5 — TOP BAR (3D: main bar + highlight + shadow + endcaps)
-  // Main bar
-  ctx.fillStyle = '#c8c8c8';
-  ctx.fillRect(tbX, topBarTop, tbW, topBarH);
-  // Highlight strip (top 3px)
-  ctx.fillStyle = '#efefef';
-  ctx.fillRect(tbX, topBarTop, tbW, 3);
-  // Shadow strip (bottom 2px)
-  ctx.fillStyle = '#909090';
-  ctx.fillRect(tbX, topBarTop + topBarH - 2, tbW, 2);
-  // Left endcap
-  ctx.fillStyle = '#aaaaaa';
-  _rrect(ctx, tbX - 4, topBarTop - 1, 8, topBarH + 2, 3); ctx.fill();
-  // Right endcap
-  _rrect(ctx, tbX + tbW - 4, topBarTop - 1, 8, topBarH + 2, 3); ctx.fill();
-
-  // 6 — ROLL CASSETTE (cylinder at bottom of banner)
-  var cassRY = 7; // half-height of ellipse end cap
-  var cassY  = cassetteY + cassH / 2;
-  // Barrel body (rectangle between top and bottom ellipse centers)
-  ctx.fillStyle = '#4a4a4a';
-  ctx.fillRect(bannerL, cassetteY, bW, cassH);
-  // Bottom ellipse (dark — mostly hidden)
-  ctx.fillStyle = '#333333';
-  ctx.beginPath(); ctx.ellipse(bannerL + bW/2, cassetteY + cassH, bW/2, cassRY, 0, 0, Math.PI*2); ctx.fill();
-  // Top face (lighter — 3D top of cylinder)
-  ctx.fillStyle = '#6a6a6a';
-  ctx.beginPath(); ctx.ellipse(bannerL + bW/2, cassetteY, bW/2, cassRY, 0, 0, Math.PI*2); ctx.fill();
-  // Highlight arc on top face
-  ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.ellipse(bannerL + bW/2, cassetteY - 1, bW/2 - 8, Math.round(cassRY * 0.4), 0, Math.PI, 0); ctx.stroke();
-
-  // 7 — BASE (dark, low-profile, rounded rect)
+  // 6 — BANNER EDGE LIGHTING (sheen for realism)
   ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.28)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 5;
-  var baseGrd = ctx.createLinearGradient(0, baseTop, 0, baseTop + baseH);
-  baseGrd.addColorStop(0, '#3a3a3a'); baseGrd.addColorStop(1, '#1a1a1a');
-  ctx.fillStyle = baseGrd;
-  _rrect(ctx, baseL, baseTop, baseWidth, baseH, 5); ctx.fill();
+  ctx.transform(1, 0, -0.03, 1, 0.03 * (bannerTop + bH / 2), 0);
+  var leftWrap = ctx.createLinearGradient(bannerL, 0, bannerL + 14, 0);
+  leftWrap.addColorStop(0, 'rgba(0,0,0,0.22)');
+  leftWrap.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = leftWrap; ctx.fillRect(bannerL, bannerTop, 14, bH);
+  var rightWrap = ctx.createLinearGradient(bannerL + bW - 8, 0, bannerL + bW, 0);
+  rightWrap.addColorStop(0, 'rgba(0,0,0,0)');
+  rightWrap.addColorStop(1, 'rgba(255,255,255,0.18)');
+  ctx.fillStyle = rightWrap; ctx.fillRect(bannerL + bW - 8, bannerTop, 8, bH);
+  var vSheen = ctx.createLinearGradient(0, bannerTop, 0, bannerTop + bH);
+  vSheen.addColorStop(0, 'rgba(255,255,255,0.05)');
+  vSheen.addColorStop(0.5, 'rgba(255,255,255,0)');
+  vSheen.addColorStop(1, 'rgba(0,0,0,0.12)');
+  ctx.fillStyle = vSheen; ctx.fillRect(bannerL, bannerTop, bW, bH);
   ctx.restore();
-  // Highlight line on base top
-  ctx.fillStyle = 'rgba(255,255,255,0.10)';
-  ctx.fillRect(baseL + 6, baseTop + 2, baseWidth - 12, 2);
-  // Rubber feet
-  ctx.fillStyle = '#111111';
-  var footW = 20;
-  _rrect(ctx, baseL + Math.round(baseWidth * 0.15) - footW/2, baseTop + baseH, footW, footH, 2); ctx.fill();
-  _rrect(ctx, baseL + Math.round(baseWidth * 0.85) - footW/2, baseTop + baseH, footW, footH, 2); ctx.fill();
-  // Floor shadow ellipse
-  ctx.fillStyle = 'rgba(0,0,0,0.15)';
-  ctx.beginPath(); ctx.ellipse(cW/2, shadowCY, baseWidth * 0.4, 6, 0, 0, Math.PI*2); ctx.fill();
 
-  // update label
+  // 7 — WIDE FLAT BRUSHED-ALUMINUM BASE PLATE
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.22)';
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetY = 4;
+  var baseGrd = ctx.createLinearGradient(0, baseTop, 0, baseTop + baseH);
+  baseGrd.addColorStop(0, '#e4e7ec');
+  baseGrd.addColorStop(0.4, '#c0c4cc');
+  baseGrd.addColorStop(0.6, '#a8acb4');
+  baseGrd.addColorStop(1, '#7d8189');
+  ctx.fillStyle = baseGrd;
+  _rrect(ctx, baseL, baseTop, baseWidth, baseH, 4); ctx.fill();
+  ctx.restore();
+  // Brushed-metal horizontal lines
+  ctx.save();
+  ctx.globalAlpha = 0.12;
+  for (var bl = 0; bl < baseH - 2; bl += 2) {
+    ctx.fillStyle = bl % 4 === 0 ? '#ffffff' : '#2a2d32';
+    ctx.fillRect(baseL + 3, baseTop + 1 + bl, baseWidth - 6, 1);
+  }
+  ctx.restore();
+  // Base top highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  _rrect(ctx, baseL + 3, baseTop + 1, baseWidth - 6, 2, 1); ctx.fill();
+  // Pole attachment cap at center
+  ctx.fillStyle = '#6d7178';
+  _rrect(ctx, poleX - 6, baseTop, poleW + 12, 5, 2); ctx.fill();
+
+  // 8 — SIZE LABEL below stand
+  var lblY = baseTop + baseH + 30;
+  ctx.fillStyle = 'rgba(12,14,20,0.7)';
+  ctx.font = '600 11px Outfit, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(sz.label + '  ·  Retractable Banner Stand', cW / 2, lblY);
+  // Thin accent underline
+  var lblW = ctx.measureText(sz.label + '  ·  Retractable Banner Stand').width;
+  ctx.strokeStyle = 'rgba(201,168,76,0.5)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cW / 2 - lblW / 2 - 4, lblY + 10);
+  ctx.lineTo(cW / 2 + lblW / 2 + 4, lblY + 10);
+  ctx.stroke();
+
+  // update mockup label pill below canvas
   var lbl = document.getElementById('mockup-labels');
-  if (lbl) lbl.innerHTML = '<span class="mockup-label" style="color:var(--muted);font-size:12px;">Retractable Banner Stand Preview · ' + sz.label + '</span>';
+  if (lbl) lbl.innerHTML = '<span class="mockup-label" style="color:var(--muted);font-size:12px;">Modern Retractable Stand · ' + sz.label + '</span>';
 }
 
 function downloadStandMockup() {
