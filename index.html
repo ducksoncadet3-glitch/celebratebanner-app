@@ -1038,7 +1038,7 @@ function buildPreview() {
     if (actualCount >= targetSlots) {
       drawList = baseList.slice();
     } else {
-      for (var k=0; k<targetSlots; k++) drawList.push(baseList[k % actualCount]);
+      for (var k=0; k<targetSlots; k++) { var src=baseList[k % actualCount]; drawList.push(k < actualCount ? src : Object.assign({}, src)); }
     }
   }
   var totalDrawn = drawList.length;
@@ -2565,7 +2565,8 @@ function _drawCollageCellFrame(ctx, x, y, w, h, accent, photoFrame) {
 
 // Unified collage cell draw — handles clip, photo, frame in correct order for each frame type
 function _drawCollageCell(ctx, photo, x, y, w, h, cornerR, accent) {
-  var frame = (photo && photo.frame && photo.frame !== 'none') ? photo.frame : 'none';
+  var _heroRef = S.photos[S.hero >= 0 ? S.hero : 0];
+  var frame = (photo && photo !== _heroRef && photo.frame && photo.frame !== 'none') ? photo.frame : 'none';
 
   if (frame === 'polaroid') {
     ctx.save();
