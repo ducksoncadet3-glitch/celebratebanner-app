@@ -83,8 +83,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--ivory); color: var(-
 .hero-label { position: absolute; bottom: 0; left: 0; right: 0; background: var(--gold); color: var(--obsidian); font-size: 9px; font-weight: 700; text-align: center; padding: 3px 0; letter-spacing: 1.5px; text-transform: uppercase; }
 .photo-cell .rm-btn { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(12,14,20,0.75); color: var(--white); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; opacity: 0; transition: opacity 0.15s; }
 .photo-cell .rot-btn { position: absolute; top: 4px; left: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(201,168,76,0.85); color: var(--obsidian); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; opacity: 0; transition: opacity 0.15s; }
-.photo-cell:hover .rm-btn, .photo-cell:hover .rot-btn, .photo-cell:hover .frame-btn { opacity: 1; }
-.photo-cell:hover .frm-btn { opacity: 1 !important; }
+.photo-cell:hover .rm-btn, .photo-cell:hover .rot-btn { opacity: 1; }
 .customize-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 2rem; }
 @media (max-width: 700px) { .customize-grid { grid-template-columns: 1fr; } }
 .field-card { background: var(--white); border-radius: var(--r2); padding: 1.5rem; border: 0.5px solid var(--border2); box-shadow: var(--shadow-sm); }
@@ -244,7 +243,7 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
   .delivery-cards { grid-template-columns: 1fr; }
   .btn-group { gap: 8px; }
   .photo-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
-  .photo-cell .rm-btn, .photo-cell .rot-btn, .photo-cell .frame-btn { opacity: 1; }
+  .photo-cell .rm-btn, .photo-cell .rot-btn { opacity: 1; }
   .size-cards { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
   .size-card { padding: 12px; }
   .size-dim { font-size: 20px; }
@@ -919,7 +918,6 @@ function renderPhotoGrid() {
       (i===S.hero?'<div class="hero-label">Hero</div>':'')+
       '<button class="rot-btn" onclick="rotatePhoto('+i+');event.stopPropagation()" title="Rotate">↻</button>'+
       '<button class="rm-btn" onclick="removePhoto('+i+');event.stopPropagation()">✕</button>'+
-      '<button onclick="cyclePhotoFrame('+i+');event.stopPropagation()" style="position:absolute;bottom:4px;left:4px;width:22px;height:22px;border-radius:4px;background:' + (p.frame && p.frame!=='none' ? 'rgba(201,168,76,0.9)' : 'rgba(12,14,20,0.7)') + ';color:#fff;border:none;cursor:pointer;font-size:9px;font-weight:900;opacity:0;transition:opacity 0.15s;" class="frm-btn">F</button>'+
       '</div>';
   }).join('');
 }
@@ -1109,14 +1107,27 @@ function drawImg(ctx, photo, x, y, w, h) {
     ctx.restore();
     return;
   }
-  var img = (photo._img&&photo._img.complete&&photo._img.naturalWidth)?photo._img:(function(){var i=new Image();i.src=photo.src;return i;})();
+  // Always pull from the full-resolution _img (loaded from the original data URL), never a thumbnail.
+  var img = (photo._img && photo._img.complete && photo._img.naturalWidth) ? photo._img : null;
+  if (!img) {
+    if (!photo._img) { photo._img = new Image(); photo._img.src = photo.src; }
+    return;
+  }
+  var nw = img.naturalWidth, nh = img.naturalHeight;
+  if (!nw || !nh) return;
   var rot = photo.rotation||0;
   var f = (typeof FILTERS!=='undefined') ? FILTERS.find(function(f){return f.id===S.effects.filter;}) : null;
   ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  if (ctx.imageSmoothingQuality !== undefined) ctx.imageSmoothingQuality = 'high';
   if(f&&f.css) ctx.filter=f.css;
   ctx.translate(x+w/2,y+h/2); ctx.rotate(rot*Math.PI/180);
-  var sw=(rot===90||rot===270)?h:w, sh=(rot===90||rot===270)?w:h;
-  try{ctx.drawImage(img,-sw/2,-sh/2,sw,sh);}catch(e){}
+  var dw=(rot===90||rot===270)?h:w, dh=(rot===90||rot===270)?w:h;
+  // Cover-fit from full natural dimensions: pick the largest source rect that matches the destination aspect.
+  var destAspect = dw/dh, srcAspect = nw/nh, sx, sy, sw, sh;
+  if (srcAspect > destAspect) { sh = nh; sw = nh*destAspect; sx = (nw-sw)/2; sy = 0; }
+  else { sw = nw; sh = nw/destAspect; sx = 0; sy = (nh-sh)/2; }
+  try{ ctx.drawImage(img, sx, sy, sw, sh, -dw/2, -dh/2, dw, dh); }catch(e){}
   ctx.restore();
 }
 
@@ -2968,14 +2979,26 @@ buildCustomizeFields = function() { _origBuildCustomizeFields(); buildEffectsPan
 var _origDrawImg = drawImg;
 drawImg = function(ctx, photo, x, y, w, h) {
   if (!photo) { ctx.fillStyle='rgba(255,255,255,0.05)'; ctx.fillRect(x,y,w,h); return; }
-  var img = (photo._img && photo._img.complete && photo._img.naturalWidth) ? photo._img : (function(){ var i=new Image(); i.src=photo.src; return i; })();
+  // Always pull from the full-resolution _img, never a thumbnail.
+  var img = (photo._img && photo._img.complete && photo._img.naturalWidth) ? photo._img : null;
+  if (!img) {
+    if (!photo._img) { photo._img = new Image(); photo._img.src = photo.src; }
+    return;
+  }
+  var nw = img.naturalWidth, nh = img.naturalHeight;
+  if (!nw || !nh) return;
   var rot = photo.rotation || 0;
   var f = FILTERS.find(function(f){ return f.id === S.effects.filter; });
   ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  if (ctx.imageSmoothingQuality !== undefined) ctx.imageSmoothingQuality = 'high';
   if (f && f.css) ctx.filter = f.css;
   ctx.translate(x+w/2, y+h/2); ctx.rotate(rot * Math.PI / 180);
-  var sw=(rot===90||rot===270)?h:w, sh=(rot===90||rot===270)?w:h;
-  try{ctx.drawImage(img,-sw/2,-sh/2,sw,sh);}catch(e){}
+  var dw=(rot===90||rot===270)?h:w, dh=(rot===90||rot===270)?w:h;
+  var destAspect = dw/dh, srcAspect = nw/nh, sx, sy, sw, sh;
+  if (srcAspect > destAspect) { sh = nh; sw = nh*destAspect; sx = (nw-sw)/2; sy = 0; }
+  else { sw = nw; sh = nw/destAspect; sx = 0; sy = (nh-sh)/2; }
+  try{ ctx.drawImage(img, sx, sy, sw, sh, -dw/2, -dh/2, dw, dh); }catch(e){}
   ctx.restore();
 };
 
@@ -3216,14 +3239,13 @@ function renderMockup() {
   var bW = sz.bW, bH = sz.bH;
 
   // ── Layout geometry — modern retractable stand ──
-  var tilt = 0.05;                // slight 3D tilt (≈ 3°)
-  var topBarH = 6;                // slim silver top bar
-  var topPad  = 30;
-  var bottomPad = 70;             // room for base + shadow + label
-  var poleW = 4;                  // slim chrome pole on right
-  var baseH = 14;                 // flat base plate height
-  var baseWidth = Math.round(bW * 1.45);
-  var sideBreath = Math.round(bW * 0.18);
+  var topBarH = 7;                // slim silver top bar
+  var topPad  = 34;
+  var bottomPad = 80;             // room for base + shadow + label
+  var poleW = 8;                  // thicker chrome pole on right
+  var baseH = 18;                 // flatter, taller base plate
+  var baseWidth = Math.round(bW * 1.7);    // wider base
+  var sideBreath = Math.round(bW * 0.22);
   var cW = bW + sideBreath * 2;
   var bannerL = sideBreath;
   var bannerTop = topPad + topBarH;
@@ -3231,14 +3253,21 @@ function renderMockup() {
   var cH = baseTop + baseH + bottomPad;
   var baseL = Math.round((cW - baseWidth) / 2);
 
+  // 2x pixel density for crisp rendering — canvas backing buffer is 2x, CSS scales back
+  var DPR = 2;
+
   // Create/reuse single canvas
   var mc = document.getElementById('mockup-stand-canvas');
   if (!mc) {
     stage.innerHTML = '<canvas id="mockup-stand-canvas" style="display:block;width:100%;height:auto;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,0.14);margin:0 auto;max-width:' + cW + 'px;"></canvas>';
     mc = document.getElementById('mockup-stand-canvas');
   }
-  mc.width = cW; mc.height = cH;
+  mc.width = cW * DPR; mc.height = cH * DPR;
+  mc.style.maxWidth = cW + 'px';
   var ctx = mc.getContext('2d');
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  if (ctx.imageSmoothingQuality !== undefined) ctx.imageSmoothingQuality = 'high';
 
   // 1 — CLEAN STUDIO BACKGROUND (white → light gray)
   var bgGrd = ctx.createLinearGradient(0, 0, 0, cH);
@@ -3254,26 +3283,38 @@ function renderMockup() {
   floorGrd.addColorStop(1, 'rgba(180,186,198,0.0)');
   ctx.fillStyle = floorGrd; ctx.fillRect(0, seamY, cW, cH - seamY);
 
-  // 2 — DROP SHADOW beneath entire stand
+  // 2 — STRONGER DROP SHADOW beneath entire stand (contact shadow + ambient)
   ctx.save();
-  ctx.fillStyle = 'rgba(0,0,0,0.28)';
-  ctx.filter = 'blur(10px)';
+  ctx.fillStyle = 'rgba(0,0,0,0.38)';
+  ctx.filter = 'blur(14px)';
   ctx.beginPath();
-  ctx.ellipse(cW / 2, baseTop + baseH + 6, baseWidth * 0.48, 8, 0, 0, Math.PI * 2);
+  ctx.ellipse(cW / 2, baseTop + baseH + 10, baseWidth * 0.54, 12, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  // Tight contact shadow directly under the base
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.filter = 'blur(4px)';
+  ctx.beginPath();
+  ctx.ellipse(cW / 2, baseTop + baseH + 3, baseWidth * 0.48, 4, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
-  // 3 — SLIM CHROME POLE (right side, behind banner)
+  // 3 — THICKER CHROME POLE (right side, behind banner) — 4-stop brushed metal gradient
   var poleX = bannerL + bW + 4;
   var poleGrd = ctx.createLinearGradient(poleX, 0, poleX + poleW, 0);
-  poleGrd.addColorStop(0, '#8a8d93');
-  poleGrd.addColorStop(0.5, '#e8eaee');
-  poleGrd.addColorStop(1, '#7e8288');
+  poleGrd.addColorStop(0.00, '#e8e8e8');
+  poleGrd.addColorStop(0.35, '#ffffff');
+  poleGrd.addColorStop(0.70, '#c0c0c0');
+  poleGrd.addColorStop(1.00, '#909090');
   ctx.fillStyle = poleGrd;
   ctx.fillRect(poleX, topPad, poleW, baseTop - topPad - 1);
-  // Pole highlight
-  ctx.fillStyle = 'rgba(255,255,255,0.55)';
-  ctx.fillRect(poleX + poleW * 0.35, topPad, poleW * 0.2, baseTop - topPad - 1);
+  // Bright specular highlight strip
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.fillRect(poleX + poleW * 0.32, topPad, poleW * 0.14, baseTop - topPad - 1);
+  // Subtle dark edge on far right for depth
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
+  ctx.fillRect(poleX + poleW - 1, topPad, 1, baseTop - topPad - 1);
 
   // 4 — THIN SILVER TOP BAR across banner top
   var tbX = bannerL - 4, tbW = bW + 14;
@@ -3288,20 +3329,21 @@ function renderMockup() {
   ctx.beginPath(); ctx.arc(tbX, topPad + topBarH / 2, topBarH * 0.6, 0, Math.PI * 2); ctx.fill();
   ctx.beginPath(); ctx.arc(tbX + tbW, topPad + topBarH / 2, topBarH * 0.6, 0, Math.PI * 2); ctx.fill();
 
-  // 5 — BANNER ART with slight 3D perspective tilt (~5–6°)
+  // 5 — BANNER ART at full resolution — use the high-res preview canvas directly
   var src = document.getElementById('preview-canvas');
   ctx.save();
   // Shadow BEHIND banner
-  ctx.shadowColor = 'rgba(0,0,0,0.22)';
-  ctx.shadowBlur = 20;
+  ctx.shadowColor = 'rgba(0,0,0,0.28)';
+  ctx.shadowBlur = 24;
   ctx.shadowOffsetX = 4;
-  ctx.shadowOffsetY = 6;
+  ctx.shadowOffsetY = 8;
   // Apply a mild horizontal skew transform for subtle 3D feel (top leans slightly left)
   var skewX = -0.03;
   ctx.transform(1, 0, skewX, 1, -skewX * (bannerTop + bH / 2), 0);
 
   if (src && src.width > 0) {
-    try { ctx.drawImage(src, bannerL, bannerTop, bW, bH); } catch(e) {}
+    // drawImage uses the full source dimensions of preview-canvas (no pre-scaling)
+    try { ctx.drawImage(src, 0, 0, src.width, src.height, bannerL, bannerTop, bW, bH); } catch(e) {}
   } else {
     var phg = ctx.createLinearGradient(bannerL, bannerTop, bannerL, bannerTop + bH);
     phg.addColorStop(0, S.theme.bg || '#1a1a2e');
@@ -3314,7 +3356,7 @@ function renderMockup() {
   }
   ctx.restore();
 
-  // 6 — BANNER EDGE LIGHTING (sheen for realism)
+  // 6 — BANNER EDGE LIGHTING + diagonal shine/reflection
   ctx.save();
   ctx.transform(1, 0, -0.03, 1, 0.03 * (bannerTop + bH / 2), 0);
   var leftWrap = ctx.createLinearGradient(bannerL, 0, bannerL + 14, 0);
@@ -3326,24 +3368,37 @@ function renderMockup() {
   rightWrap.addColorStop(1, 'rgba(255,255,255,0.18)');
   ctx.fillStyle = rightWrap; ctx.fillRect(bannerL + bW - 8, bannerTop, 8, bH);
   var vSheen = ctx.createLinearGradient(0, bannerTop, 0, bannerTop + bH);
-  vSheen.addColorStop(0, 'rgba(255,255,255,0.05)');
+  vSheen.addColorStop(0, 'rgba(255,255,255,0.06)');
   vSheen.addColorStop(0.5, 'rgba(255,255,255,0)');
-  vSheen.addColorStop(1, 'rgba(0,0,0,0.12)');
+  vSheen.addColorStop(1, 'rgba(0,0,0,0.14)');
   ctx.fillStyle = vSheen; ctx.fillRect(bannerL, bannerTop, bW, bH);
+  // Diagonal specular shine across upper-left
+  var shineGrd = ctx.createLinearGradient(bannerL, bannerTop, bannerL + bW * 0.8, bannerTop + bH * 0.5);
+  shineGrd.addColorStop(0,    'rgba(255,255,255,0)');
+  shineGrd.addColorStop(0.35, 'rgba(255,255,255,0.14)');
+  shineGrd.addColorStop(0.5,  'rgba(255,255,255,0.22)');
+  shineGrd.addColorStop(0.65, 'rgba(255,255,255,0.14)');
+  shineGrd.addColorStop(1,    'rgba(255,255,255,0)');
+  ctx.fillStyle = shineGrd;
+  ctx.fillRect(bannerL, bannerTop, bW, bH);
+  // Thin black border around banner edges
+  ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(bannerL + 0.5, bannerTop + 0.5, bW - 1, bH - 1);
   ctx.restore();
 
-  // 7 — WIDE FLAT BRUSHED-ALUMINUM BASE PLATE
+  // 7 — WIDE FLAT BRUSHED-ALUMINUM BASE PLATE (wider + flatter)
   ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.22)';
-  ctx.shadowBlur = 16;
-  ctx.shadowOffsetY = 4;
+  ctx.shadowColor = 'rgba(0,0,0,0.30)';
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetY = 6;
   var baseGrd = ctx.createLinearGradient(0, baseTop, 0, baseTop + baseH);
-  baseGrd.addColorStop(0, '#e4e7ec');
-  baseGrd.addColorStop(0.4, '#c0c4cc');
-  baseGrd.addColorStop(0.6, '#a8acb4');
-  baseGrd.addColorStop(1, '#7d8189');
+  baseGrd.addColorStop(0.00, '#eef1f5');
+  baseGrd.addColorStop(0.35, '#c6cad2');
+  baseGrd.addColorStop(0.65, '#9fa3ab');
+  baseGrd.addColorStop(1.00, '#6e7279');
   ctx.fillStyle = baseGrd;
-  _rrect(ctx, baseL, baseTop, baseWidth, baseH, 4); ctx.fill();
+  _rrect(ctx, baseL, baseTop, baseWidth, baseH, 5); ctx.fill();
   ctx.restore();
   // Brushed-metal horizontal lines
   ctx.save();
@@ -3354,14 +3409,17 @@ function renderMockup() {
   }
   ctx.restore();
   // Base top highlight
-  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
   _rrect(ctx, baseL + 3, baseTop + 1, baseWidth - 6, 2, 1); ctx.fill();
+  // Subtle bottom edge shadow for a flatter, grounded look
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.fillRect(baseL + 4, baseTop + baseH - 1, baseWidth - 8, 1);
   // Pole attachment cap at center
   ctx.fillStyle = '#6d7178';
-  _rrect(ctx, poleX - 6, baseTop, poleW + 12, 5, 2); ctx.fill();
+  _rrect(ctx, poleX - 6, baseTop, poleW + 12, 6, 2); ctx.fill();
 
   // 8 — SIZE LABEL below stand
-  var lblY = baseTop + baseH + 30;
+  var lblY = baseTop + baseH + 36;
   ctx.fillStyle = 'rgba(12,14,20,0.7)';
   ctx.font = '600 11px Outfit, sans-serif';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
