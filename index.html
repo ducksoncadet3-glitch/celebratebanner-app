@@ -391,7 +391,7 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
   </div>
   <div class="btn-group">
     <button class="btn btn-outline" onclick="gotoPage(1)">← Back</button>
-    <button class="btn btn-primary" onclick="buildPreview()">Generate Preview →</button>
+    <button class="btn btn-primary" onclick="buildPreview()">Apply & Preview →</button>
   </div>
 </div>
 
@@ -3004,125 +3004,6 @@ drawImg = function(ctx, photo, x, y, w, h) {
 
 
 console.log('✓ CelebrateBanner Effects Module loaded');
-
-// ============================================================
-// LIVE PREVIEW MODULE
-// ============================================================
-var _livePreviewActive = false;
-var _livePreviewTimer = null;
-var _livePreviewCanvas = null;
-var _livePreviewCtx = null;
-
-function buildLivePreviewPanel() {
-  if (document.getElementById('live-preview-panel')) return;
-  var panel = document.createElement('div');
-  panel.id = 'live-preview-panel';
-  panel.style.cssText = 'position:fixed;bottom:24px;left:24px;width:200px;background:var(--obsidian);border-radius:var(--r2);border:1px solid var(--border);box-shadow:var(--shadow-lg);z-index:500;overflow:hidden;transition:all 0.3s cubic-bezier(0.4,0,0.2,1);transform:translateY(20px);opacity:0;';
-  panel.innerHTML = `
-    <div style="padding:10px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);">
-      <div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold2);">⚡ Live Preview</div>
-      <div style="display:flex;gap:6px;align-items:center;"><div id="lp-status" style="width:6px;height:6px;border-radius:50%;background:#5A8F6A;"></div><button onclick="toggleLivePreview()" id="lp-toggle" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:11px;cursor:pointer;padding:0;">hide</button></div>
-    </div>
-    <div id="lp-canvas-wrap" style="position:relative;padding:8px;"><canvas id="lp-canvas" style="width:100%;border-radius:8px;display:block;"></canvas><div id="lp-spinner" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(12,14,20,0.7);border-radius:8px;opacity:0;pointer-events:none;transition:opacity 0.2s;"><div style="width:20px;height:20px;border:2px solid rgba(201,168,76,0.2);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;"></div></div></div>
-    <div style="padding:4px 12px 10px;"><div id="lp-info" style="font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:0.5px;">No theme selected</div><button onclick="applyLiveToMain()" style="margin-top:6px;width:100%;padding:7px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--obsidian);border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.5px;">Apply & Preview →</button></div>`;
-  document.body.appendChild(panel);
-  setTimeout(function() { panel.style.transform = 'translateY(0)'; panel.style.opacity = '1'; }, 300);
-  _livePreviewCanvas = document.getElementById('lp-canvas');
-  _livePreviewCtx = _livePreviewCanvas.getContext('2d');
-  _livePreviewActive = true;
-}
-
-function toggleLivePreview() {
-  var wrap = document.getElementById('lp-canvas-wrap');
-  var btn = document.getElementById('lp-toggle');
-  var panel = document.getElementById('live-preview-panel');
-  if (wrap.style.display === 'none') { wrap.style.display = 'block'; btn.textContent = 'hide'; panel.style.width = '200px'; }
-  else { wrap.style.display = 'none'; btn.textContent = 'show'; panel.style.width = '160px'; }
-}
-
-function liveRender() {
-  if (!_livePreviewActive || !S.theme || S.page !== 2) return;
-  var spinner = document.getElementById('lp-spinner');
-  var status = document.getElementById('lp-status');
-  var info = document.getElementById('lp-info');
-  if (spinner) { spinner.style.opacity = '1'; spinner.style.pointerEvents = 'auto'; }
-  if (status) status.style.background = '#C9A84C';
-  clearTimeout(_livePreviewTimer);
-  _livePreviewTimer = setTimeout(function() {
-    try {
-      var c = _livePreviewCanvas;
-      if (!c) return;
-      var LW = 184;
-      var t = S.theme;
-      var heroPhoto = S.hero >= 0 ? S.photos[S.hero] : (S.photos[0] || null);
-      var others = S.photos.filter(function(_, i) { return i !== (S.hero >= 0 ? S.hero : 0); });
-      var name = t.id === 'champion' ? (S.fields.teamName || '') : t.id === 'wedding' ? (S.fields.coupleNames || '') : (S.fields.name || S.fields.coupleNames || S.fields.names || S.fields.petName || '');
-      var sub = S.fields.year || S.fields.date || S.fields.years || (t.id !== 'stars-stripes' ? S.fields.caption : '') || '';
-      var sub2 = S.fields.school || S.fields.city || (t.id === 'stars-stripes' ? S.fields.caption : '') || '';
-      var textH = Math.round(LW * 0.28); var heroSz = Math.round(LW * 0.55); var heroX = Math.round((LW - heroSz) / 2); var heroY = textH + 6; var heroBot = heroY + heroSz + Math.round(LW * 0.06);
-      var n = 6, pad = 2, cw = Math.floor((LW - 10 - (n-1)*pad) / n);
-      var oc = S.photos.length > 0 ? S.photos.length - 1 : 0; var rows = Math.max(1, Math.ceil(oc / n));
-      var LH = Math.max(Math.round(LW * 1.5), heroBot + rows*(cw+pad) + 14);
-      c.width = LW; c.height = LH;
-      var ctx = _livePreviewCtx;
-      ctx.fillStyle = S.bgColor || t.bg || '#0B0D18'; ctx.fillRect(0, 0, LW, LH);
-      if (typeof drawThemeBackground === 'function') drawThemeBackground(ctx, t, LW, LH, S.accent||'#C9A84C', S.bgColor||t.bg||'#0B0D18');
-      var vig = ctx.createRadialGradient(LW/2, LH*0.35, LH*0.08, LW/2, LH*0.52, LH*0.75); vig.addColorStop(0, 'rgba(0,0,0,0.08)'); vig.addColorStop(1, 'rgba(0,0,0,0.38)'); ctx.fillStyle = vig; ctx.fillRect(0, 0, LW, LH);
-      drawBannerTextTop(ctx, t, LW, textH, name, sub, sub2, S.accent || '#C9A84C');
-      var r2 = 8; roundClip(ctx, heroX, heroY, heroSz, heroSz, r2); drawHeroImg(ctx, heroPhoto, heroX, heroY, heroSz, heroSz, S.bgColor||t.bg||'#0B0D18'); ctx.restore();
-      drawHeroFrame(ctx, heroX, heroY, heroSz, S.accent || '#C9A84C');
-      if (t.id === 'graduation') { drawVerticalCongrats(ctx, heroX, heroY, heroSz, S.accent); drawGradDiploma(ctx, LW, heroY, heroSz, S.accent); }
-      if (t.id === 'stars-stripes') drawVerticalStripes(ctx, heroX, heroY, heroSz, S.accent);
-      drawCollageRow(ctx, others, LW, LH, S.accent, heroBot);
-      if (typeof drawOverlay === 'function') drawOverlay(ctx, LW, LH, S.accent || '#C9A84C');
-      if (info) { var fx = S.effects || {}; var parts = []; if (fx.filter && fx.filter !== 'none') parts.push(fx.filter); if (fx.overlay && fx.overlay !== 'none') parts.push(fx.overlay); if (fx.frame && fx.frame !== 'none') parts.push(fx.frame); if (fx.textFx && fx.textFx !== 'none') parts.push(fx.textFx); info.textContent = parts.length ? parts.join(' · ') : (t.name + ' · ' + S.size + '"'); }
-      if (spinner) { spinner.style.opacity = '0'; spinner.style.pointerEvents = 'none'; }
-      if (status) status.style.background = '#5A8F6A';
-    } catch(e) { console.warn('Live preview error:', e); if (spinner) { spinner.style.opacity = '0'; spinner.style.pointerEvents = 'none'; } if (status) status.style.background = '#C4617A'; }
-  }, 120);
-}
-
-function applyLiveToMain() { buildPreview(); showToast('✓ Preview updated!'); }
-
-function hookLivePreviewInputs() {
-  var container = document.getElementById('text-fields-container');
-  if (container) container.addEventListener('input', function() { liveRender(); });
-  document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('pal-swatch')) setTimeout(liveRender, 50);
-    if (e.target.closest('.size-card')) setTimeout(liveRender, 50);
-    if (e.target.closest('#filter-swatches, #overlay-swatches, #frame-swatches, #textfx-swatches, #collage-frame-swatches')) setTimeout(liveRender, 50);
-  });
-  var bgPicker = document.getElementById('bg-color-picker');
-  if (bgPicker) bgPicker.addEventListener('input', function() { liveRender(); });
-}
-
-var _origGotoPage = gotoPage;
-gotoPage = function(n) {
-  _origGotoPage(n);
-  var panel = document.getElementById('live-preview-panel');
-  if (n === 2) {
-    if (!panel) { buildLivePreviewPanel(); setTimeout(hookLivePreviewInputs, 300); }
-    else { panel.style.transform = 'translateY(0)'; panel.style.opacity = '1'; panel.style.pointerEvents = 'auto'; }
-    setTimeout(liveRender, 400);
-  } else {
-    if (panel) { panel.style.transform = 'translateY(20px)'; panel.style.opacity = '0'; panel.style.pointerEvents = 'none'; }
-  }
-};
-
-var _origSetAccent = setAccent;
-setAccent = function(col, el) { _origSetAccent(col, el); setTimeout(liveRender, 50); };
-var _origUpdateBgColor = updateBgColor;
-updateBgColor = function(val) { _origUpdateBgColor(val); setTimeout(liveRender, 50); };
-var _origSetEffect = setEffect;
-setEffect = function(type, value, el) { _origSetEffect(type, value, el); setTimeout(liveRender, 50); };
-var _origSelectTheme = selectTheme;
-selectTheme = function(id, el) { _origSelectTheme(id, el); setTimeout(liveRender, 100); };
-var _origSetHero = setHero;
-setHero = function(i) { _origSetHero(i); setTimeout(liveRender, 100); };
-var _origRotatePhoto = rotatePhoto;
-rotatePhoto = function(i) { _origRotatePhoto(i); setTimeout(liveRender, 100); };
-
-console.log('✓ CelebrateBanner Live Preview loaded');
 
 // ============================================================
 // CHANGE 1 & 2: IMPROVED RETRACTABLE BANNER STAND MOCKUP v3
