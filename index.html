@@ -900,7 +900,7 @@ function handleFiles(files) {
   arr.forEach(function(f){
     getExifRotation(f, function(rot) {
       var r = new FileReader();
-      r.onload = function(e){ var imgObj=new Image(); imgObj.src=e.target.result; S.photos.push({src:e.target.result,name:f.name,rotation:rot,_img:imgObj,frame:'none'}); renderPhotoGrid(); };
+      r.onload = function(e){ var imgObj=new Image(); imgObj.src=e.target.result; S.photos.push({src:e.target.result,name:f.name,rotation:rot,_img:imgObj,frame:'none'}); renderPhotoGrid(); if (typeof _buildCollageFrameThumbs === 'function') _buildCollageFrameThumbs(); };
       r.readAsDataURL(f);
     });
   });
@@ -922,7 +922,7 @@ function renderPhotoGrid() {
   }).join('');
 }
 
-function rotatePhoto(i) { S.photos[i].rotation = ((S.photos[i].rotation||0)+90)%360; renderPhotoGrid(); }
+function rotatePhoto(i) { S.photos[i].rotation = ((S.photos[i].rotation||0)+90)%360; renderPhotoGrid(); if (typeof _buildCollageFrameThumbs === 'function') _buildCollageFrameThumbs(); }
 function cyclePhotoFrame(i) {
   var ids = ['none','classic','double','rounded','polaroid','film','stars','patriotic','floral','neon'];
   var cur = S.photos[i].frame || 'none';
@@ -946,14 +946,15 @@ function handleUrlPhoto() {
     var cached=new Image(); cached.src=src;
     S.photos.push({src:src,name:'web-photo.jpg',rotation:0,_img:cached,frame:'none'});
     renderPhotoGrid();
+    if (typeof _buildCollageFrameThumbs === 'function') _buildCollageFrameThumbs();
     document.getElementById('url-input').value='';
     showToast('✓ Photo added from web');
   };
   img.onerror = function() { showToast('⚠️ Could not load — URL may be blocked. Try saving it first.'); };
   img.src = url;
 }
-function setHero(i) { S.hero = S.hero===i ? -1 : i; renderPhotoGrid(); }
-function removePhoto(i) { S.photos.splice(i,1); if(S.hero===i) S.hero=-1; else if(S.hero>i) S.hero--; renderPhotoGrid(); }
+function setHero(i) { S.hero = S.hero===i ? -1 : i; renderPhotoGrid(); if (typeof _buildCollageFrameThumbs === 'function') _buildCollageFrameThumbs(); }
+function removePhoto(i) { S.photos.splice(i,1); if(S.hero===i) S.hero=-1; else if(S.hero>i) S.hero--; renderPhotoGrid(); if (typeof _buildCollageFrameThumbs === 'function') _buildCollageFrameThumbs(); }
 function updateBgColor(val) { S.bgColor = val; document.getElementById('bg-color-hex').textContent = val; }
 
 function buildCustomizeFields() {
@@ -2240,7 +2241,7 @@ var TEXT_FX = [
 
 function buildEffectsPanel() {
   var existing = document.getElementById('effects-panel');
-  if (existing) { _syncEffectsPanelUI(); return; }
+  if (existing) { _syncEffectsPanelUI(); _buildCollageFrameThumbs(); return; }
   var panel = document.createElement('div');
   panel.id = 'effects-panel';
   panel.className = 'field-card';
@@ -2267,12 +2268,14 @@ function buildEffectsPanel() {
       </div>
     </div>
     <div style="margin-bottom:1.25rem;">
-      <div class="field-label" style="margin-bottom:8px;">🎞️ Collage Photo Frames — apply to all or per photo</div>
+      <div class="field-label" style="margin-bottom:10px;">🎞️ Collage Photo Frames</div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold-dark);margin-bottom:6px;">Apply to ALL photos:</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding:6px;background:var(--ivory2);border-radius:12px;" id="collage-frame-tabs">
-        ${COLLAGE_FRAMES.map(f => `<div id="cft-${f.id}" onclick="setCollageFrameAll('${f.id}',this)" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;padding:5px 11px;border-radius:20px;border:2px solid ${f.id==='none'?'var(--gold)':'transparent'};background:${f.id==='none'?'rgba(201,168,76,0.12)':'transparent'};font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;color:${f.id==='none'?'var(--gold-dark)':'var(--muted)'};transition:all 0.18s;white-space:nowrap;">${f.label}</div>`).join('')}
+        ${COLLAGE_FRAMES.map(f => `<div id="cft-tab-${f.id}" onclick="setCollageFrameAll('${f.id}',this)" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;padding:5px 11px;border-radius:20px;border:2px solid ${f.id==='none'?'var(--gold)':'transparent'};background:${f.id==='none'?'rgba(201,168,76,0.12)':'transparent'};font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;color:${f.id==='none'?'var(--gold-dark)':'var(--muted)'};transition:all 0.18s;white-space:nowrap;"><span class="cft-check" style="display:${f.id==='none'?'inline':'none'};color:var(--gold);font-weight:900;">✓</span>${f.label}</div>`).join('')}
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Click a tab above to apply a frame to all collage photos · Click a thumbnail below to customize individually</div>
-      <div id="collage-frame-thumbs-row" style="display:flex;gap:8px;flex-wrap:wrap;overflow-x:auto;min-height:32px;"></div>
+      <div style="font-size:11px;color:var(--gold-dark);margin-bottom:12px;background:rgba(201,168,76,0.06);padding:8px 10px;border-radius:8px;border:1px solid rgba(201,168,76,0.15);">💡 Use tabs to set all at once, or tap individual photos to customize each one</div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold-dark);margin-bottom:8px;">Or customize each photo individually:</div>
+      <div id="collage-frame-thumbs-row" style="display:flex;gap:10px;flex-wrap:wrap;overflow-x:auto;min-height:90px;"></div>
     </div>
     <div style="margin-bottom:1.25rem;">
       <div class="field-label" style="margin-bottom:8px;">✍️ Text Style</div>
@@ -2402,10 +2405,11 @@ function _syncEffectsPanelUI() {
     var dominant = 'none', max = 0;
     Object.keys(counts).forEach(function(k){ if(counts[k]>max){max=counts[k];dominant=k;} });
     tabsRoot.querySelectorAll(':scope > div').forEach(function(d){
-      var isActive = d.id === 'cft-'+dominant;
+      var isActive = d.id === 'cft-tab-'+dominant;
       d.style.borderColor = isActive ? 'var(--gold)' : 'transparent';
       d.style.background  = isActive ? 'rgba(201,168,76,0.12)' : 'transparent';
       d.style.color       = isActive ? 'var(--gold-dark)' : 'var(--muted)';
+      var c = d.querySelector('.cft-check'); if (c) c.style.display = isActive ? 'inline' : 'none';
     });
   }
   _buildCollageFrameThumbs();
@@ -2461,56 +2465,60 @@ function _buildHeroFilterCSS() {
 function _buildCollageFrameThumbs() {
   var row = document.getElementById('collage-frame-thumbs-row');
   if (!row) return;
-  // Exclude the effective hero (S.hero >= 0 picks explicitly; -1 falls back to index 0 in preview)
   var effectiveHero = S.hero >= 0 ? S.hero : 0;
   var collagePics = S.photos.filter(function(p, i) { return i !== effectiveHero; });
   if (collagePics.length === 0) {
-    row.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:8px 0;">No collage photos yet — upload photos in Step 1</div>';
-    return;
+    row.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:14px 0;width:100%;text-align:center;">No collage photos yet — upload photos in Step 2</div>';
+  } else {
+    row.innerHTML = '';
+    collagePics.forEach(function(photo, ci) {
+      var actualIdx = S.photos.indexOf(photo);
+      var frameName = (photo.frame && photo.frame !== 'none') ? photo.frame : 'none';
+      var frameLabel = (COLLAGE_FRAMES.find(function(f) { return f.id === frameName; }) || COLLAGE_FRAMES[0]).label;
+      var item = document.createElement('div');
+      item.id = 'cft-thumb-' + actualIdx;
+      item.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:6px;border-radius:10px;border:2px solid ' + (frameName !== 'none' ? 'var(--gold)' : 'var(--border2)') + ';background:var(--ivory);transition:all 0.18s;min-width:82px;';
+      item.setAttribute('onclick', 'cycleCollageFrame(' + actualIdx + ')');
+      var cv = document.createElement('canvas');
+      cv.width = 70; cv.height = 70;
+      cv.style.cssText = 'width:70px;height:70px;border-radius:6px;display:block;';
+      var cx2 = cv.getContext('2d');
+      if (photo && photo._img && photo._img.complete && photo._img.naturalWidth) {
+        try {
+          var iw = photo._img.naturalWidth || 70;
+          var ih = photo._img.naturalHeight || 70;
+          var scale = Math.max(70/iw, 70/ih);
+          var dw = iw*scale, dh = ih*scale;
+          cx2.drawImage(photo._img, (70-dw)/2, (70-dh)/2, dw, dh);
+        } catch(e) { cx2.fillStyle='#1a1c24'; cx2.fillRect(0,0,70,70); }
+      } else {
+        cx2.fillStyle = '#1a1c24'; cx2.fillRect(0,0,70,70);
+        cx2.fillStyle = 'rgba(255,255,255,0.2)'; cx2.font = '22px sans-serif'; cx2.textAlign = 'center'; cx2.textBaseline = 'middle';
+        cx2.fillText(String(ci+1), 35, 35);
+      }
+      var num = document.createElement('div');
+      num.style.cssText = 'font-size:9px;color:rgba(201,168,76,0.75);font-weight:700;letter-spacing:0.4px;';
+      num.textContent = 'Photo ' + (ci + 1);
+      var lbl = document.createElement('div');
+      lbl.style.cssText = 'font-size:10px;font-weight:600;color:' + (frameName !== 'none' ? 'var(--gold-dark)' : 'var(--muted)') + ';text-align:center;max-width:74px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+      lbl.textContent = frameLabel;
+      item.appendChild(cv); item.appendChild(num); item.appendChild(lbl);
+      row.appendChild(item);
+    });
   }
-  row.innerHTML = '';
-  collagePics.forEach(function(photo, ci) {
-    var actualIdx = S.photos.indexOf(photo);
-    var frameName = (photo.frame && photo.frame !== 'none') ? photo.frame : 'none';
-    var frameLabel = (COLLAGE_FRAMES.find(function(f) { return f.id === frameName; }) || COLLAGE_FRAMES[0]).label;
-    var item = document.createElement('div');
-    item.id = 'cft-' + actualIdx;
-    item.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px;border-radius:10px;border:2px solid ' + (frameName !== 'none' ? 'var(--gold)' : 'var(--border2)') + ';background:var(--ivory);transition:all 0.18s;min-width:70px;';
-    item.setAttribute('onclick', 'cycleCollageFrame(' + actualIdx + ')');
-    var cv = document.createElement('canvas');
-    cv.width = 60; cv.height = 60;
-    cv.style.cssText = 'width:60px;height:60px;border-radius:6px;display:block;';
-    var cx2 = cv.getContext('2d');
-    if (photo && photo._img && photo._img.complete && photo._img.naturalWidth) {
-      try {
-        var iw = photo._img.naturalWidth || 60;
-        var ih = photo._img.naturalHeight || 60;
-        var scale = Math.max(60/iw, 60/ih);
-        var dw = iw*scale, dh = ih*scale;
-        cx2.drawImage(photo._img, (60-dw)/2, (60-dh)/2, dw, dh);
-      } catch(e) { cx2.fillStyle='#1a1c24'; cx2.fillRect(0,0,60,60); }
-    } else {
-      cx2.fillStyle = '#1a1c24'; cx2.fillRect(0,0,60,60);
-      cx2.fillStyle = 'rgba(255,255,255,0.2)'; cx2.font = '20px sans-serif'; cx2.textAlign = 'center'; cx2.textBaseline = 'middle';
-      cx2.fillText(String(ci+1), 30, 30);
-    }
-    var num = document.createElement('div');
-    num.style.cssText = 'font-size:8px;color:rgba(201,168,76,0.7);font-weight:700;';
-    num.textContent = 'Photo ' + (ci + 1);
-    var lbl = document.createElement('div');
-    lbl.style.cssText = 'font-size:9px;font-weight:600;color:var(--muted);text-align:center;max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
-    lbl.textContent = frameLabel;
-    item.appendChild(cv); item.appendChild(num); item.appendChild(lbl);
-    row.appendChild(item);
-  });
-  // Sync tab active state to reflect current frames
   var allSameFrame = collagePics.length > 0 && collagePics.every(function(p) { return (p.frame || 'none') === (collagePics[0].frame || 'none'); });
   var activeFrame = collagePics.length === 0 ? 'none' : (allSameFrame ? (collagePics[0].frame || 'none') : null);
   var tabs = document.querySelectorAll('#collage-frame-tabs > div');
   COLLAGE_FRAMES.forEach(function(f, i) {
     if (!tabs[i]) return;
-    if (f.id === activeFrame) { tabs[i].style.borderColor = 'var(--gold)'; tabs[i].style.background = 'rgba(201,168,76,0.12)'; tabs[i].style.color = 'var(--gold-dark)'; }
-    else { tabs[i].style.borderColor = 'transparent'; tabs[i].style.background = 'transparent'; tabs[i].style.color = 'var(--muted)'; }
+    var check = tabs[i].querySelector('.cft-check');
+    if (f.id === activeFrame) {
+      tabs[i].style.borderColor = 'var(--gold)'; tabs[i].style.background = 'rgba(201,168,76,0.12)'; tabs[i].style.color = 'var(--gold-dark)';
+      if (check) check.style.display = 'inline';
+    } else {
+      tabs[i].style.borderColor = 'transparent'; tabs[i].style.background = 'transparent'; tabs[i].style.color = 'var(--muted)';
+      if (check) check.style.display = 'none';
+    }
   });
 }
 
@@ -2535,8 +2543,12 @@ function setCollageFrameAll(frameId, el) {
   S.photos.forEach(function(p, i) { if (i !== effectiveHero) p.frame = frameId; });
   document.querySelectorAll('#collage-frame-tabs > div').forEach(function(d) {
     d.style.borderColor = 'transparent'; d.style.background = 'transparent'; d.style.color = 'var(--muted)';
+    var c = d.querySelector('.cft-check'); if (c) c.style.display = 'none';
   });
-  if (el) { el.style.borderColor = 'var(--gold)'; el.style.background = 'rgba(201,168,76,0.12)'; el.style.color = 'var(--gold-dark)'; }
+  if (el) {
+    el.style.borderColor = 'var(--gold)'; el.style.background = 'rgba(201,168,76,0.12)'; el.style.color = 'var(--gold-dark)';
+    var c = el.querySelector('.cft-check'); if (c) c.style.display = 'inline';
+  }
   _buildCollageFrameThumbs();
   var label = (COLLAGE_FRAMES.find(function(f) { return f.id === frameId; }) || COLLAGE_FRAMES[0]).label;
   showToast('✓ All collage photos: ' + label);
