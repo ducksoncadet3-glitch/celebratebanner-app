@@ -90,12 +90,14 @@ body { font-family: 'Outfit', sans-serif; background: var(--ivory); color: var(-
 .field input { font-family: 'Outfit', sans-serif; font-size: 14px; padding: 11px 14px; border: 1px solid var(--border2); border-radius: var(--r); background: var(--white); color: var(--text); transition: all 0.18s; }
 .field input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.14); }
 
-/* Frame tabs */
-.frame-apply-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; padding: 12px 14px; background: var(--white); border: 1px solid var(--border2); border-radius: var(--r2); }
-.frame-apply-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-right: 4px; }
+/* Frame palette */
+.frame-palette { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; padding: 14px 16px; background: var(--white); border: 1px solid var(--border2); border-radius: var(--r2); }
+.frame-palette-label { font-size: 12px; font-weight: 600; color: var(--muted); }
+.frame-tabs { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 200px; }
+.frame-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .frame-tab { font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border2); background: var(--white); color: var(--text); cursor: pointer; transition: all 0.18s; }
 .frame-tab:hover { border-color: var(--gold); }
-.frame-tab.active { background: var(--obsidian); color: var(--gold2); border-color: var(--obsidian); }
+.frame-tab.active { background: var(--obsidian); color: var(--gold2); border-color: var(--obsidian); box-shadow: 0 0 0 3px rgba(201,168,76,0.18); }
 
 .cell-frame-badge { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(12,14,20,0.78); color: var(--gold2); font-size: 9px; font-weight: 700; text-align: center; padding: 4px 0; letter-spacing: 1.2px; text-transform: uppercase; backdrop-filter: blur(4px); }
 .photo-cell.is-hero .cell-frame-badge { background: var(--gold); color: var(--obsidian); }
@@ -279,23 +281,24 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
     <div class="design-section">
       <div class="design-section-head">
         <div class="design-section-title">Photo frames</div>
-        <div class="design-section-meta">Apply to all, or set per-photo</div>
+        <div class="design-section-meta">Pick a style, then click photos — or apply to all</div>
       </div>
-      <div class="frame-apply-row">
-        <span class="frame-apply-label">Apply to all:</span>
-        <button class="frame-tab" data-frame="rounded" onclick="applyAllFrames('rounded')">Rounded</button>
-        <button class="frame-tab" data-frame="circle" onclick="applyAllFrames('circle')">Circle</button>
-        <button class="frame-tab" data-frame="polaroid" onclick="applyAllFrames('polaroid')">Polaroid</button>
-        <button class="frame-tab" data-frame="gold" onclick="applyAllFrames('gold')">Gold edge</button>
+      <div class="frame-palette">
+        <span class="frame-palette-label">Frame:</span>
+        <div class="frame-tabs" id="frame-tabs"></div>
+        <div class="frame-actions">
+          <button class="btn btn-dark btn-sm" onclick="applyAllFrames()">Apply to all photos</button>
+          <button class="btn btn-outline btn-sm" onclick="resetFrames()">Reset</button>
+        </div>
       </div>
-      <div class="hero-tip">🖼 Click any thumbnail below to cycle its frame. Hero photo uses its own frame too.</div>
+      <div class="hero-tip">🖼 Click any photo to apply the selected frame. Hero gets its own too.</div>
       <div class="photo-grid" id="design-frame-grid"></div>
     </div>
 
     <div class="design-section">
       <div class="design-section-head">
         <div class="design-section-title">Layout</div>
-        <div class="design-section-meta">Up to 12 photos render in the final banner</div>
+        <div class="design-section-meta">All uploaded photos render in the final banner (up to 50)</div>
       </div>
       <button class="btn btn-outline" onclick="shuffleLayout()">🔀 Shuffle Layout</button>
       <span style="font-size:12px;color:var(--muted);margin-left:12px;" id="shuffle-status">No shuffle yet — order will follow upload order.</span>
@@ -441,10 +444,11 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
 // ─────────────────────────────────────────────────────────────
 // State
 // ─────────────────────────────────────────────────────────────
-const MAX_RENDER_IMAGES = 12;
+const MAX_RENDER_IMAGES = 50;
 const MAX_UPLOAD = 50;
 
-const FRAME_OPTIONS = ['rounded', 'circle', 'polaroid', 'gold'];
+const FRAME_OPTIONS = ['rounded', 'circle', 'polaroid', 'gold', 'hexagon', 'arch'];
+const FRAME_LABELS = { rounded: 'Rounded', circle: 'Circle', polaroid: 'Polaroid', gold: 'Gold edge', hexagon: 'Hexagon', arch: 'Arch' };
 
 const state = {
   appName: "CelebrateBanner",
@@ -452,7 +456,8 @@ const state = {
   heroImage: null,         // image id
   shuffledSeed: null,
   selectedImages: [],      // image ids in render order (hero first)
-  frames: {},              // { [photoId]: 'rounded'|'circle'|'polaroid'|'gold' }
+  frames: {},              // { [photoId]: frame name }
+  activeFrame: 'rounded',  // currently selected palette frame
   bannerText: { name: '', year: '', school: '' },
   isPremium: false,
   previewGenerated: false,
@@ -678,50 +683,64 @@ function renderDesignGrids() {
     });
     heroGrid.appendChild(hCell);
 
-    // Frame thumbnail — every photo (including hero) gets one, click to cycle
+    // Frame thumbnail — click applies the active frame to this photo
     const fr = frameOf(p.id);
     const fCell = document.createElement('div');
     fCell.className = 'photo-cell' + (p.id === state.heroImage ? ' is-hero' : '');
-    fCell.title = `Frame: ${fr} · click to cycle`;
+    fCell.title = `Current: ${FRAME_LABELS[fr]} · click to apply ${FRAME_LABELS[state.activeFrame]}`;
     fCell.innerHTML = `
       <img src="${p.dataUrl}" alt="${p.name}">
-      <div class="cell-frame-badge">${p.id === state.heroImage ? 'Hero · ' : ''}${fr}</div>
+      <div class="cell-frame-badge">${p.id === state.heroImage ? 'Hero · ' : ''}${FRAME_LABELS[fr]}</div>
     `;
-    fCell.addEventListener('click', () => cycleFrame(p.id));
+    fCell.addEventListener('click', () => applyFrameTo(p.id));
     frameGrid.appendChild(fCell);
   });
 
-  // Sync hero badge state — text inputs already mounted, restore values
   document.getElementById('text-name').value = state.bannerText.name;
   document.getElementById('text-year').value = state.bannerText.year;
   document.getElementById('text-school').value = state.bannerText.school;
-  syncFrameTabs();
+  renderFrameTabs();
 }
 
-function cycleFrame(id) {
-  const cur = frameOf(id);
-  const next = FRAME_OPTIONS[(FRAME_OPTIONS.indexOf(cur) + 1) % FRAME_OPTIONS.length];
-  state.frames[id] = next;
-  state.previewGenerated = false;
-  renderDesignGrids();
-}
-
-function applyAllFrames(frame) {
-  if (!FRAME_OPTIONS.includes(frame)) return;
-  state.images.forEach(p => { state.frames[p.id] = frame; });
-  state.previewGenerated = false;
-  renderDesignGrids();
-  toast('Frame applied to all photos');
-}
-
-function syncFrameTabs() {
-  // Highlight a frame tab if every photo currently uses it
-  const ids = state.images.map(p => p.id);
-  const allSame = ids.length && ids.every(id => frameOf(id) === frameOf(ids[0]));
-  const active = allSame ? frameOf(ids[0]) : null;
-  document.querySelectorAll('.frame-tab').forEach(el => {
-    el.classList.toggle('active', el.dataset.frame === active);
+function renderFrameTabs() {
+  const tabs = document.getElementById('frame-tabs');
+  if (!tabs) return;
+  tabs.innerHTML = '';
+  FRAME_OPTIONS.forEach(f => {
+    const b = document.createElement('button');
+    b.className = 'frame-tab' + (f === state.activeFrame ? ' active' : '');
+    b.dataset.frame = f;
+    b.textContent = FRAME_LABELS[f];
+    b.onclick = () => setActiveFrame(f);
+    tabs.appendChild(b);
   });
+}
+
+function setActiveFrame(frame) {
+  if (!FRAME_OPTIONS.includes(frame)) return;
+  state.activeFrame = frame;
+  renderFrameTabs();
+}
+
+function applyFrameTo(id) {
+  state.frames[id] = state.activeFrame;
+  state.previewGenerated = false;
+  renderDesignGrids();
+}
+
+function applyAllFrames() {
+  state.images.forEach(p => { state.frames[p.id] = state.activeFrame; });
+  state.previewGenerated = false;
+  renderDesignGrids();
+  toast(`Applied ${FRAME_LABELS[state.activeFrame]} to all photos`);
+}
+
+function resetFrames() {
+  state.frames = {};
+  state.activeFrame = 'rounded';
+  state.previewGenerated = false;
+  renderDesignGrids();
+  toast('Frames reset');
 }
 
 function updateText() {
@@ -864,23 +883,41 @@ function renderBannerText(ctx, W, topY) {
   return y === topY ? 40 : y;
 }
 
+function pickGridCols(n) {
+  if (n <= 1) return 1;
+  if (n <= 4) return 2;
+  if (n <= 9) return 3;
+  if (n <= 16) return 4;
+  if (n <= 25) return 5;
+  if (n <= 36) return 6;
+  return 7;
+}
+
+function pickHeroFraction(n) {
+  if (n <= 3) return 0.95;
+  if (n <= 8) return 0.50;
+  if (n <= 15) return 0.42;
+  if (n <= 30) return 0.34;
+  return 0.28;
+}
+
 function renderStandard(ctx, photos, W, H, contentTop) {
   const margin = 50;
   const innerW = W - margin * 2;
   const supporting = photos.slice(1);
   const available = H - contentTop - 60;
-  const heroH = Math.round(available * (supporting.length === 0 ? 0.95 : 0.5));
+  const heroH = Math.round(available * pickHeroFraction(supporting.length));
 
   drawPhotoFramed(ctx, photos[0], margin, contentTop, innerW, heroH, { shadow: false });
 
   if (supporting.length === 0) return;
 
-  const gridTop = contentTop + heroH + 24;
-  const gridBottom = H - 60;
+  const gridTop = contentTop + heroH + 20;
+  const gridBottom = H - 50;
   const gridH = gridBottom - gridTop;
-  const cols = supporting.length <= 3 ? supporting.length : 4;
+  const cols = pickGridCols(supporting.length);
   const rows = Math.ceil(supporting.length / cols);
-  const gap = 12;
+  const gap = supporting.length > 24 ? 6 : (supporting.length > 12 ? 8 : 12);
   const cellW = (innerW - gap * (cols - 1)) / cols;
   const cellH = (gridH - gap * (rows - 1)) / rows;
 
@@ -950,8 +987,71 @@ function drawPhotoFramed(ctx, p, x, y, w, h, opts) {
   if (frame === 'polaroid')      drawPolaroidFrame(ctx, p.imgEl, x, y, w, h, shadow);
   else if (frame === 'circle')   drawCircleFrame(ctx, p.imgEl, x, y, w, h, shadow);
   else if (frame === 'gold')     drawGoldFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'hexagon')  drawHexagonFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'arch')     drawArchFrame(ctx, p.imgEl, x, y, w, h, shadow);
   else                            drawRoundedFrame(ctx, p.imgEl, x, y, w, h, shadow);
 
+  ctx.restore();
+}
+
+function hexPath(ctx, x, y, w, h) {
+  // pointy-top hexagon inscribed in box
+  const cx = x + w / 2, cy = y + h / 2;
+  const rx = w / 2, ry = h / 2;
+  ctx.beginPath();
+  ctx.moveTo(cx,        cy - ry);
+  ctx.lineTo(cx + rx,   cy - ry / 2);
+  ctx.lineTo(cx + rx,   cy + ry / 2);
+  ctx.lineTo(cx,        cy + ry);
+  ctx.lineTo(cx - rx,   cy + ry / 2);
+  ctx.lineTo(cx - rx,   cy - ry / 2);
+  ctx.closePath();
+}
+
+function archPath(ctx, x, y, w, h) {
+  // rounded top, flat bottom (cathedral / archway)
+  const r = w / 2;
+  ctx.beginPath();
+  ctx.moveTo(x, y + h);
+  ctx.lineTo(x, y + r);
+  ctx.arc(x + r, y + r, r, Math.PI, 2 * Math.PI);
+  ctx.lineTo(x + w, y + h);
+  ctx.closePath();
+}
+
+function drawHexagonFrame(ctx, img, x, y, w, h, shadow) {
+  if (shadow) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8;
+    ctx.fillStyle = '#000';
+    hexPath(ctx, x, y, w, h); ctx.fill();
+    ctx.restore();
+  }
+  ctx.save();
+  hexPath(ctx, x, y, w, h); ctx.clip();
+  drawCover(ctx, img, x, y, w, h);
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = 'rgba(201,168,76,0.9)'; ctx.lineWidth = 2;
+  hexPath(ctx, x, y, w, h); ctx.stroke();
+  ctx.restore();
+}
+
+function drawArchFrame(ctx, img, x, y, w, h, shadow) {
+  if (shadow) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8;
+    ctx.fillStyle = '#000';
+    archPath(ctx, x, y, w, h); ctx.fill();
+    ctx.restore();
+  }
+  ctx.save();
+  archPath(ctx, x, y, w, h); ctx.clip();
+  drawCover(ctx, img, x, y, w, h);
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = 'rgba(201,168,76,0.9)'; ctx.lineWidth = 2;
+  archPath(ctx, x, y, w, h); ctx.stroke();
   ctx.restore();
 }
 
