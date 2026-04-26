@@ -288,6 +288,7 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
         <div class="frame-tabs" id="frame-tabs"></div>
         <div class="frame-actions">
           <button class="btn btn-dark btn-sm" onclick="applyAllFrames()">Apply to all photos</button>
+          <button class="btn btn-primary btn-sm" onclick="mixFrames()">🎨 Mix all frames</button>
           <button class="btn btn-outline btn-sm" onclick="resetFrames()">Reset</button>
         </div>
       </div>
@@ -741,6 +742,16 @@ function resetFrames() {
   state.previewGenerated = false;
   renderDesignGrids();
   toast('Frames reset');
+}
+
+function mixFrames() {
+  // Shuffled round-robin: every frame style appears, ordering is randomised
+  const seed = state.shuffledSeed ?? generateRandomSeed();
+  const order = shuffleArray(FRAME_OPTIONS, mulberry32(seed ^ 0xF1A));
+  state.images.forEach((p, i) => { state.frames[p.id] = order[i % order.length]; });
+  state.previewGenerated = false;
+  renderDesignGrids();
+  toast('Mixed frames applied');
 }
 
 function updateText() {
