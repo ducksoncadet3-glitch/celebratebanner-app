@@ -944,19 +944,20 @@ function renderStandard(ctx, photos, W, H, contentTop) {
 function renderPremium(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0xDEAD);
-  const margin = 50;
+  const margin = 40;
   const innerW = W - margin * 2;
   const supporting = photos.slice(1);
 
-  // Scatter supporting photos (some will sit behind hero)
-  const gridTop = contentTop + 10;
-  const gridBottom = H - 80;
+  // Scatter supporting photos in square cells (so circles/hexes/arches stay proportional)
+  const gridTop = contentTop + 6;
+  const gridBottom = H - 60;
   const gridH = gridBottom - gridTop;
-  const cols = 4;
+  const cols = supporting.length <= 12 ? 4 : (supporting.length <= 24 ? 5 : (supporting.length <= 40 ? 6 : 7));
   const rows = Math.max(1, Math.ceil(supporting.length / cols));
-  const gap = 18;
+  const gap = supporting.length > 24 ? 8 : 14;
   const cellW = (innerW - gap * (cols - 1)) / cols;
   const cellH = (gridH - gap * (rows - 1)) / rows;
+  const cellSize = Math.min(cellW, cellH);  // square cells
 
   supporting.forEach((p, i) => {
     const r = Math.floor(i / cols);
@@ -964,16 +965,62 @@ function renderPremium(ctx, photos, W, H, contentTop) {
     const cx = margin + c * (cellW + gap) + cellW / 2;
     const cy = gridTop + r * (cellH + gap) + cellH / 2;
     const rot = (rng() * 10 - 5) * Math.PI / 180;
-    drawPhotoFramed(ctx, p, 0, 0, cellW, cellH, { rotation: rot, cx, cy, shadow: true });
+    drawPhotoFramed(ctx, p, 0, 0, cellSize, cellSize, { rotation: rot, cx, cy, shadow: true });
   });
 
-  // Hero on top — large, centered, slight rotation
-  const heroW = innerW * 0.72;
-  const heroH = heroW;
+  // Hero — premium polaroid card on top of the grid, smaller so supporting still shows around it
+  const heroW = Math.min(innerW * 0.56, 440);
+  const heroH = heroW * 1.1;
   const heroCx = W / 2;
-  const heroCy = (contentTop + H) / 2 - 20;
-  const heroRot = (rng() * 6 - 3) * Math.PI / 180;
-  drawPhotoFramed(ctx, photos[0], 0, 0, heroW, heroH, { rotation: heroRot, cx: heroCx, cy: heroCy, shadow: true });
+  const heroCy = (contentTop + H) / 2 - 10;
+  const heroRot = (rng() * 5 - 2.5) * Math.PI / 180;
+  drawPremiumHero(ctx, photos[0], heroCx, heroCy, heroW, heroH, heroRot);
+}
+
+// Forced premium hero — polaroid card with gold inner trim + heavy shadow.
+// Overrides whatever frame the hero photo has been assigned in the palette.
+function drawPremiumHero(ctx, p, cx, cy, w, h, rotation) {
+  const pad = Math.round(Math.min(w, h) * 0.05);
+  const captionH = Math.round(h * 0.12);
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rotation);
+  const x = -w / 2, y = -h / 2;
+
+  // White card with heavy shadow
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.65)';
+  ctx.shadowBlur = 36;
+  ctx.shadowOffsetY = 18;
+  ctx.fillStyle = '#FAF8F3';
+  roundRect(ctx, x, y, w, h, 6);
+  ctx.fill();
+  ctx.restore();
+
+  // Photo
+  const ix = x + pad, iy = y + pad;
+  const iw = w - pad * 2, ih = h - pad - captionH;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(ix, iy, iw, ih); ctx.clip();
+  drawCover(ctx, p.imgEl, ix, iy, iw, ih);
+  ctx.restore();
+
+  // Gold inner trim around the photo
+  ctx.save();
+  ctx.strokeStyle = '#C9A84C'; ctx.lineWidth = 2;
+  ctx.strokeRect(ix - 1, iy - 1, iw + 2, ih + 2);
+  ctx.restore();
+
+  // Subtle gold caption underline
+  ctx.save();
+  ctx.strokeStyle = 'rgba(201,168,76,0.5)'; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(x + pad * 2, y + h - captionH / 2);
+  ctx.lineTo(x + w - pad * 2, y + h - captionH / 2);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.restore();
 }
 
 // ── Frame dispatch ────────────────────────────────────────────
@@ -1006,9 +1053,10 @@ function drawPhotoFramed(ctx, p, x, y, w, h, opts) {
 }
 
 function hexPath(ctx, x, y, w, h) {
-  // pointy-top hexagon inscribed in box
+  // Pointy-top hexagon inscribed in a square centered in the cell — never stretched
+  const size = Math.min(w, h);
   const cx = x + w / 2, cy = y + h / 2;
-  const rx = w / 2, ry = h / 2;
+  const rx = size / 2, ry = size / 2;
   ctx.beginPath();
   ctx.moveTo(cx,        cy - ry);
   ctx.lineTo(cx + rx,   cy - ry / 2);
@@ -1020,17 +1068,24 @@ function hexPath(ctx, x, y, w, h) {
 }
 
 function archPath(ctx, x, y, w, h) {
-  // rounded top, flat bottom (cathedral / archway)
-  const r = w / 2;
+  // Cathedral arch — sized to a portrait box (3:4) inscribed in the cell, centered
+  const aw = Math.min(w, h * 0.78);
+  const ah = Math.min(h, aw / 0.78);
+  const ax = x + (w - aw) / 2;
+  const ay = y + (h - ah) / 2;
+  const r = aw / 2;
   ctx.beginPath();
-  ctx.moveTo(x, y + h);
-  ctx.lineTo(x, y + r);
-  ctx.arc(x + r, y + r, r, Math.PI, 2 * Math.PI);
-  ctx.lineTo(x + w, y + h);
+  ctx.moveTo(ax, ay + ah);
+  ctx.lineTo(ax, ay + r);
+  ctx.arc(ax + r, ay + r, r, Math.PI, 2 * Math.PI);
+  ctx.lineTo(ax + aw, ay + ah);
   ctx.closePath();
 }
 
 function drawHexagonFrame(ctx, img, x, y, w, h, shadow) {
+  // Image fills the inscribed square so the hex shows a proportional crop
+  const size = Math.min(w, h);
+  const ix = x + (w - size) / 2, iy = y + (h - size) / 2;
   if (shadow) {
     ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8;
@@ -1040,7 +1095,7 @@ function drawHexagonFrame(ctx, img, x, y, w, h, shadow) {
   }
   ctx.save();
   hexPath(ctx, x, y, w, h); ctx.clip();
-  drawCover(ctx, img, x, y, w, h);
+  drawCover(ctx, img, ix, iy, size, size);
   ctx.restore();
   ctx.save();
   ctx.strokeStyle = 'rgba(201,168,76,0.9)'; ctx.lineWidth = 2;
@@ -1049,6 +1104,10 @@ function drawHexagonFrame(ctx, img, x, y, w, h, shadow) {
 }
 
 function drawArchFrame(ctx, img, x, y, w, h, shadow) {
+  // Image fills the arch's portrait bounding box so the dome top stays proportional
+  const aw = Math.min(w, h * 0.78);
+  const ah = Math.min(h, aw / 0.78);
+  const ax = x + (w - aw) / 2, ay = y + (h - ah) / 2;
   if (shadow) {
     ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8;
@@ -1058,7 +1117,7 @@ function drawArchFrame(ctx, img, x, y, w, h, shadow) {
   }
   ctx.save();
   archPath(ctx, x, y, w, h); ctx.clip();
-  drawCover(ctx, img, x, y, w, h);
+  drawCover(ctx, img, ax, ay, aw, ah);
   ctx.restore();
   ctx.save();
   ctx.strokeStyle = 'rgba(201,168,76,0.9)'; ctx.lineWidth = 2;
@@ -1081,17 +1140,19 @@ function drawRoundedFrame(ctx, img, x, y, w, h, shadow) {
 }
 
 function drawCircleFrame(ctx, img, x, y, w, h, shadow) {
-  const cx = x + w / 2, cy = y + h / 2, rx = w / 2, ry = h / 2;
+  // True circle inscribed in the cell — never an oval
+  const cx = x + w / 2, cy = y + h / 2;
+  const r = Math.min(w, h) / 2;
   if (shadow) {
     ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8;
     ctx.fillStyle = '#000';
-    ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
   ctx.save();
-  ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.clip();
-  drawCover(ctx, img, x, y, w, h);
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
+  drawCover(ctx, img, cx - r, cy - r, r * 2, r * 2);
   ctx.restore();
 }
 
