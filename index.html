@@ -71,14 +71,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--ivory); color: var(-
 .photo-cell:hover { transform: scale(1.03); box-shadow: var(--shadow-md); }
 .photo-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .photo-cell.is-hero { border-color: var(--gold); box-shadow: var(--shadow-gold); }
-.photo-cell.is-pinned { border-color: var(--sky); }
-.photo-cell.is-hero.is-pinned { border-color: var(--gold); }
 .cell-badge { position: absolute; bottom: 0; left: 0; right: 0; background: var(--gold); color: var(--obsidian); font-size: 9px; font-weight: 700; text-align: center; padding: 3px 0; letter-spacing: 1.5px; text-transform: uppercase; }
-.cell-badge.pin-badge { background: var(--sky); color: var(--white); }
-
-.cell-pin-btn { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border-radius: 50%; background: rgba(12,14,20,0.7); color: var(--white); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; backdrop-filter: blur(6px); transition: all 0.2s; z-index: 2; }
-.cell-pin-btn:hover { background: var(--obsidian); transform: scale(1.1); }
-.cell-pin-btn.pinned { background: var(--sky); color: var(--white); }
 .cell-rm-btn { position: absolute; top: 6px; left: 6px; width: 24px; height: 24px; border-radius: 50%; background: rgba(12,14,20,0.7); color: var(--white); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; opacity: 0; transition: opacity 0.2s; z-index: 2; }
 .photo-cell:hover .cell-rm-btn { opacity: 1; }
 
@@ -90,12 +83,31 @@ body { font-family: 'Outfit', sans-serif; background: var(--ivory); color: var(-
 .design-section-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; }
 .design-section-meta { font-size: 12px; color: var(--muted); }
 
+/* Text fields */
+.text-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field-label { font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
+.field input { font-family: 'Outfit', sans-serif; font-size: 14px; padding: 11px 14px; border: 1px solid var(--border2); border-radius: var(--r); background: var(--white); color: var(--text); transition: all 0.18s; }
+.field input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.14); }
+
+/* Frame tabs */
+.frame-apply-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; padding: 12px 14px; background: var(--white); border: 1px solid var(--border2); border-radius: var(--r2); }
+.frame-apply-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-right: 4px; }
+.frame-tab { font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border2); background: var(--white); color: var(--text); cursor: pointer; transition: all 0.18s; }
+.frame-tab:hover { border-color: var(--gold); }
+.frame-tab.active { background: var(--obsidian); color: var(--gold2); border-color: var(--obsidian); }
+
+.cell-frame-badge { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(12,14,20,0.78); color: var(--gold2); font-size: 9px; font-weight: 700; text-align: center; padding: 4px 0; letter-spacing: 1.2px; text-transform: uppercase; backdrop-filter: blur(4px); }
+.photo-cell.is-hero .cell-frame-badge { background: var(--gold); color: var(--obsidian); }
+
 /* Preview */
-.preview-frame { background: var(--obsidian2); border-radius: var(--r3); padding: 1.5rem; box-shadow: var(--shadow-lg); margin-bottom: 1.5rem; }
+.preview-frame { background: var(--obsidian2); border-radius: var(--r3); padding: 1.75rem 1.5rem 0; box-shadow: var(--shadow-lg); margin-bottom: 1.5rem; }
 .preview-label { font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
 .preview-spec { font-size: 10px; color: rgba(255,255,255,0.2); }
-#banner-preview { width: 100%; max-width: 480px; aspect-ratio: 2/3; border-radius: var(--r2); overflow: hidden; position: relative; margin: 0 auto; background: var(--obsidian3); display: flex; align-items: center; justify-content: center; }
+#banner-preview { width: 80%; max-width: 640px; aspect-ratio: 2/3; border-radius: var(--r2); overflow: hidden; position: relative; margin: 0 auto; background: var(--obsidian3); display: flex; align-items: center; justify-content: center; }
 canvas#preview-canvas { width: 100%; height: 100%; display: block; }
+.stand-mockup { width: 80%; max-width: 640px; margin: 0 auto; padding-bottom: 1rem; line-height: 0; }
+.stand-mockup svg { width: 100%; height: auto; display: block; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.5)); }
 .preview-empty { color: rgba(255,255,255,0.45); text-align: center; padding: 2rem; font-size: 14px; }
 .preview-loading { color: var(--gold2); display: flex; flex-direction: column; align-items: center; gap: 16px; }
 .preview-loading .spinner { width: 36px; height: 36px; border: 3px solid rgba(201,168,76,0.18); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.9s linear infinite; }
@@ -232,7 +244,7 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
   <section class="page" id="pg-2">
     <div class="sec-eyebrow">Step 2 of 4</div>
     <h1 class="sec-title">Design your banner</h1>
-    <p class="sec-sub">Pick the hero photo, pin the ones that must appear, then shuffle the layout until you like it.</p>
+    <p class="sec-sub">Pick the hero photo, add your text, and choose a frame for each photo.</p>
 
     <div class="design-section">
       <div class="design-section-head">
@@ -245,17 +257,45 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
 
     <div class="design-section">
       <div class="design-section-head">
-        <div class="design-section-title">Pin must-have photos</div>
-        <div class="design-section-meta"><span id="pinned-count">0</span> pinned · max 11 supporting</div>
+        <div class="design-section-title">Banner text</div>
+        <div class="design-section-meta">Shown at the top of the banner</div>
       </div>
-      <div class="hero-tip">📌 Pinned photos always appear in the final layout — useful for guests of honor.</div>
-      <div class="photo-grid" id="design-pin-grid"></div>
+      <div class="text-fields">
+        <label class="field">
+          <span class="field-label">Name</span>
+          <input type="text" id="text-name" placeholder="e.g., Sarah Johnson" oninput="updateText()" maxlength="40">
+        </label>
+        <label class="field">
+          <span class="field-label">Class / Year</span>
+          <input type="text" id="text-year" placeholder="e.g., Class of 2025" oninput="updateText()" maxlength="40">
+        </label>
+        <label class="field">
+          <span class="field-label">School (optional)</span>
+          <input type="text" id="text-school" placeholder="e.g., Lincoln High" oninput="updateText()" maxlength="40">
+        </label>
+      </div>
+    </div>
+
+    <div class="design-section">
+      <div class="design-section-head">
+        <div class="design-section-title">Photo frames</div>
+        <div class="design-section-meta">Apply to all, or set per-photo</div>
+      </div>
+      <div class="frame-apply-row">
+        <span class="frame-apply-label">Apply to all:</span>
+        <button class="frame-tab" data-frame="rounded" onclick="applyAllFrames('rounded')">Rounded</button>
+        <button class="frame-tab" data-frame="circle" onclick="applyAllFrames('circle')">Circle</button>
+        <button class="frame-tab" data-frame="polaroid" onclick="applyAllFrames('polaroid')">Polaroid</button>
+        <button class="frame-tab" data-frame="gold" onclick="applyAllFrames('gold')">Gold edge</button>
+      </div>
+      <div class="hero-tip">🖼 Click any thumbnail below to cycle its frame. Hero photo uses its own frame too.</div>
+      <div class="photo-grid" id="design-frame-grid"></div>
     </div>
 
     <div class="design-section">
       <div class="design-section-head">
         <div class="design-section-title">Layout</div>
-        <div class="design-section-meta">Up to 12 photos render — hero + 11 supporting</div>
+        <div class="design-section-meta">Up to 12 photos render in the final banner</div>
       </div>
       <button class="btn btn-outline" onclick="shuffleLayout()">🔀 Shuffle Layout</button>
       <span style="font-size:12px;color:var(--muted);margin-left:12px;" id="shuffle-status">No shuffle yet — order will follow upload order.</span>
@@ -286,10 +326,44 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
         </div>
         <canvas id="preview-canvas" width="800" height="1200" style="display:none;"></canvas>
       </div>
+      <!-- Chrome retractable banner stand -->
+      <div class="stand-mockup" id="stand-mockup" style="display:none;">
+        <svg viewBox="0 0 480 90" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMin meet">
+          <defs>
+            <linearGradient id="goldBar" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0" stop-color="#E8C97A"/>
+              <stop offset="1" stop-color="#7A6020"/>
+            </linearGradient>
+            <linearGradient id="poleChrome" x1="0" x2="1" y1="0" y2="0">
+              <stop offset="0" stop-color="#3F4654"/>
+              <stop offset="0.5" stop-color="#E5E7EB"/>
+              <stop offset="1" stop-color="#3F4654"/>
+            </linearGradient>
+            <radialGradient id="baseChrome" cx="0.5" cy="0.3" r="0.7">
+              <stop offset="0" stop-color="#F3F4F6"/>
+              <stop offset="0.5" stop-color="#9CA3AF"/>
+              <stop offset="1" stop-color="#1F2937"/>
+            </radialGradient>
+          </defs>
+          <!-- Bottom rail/clip on banner -->
+          <rect x="60" y="0" width="360" height="6" fill="url(#goldBar)" rx="1"/>
+          <!-- Telescoping pole -->
+          <rect x="237" y="6" width="6" height="42" fill="url(#poleChrome)"/>
+          <!-- Base cap -->
+          <rect x="225" y="46" width="30" height="8" rx="2" fill="url(#poleChrome)"/>
+          <!-- Weighted base -->
+          <ellipse cx="240" cy="62" rx="120" ry="14" fill="url(#baseChrome)"/>
+          <ellipse cx="240" cy="60" rx="120" ry="14" fill="#D1D5DB"/>
+          <ellipse cx="240" cy="60" rx="115" ry="11" fill="url(#baseChrome)" opacity="0.85"/>
+          <!-- Highlight -->
+          <ellipse cx="220" cy="56" rx="45" ry="3" fill="rgba(255,255,255,0.4)"/>
+        </svg>
+      </div>
     </div>
 
     <div class="gen-btn-wrap">
       <button class="btn btn-primary btn-lg" id="generate-btn" onclick="generatePreview()">✨ Generate My Banner</button>
+      <button class="btn btn-dark btn-lg" id="download-jpg-main" style="display:none;" onclick="downloadJpg()">⬇ Download JPG</button>
     </div>
 
     <div id="post-preview" style="display:none;">
@@ -307,6 +381,7 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
       <div class="btn-group">
         <button class="btn btn-outline" onclick="goto(2)">← Edit Design</button>
         <button class="btn btn-outline" onclick="generatePreview(true)">🔄 Regenerate</button>
+        <button class="btn btn-outline" id="download-hd-btn" onclick="downloadHdJpg()">⬇️ Download HD <span class="price-tag" style="margin-left:6px;">Premium</span></button>
         <button class="btn btn-primary" onclick="goto(4)">Continue to Delivery →</button>
       </div>
     </div>
@@ -369,22 +444,25 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
 const MAX_RENDER_IMAGES = 12;
 const MAX_UPLOAD = 50;
 
+const FRAME_OPTIONS = ['rounded', 'circle', 'polaroid', 'gold'];
+
 const state = {
   appName: "CelebrateBanner",
   images: [],              // [{ id, dataUrl, name, imgEl }]
   heroImage: null,         // image id
-  pinnedImages: [],        // image ids
   shuffledSeed: null,
   selectedImages: [],      // image ids in render order (hero first)
+  frames: {},              // { [photoId]: 'rounded'|'circle'|'polaroid'|'gold' }
+  bannerText: { name: '', year: '', school: '' },
   isPremium: false,
   previewGenerated: false,
-  previewStandardUrl: "",
-  previewPremiumUrl: "",
   selectedPreviewMode: "standard",
   previewCacheKey: "",
   delivery: "digital",
   step: 1,
 };
+
+function frameOf(id) { return state.frames[id] || 'rounded'; }
 
 // ─────────────────────────────────────────────────────────────
 // Utilities
@@ -420,11 +498,14 @@ function djb2(str) {
 }
 
 function computeCacheKey() {
+  const t = state.bannerText;
+  const frameSig = Object.keys(state.frames).sort().map(k => k + ':' + state.frames[k]).join(',');
   return djb2([
     state.heroImage || '',
-    state.pinnedImages.join(','),
     state.shuffledSeed ?? 'none',
     state.isPremium ? 'P' : 'S',
+    frameSig,
+    t.name + '|' + t.year + '|' + t.school,
   ].join('|'));
 }
 
@@ -443,17 +524,9 @@ function selectImages() {
   if (!state.heroImage) return [];
   const heroId = state.heroImage;
   const pool = state.images.map(i => i.id).filter(id => id !== heroId);
-  const pinned = state.pinnedImages.filter(id => id !== heroId && pool.includes(id));
-  const remainingSlots = Math.max(0, MAX_RENDER_IMAGES - 1 - pinned.length);
-
-  const unpinnedPool = pool.filter(id => !pinned.includes(id));
   const seed = state.shuffledSeed ?? 0;
-  const shuffled = state.shuffledSeed != null
-    ? shuffleArray(unpinnedPool, mulberry32(seed))
-    : unpinnedPool;
-
-  const supporting = pinned.concat(shuffled.slice(0, remainingSlots));
-  return [heroId, ...supporting];
+  const ordered = state.shuffledSeed != null ? shuffleArray(pool, mulberry32(seed)) : pool;
+  return [heroId, ...ordered.slice(0, MAX_RENDER_IMAGES - 1)];
 }
 
 function shuffleLayout() {
@@ -575,7 +648,7 @@ function refreshUploadStats() {
 
 function removePhoto(id) {
   state.images = state.images.filter(p => p.id !== id);
-  state.pinnedImages = state.pinnedImages.filter(p => p !== id);
+  delete state.frames[id];
   if (state.heroImage === id) state.heroImage = state.images[0]?.id || null;
   state.previewGenerated = false;
   renderUploadGrid();
@@ -586,9 +659,9 @@ function removePhoto(id) {
 // ─────────────────────────────────────────────────────────────
 function renderDesignGrids() {
   const heroGrid = document.getElementById('design-hero-grid');
-  const pinGrid = document.getElementById('design-pin-grid');
+  const frameGrid = document.getElementById('design-frame-grid');
   heroGrid.innerHTML = '';
-  pinGrid.innerHTML = '';
+  frameGrid.innerHTML = '';
 
   state.images.forEach(p => {
     // Hero selector
@@ -600,43 +673,62 @@ function renderDesignGrids() {
     `;
     hCell.addEventListener('click', () => {
       state.heroImage = p.id;
-      // hero can't also be pinned (it's already always included)
-      state.pinnedImages = state.pinnedImages.filter(id => id !== p.id);
       state.previewGenerated = false;
       renderDesignGrids();
     });
     heroGrid.appendChild(hCell);
 
-    // Pin selector — exclude the hero from pinning UI
-    if (p.id !== state.heroImage) {
-      const pinned = state.pinnedImages.includes(p.id);
-      const pCell = document.createElement('div');
-      pCell.className = 'photo-cell' + (pinned ? ' is-pinned' : '');
-      pCell.innerHTML = `
-        <img src="${p.dataUrl}" alt="${p.name}">
-        <button class="cell-pin-btn ${pinned ? 'pinned' : ''}" title="${pinned ? 'Unpin' : 'Pin'}" onclick="event.stopPropagation();togglePin('${p.id}')">📌</button>
-        ${pinned ? '<div class="cell-badge pin-badge">Pinned</div>' : ''}
-      `;
-      pCell.addEventListener('click', () => togglePin(p.id));
-      pinGrid.appendChild(pCell);
-    }
+    // Frame thumbnail — every photo (including hero) gets one, click to cycle
+    const fr = frameOf(p.id);
+    const fCell = document.createElement('div');
+    fCell.className = 'photo-cell' + (p.id === state.heroImage ? ' is-hero' : '');
+    fCell.title = `Frame: ${fr} · click to cycle`;
+    fCell.innerHTML = `
+      <img src="${p.dataUrl}" alt="${p.name}">
+      <div class="cell-frame-badge">${p.id === state.heroImage ? 'Hero · ' : ''}${fr}</div>
+    `;
+    fCell.addEventListener('click', () => cycleFrame(p.id));
+    frameGrid.appendChild(fCell);
   });
 
-  document.getElementById('pinned-count').textContent = state.pinnedImages.length;
+  // Sync hero badge state — text inputs already mounted, restore values
+  document.getElementById('text-name').value = state.bannerText.name;
+  document.getElementById('text-year').value = state.bannerText.year;
+  document.getElementById('text-school').value = state.bannerText.school;
+  syncFrameTabs();
 }
 
-function togglePin(id) {
-  if (id === state.heroImage) return;
-  const idx = state.pinnedImages.indexOf(id);
-  if (idx >= 0) state.pinnedImages.splice(idx, 1);
-  else {
-    if (state.pinnedImages.length >= MAX_RENDER_IMAGES - 1) {
-      toast(`Up to ${MAX_RENDER_IMAGES - 1} pinned photos`); return;
-    }
-    state.pinnedImages.push(id);
-  }
+function cycleFrame(id) {
+  const cur = frameOf(id);
+  const next = FRAME_OPTIONS[(FRAME_OPTIONS.indexOf(cur) + 1) % FRAME_OPTIONS.length];
+  state.frames[id] = next;
   state.previewGenerated = false;
   renderDesignGrids();
+}
+
+function applyAllFrames(frame) {
+  if (!FRAME_OPTIONS.includes(frame)) return;
+  state.images.forEach(p => { state.frames[p.id] = frame; });
+  state.previewGenerated = false;
+  renderDesignGrids();
+  toast('Frame applied to all photos');
+}
+
+function syncFrameTabs() {
+  // Highlight a frame tab if every photo currently uses it
+  const ids = state.images.map(p => p.id);
+  const allSame = ids.length && ids.every(id => frameOf(id) === frameOf(ids[0]));
+  const active = allSame ? frameOf(ids[0]) : null;
+  document.querySelectorAll('.frame-tab').forEach(el => {
+    el.classList.toggle('active', el.dataset.frame === active);
+  });
+}
+
+function updateText() {
+  state.bannerText.name = document.getElementById('text-name').value;
+  state.bannerText.year = document.getElementById('text-year').value;
+  state.bannerText.school = document.getElementById('text-school').value;
+  state.previewGenerated = false;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -649,18 +741,29 @@ function refreshPreviewUI() {
   const canvas = document.getElementById('preview-canvas');
   const genBtn = document.getElementById('generate-btn');
 
+  const stand = document.getElementById('stand-mockup');
+  const dlMain = document.getElementById('download-jpg-main');
   if (state.previewGenerated) {
     post.style.display = 'block';
     pre.style.display = 'none';
     empty.style.display = 'none';
     canvas.style.display = 'block';
     genBtn.style.display = 'none';
+    if (stand) stand.style.display = 'block';
+    if (dlMain) dlMain.style.display = 'inline-flex';
+    const hd = document.getElementById('download-hd-btn');
+    if (hd) {
+      hd.style.opacity = state.isPremium ? '1' : '0.45';
+      hd.title = state.isPremium ? 'Download HD (2400×3600)' : 'Toggle Premium above to unlock HD';
+    }
   } else {
     post.style.display = 'none';
     pre.style.display = 'block';
     empty.style.display = 'block';
     canvas.style.display = 'none';
     genBtn.style.display = 'inline-flex';
+    if (stand) stand.style.display = 'none';
+    if (dlMain) dlMain.style.display = 'none';
   }
 }
 
@@ -682,7 +785,7 @@ function generatePreview(force) {
 
   // Defer to next tick so the spinner paints
   setTimeout(() => {
-    renderToCanvas(ids, state.isPremium);
+    renderToCanvas(document.getElementById('preview-canvas'), ids, state.isPremium, 1);
     state.previewGenerated = true;
     state.previewCacheKey = newKey;
     document.getElementById('preview-spec-text').textContent =
@@ -703,11 +806,14 @@ function setPreviewMode(mode) {
   generatePreview(true);
 }
 
-// Canvas rendering
-function renderToCanvas(ids, premium) {
-  const canvas = document.getElementById('preview-canvas');
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
+// Canvas rendering — logical 800×1200 coordinate space, scaled up via ctx.scale
+function renderToCanvas(targetCanvas, ids, premium, scale) {
+  scale = scale || 1;
+  const W = 800, H = 1200;
+  targetCanvas.width = W * scale;
+  targetCanvas.height = H * scale;
+  const ctx = targetCanvas.getContext('2d');
+  ctx.scale(scale, scale);
 
   // Background
   const grad = ctx.createLinearGradient(0, 0, 0, H);
@@ -721,37 +827,60 @@ function renderToCanvas(ids, premium) {
   ctx.lineWidth = 8;
   ctx.strokeRect(20, 20, W - 40, H - 40);
 
+  // Banner text at top
+  const textBottomY = renderBannerText(ctx, W, 56);
+
   const photos = ids.map(id => state.images.find(p => p.id === id)).filter(Boolean);
   if (photos.length === 0) return;
 
-  if (premium) renderPremium(ctx, photos, W, H);
-  else renderStandard(ctx, photos, W, H);
-
-  // Title
-  ctx.fillStyle = '#E8C97A';
-  ctx.font = 'bold 56px "Cormorant Garamond", serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('Celebrate', W / 2, H - 70);
+  const contentTop = textBottomY + 24;
+  if (premium) renderPremium(ctx, photos, W, H, contentTop);
+  else renderStandard(ctx, photos, W, H, contentTop);
 }
 
-function renderStandard(ctx, photos, W, H) {
+function renderBannerText(ctx, W, topY) {
+  const t = state.bannerText;
+  let y = topY;
+  ctx.textAlign = 'center';
+  if (t.name) {
+    ctx.fillStyle = '#F5E4B0';
+    ctx.font = 'bold 64px "Cormorant Garamond", serif';
+    ctx.fillText(t.name, W / 2, y + 56);
+    y += 74;
+  }
+  if (t.year) {
+    ctx.fillStyle = '#E8C97A';
+    ctx.font = 'italic 600 30px "Cormorant Garamond", serif';
+    ctx.fillText(t.year, W / 2, y + 30);
+    y += 40;
+  }
+  if (t.school) {
+    ctx.fillStyle = 'rgba(232,201,122,0.78)';
+    ctx.font = '500 18px Outfit, sans-serif';
+    ctx.fillText(t.school, W / 2, y + 20);
+    y += 28;
+  }
+  // If no text at all, return a small top margin
+  return y === topY ? 40 : y;
+}
+
+function renderStandard(ctx, photos, W, H, contentTop) {
   const margin = 50;
   const innerW = W - margin * 2;
-  const heroH = Math.round(H * 0.45);
   const supporting = photos.slice(1);
+  const available = H - contentTop - 60;
+  const heroH = Math.round(available * (supporting.length === 0 ? 0.95 : 0.5));
 
-  // Hero
-  drawCover(ctx, photos[0].imgEl, margin, margin, innerW, heroH, 12);
+  drawPhotoFramed(ctx, photos[0], margin, contentTop, innerW, heroH, { shadow: false });
 
   if (supporting.length === 0) return;
 
-  // Grid for supporting photos
-  const gridTop = margin + heroH + 20;
-  const gridBottom = H - 130;     // leave room for title
+  const gridTop = contentTop + heroH + 24;
+  const gridBottom = H - 60;
   const gridH = gridBottom - gridTop;
-  const cols = supporting.length <= 3 ? supporting.length : (supporting.length <= 8 ? 4 : 4);
+  const cols = supporting.length <= 3 ? supporting.length : 4;
   const rows = Math.ceil(supporting.length / cols);
-  const gap = 10;
+  const gap = 12;
   const cellW = (innerW - gap * (cols - 1)) / cols;
   const cellH = (gridH - gap * (rows - 1)) / rows;
 
@@ -760,24 +889,24 @@ function renderStandard(ctx, photos, W, H) {
     const c = i % cols;
     const x = margin + c * (cellW + gap);
     const y = gridTop + r * (cellH + gap);
-    drawCover(ctx, p.imgEl, x, y, cellW, cellH, 8);
+    drawPhotoFramed(ctx, p, x, y, cellW, cellH, { shadow: false });
   });
 }
 
-function renderPremium(ctx, photos, W, H) {
+function renderPremium(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0xDEAD);
   const margin = 50;
   const innerW = W - margin * 2;
   const supporting = photos.slice(1);
 
-  // First, scatter supporting photos behind hero with rotation/shadows
-  const gridTop = margin + 30;
-  const gridBottom = H - 200;
+  // Scatter supporting photos (some will sit behind hero)
+  const gridTop = contentTop + 10;
+  const gridBottom = H - 80;
   const gridH = gridBottom - gridTop;
   const cols = 4;
   const rows = Math.max(1, Math.ceil(supporting.length / cols));
-  const gap = 16;
+  const gap = 18;
   const cellW = (innerW - gap * (cols - 1)) / cols;
   const cellH = (gridH - gap * (rows - 1)) / rows;
 
@@ -786,52 +915,109 @@ function renderPremium(ctx, photos, W, H) {
     const c = i % cols;
     const cx = margin + c * (cellW + gap) + cellW / 2;
     const cy = gridTop + r * (cellH + gap) + cellH / 2;
-    const rot = (rng() * 10 - 5) * Math.PI / 180;     // -5° to +5°
-    drawRotatedCover(ctx, p.imgEl, cx, cy, cellW, cellH, rot, 10, true);
+    const rot = (rng() * 10 - 5) * Math.PI / 180;
+    drawPhotoFramed(ctx, p, 0, 0, cellW, cellH, { rotation: rot, cx, cy, shadow: true });
   });
 
-  // Hero — large, centered, scaled 1.8× relative to standard hero, slight rotation
+  // Hero on top — large, centered, slight rotation
   const heroW = innerW * 0.72;
-  const heroH = heroW * 1.0;        // squarish hero in premium
+  const heroH = heroW;
   const heroCx = W / 2;
-  const heroCy = H / 2 - 30;
+  const heroCy = (contentTop + H) / 2 - 20;
   const heroRot = (rng() * 6 - 3) * Math.PI / 180;
-  drawRotatedCover(ctx, photos[0].imgEl, heroCx, heroCy, heroW, heroH, heroRot, 16, true);
+  drawPhotoFramed(ctx, photos[0], 0, 0, heroW, heroH, { rotation: heroRot, cx: heroCx, cy: heroCy, shadow: true });
 }
 
-function drawCover(ctx, img, x, y, w, h, radius) {
+// ── Frame dispatch ────────────────────────────────────────────
+function drawPhotoFramed(ctx, p, x, y, w, h, opts) {
+  opts = opts || {};
+  const frame = opts.forceFrame || frameOf(p.id);
+  const rotation = opts.rotation || 0;
+  const shadow = opts.shadow !== false;
+
   ctx.save();
-  roundRect(ctx, x, y, w, h, radius);
-  ctx.clip();
+  if (rotation) {
+    const cx = opts.cx ?? (x + w / 2);
+    const cy = opts.cy ?? (y + h / 2);
+    ctx.translate(cx, cy);
+    ctx.rotate(rotation);
+    x = -w / 2; y = -h / 2;
+  } else if (opts.cx != null) {
+    ctx.translate(opts.cx, opts.cy);
+    x = -w / 2; y = -h / 2;
+  }
+
+  if (frame === 'polaroid')      drawPolaroidFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'circle')   drawCircleFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'gold')     drawGoldFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else                            drawRoundedFrame(ctx, p.imgEl, x, y, w, h, shadow);
+
+  ctx.restore();
+}
+
+function drawRoundedFrame(ctx, img, x, y, w, h, shadow) {
+  if (shadow) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8;
+    ctx.fillStyle = '#000';
+    roundRect(ctx, x, y, w, h, 12); ctx.fill();
+    ctx.restore();
+  }
+  ctx.save();
+  roundRect(ctx, x, y, w, h, 12); ctx.clip();
+  drawCover(ctx, img, x, y, w, h);
+  ctx.restore();
+}
+
+function drawCircleFrame(ctx, img, x, y, w, h, shadow) {
+  const cx = x + w / 2, cy = y + h / 2, rx = w / 2, ry = h / 2;
+  if (shadow) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8;
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  ctx.save();
+  ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.clip();
+  drawCover(ctx, img, x, y, w, h);
+  ctx.restore();
+}
+
+function drawPolaroidFrame(ctx, img, x, y, w, h, shadow) {
+  const pad = Math.min(w, h) * 0.06;
+  const bottomPad = Math.min(w, h) * 0.16;
+  // White card background
+  ctx.save();
+  if (shadow) { ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 10; }
+  ctx.fillStyle = '#FAF8F3';
+  roundRect(ctx, x, y, w, h, 4); ctx.fill();
+  ctx.restore();
+  // Photo inside
+  const ix = x + pad, iy = y + pad;
+  const iw = w - pad * 2, ih = h - pad - bottomPad;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(ix, iy, iw, ih); ctx.clip();
+  drawCover(ctx, img, ix, iy, iw, ih);
+  ctx.restore();
+}
+
+function drawGoldFrame(ctx, img, x, y, w, h, shadow) {
+  drawRoundedFrame(ctx, img, x, y, w, h, shadow);
+  ctx.save();
+  ctx.strokeStyle = '#C9A84C'; ctx.lineWidth = 4;
+  roundRect(ctx, x, y, w, h, 12); ctx.stroke();
+  ctx.restore();
+}
+
+function drawCover(ctx, img, x, y, w, h) {
+  if (!img) return;
   const ar = img.naturalWidth / img.naturalHeight;
   const tar = w / h;
   let dw, dh, dx, dy;
   if (ar > tar) { dh = h; dw = h * ar; dx = x - (dw - w) / 2; dy = y; }
-  else { dw = w; dh = w / ar; dx = x; dy = y - (dh - h) / 2; }
+  else          { dw = w; dh = w / ar; dx = x; dy = y - (dh - h) / 2; }
   ctx.drawImage(img, dx, dy, dw, dh);
-  ctx.restore();
-}
-
-function drawRotatedCover(ctx, img, cx, cy, w, h, rotation, radius, shadow) {
-  ctx.save();
-  if (shadow) {
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowBlur = 24;
-    ctx.shadowOffsetY = 10;
-  }
-  ctx.translate(cx, cy);
-  ctx.rotate(rotation);
-  drawCover(ctx, img, -w / 2, -h / 2, w, h, radius);
-  ctx.restore();
-  // gold border
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(rotation);
-  ctx.strokeStyle = '#C9A84C';
-  ctx.lineWidth = 3;
-  roundRect(ctx, -w / 2, -h / 2, w, h, radius);
-  ctx.stroke();
-  ctx.restore();
 }
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -868,6 +1054,45 @@ function refreshSummary() {
   document.getElementById('sum-delivery-key').textContent = isPrint ? 'Printed banner (24×36)' : 'Digital download';
   document.getElementById('sum-delivery-price').textContent = '$' + base.toFixed(2);
   document.getElementById('sum-total').textContent = '$' + total.toFixed(2);
+}
+
+function triggerDownload(blobOrUrl, filename) {
+  const url = typeof blobOrUrl === 'string' ? blobOrUrl : URL.createObjectURL(blobOrUrl);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  if (typeof blobOrUrl !== 'string') setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadJpg() {
+  if (!state.previewGenerated) { toast('Generate a preview first'); return; }
+  const canvas = document.getElementById('preview-canvas');
+  triggerDownload(canvas.toDataURL('image/jpeg', 0.92), `celebratebanner-${Date.now()}.jpg`);
+  toast('Downloaded');
+}
+
+function downloadHdJpg() {
+  if (!state.previewGenerated) { toast('Generate a preview first'); return; }
+  if (!state.isPremium) { toast('HD download is a Premium feature — toggle Premium above'); return; }
+
+  const btn = document.getElementById('download-hd-btn');
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.textContent = 'Rendering HD…';
+
+  setTimeout(() => {
+    const off = document.createElement('canvas');
+    renderToCanvas(off, state.selectedImages, state.isPremium, 3);
+    off.toBlob(blob => {
+      triggerDownload(blob, `celebratebanner-hd-${Date.now()}.jpg`);
+      btn.disabled = false;
+      btn.innerHTML = original;
+      toast('HD downloaded · 2400×3600');
+    }, 'image/jpeg', 0.95);
+  }, 50);
 }
 
 function placeholderCheckout() {
