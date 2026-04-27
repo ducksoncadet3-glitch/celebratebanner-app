@@ -74,6 +74,9 @@ body { font-family: 'Outfit', sans-serif; background: var(--ivory); color: var(-
 .cell-badge { position: absolute; bottom: 0; left: 0; right: 0; background: var(--gold); color: var(--obsidian); font-size: 9px; font-weight: 700; text-align: center; padding: 3px 0; letter-spacing: 1.5px; text-transform: uppercase; }
 .cell-rm-btn { position: absolute; top: 6px; left: 6px; width: 24px; height: 24px; border-radius: 50%; background: rgba(12,14,20,0.7); color: var(--white); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; opacity: 0; transition: opacity 0.2s; z-index: 2; }
 .photo-cell:hover .cell-rm-btn { opacity: 1; }
+.cell-rot-btn { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 50%; background: rgba(12,14,20,0.78); color: #E8C97A; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; line-height: 1; z-index: 3; transition: all 0.18s; }
+.cell-rot-btn:hover { background: var(--obsidian); transform: scale(1.1); }
+.photo-cell img { transition: transform 0.18s; }
 
 .hero-tip { background: linear-gradient(135deg, rgba(201,168,76,0.08), rgba(201,168,76,0.04)); border: 1px solid rgba(201,168,76,0.25); border-radius: var(--r2); padding: 12px 16px; font-size: 13px; color: var(--gold-dark); margin-bottom: 1.25rem; line-height: 1.5; }
 
@@ -108,8 +111,8 @@ body { font-family: 'Outfit', sans-serif; background: var(--ivory); color: var(-
 .preview-spec { font-size: 10px; color: rgba(255,255,255,0.2); }
 #banner-preview { width: 80%; max-width: 640px; aspect-ratio: 2/3; border-radius: var(--r2); overflow: hidden; position: relative; margin: 0 auto; background: var(--obsidian3); display: flex; align-items: center; justify-content: center; }
 canvas#preview-canvas { width: 100%; height: 100%; display: block; }
-.stand-mockup { width: 80%; max-width: 640px; margin: 0 auto; padding-bottom: 1rem; line-height: 0; }
-.stand-mockup svg { width: 100%; height: auto; display: block; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.5)); }
+.stand-mockup { width: 90%; max-width: 640px; margin: 1rem auto 0; padding-bottom: 1rem; line-height: 0; }
+.stand-mockup canvas { width: 100%; height: auto; display: block; filter: drop-shadow(0 8px 18px rgba(0,0,0,0.18)); border-radius: 4px; }
 .preview-empty { color: rgba(255,255,255,0.45); text-align: center; padding: 2rem; font-size: 14px; }
 .preview-loading { color: var(--gold2); display: flex; flex-direction: column; align-items: center; gap: 16px; }
 .preview-loading .spinner { width: 36px; height: 36px; border: 3px solid rgba(201,168,76,0.18); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.9s linear infinite; }
@@ -332,39 +335,8 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
         </div>
         <canvas id="preview-canvas" width="800" height="1200" style="display:none;"></canvas>
       </div>
-      <!-- Chrome retractable banner stand -->
-      <div class="stand-mockup" id="stand-mockup" style="display:none;">
-        <svg viewBox="0 0 480 90" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMin meet">
-          <defs>
-            <linearGradient id="goldBar" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0" stop-color="#E8C97A"/>
-              <stop offset="1" stop-color="#7A6020"/>
-            </linearGradient>
-            <linearGradient id="poleChrome" x1="0" x2="1" y1="0" y2="0">
-              <stop offset="0" stop-color="#3F4654"/>
-              <stop offset="0.5" stop-color="#E5E7EB"/>
-              <stop offset="1" stop-color="#3F4654"/>
-            </linearGradient>
-            <radialGradient id="baseChrome" cx="0.5" cy="0.3" r="0.7">
-              <stop offset="0" stop-color="#F3F4F6"/>
-              <stop offset="0.5" stop-color="#9CA3AF"/>
-              <stop offset="1" stop-color="#1F2937"/>
-            </radialGradient>
-          </defs>
-          <!-- Bottom rail/clip on banner -->
-          <rect x="60" y="0" width="360" height="6" fill="url(#goldBar)" rx="1"/>
-          <!-- Telescoping pole -->
-          <rect x="237" y="6" width="6" height="42" fill="url(#poleChrome)"/>
-          <!-- Base cap -->
-          <rect x="225" y="46" width="30" height="8" rx="2" fill="url(#poleChrome)"/>
-          <!-- Weighted base -->
-          <ellipse cx="240" cy="62" rx="120" ry="14" fill="url(#baseChrome)"/>
-          <ellipse cx="240" cy="60" rx="120" ry="14" fill="#D1D5DB"/>
-          <ellipse cx="240" cy="60" rx="115" ry="11" fill="url(#baseChrome)" opacity="0.85"/>
-          <!-- Highlight -->
-          <ellipse cx="220" cy="56" rx="45" ry="3" fill="rgba(255,255,255,0.4)"/>
-        </svg>
-      </div>
+      <!-- Realistic retractable banner stand mockup (canvas, populated by renderStandMockup) -->
+      <div class="stand-mockup" id="stand-mockup" style="display:none;"></div>
     </div>
 
     <div class="gen-btn-wrap">
@@ -477,6 +449,7 @@ const state = {
   shuffledSeed: null,
   selectedImages: [],      // image ids in render order (hero first)
   frames: {},              // { [photoId]: frame name }
+  rotations: {},           // { [photoId]: 0 | 90 | 180 | 270 } user-controlled photo rotation
   activeFrame: 'rounded',  // currently selected palette frame
   bannerText: { name: '', year: '', school: '' },
   isPremium: false,
@@ -526,11 +499,13 @@ function djb2(str) {
 function computeCacheKey() {
   const t = state.bannerText;
   const frameSig = Object.keys(state.frames).sort().map(k => k + ':' + state.frames[k]).join(',');
+  const rotSig = Object.keys(state.rotations).sort().map(k => k + ':' + state.rotations[k]).join(',');
   return djb2([
     state.heroImage || '',
     state.shuffledSeed ?? 'none',
     state.arrangement,
     frameSig,
+    rotSig,
     t.name + '|' + t.year + '|' + t.school,
   ].join('|'));
 }
@@ -704,16 +679,21 @@ function renderDesignGrids() {
     });
     heroGrid.appendChild(hCell);
 
-    // Frame thumbnail — click applies the active frame to this photo
+    // Frame thumbnail — click applies the active frame to this photo (rotate btn excepted)
     const fr = frameOf(p.id);
+    const rot = state.rotations[p.id] || 0;
     const fCell = document.createElement('div');
     fCell.className = 'photo-cell' + (p.id === state.heroImage ? ' is-hero' : '');
     fCell.title = `Current: ${FRAME_LABELS[fr]} · click to apply ${FRAME_LABELS[state.activeFrame]}`;
     fCell.innerHTML = `
-      <img src="${p.dataUrl}" alt="${p.name}">
-      <div class="cell-frame-badge">${p.id === state.heroImage ? 'Hero · ' : ''}${FRAME_LABELS[fr]}</div>
+      <img src="${p.dataUrl}" alt="${p.name}" style="transform:rotate(${rot}deg);">
+      <button class="cell-rot-btn" type="button" title="Rotate 90°">↻</button>
+      <div class="cell-frame-badge">${p.id === state.heroImage ? 'Hero · ' : ''}${FRAME_LABELS[fr]}${rot ? ' · ' + rot + '°' : ''}</div>
     `;
-    fCell.addEventListener('click', () => applyFrameTo(p.id));
+    fCell.addEventListener('click', (e) => {
+      if (e.target.closest('.cell-rot-btn')) { rotatePhoto(p.id); return; }
+      applyFrameTo(p.id);
+    });
     frameGrid.appendChild(fCell);
   });
 
@@ -747,6 +727,13 @@ function applyFrameTo(id) {
   state.frames[id] = state.activeFrame;
   state.previewGenerated = false;
   renderDesignGrids();
+}
+
+function rotatePhoto(id) {
+  state.rotations[id] = ((state.rotations[id] || 0) + 90) % 360;
+  state.previewGenerated = false;
+  renderDesignGrids();
+  toast('Photo rotated ' + state.rotations[id] + '°');
 }
 
 function applyAllFrames() {
@@ -847,12 +834,14 @@ function generatePreview(force) {
 
   // Defer to next tick so the spinner paints
   setTimeout(() => {
-    renderToCanvas(document.getElementById('preview-canvas'), ids, state.isPremium, 1);
+    const previewCanvas = document.getElementById('preview-canvas');
+    renderToCanvas(previewCanvas, ids, state.isPremium, 1);
     state.previewGenerated = true;
     state.previewCacheKey = newKey;
     document.getElementById('preview-spec-text').textContent =
       `Cache: ${newKey} · ${ids.length} photos · ${state.arrangement}${state.isPremium ? ' (Premium)' : ''}`;
     refreshPreviewUI();
+    try { renderStandMockup(previewCanvas); } catch (e) { console.warn('Stand mockup render failed:', e); }
     toast('Banner ready');
   }, 60);
 }
@@ -948,9 +937,11 @@ function pickGridCols(n) {
 }
 
 function pickHeroFraction(n) {
-  if (n <= 3) return 0.95;
-  if (n <= 8) return 0.50;
-  if (n <= 15) return 0.42;
+  // Reduced so a 32px gap + the collage grid below the hero always fits
+  if (n === 0) return 0.85;
+  if (n <= 3) return 0.55;
+  if (n <= 8) return 0.45;
+  if (n <= 15) return 0.40;
   if (n <= 30) return 0.34;
   return 0.28;
 }
@@ -996,6 +987,18 @@ function _photoRot(rng, maxDeg) {
 }
 
 // ── Layout 1: Classic — hero centered top, even grid below, hero on top of grid edge ──
+// Hero rect is the area the hero photo occupies. Used to skip placing supporting tiles
+// behind the hero in free-form layouts (Scattered, Mosaic, Staircase).
+function _hits(rect, x, y, w, h, pad) {
+  pad = pad || 0;
+  return !(x + w <= rect.left - pad || x >= rect.right + pad ||
+           y + h <= rect.top - pad  || y >= rect.bottom + pad);
+}
+function _heroRect(cx, cy, w, h) {
+  return { left: cx - w / 2, right: cx + w / 2, top: cy - h / 2, bottom: cy + h / 2 };
+}
+
+// ── Layout 1: Classic — hero centered top, 32px gap, even grid below, all photos ──
 function renderClassic(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0xC1A5);
@@ -1004,12 +1007,12 @@ function renderClassic(ctx, photos, W, H, contentTop) {
   const supporting = photos.slice(1);
   const available = H - contentTop - 60;
   const heroH = Math.round(available * pickHeroFraction(supporting.length));
+  const heroBot = contentTop + heroH + 32;
 
   if (supporting.length > 0) {
-    const overlap = 22;
-    const gridTop = contentTop + heroH - overlap;
+    const gridTop = heroBot;
     const gridBottom = H - 50;
-    const gridH = gridBottom - gridTop;
+    const gridH = Math.max(60, gridBottom - gridTop);
     const cols = pickGridCols(supporting.length);
     const rows = Math.ceil(supporting.length / cols);
     const gap = supporting.length > 24 ? 6 : (supporting.length > 12 ? 8 : 12);
@@ -1025,11 +1028,11 @@ function renderClassic(ctx, photos, W, H, contentTop) {
     });
   }
 
-  // Hero ≥ 2.5× collage cell (ensured by full-width hero)
+  // Hero drawn LAST (on top visually) at y=contentTop, height=heroH (does not eat into grid)
   drawHeroPhoto(ctx, photos[0], margin, contentTop, innerW, heroH, { rotation: _photoRot(rng, 1.2) });
 }
 
-// ── Layout 2: Magazine — hero left, 2-column grid right ──
+// ── Layout 2: Magazine — hero left, 2-col grid right, all photos (rows scale down) ──
 function renderMagazine(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0x4A6A);
@@ -1046,7 +1049,7 @@ function renderMagazine(ctx, photos, W, H, contentTop) {
   const rightX = margin + heroW + 14;
   const rightW = innerW - heroW - 14;
   const cols = 2;
-  const count = Math.min(supporting.length, 12);
+  const count = supporting.length;
   const rows = Math.max(1, Math.ceil(count / cols));
   const gap = 8;
   const cellW = (rightW - gap) / cols;
@@ -1063,7 +1066,7 @@ function renderMagazine(ctx, photos, W, H, contentTop) {
   drawHeroPhoto(ctx, photos[0], heroX, heroY, heroW, heroH, { rotation: _photoRot(rng, 1) });
 }
 
-// ── Layout 3: Pyramid — hero top center, supporting in widening rows below ──
+// ── Layout 3: Pyramid — hero top, 32px gap, widening rows below holding ALL photos ──
 function renderPyramid(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0x9991);
@@ -1075,23 +1078,28 @@ function renderPyramid(ctx, photos, W, H, contentTop) {
   const heroSize = Math.min(innerW * 0.45, innerH * 0.40);
   const heroX = (W - heroSize) / 2;
   const heroY = contentTop + 8;
+  const heroBot = heroY + heroSize + 32;
 
-  const pyTop = contentTop + heroSize + 22;
-  const pyBottom = H - 50;
-  const pyH = pyBottom - pyTop;
-
+  // Build widening rows (2,3,4,...) until all photos are placed
   const rowCounts = [];
-  let remaining = Math.min(supporting.length, 18);
+  let remaining = supporting.length;
   let rowCols = 2;
-  while (remaining > 0 && rowCounts.length < 4) {
+  while (remaining > 0) {
     const take = Math.min(rowCols, remaining);
     rowCounts.push(take);
     remaining -= take;
     rowCols++;
   }
   if (rowCounts.length === 0) rowCounts.push(0);
+
+  const pyTop = heroBot;
+  const pyBottom = H - 50;
+  const pyH = Math.max(60, pyBottom - pyTop);
   const rowH = pyH / rowCounts.length;
-  const cellSize = Math.min(rowH * 0.85, innerW * 0.18);
+  // Cell size shrinks if many rows so the widest row fits horizontally
+  const widestRow = Math.max.apply(null, rowCounts);
+  const maxCellByWidth = (innerW - 10 * (widestRow - 1)) / Math.max(1, widestRow);
+  const cellSize = Math.max(28, Math.min(rowH * 0.85, maxCellByWidth));
 
   let idx = 0;
   rowCounts.forEach((count, r) => {
@@ -1114,7 +1122,7 @@ function renderPyramid(ctx, photos, W, H, contentTop) {
   drawHeroPhoto(ctx, photos[0], heroX, heroY, heroSize, heroSize, { rotation: _photoRot(rng, 1.2) });
 }
 
-// ── Layout 4: Scattered — scrapbook, ±5° rotations, overlapping edges ──
+// ── Layout 4: Scattered — scrapbook, ±5° rotations, ALL photos, skip hero zone ──
 function renderScattered(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0xBEEF);
@@ -1123,77 +1131,97 @@ function renderScattered(ctx, photos, W, H, contentTop) {
   const innerW = W - margin * 2;
   const innerH = H - contentTop - 60;
 
-  // Hero size — large enough to be ≥ 2.5× a collage tile
   const heroSize = Math.min(W * 0.42, innerH * 0.45);
-  const tileSize = heroSize / 2.7;
+  const heroCx = W / 2;
+  const heroCy = contentTop + innerH / 2;
+  const heroRect = _heroRect(heroCx, heroCy, heroSize, heroSize);
 
-  const cols = 4, rows = 4;
-  const colW = innerW / cols;
-  const rowH = innerH / rows;
-  const count = Math.min(supporting.length, cols * rows);
+  // Expand grid rows dynamically: cols=4 fixed, rows ceil(count/cols)
+  const cols = 4;
+  const rows = Math.max(1, Math.ceil(supporting.length / cols));
+  // Tile size: hero must be ≥ 2.5× tile, so cap tile at heroSize/2.7
+  const cellW = innerW / cols;
+  const cellH = innerH / rows;
+  const tileSize = Math.max(28, Math.min(heroSize / 2.7, Math.min(cellW, cellH) * 0.9));
 
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < supporting.length; i++) {
     const c = i % cols;
     const r = Math.floor(i / cols);
-    const baseCx = margin + c * colW + colW / 2;
-    const baseCy = contentTop + r * rowH + rowH / 2;
-    const jitterX = (rng() * 36 - 18);
-    const jitterY = (rng() * 36 - 18);
+    const baseCx = margin + c * cellW + cellW / 2;
+    const baseCy = contentTop + r * cellH + cellH / 2;
+    let jitterX = (rng() * 36 - 18);
+    let jitterY = (rng() * 36 - 18);
+    let cx = baseCx + jitterX, cy = baseCy + jitterY;
+    // Push tile away from hero zone if it would land behind it
+    const half = tileSize / 2;
+    if (_hits(heroRect, cx - half, cy - half, tileSize, tileSize, 8)) {
+      const dx = cx - heroCx, dy = cy - heroCy;
+      const len = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+      const push = heroSize / 2 + half + 12;
+      cx = heroCx + (dx / len) * push;
+      cy = heroCy + (dy / len) * push;
+    }
     const rot = (rng() * 10 - 5) * Math.PI / 180;
     drawPhotoFramed(ctx, supporting[i], 0, 0, tileSize, tileSize, {
-      cx: baseCx + jitterX, cy: baseCy + jitterY, rotation: rot, shadow: true,
+      cx, cy, rotation: rot, shadow: true,
     });
   }
 
-  const heroCx = W / 2;
-  const heroCy = contentTop + innerH / 2;
   drawHeroPhoto(ctx, photos[0], 0, 0, heroSize, heroSize, { cx: heroCx, cy: heroCy, rotation: _photoRot(rng, 3) });
 }
 
-// ── Layout 5: Film Strip — single horizontal row, hero slightly larger ──
+// ── Layout 5: Film Strip — center horizontal row(s), wraps to 2 rows if >8 photos ──
 function renderFilmstrip(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0xF11A);
-  const margin = 30;
   const supporting = photos.slice(1);
-  const innerW = W - margin * 2;
+  const innerW = W - 60;
   const innerH = H - contentTop - 60;
 
-  // Lay everything (supporting + hero) on one center horizontal row, hero in the middle.
-  const stripCy = contentTop + innerH / 2;
-  const total = 1 + Math.min(supporting.length, 8); // cap so they fit
-  const supCount = total - 1;
-  // Tile size — hero is 2.5× this
-  const reservedHeroW = innerW * 0.30;
-  const heroSize = Math.min(reservedHeroW, innerH * 0.72);
-  const tileSize = Math.min(heroSize / 2.5, (innerW - heroSize - 10 * supCount) / Math.max(1, supCount));
+  const supCount = supporting.length;
+  const rowCount = supCount > 8 ? 2 : 1;
+  const perRow = Math.ceil(supCount / Math.max(1, rowCount));
 
-  // Half on the left of hero, half on the right
-  const leftCount = Math.ceil(supCount / 2);
-  const rightCount = supCount - leftCount;
+  const heroSize = Math.min(innerW * 0.30, innerH * 0.72);
+  // Tile size — hero must be ≥ 2.5× tile; also fit perRow tiles into one row alongside the hero
   const gap = 10;
+  const availForTiles = innerW - heroSize - gap * 2;
+  const tilesEachSide = Math.ceil(perRow / 2);
+  const tileSize = Math.max(28, Math.min(heroSize / 2.5, (availForTiles / 2 - gap * (tilesEachSide - 1)) / Math.max(1, tilesEachSide)));
 
-  // Left column of tiles
-  let lx = (W / 2) - heroSize / 2 - gap - tileSize / 2;
-  for (let i = leftCount - 1; i >= 0; i--) {
-    drawPhotoFramed(ctx, supporting[i], 0, 0, tileSize, tileSize, {
-      cx: lx, cy: stripCy, rotation: _photoRot(rng, 2), shadow: true,
-    });
-    lx -= (tileSize + gap);
-  }
-  // Right tiles
-  let rx = (W / 2) + heroSize / 2 + gap + tileSize / 2;
-  for (let i = 0; i < rightCount; i++) {
-    drawPhotoFramed(ctx, supporting[leftCount + i], 0, 0, tileSize, tileSize, {
-      cx: rx, cy: stripCy, rotation: _photoRot(rng, 2), shadow: true,
-    });
-    rx += (tileSize + gap);
+  const stripCy = contentTop + innerH / 2;
+  // For 2 rows, stack one above and one below the center line
+  const rowOffsets = rowCount === 1 ? [0] : [-(tileSize + gap) / 2, (tileSize + gap) / 2];
+
+  for (let row = 0; row < rowCount; row++) {
+    const startI = row * perRow;
+    const endI = Math.min(supCount, startI + perRow);
+    const cnt = endI - startI;
+    if (cnt === 0) continue;
+    const leftCount = Math.ceil(cnt / 2);
+    const cy = stripCy + rowOffsets[row];
+    // Left side of hero
+    let lx = (W / 2) - heroSize / 2 - gap - tileSize / 2;
+    for (let i = leftCount - 1; i >= 0; i--) {
+      drawPhotoFramed(ctx, supporting[startI + i], 0, 0, tileSize, tileSize, {
+        cx: lx, cy, rotation: _photoRot(rng, 2), shadow: true,
+      });
+      lx -= (tileSize + gap);
+    }
+    // Right side
+    let rx = (W / 2) + heroSize / 2 + gap + tileSize / 2;
+    for (let i = leftCount; i < cnt; i++) {
+      drawPhotoFramed(ctx, supporting[startI + i], 0, 0, tileSize, tileSize, {
+        cx: rx, cy, rotation: _photoRot(rng, 2), shadow: true,
+      });
+      rx += (tileSize + gap);
+    }
   }
 
   drawHeroPhoto(ctx, photos[0], 0, 0, heroSize, heroSize, { cx: W / 2, cy: stripCy, rotation: _photoRot(rng, 1.5) });
 }
 
-// ── Layout 6: Mosaic — hero in center, photos on all four sides ──
+// ── Layout 6: Mosaic — hero center, photos in a grid that excludes hero zone, ALL photos ──
 function renderMosaic(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0xA10C);
@@ -1205,37 +1233,43 @@ function renderMosaic(ctx, photos, W, H, contentTop) {
   const cx = W / 2;
   const cy = contentTop + innerH / 2;
   const heroSize = Math.min(innerW * 0.42, innerH * 0.42);
-  const tileSize = heroSize / 2.7;
+  const heroRect = _heroRect(cx, cy, heroSize, heroSize);
   const ringPad = 14;
+  const gap = 8;
 
-  // Top row, bottom row: span across width above/below hero
-  const topY = cy - heroSize / 2 - ringPad - tileSize / 2;
-  const botY = cy + heroSize / 2 + ringPad + tileSize / 2;
-  const topBotCount = 5;
-  const tbStep = (innerW - tileSize) / (topBotCount - 1);
-  // Left column, right column: between top and bottom rows, alongside hero
-  const sideX = cx - heroSize / 2 - ringPad - tileSize / 2;
-  const sideXR = cx + heroSize / 2 + ringPad + tileSize / 2;
-  const sideCount = 3;
-  const sideStep = (heroSize + ringPad * 2) / (sideCount + 1);
+  // Find a tile size such that the grid (minus hero-zone cells) holds all supporting photos.
+  let tileSize = heroSize / 2.7;
+  let layout = null;
+  for (let attempt = 0; attempt < 12; attempt++) {
+    const cols = Math.max(3, Math.floor((innerW + gap) / (tileSize + gap)));
+    const rows = Math.max(2, Math.floor((innerH + gap) / (tileSize + gap)));
+    const slots = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const sx = margin + c * (tileSize + gap);
+        const sy = contentTop + r * (tileSize + gap);
+        if (_hits(heroRect, sx, sy, tileSize, tileSize, ringPad)) continue;
+        slots.push({ cx: sx + tileSize / 2, cy: sy + tileSize / 2 });
+      }
+    }
+    if (slots.length >= supporting.length || tileSize <= 28) {
+      layout = { tileSize, slots };
+      break;
+    }
+    tileSize *= 0.88;
+  }
+  if (!layout) layout = { tileSize: 28, slots: [] };
 
-  const slots = [];
-  for (let i = 0; i < topBotCount; i++) slots.push({ cx: margin + tileSize / 2 + i * tbStep, cy: topY });
-  for (let i = 0; i < sideCount; i++) slots.push({ cx: sideX, cy: cy - heroSize / 2 - ringPad + (i + 1) * sideStep });
-  for (let i = 0; i < sideCount; i++) slots.push({ cx: sideXR, cy: cy - heroSize / 2 - ringPad + (i + 1) * sideStep });
-  for (let i = 0; i < topBotCount; i++) slots.push({ cx: margin + tileSize / 2 + i * tbStep, cy: botY });
-
-  const cap = Math.min(supporting.length, slots.length);
-  for (let i = 0; i < cap; i++) {
-    drawPhotoFramed(ctx, supporting[i], 0, 0, tileSize, tileSize, {
-      cx: slots[i].cx, cy: slots[i].cy, rotation: _photoRot(rng, 2), shadow: true,
+  for (let i = 0; i < supporting.length && i < layout.slots.length; i++) {
+    drawPhotoFramed(ctx, supporting[i], 0, 0, layout.tileSize, layout.tileSize, {
+      cx: layout.slots[i].cx, cy: layout.slots[i].cy, rotation: _photoRot(rng, 2), shadow: true,
     });
   }
 
   drawHeroPhoto(ctx, photos[0], 0, 0, heroSize, heroSize, { cx, cy, rotation: _photoRot(rng, 1) });
 }
 
-// ── Layout 7: Staircase — diagonal stair from top-left to bottom-right ──
+// ── Layout 7: Staircase — diagonal stair, ALL photos (tile shrinks if many), skip hero ──
 function renderStaircase(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0x57A1);
@@ -1244,28 +1278,40 @@ function renderStaircase(ctx, photos, W, H, contentTop) {
   const innerW = W - margin * 2;
   const innerH = H - contentTop - 60;
 
-  const steps = Math.min(supporting.length, 8);
-  const tileSize = Math.min(innerW / 5, innerH / 6);
-  const heroSize = tileSize * 2.6; // ≥ 2.5×
+  const steps = supporting.length;
+  // Diagonal path length, tile size scales so all steps fit along the diagonal
+  const diagLen = Math.sqrt(innerW * innerW + innerH * innerH) * 0.85;
+  const stepDist = diagLen / Math.max(1, steps);
+  const tileSize = Math.max(30, Math.min(stepDist * 0.85, innerH / 6, innerW / 5));
+  const heroSize = Math.max(tileSize * 2.6, Math.min(innerW * 0.45, innerH * 0.45));
 
-  // Diagonal path from top-left to bottom-right
   const startX = margin + tileSize / 2 + 10;
   const startY = contentTop + tileSize / 2 + 6;
   const endX = W - margin - tileSize / 2 - 10;
   const endY = contentTop + innerH - tileSize / 2 - 6;
 
+  const heroCx = W / 2 + 8;
+  const heroCy = contentTop + innerH / 2 + 6;
+  const heroRect = _heroRect(heroCx, heroCy, heroSize, heroSize);
+
   for (let i = 0; i < steps; i++) {
     const t = steps === 1 ? 0.5 : i / (steps - 1);
-    const cx = startX + (endX - startX) * t;
-    const cy = startY + (endY - startY) * t;
+    let cx = startX + (endX - startX) * t;
+    let cy = startY + (endY - startY) * t;
+    const half = tileSize / 2;
+    // Skip the segment that overlaps hero by pushing tile perpendicular to diagonal
+    if (_hits(heroRect, cx - half, cy - half, tileSize, tileSize, 8)) {
+      const dx = cx - heroCx, dy = cy - heroCy;
+      const len = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+      const push = heroSize / 2 + half + 12;
+      cx = heroCx + (dx / len) * push;
+      cy = heroCy + (dy / len) * push;
+    }
     drawPhotoFramed(ctx, supporting[i], 0, 0, tileSize, tileSize, {
       cx, cy, rotation: _photoRot(rng, 3), shadow: true,
     });
   }
 
-  // Hero centered, slightly below visual center, large and on top
-  const heroCx = W / 2 + 8;
-  const heroCy = contentTop + innerH / 2 + 6;
   drawHeroPhoto(ctx, photos[0], 0, 0, heroSize, heroSize, { cx: heroCx, cy: heroCy, rotation: _photoRot(rng, 2) });
 }
 
@@ -1275,6 +1321,8 @@ function drawPhotoFramed(ctx, p, x, y, w, h, opts) {
   const frame = opts.forceFrame || frameOf(p.id);
   const rotation = opts.rotation || 0;
   const shadow = opts.shadow !== false;
+  // Plumb the user's per-photo rotation (set via Design rotate button) into drawCover
+  if (p && p.imgEl) p.imgEl._rotDeg = (state.rotations && state.rotations[p.id]) || 0;
 
   ctx.save();
   if (rotation) {
@@ -1800,14 +1848,27 @@ function drawGoldFrame(ctx, img, x, y, w, h, shadow) {
   ctx.restore();
 }
 
+// Object-fit: cover behavior. Always fills the (w x h) target completely.
+// Honors any per-photo rotation stashed on the image as img._rotDeg (set by drawPhotoFramed).
 function drawCover(ctx, img, x, y, w, h) {
   if (!img) return;
-  const ar = img.naturalWidth / img.naturalHeight;
-  const tar = w / h;
-  let dw, dh, dx, dy;
-  if (ar > tar) { dh = h; dw = h * ar; dx = x - (dw - w) / 2; dy = y; }
-  else          { dw = w; dh = w / ar; dx = x; dy = y - (dh - h) / 2; }
-  ctx.drawImage(img, dx, dy, dw, dh);
+  const iw = img.naturalWidth || img.width || 1;
+  const ih = img.naturalHeight || img.height || 1;
+  const rotDeg = ((img._rotDeg || 0) % 360 + 360) % 360;
+  const swap = rotDeg === 90 || rotDeg === 270;
+  // Effective natural dims after the user's 90° rotation, used to compute cover scale
+  const effW = swap ? ih : iw;
+  const effH = swap ? iw : ih;
+  const scale = Math.max(w / effW, h / effH);
+  const dw = iw * scale;
+  const dh = ih * scale;
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+  ctx.save();
+  ctx.translate(cx, cy);
+  if (rotDeg) ctx.rotate(rotDeg * Math.PI / 180);
+  ctx.drawImage(img, 0, 0, iw, ih, -dw / 2, -dh / 2, dw, dh);
+  ctx.restore();
 }
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -1818,6 +1879,187 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.arcTo(x, y + h, x, y, r);
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
+}
+
+// ─────────────────────────────────────────────────────────────
+// Realistic retractable banner stand mockup
+// Draws the banner content as the "fabric" hanging from a chrome top bar,
+// with a chrome telescoping pole on the right and a brushed-aluminum base.
+// Renders at 2x pixel density for sharpness.
+// ─────────────────────────────────────────────────────────────
+function renderStandMockup(bannerCanvas) {
+  const container = document.getElementById('stand-mockup');
+  if (!container) return null;
+  container.innerHTML = '';
+
+  const dpr = 2;
+  const W = 600, H = 900; // logical canvas size
+  const canvas = document.createElement('canvas');
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = '100%';
+  canvas.style.height = 'auto';
+  canvas.style.display = 'block';
+  canvas.style.maxWidth = '640px';
+  canvas.style.margin = '0 auto';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  // 1) Studio background (very light gray)
+  ctx.fillStyle = '#F8F8F8';
+  ctx.fillRect(0, 0, W, H);
+
+  // Layout regions
+  const margin = 30;
+  const topBarH = Math.round(H * 0.015);  // slim chrome top bar
+  const baseH = Math.round(H * 0.04);     // brushed aluminum base
+  const poleW = Math.max(4, Math.round(W * 0.008));
+  const banH = Math.round(H * 0.80);
+  const bannerL = margin;
+  const bannerR = W - margin - poleW - 6;
+  const bannerW = bannerR - bannerL;
+  const bannerT = margin + topBarH;
+  const bannerB = bannerT + banH;
+
+  // 2) Top bar — slim chrome silver hanging the banner
+  const tbGrad = ctx.createLinearGradient(bannerL, 0, bannerR, 0);
+  tbGrad.addColorStop(0, '#E0E0E0');
+  tbGrad.addColorStop(0.5, '#FFFFFF');
+  tbGrad.addColorStop(1, '#C0C0C0');
+  ctx.fillStyle = tbGrad;
+  ctx.fillRect(bannerL, margin, bannerW, topBarH);
+  // Darker end caps
+  ctx.fillStyle = '#7B7F86';
+  const capR = topBarH * 0.85;
+  ctx.beginPath(); ctx.arc(bannerL, margin + topBarH / 2, capR, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(bannerR, margin + topBarH / 2, capR, 0, Math.PI * 2); ctx.fill();
+
+  // 3) Banner with vertical perspective (top ~2% narrower than bottom) + fabric texture
+  const taper = bannerW * 0.02;
+  const topLx = bannerL + taper;
+  const topRx = bannerR - taper;
+
+  // Trapezoid clip for the banner content
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(topLx, bannerT);
+  ctx.lineTo(topRx, bannerT);
+  ctx.lineTo(bannerR, bannerB);
+  ctx.lineTo(bannerL, bannerB);
+  ctx.closePath();
+  ctx.clip();
+  // The banner content
+  ctx.drawImage(bannerCanvas, bannerL, bannerT, bannerW, banH);
+  // Fabric texture: very fine diagonal lines at low opacity
+  ctx.strokeStyle = 'rgba(0,0,0,0.03)';
+  ctx.lineWidth = 0.5;
+  for (let i = -banH; i < bannerW + banH; i += 4) {
+    ctx.beginPath();
+    ctx.moveTo(bannerL + i, bannerT);
+    ctx.lineTo(bannerL + i + banH, bannerB);
+    ctx.stroke();
+  }
+  // Specular highlight diagonal across upper-left
+  const spec = ctx.createLinearGradient(bannerL, bannerT, bannerL + bannerW * 0.55, bannerT + banH * 0.5);
+  spec.addColorStop(0, 'rgba(255,255,255,0.18)');
+  spec.addColorStop(0.5, 'rgba(255,255,255,0.06)');
+  spec.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = spec;
+  ctx.fillRect(bannerL, bannerT, bannerW, banH);
+  ctx.restore();
+
+  // Thin black border around the banner trapezoid
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(topLx, bannerT);
+  ctx.lineTo(topRx, bannerT);
+  ctx.lineTo(bannerR, bannerB);
+  ctx.lineTo(bannerL, bannerB);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.restore();
+
+  // 4) Pole — chrome telescoping pole on the RIGHT, slight taper wider at base
+  const poleX = bannerR + 6;
+  const poleTop = margin + topBarH;
+  const poleBot = bannerB + baseH * 0.4;
+  const poleH = poleBot - poleTop;
+  const poleTopW = poleW;
+  const poleBotW = poleW * 1.4;
+  const poleLeft = poleX - (poleBotW - poleTopW) / 2;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(poleX, poleTop);
+  ctx.lineTo(poleX + poleTopW, poleTop);
+  ctx.lineTo(poleX + poleTopW + (poleBotW - poleTopW) / 2, poleBot);
+  ctx.lineTo(poleLeft, poleBot);
+  ctx.closePath();
+  const poleGrad = ctx.createLinearGradient(poleLeft, 0, poleLeft + poleBotW, 0);
+  poleGrad.addColorStop(0, '#3F4654');
+  poleGrad.addColorStop(0.4, '#E5E7EB');
+  poleGrad.addColorStop(0.7, '#FFFFFF');
+  poleGrad.addColorStop(1, '#9CA3AF');
+  ctx.fillStyle = poleGrad;
+  ctx.fill();
+  // Adjustment knob halfway down — small dark ellipse
+  const knobCy = poleTop + poleH * 0.5;
+  const knobRX = poleW * 1.4;
+  const knobRY = poleW * 0.7;
+  ctx.fillStyle = '#374151';
+  ctx.beginPath();
+  ctx.ellipse(poleX + poleW / 2, knobCy, knobRX, knobRY, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // 5) Base — wide brushed aluminum ellipse, centered horizontally, with shadow + highlight
+  const baseW = Math.round(bannerW * 0.65);
+  const baseCx = (bannerL + bannerR) / 2 + 6;
+  const baseCy = bannerB + baseH;
+
+  // Contact shadow under base — soft blurred dark ellipse
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.30)';
+  if (typeof ctx.filter !== 'undefined') ctx.filter = 'blur(8px)';
+  ctx.beginPath();
+  ctx.ellipse(baseCx, baseCy + baseH * 0.4, baseW / 2 + 10, baseH * 0.55, 0, 0, Math.PI * 2);
+  ctx.fill();
+  if (typeof ctx.filter !== 'undefined') ctx.filter = 'none';
+  ctx.restore();
+
+  // Brushed aluminum radial gradient
+  const baseGrad = ctx.createRadialGradient(baseCx - baseW * 0.1, baseCy - baseH * 0.4, 4, baseCx, baseCy, baseW / 2);
+  baseGrad.addColorStop(0, '#F3F4F6');
+  baseGrad.addColorStop(0.4, '#D1D5DB');
+  baseGrad.addColorStop(0.75, '#6B7280');
+  baseGrad.addColorStop(1, '#374151');
+  ctx.fillStyle = baseGrad;
+  ctx.beginPath();
+  ctx.ellipse(baseCx, baseCy, baseW / 2, baseH, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Bright highlight on upper-left of base
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,255,255,0.40)';
+  ctx.beginPath();
+  ctx.ellipse(baseCx - baseW * 0.18, baseCy - baseH * 0.35, baseW * 0.30, baseH * 0.35, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // Floor reflection — very faint downward gradient strip below base
+  const floorTop = baseCy + baseH;
+  const floorH = H - floorTop;
+  if (floorH > 6) {
+    const floorGrad = ctx.createLinearGradient(0, floorTop, 0, floorTop + floorH);
+    floorGrad.addColorStop(0, 'rgba(0,0,0,0.06)');
+    floorGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = floorGrad;
+    ctx.fillRect(0, floorTop, W, floorH);
+  }
+
+  container.appendChild(canvas);
+  return canvas;
 }
 
 // ─────────────────────────────────────────────────────────────
