@@ -348,7 +348,7 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
       <div class="upsell-card">
         <div class="upsell-info">
           <div class="upsell-title">Pick your arrangement</div>
-          <div class="upsell-sub">Classic is included. Premium arrangements (Polaroid, Mosaic, Spotlight, Filmstrip, Stack, Strip) unlock layered composition + HD download for +$9.99.</div>
+          <div class="upsell-sub">Classic is included. Premium arrangements (Magazine, Pyramid, Scattered, Mosaic) unlock layered composition + HD download for +$9.99.</div>
         </div>
       </div>
       <div class="arr-grid" id="arr-grid"></div>
@@ -433,13 +433,11 @@ const FRAME_LABELS = {
 };
 
 const ARRANGEMENTS = [
-  { id: 'classic',   label: 'Classic',   sub: 'Hero centered top, collage grid below',                tier: 'standard' },
-  { id: 'magazine',  label: 'Magazine',  sub: 'Hero on the left, 2-column grid on the right',          tier: 'premium' },
-  { id: 'pyramid',   label: 'Pyramid',   sub: 'Hero on top, photos in widening rows below',            tier: 'premium' },
-  { id: 'scattered', label: 'Scattered', sub: 'Scrapbook feel — overlapping photos at slight angles',  tier: 'premium' },
-  { id: 'filmstrip', label: 'Film Strip',sub: 'Single horizontal row, hero slightly larger',           tier: 'premium' },
-  { id: 'mosaic',    label: 'Mosaic',    sub: 'Hero in the center, photos on all four sides',          tier: 'premium' },
-  { id: 'staircase', label: 'Staircase', sub: 'Diagonal stair pattern, top-left to bottom-right',      tier: 'premium' },
+  { id: 'classic',   label: 'Classic',   sub: 'Hero centered top, collage grid below · Best with 1–50 photos',               tier: 'standard', minPhotos: 1,  maxPhotos: 50 },
+  { id: 'magazine',  label: 'Magazine',  sub: 'Hero on the left, 2-column grid on the right · Best with 3–25 photos',         tier: 'premium',  minPhotos: 3,  maxPhotos: 25 },
+  { id: 'pyramid',   label: 'Pyramid',   sub: 'Hero on top, photos in widening rows below · Best with 3–28 photos',           tier: 'premium',  minPhotos: 3,  maxPhotos: 28 },
+  { id: 'scattered', label: 'Scattered', sub: 'Scrapbook feel — overlapping photos at slight angles · Best with 5–40 photos', tier: 'premium',  minPhotos: 5,  maxPhotos: 40 },
+  { id: 'mosaic',    label: 'Mosaic',    sub: 'Hero in the center, photos on all four sides · Best with 8–40 photos',         tier: 'premium',  minPhotos: 8,  maxPhotos: 40 },
 ];
 
 const state = {
@@ -795,7 +793,9 @@ function refreshPreviewUI() {
     post.style.display = 'block';
     pre.style.display = 'none';
     empty.style.display = 'none';
-    canvas.style.display = 'block';
+    // Plain banner canvas stays hidden — the stand mockup is the only visible preview.
+    // The canvas is still kept in the DOM so downloadJpg() can read its bytes.
+    canvas.style.display = 'none';
     genBtn.style.display = 'none';
     renderArrangementGrid();
     if (stand) stand.style.display = 'block';
@@ -892,38 +892,51 @@ function renderToCanvas(targetCanvas, ids, premium, scale) {
     case 'magazine':  renderMagazine(ctx, photos, W, H, contentTop); break;
     case 'pyramid':   renderPyramid(ctx, photos, W, H, contentTop); break;
     case 'scattered': renderScattered(ctx, photos, W, H, contentTop); break;
-    case 'filmstrip': renderFilmstrip(ctx, photos, W, H, contentTop); break;
     case 'mosaic':    renderMosaic(ctx, photos, W, H, contentTop); break;
-    case 'staircase': renderStaircase(ctx, photos, W, H, contentTop); break;
     case 'classic':
     default:          renderClassic(ctx, photos, W, H, contentTop); break;
   }
 }
 
 function renderBannerText(ctx, W, topY) {
-  const t = state.bannerText;
+  const t = state.bannerText || {};
+  // Pull live values from inputs as a safety net in case updateText() didn't fire
+  // (e.g. if the user edited an input but the focus left without an input event).
+  const liveName   = (document.getElementById('text-name')   || {}).value;
+  const liveYear   = (document.getElementById('text-year')   || {}).value;
+  const liveSchool = (document.getElementById('text-school') || {}).value;
+  const name   = (t.name   || liveName   || '').trim();
+  const year   = (t.year   || liveYear   || '').trim();
+  const school = (t.school || liveSchool || '').trim();
+
   let y = topY;
   ctx.textAlign = 'center';
-  if (t.name) {
+
+  // Name — fallback placeholder in muted gold so the text area is never empty
+  if (name) {
     ctx.fillStyle = '#F5E4B0';
     ctx.font = 'bold 64px "Cormorant Garamond", serif';
-    ctx.fillText(t.name, W / 2, y + 56);
-    y += 74;
+    ctx.fillText(name, W / 2, y + 56);
+  } else {
+    ctx.fillStyle = 'rgba(232,201,122,0.45)';
+    ctx.font = 'italic 600 56px "Cormorant Garamond", serif';
+    ctx.fillText('Your Name Here', W / 2, y + 56);
   }
-  if (t.year) {
+  y += 74;
+
+  if (year) {
     ctx.fillStyle = '#E8C97A';
     ctx.font = 'italic 600 30px "Cormorant Garamond", serif';
-    ctx.fillText(t.year, W / 2, y + 30);
+    ctx.fillText(year, W / 2, y + 30);
     y += 40;
   }
-  if (t.school) {
+  if (school) {
     ctx.fillStyle = 'rgba(232,201,122,0.78)';
     ctx.font = '500 18px Outfit, sans-serif';
-    ctx.fillText(t.school, W / 2, y + 20);
+    ctx.fillText(school, W / 2, y + 20);
     y += 28;
   }
-  // If no text at all, return a small top margin
-  return y === topY ? 40 : y;
+  return y;
 }
 
 function pickGridCols(n) {
@@ -966,8 +979,11 @@ function drawHeroPhoto(ctx, p, x, y, w, h, opts) {
   ctx.fillRect(-w / 2 - pad, -h / 2 - pad, w + pad * 2, h + pad * 2);
   ctx.restore();
 
-  // Photo via the frame dispatcher (no shadow — halo provides it)
+  // Photo via the frame dispatcher (no shadow — halo provides it).
+  // Hero opts in to contain-fit so the whole photo is visible (no face-only zoom crop).
+  if (p && p.imgEl) p.imgEl._useContain = true;
   drawPhotoFramed(ctx, p, x, y, w, h, { cx: opts.cx, cy: opts.cy, rotation: opts.rotation, shadow: false });
+  if (p && p.imgEl) p.imgEl._useContain = false;
 
   // Faint outer gold glow stroke for extra pop
   ctx.save();
@@ -988,7 +1004,7 @@ function _photoRot(rng, maxDeg) {
 
 // ── Layout 1: Classic — hero centered top, even grid below, hero on top of grid edge ──
 // Hero rect is the area the hero photo occupies. Used to skip placing supporting tiles
-// behind the hero in free-form layouts (Scattered, Mosaic, Staircase).
+// behind the hero in free-form layouts (Scattered, Mosaic).
 function _hits(rect, x, y, w, h, pad) {
   pad = pad || 0;
   return !(x + w <= rect.left - pad || x >= rect.right + pad ||
@@ -1170,58 +1186,7 @@ function renderScattered(ctx, photos, W, H, contentTop) {
   drawHeroPhoto(ctx, photos[0], 0, 0, heroSize, heroSize, { cx: heroCx, cy: heroCy, rotation: _photoRot(rng, 3) });
 }
 
-// ── Layout 5: Film Strip — center horizontal row(s), wraps to 2 rows if >8 photos ──
-function renderFilmstrip(ctx, photos, W, H, contentTop) {
-  const seed = state.shuffledSeed ?? 12345;
-  const rng = mulberry32(seed ^ 0xF11A);
-  const supporting = photos.slice(1);
-  const innerW = W - 60;
-  const innerH = H - contentTop - 60;
-
-  const supCount = supporting.length;
-  const rowCount = supCount > 8 ? 2 : 1;
-  const perRow = Math.ceil(supCount / Math.max(1, rowCount));
-
-  const heroSize = Math.min(innerW * 0.30, innerH * 0.72);
-  // Tile size — hero must be ≥ 2.5× tile; also fit perRow tiles into one row alongside the hero
-  const gap = 10;
-  const availForTiles = innerW - heroSize - gap * 2;
-  const tilesEachSide = Math.ceil(perRow / 2);
-  const tileSize = Math.max(28, Math.min(heroSize / 2.5, (availForTiles / 2 - gap * (tilesEachSide - 1)) / Math.max(1, tilesEachSide)));
-
-  const stripCy = contentTop + innerH / 2;
-  // For 2 rows, stack one above and one below the center line
-  const rowOffsets = rowCount === 1 ? [0] : [-(tileSize + gap) / 2, (tileSize + gap) / 2];
-
-  for (let row = 0; row < rowCount; row++) {
-    const startI = row * perRow;
-    const endI = Math.min(supCount, startI + perRow);
-    const cnt = endI - startI;
-    if (cnt === 0) continue;
-    const leftCount = Math.ceil(cnt / 2);
-    const cy = stripCy + rowOffsets[row];
-    // Left side of hero
-    let lx = (W / 2) - heroSize / 2 - gap - tileSize / 2;
-    for (let i = leftCount - 1; i >= 0; i--) {
-      drawPhotoFramed(ctx, supporting[startI + i], 0, 0, tileSize, tileSize, {
-        cx: lx, cy, rotation: _photoRot(rng, 2), shadow: true,
-      });
-      lx -= (tileSize + gap);
-    }
-    // Right side
-    let rx = (W / 2) + heroSize / 2 + gap + tileSize / 2;
-    for (let i = leftCount; i < cnt; i++) {
-      drawPhotoFramed(ctx, supporting[startI + i], 0, 0, tileSize, tileSize, {
-        cx: rx, cy, rotation: _photoRot(rng, 2), shadow: true,
-      });
-      rx += (tileSize + gap);
-    }
-  }
-
-  drawHeroPhoto(ctx, photos[0], 0, 0, heroSize, heroSize, { cx: W / 2, cy: stripCy, rotation: _photoRot(rng, 1.5) });
-}
-
-// ── Layout 6: Mosaic — hero center, photos in a grid that excludes hero zone, ALL photos ──
+// ── Layout 5: Mosaic — hero center, photos in a grid that excludes hero zone, ALL photos ──
 function renderMosaic(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0xA10C);
@@ -1267,52 +1232,6 @@ function renderMosaic(ctx, photos, W, H, contentTop) {
   }
 
   drawHeroPhoto(ctx, photos[0], 0, 0, heroSize, heroSize, { cx, cy, rotation: _photoRot(rng, 1) });
-}
-
-// ── Layout 7: Staircase — diagonal stair, ALL photos (tile shrinks if many), skip hero ──
-function renderStaircase(ctx, photos, W, H, contentTop) {
-  const seed = state.shuffledSeed ?? 12345;
-  const rng = mulberry32(seed ^ 0x57A1);
-  const margin = 30;
-  const supporting = photos.slice(1);
-  const innerW = W - margin * 2;
-  const innerH = H - contentTop - 60;
-
-  const steps = supporting.length;
-  // Diagonal path length, tile size scales so all steps fit along the diagonal
-  const diagLen = Math.sqrt(innerW * innerW + innerH * innerH) * 0.85;
-  const stepDist = diagLen / Math.max(1, steps);
-  const tileSize = Math.max(30, Math.min(stepDist * 0.85, innerH / 6, innerW / 5));
-  const heroSize = Math.max(tileSize * 2.6, Math.min(innerW * 0.45, innerH * 0.45));
-
-  const startX = margin + tileSize / 2 + 10;
-  const startY = contentTop + tileSize / 2 + 6;
-  const endX = W - margin - tileSize / 2 - 10;
-  const endY = contentTop + innerH - tileSize / 2 - 6;
-
-  const heroCx = W / 2 + 8;
-  const heroCy = contentTop + innerH / 2 + 6;
-  const heroRect = _heroRect(heroCx, heroCy, heroSize, heroSize);
-
-  for (let i = 0; i < steps; i++) {
-    const t = steps === 1 ? 0.5 : i / (steps - 1);
-    let cx = startX + (endX - startX) * t;
-    let cy = startY + (endY - startY) * t;
-    const half = tileSize / 2;
-    // Skip the segment that overlaps hero by pushing tile perpendicular to diagonal
-    if (_hits(heroRect, cx - half, cy - half, tileSize, tileSize, 8)) {
-      const dx = cx - heroCx, dy = cy - heroCy;
-      const len = Math.max(1, Math.sqrt(dx * dx + dy * dy));
-      const push = heroSize / 2 + half + 12;
-      cx = heroCx + (dx / len) * push;
-      cy = heroCy + (dy / len) * push;
-    }
-    drawPhotoFramed(ctx, supporting[i], 0, 0, tileSize, tileSize, {
-      cx, cy, rotation: _photoRot(rng, 3), shadow: true,
-    });
-  }
-
-  drawHeroPhoto(ctx, photos[0], 0, 0, heroSize, heroSize, { cx: heroCx, cy: heroCy, rotation: _photoRot(rng, 2) });
 }
 
 // ── Frame dispatch ────────────────────────────────────────────
@@ -1848,18 +1767,24 @@ function drawGoldFrame(ctx, img, x, y, w, h, shadow) {
   ctx.restore();
 }
 
-// Object-fit: cover behavior. Always fills the (w x h) target completely.
-// Honors any per-photo rotation stashed on the image as img._rotDeg (set by drawPhotoFramed).
+// Object-fit: cover by default. Honors per-image flags:
+//   img._rotDeg     — user-driven 90° rotation set by drawPhotoFramed
+//   img._useContain — true to fit the entire photo inside the frame (no zoom-crop)
+// Hero photos opt in to contain-fit so faces aren't cropped when aspect ratios differ.
 function drawCover(ctx, img, x, y, w, h) {
   if (!img) return;
   const iw = img.naturalWidth || img.width || 1;
   const ih = img.naturalHeight || img.height || 1;
   const rotDeg = ((img._rotDeg || 0) % 360 + 360) % 360;
   const swap = rotDeg === 90 || rotDeg === 270;
-  // Effective natural dims after the user's 90° rotation, used to compute cover scale
   const effW = swap ? ih : iw;
   const effH = swap ? iw : ih;
-  const scale = Math.max(w / effW, h / effH);
+  // Auto-fall-back to contain when the cover scale would crop more than ~35% of the photo
+  const coverScale = Math.max(w / effW, h / effH);
+  const containScale = Math.min(w / effW, h / effH);
+  const cropRatio = coverScale / containScale; // ≥ 1 when aspect ratios diverge
+  const useContain = img._useContain === true || cropRatio > 1.55;
+  const scale = useContain ? containScale : coverScale;
   const dw = iw * scale;
   const dh = ih * scale;
   const cx = x + w / 2;
@@ -1912,11 +1837,11 @@ function renderStandMockup(bannerCanvas) {
   // Layout regions
   const margin = 30;
   const topBarH = Math.round(H * 0.015);  // slim chrome top bar
-  const baseH = Math.round(H * 0.04);     // brushed aluminum base
-  const poleW = Math.max(4, Math.round(W * 0.008));
-  const banH = Math.round(H * 0.80);
+  const banH = Math.round(H * 0.78);      // banner takes ~78% of mockup height
+  const baseH = Math.round(banH * 0.06);  // base 6% of banner height (was 4%)
+  const poleW = Math.max(5, Math.round(W * 0.010));
   const bannerL = margin;
-  const bannerR = W - margin - poleW - 6;
+  const bannerR = W - margin;             // banner extends full content width; pole sits on top of right edge
   const bannerW = bannerR - bannerL;
   const bannerT = margin + topBarH;
   const bannerB = bannerT + banH;
@@ -1981,22 +1906,21 @@ function renderStandMockup(bannerCanvas) {
   ctx.stroke();
   ctx.restore();
 
-  // 4) Pole — chrome telescoping pole on the RIGHT, slight taper wider at base
-  const poleX = bannerR + 6;
+  // 4) Pole — chrome telescoping pole, taller, centered under the right edge of banner
+  const poleX = bannerR - poleW / 2;        // centered on the banner's right edge
   const poleTop = margin + topBarH;
-  const poleBot = bannerB + baseH * 0.4;
+  const poleBot = bannerB + baseH * 0.85;   // taller — extends down into the base
   const poleH = poleBot - poleTop;
   const poleTopW = poleW;
-  const poleBotW = poleW * 1.4;
-  const poleLeft = poleX - (poleBotW - poleTopW) / 2;
+  const poleBotW = poleW * 1.5;
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(poleX, poleTop);
   ctx.lineTo(poleX + poleTopW, poleTop);
   ctx.lineTo(poleX + poleTopW + (poleBotW - poleTopW) / 2, poleBot);
-  ctx.lineTo(poleLeft, poleBot);
+  ctx.lineTo(poleX - (poleBotW - poleTopW) / 2, poleBot);
   ctx.closePath();
-  const poleGrad = ctx.createLinearGradient(poleLeft, 0, poleLeft + poleBotW, 0);
+  const poleGrad = ctx.createLinearGradient(poleX - poleBotW / 2, 0, poleX + poleBotW, 0);
   poleGrad.addColorStop(0, '#3F4654');
   poleGrad.addColorStop(0.4, '#E5E7EB');
   poleGrad.addColorStop(0.7, '#FFFFFF');
@@ -2005,39 +1929,55 @@ function renderStandMockup(bannerCanvas) {
   ctx.fill();
   // Adjustment knob halfway down — small dark ellipse
   const knobCy = poleTop + poleH * 0.5;
-  const knobRX = poleW * 1.4;
-  const knobRY = poleW * 0.7;
+  const knobRX = poleW * 1.6;
+  const knobRY = poleW * 0.8;
   ctx.fillStyle = '#374151';
   ctx.beginPath();
   ctx.ellipse(poleX + poleW / 2, knobCy, knobRX, knobRY, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
-  // 5) Base — wide brushed aluminum ellipse, centered horizontally, with shadow + highlight
-  const baseW = Math.round(bannerW * 0.65);
-  const baseCx = (bannerL + bannerR) / 2 + 6;
+  // 5) Base — brushed aluminum ellipse, 70% of banner width × 6% of banner height,
+  // stronger gradient + larger contact shadow.
+  const baseW = Math.round(bannerW * 0.70);
+  const baseCx = (bannerL + bannerR) / 2;
   const baseCy = bannerB + baseH;
 
-  // Contact shadow under base — soft blurred dark ellipse
+  // Contact shadow under base — larger, softer
   ctx.save();
-  ctx.fillStyle = 'rgba(0,0,0,0.30)';
-  if (typeof ctx.filter !== 'undefined') ctx.filter = 'blur(8px)';
+  ctx.fillStyle = 'rgba(0,0,0,0.40)';
+  if (typeof ctx.filter !== 'undefined') ctx.filter = 'blur(14px)';
   ctx.beginPath();
-  ctx.ellipse(baseCx, baseCy + baseH * 0.4, baseW / 2 + 10, baseH * 0.55, 0, 0, Math.PI * 2);
+  ctx.ellipse(baseCx + 6, baseCy + baseH * 0.6, baseW / 2 + 18, baseH * 0.85, 0, 0, Math.PI * 2);
   ctx.fill();
   if (typeof ctx.filter !== 'undefined') ctx.filter = 'none';
   ctx.restore();
 
-  // Brushed aluminum radial gradient
-  const baseGrad = ctx.createRadialGradient(baseCx - baseW * 0.1, baseCy - baseH * 0.4, 4, baseCx, baseCy, baseW / 2);
-  baseGrad.addColorStop(0, '#F3F4F6');
-  baseGrad.addColorStop(0.4, '#D1D5DB');
-  baseGrad.addColorStop(0.75, '#6B7280');
-  baseGrad.addColorStop(1, '#374151');
+  // Brushed aluminum radial gradient — stronger contrast (light to deep charcoal)
+  const baseGrad = ctx.createRadialGradient(baseCx - baseW * 0.12, baseCy - baseH * 0.5, 4, baseCx, baseCy + baseH * 0.2, baseW / 2);
+  baseGrad.addColorStop(0,    '#FFFFFF');
+  baseGrad.addColorStop(0.18, '#E5E7EB');
+  baseGrad.addColorStop(0.45, '#9CA3AF');
+  baseGrad.addColorStop(0.78, '#4B5563');
+  baseGrad.addColorStop(1,    '#1F2937');
   ctx.fillStyle = baseGrad;
   ctx.beginPath();
   ctx.ellipse(baseCx, baseCy, baseW / 2, baseH, 0, 0, Math.PI * 2);
   ctx.fill();
+  // Brushed-metal streaks: faint horizontal lines for texture
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(baseCx, baseCy, baseW / 2, baseH, 0, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 0.6;
+  for (let yy = baseCy - baseH; yy <= baseCy + baseH; yy += 2) {
+    ctx.beginPath();
+    ctx.moveTo(baseCx - baseW / 2, yy);
+    ctx.lineTo(baseCx + baseW / 2, yy);
+    ctx.stroke();
+  }
+  ctx.restore();
 
   // Bright highlight on upper-left of base
   ctx.save();
