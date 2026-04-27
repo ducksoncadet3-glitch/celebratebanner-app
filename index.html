@@ -447,17 +447,27 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
 const MAX_RENDER_IMAGES = 50;
 const MAX_UPLOAD = 50;
 
-const FRAME_OPTIONS = ['rounded', 'circle', 'polaroid', 'gold', 'hexagon', 'diamond', 'scallop', 'vintage', 'tape', 'neon'];
-const FRAME_LABELS = { rounded: 'Rounded', circle: 'Circle', polaroid: 'Polaroid', gold: 'Gold edge', hexagon: 'Hexagon', diamond: 'Diamond', scallop: 'Scallop', vintage: 'Vintage', tape: 'Washi tape', neon: 'Neon glow' };
+const FRAME_OPTIONS = [
+  'rounded', 'circle', 'polaroid', 'gold', 'hexagon',
+  'diamond', 'scallop', 'vintage', 'tape', 'neon',
+  'baroque', 'shadow-box', 'glitter', 'ribbon', 'crown',
+  'white', 'shadow', 'double-gold', 'heart', 'star'
+];
+const FRAME_LABELS = {
+  rounded: 'Rounded', circle: 'Circle', polaroid: 'Polaroid', gold: 'Gold edge', hexagon: 'Hexagon',
+  diamond: 'Diamond', scallop: 'Scallop', vintage: 'Vintage', tape: 'Washi tape', neon: 'Neon glow',
+  baroque: 'Baroque', 'shadow-box': 'Shadow box', glitter: 'Glitter', ribbon: 'Ribbon', crown: 'Crown',
+  white: 'White edge', shadow: 'Drop shadow', 'double-gold': 'Double gold', heart: 'Heart', star: 'Star'
+};
 
 const ARRANGEMENTS = [
-  { id: 'classic',   label: 'Classic',    sub: 'Hero on top, even grid below',         tier: 'standard' },
-  { id: 'polaroid',  label: 'Polaroid',   sub: 'Polaroid hero card on scattered grid', tier: 'premium' },
-  { id: 'mosaic',    label: 'Mosaic',     sub: 'Hero as the largest mosaic tile',      tier: 'premium' },
-  { id: 'spotlight', label: 'Spotlight',  sub: 'Hero center, supporting halo around',  tier: 'premium' },
-  { id: 'filmstrip', label: 'Filmstrip',  sub: 'Hero on top, supporting filmstrip',    tier: 'premium' },
-  { id: 'stack',     label: 'Stack',      sub: 'Hero on stacked supporting cards',     tier: 'premium' },
-  { id: 'strip',     label: 'Strip',      sub: 'Big hero, supporting bottom row',      tier: 'premium' },
+  { id: 'classic',   label: 'Classic',   sub: 'Hero centered top, collage grid below',                tier: 'standard' },
+  { id: 'magazine',  label: 'Magazine',  sub: 'Hero on the left, 2-column grid on the right',          tier: 'premium' },
+  { id: 'pyramid',   label: 'Pyramid',   sub: 'Hero on top, photos in widening rows below',            tier: 'premium' },
+  { id: 'scattered', label: 'Scattered', sub: 'Scrapbook feel — overlapping photos at slight angles',  tier: 'premium' },
+  { id: 'filmstrip', label: 'Film Strip',sub: 'Single horizontal row, hero slightly larger',           tier: 'premium' },
+  { id: 'mosaic',    label: 'Mosaic',    sub: 'Hero in the center, photos on all four sides',          tier: 'premium' },
+  { id: 'staircase', label: 'Staircase', sub: 'Diagonal stair pattern, top-left to bottom-right',      tier: 'premium' },
 ];
 
 const state = {
@@ -890,12 +900,12 @@ function renderToCanvas(targetCanvas, ids, premium, scale) {
 
   const contentTop = textBottomY + 24;
   switch (state.arrangement) {
-    case 'polaroid':  renderPolaroid(ctx, photos, W, H, contentTop); break;
-    case 'mosaic':    renderMosaic(ctx, photos, W, H, contentTop); break;
-    case 'spotlight': renderSpotlight(ctx, photos, W, H, contentTop); break;
+    case 'magazine':  renderMagazine(ctx, photos, W, H, contentTop); break;
+    case 'pyramid':   renderPyramid(ctx, photos, W, H, contentTop); break;
+    case 'scattered': renderScattered(ctx, photos, W, H, contentTop); break;
     case 'filmstrip': renderFilmstrip(ctx, photos, W, H, contentTop); break;
-    case 'stack':     renderStack(ctx, photos, W, H, contentTop); break;
-    case 'strip':     renderStrip(ctx, photos, W, H, contentTop); break;
+    case 'mosaic':    renderMosaic(ctx, photos, W, H, contentTop); break;
+    case 'staircase': renderStaircase(ctx, photos, W, H, contentTop); break;
     case 'classic':
     default:          renderClassic(ctx, photos, W, H, contentTop); break;
   }
@@ -945,14 +955,56 @@ function pickHeroFraction(n) {
   return 0.28;
 }
 
+// Hero-photo helper: gold halo + drop shadow + bigger emphasis. Used by every renderer.
+// Always rendered LAST so the hero floats above the collage layer.
+function drawHeroPhoto(ctx, p, x, y, w, h, opts) {
+  opts = opts || {};
+  const cx = opts.cx != null ? opts.cx : x + w / 2;
+  const cy = opts.cy != null ? opts.cy : y + h / 2;
+  const rot = opts.rotation || 0;
+  const pad = 5;
+
+  // Gold halo behind the photo (drop shadow comes from the gold rect's own shadow)
+  ctx.save();
+  ctx.translate(cx, cy);
+  if (rot) ctx.rotate(rot);
+  ctx.shadowColor = 'rgba(0,0,0,0.55)';
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetY = 6;
+  ctx.fillStyle = '#C9A84C';
+  ctx.fillRect(-w / 2 - pad, -h / 2 - pad, w + pad * 2, h + pad * 2);
+  ctx.restore();
+
+  // Photo via the frame dispatcher (no shadow — halo provides it)
+  drawPhotoFramed(ctx, p, x, y, w, h, { cx: opts.cx, cy: opts.cy, rotation: opts.rotation, shadow: false });
+
+  // Faint outer gold glow stroke for extra pop
+  ctx.save();
+  ctx.translate(cx, cy);
+  if (rot) ctx.rotate(rot);
+  ctx.strokeStyle = 'rgba(232,201,122,0.55)';
+  ctx.shadowColor = 'rgba(232,201,122,0.7)';
+  ctx.shadowBlur = 14;
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(-w / 2 - pad, -h / 2 - pad, w + pad * 2, h + pad * 2);
+  ctx.restore();
+}
+
+// Slight per-photo seeded rotation so the supporting layer feels hand-placed.
+function _photoRot(rng, maxDeg) {
+  return (rng() * 2 - 1) * maxDeg * Math.PI / 180;
+}
+
+// ── Layout 1: Classic — hero centered top, even grid below, hero on top of grid edge ──
 function renderClassic(ctx, photos, W, H, contentTop) {
+  const seed = state.shuffledSeed ?? 12345;
+  const rng = mulberry32(seed ^ 0xC1A5);
   const margin = 50;
   const innerW = W - margin * 2;
   const supporting = photos.slice(1);
   const available = H - contentTop - 60;
   const heroH = Math.round(available * pickHeroFraction(supporting.length));
 
-  // Draw supporting grid first (so hero overlaps on top)
   if (supporting.length > 0) {
     const overlap = 22;
     const gridTop = contentTop + heroH - overlap;
@@ -967,259 +1019,254 @@ function renderClassic(ctx, photos, W, H, contentTop) {
     supporting.forEach((p, i) => {
       const r = Math.floor(i / cols);
       const c = i % cols;
-      const x = margin + c * (cellW + gap);
-      const y = gridTop + r * (cellH + gap);
-      drawPhotoFramed(ctx, p, x, y, cellW, cellH, { shadow: false });
+      const cellCx = margin + c * (cellW + gap) + cellW / 2;
+      const cellCy = gridTop + r * (cellH + gap) + cellH / 2;
+      drawPhotoFramed(ctx, p, 0, 0, cellW, cellH, { cx: cellCx, cy: cellCy, rotation: _photoRot(rng, 1.5), shadow: false });
     });
   }
 
-  // Hero last — sits on top of grid edge so supporting photos peek out from behind
-  drawPhotoFramed(ctx, photos[0], margin, contentTop, innerW, heroH, { shadow: true });
+  // Hero ≥ 2.5× collage cell (ensured by full-width hero)
+  drawHeroPhoto(ctx, photos[0], margin, contentTop, innerW, heroH, { rotation: _photoRot(rng, 1.2) });
 }
 
-function renderPolaroid(ctx, photos, W, H, contentTop) {
+// ── Layout 2: Magazine — hero left, 2-column grid right ──
+function renderMagazine(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
-  const rng = mulberry32(seed ^ 0xDEAD);
+  const rng = mulberry32(seed ^ 0x4A6A);
   const margin = 40;
-  const innerW = W - margin * 2;
-  const supporting = photos.slice(1);
-
-  // Scatter supporting photos in square cells (so circles/hexes/diamonds stay proportional)
-  const gridTop = contentTop + 6;
-  const gridBottom = H - 60;
-  const gridH = gridBottom - gridTop;
-  const cols = supporting.length <= 12 ? 4 : (supporting.length <= 24 ? 5 : (supporting.length <= 40 ? 6 : 7));
-  const rows = Math.max(1, Math.ceil(supporting.length / cols));
-  const gap = supporting.length > 24 ? 8 : 14;
-  const cellW = (innerW - gap * (cols - 1)) / cols;
-  const cellH = (gridH - gap * (rows - 1)) / rows;
-  const cellSize = Math.min(cellW, cellH);  // square cells
-
-  supporting.forEach((p, i) => {
-    const r = Math.floor(i / cols);
-    const c = i % cols;
-    const cx = margin + c * (cellW + gap) + cellW / 2;
-    const cy = gridTop + r * (cellH + gap) + cellH / 2;
-    const rot = (rng() * 10 - 5) * Math.PI / 180;
-    drawPhotoFramed(ctx, p, 0, 0, cellSize, cellSize, { rotation: rot, cx, cy, shadow: true });
-  });
-
-  // Hero — premium polaroid card on top of the grid, smaller so supporting still shows around it
-  const heroW = Math.min(innerW * 0.56, 440);
-  const heroH = heroW * 1.1;
-  const heroCx = W / 2;
-  const heroCy = (contentTop + H) / 2 - 10;
-  const heroRot = (rng() * 5 - 2.5) * Math.PI / 180;
-  drawPremiumHero(ctx, photos[0], heroCx, heroCy, heroW, heroH, heroRot);
-}
-
-// Forced premium hero — polaroid card with gold inner trim + heavy shadow.
-// Overrides whatever frame the hero photo has been assigned in the palette.
-function drawPremiumHero(ctx, p, cx, cy, w, h, rotation) {
-  const pad = Math.round(Math.min(w, h) * 0.05);
-  const captionH = Math.round(h * 0.12);
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(rotation);
-  const x = -w / 2, y = -h / 2;
-
-  // White card with heavy shadow
-  ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.65)';
-  ctx.shadowBlur = 36;
-  ctx.shadowOffsetY = 18;
-  ctx.fillStyle = '#FAF8F3';
-  roundRect(ctx, x, y, w, h, 6);
-  ctx.fill();
-  ctx.restore();
-
-  // Photo
-  const ix = x + pad, iy = y + pad;
-  const iw = w - pad * 2, ih = h - pad - captionH;
-  ctx.save();
-  ctx.beginPath(); ctx.rect(ix, iy, iw, ih); ctx.clip();
-  drawCover(ctx, p.imgEl, ix, iy, iw, ih);
-  ctx.restore();
-
-  // Gold inner trim around the photo
-  ctx.save();
-  ctx.strokeStyle = '#C9A84C'; ctx.lineWidth = 2;
-  ctx.strokeRect(ix - 1, iy - 1, iw + 2, ih + 2);
-  ctx.restore();
-
-  // Subtle gold caption underline
-  ctx.save();
-  ctx.strokeStyle = 'rgba(201,168,76,0.5)'; ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(x + pad * 2, y + h - captionH / 2);
-  ctx.lineTo(x + w - pad * 2, y + h - captionH / 2);
-  ctx.stroke();
-  ctx.restore();
-
-  ctx.restore();
-}
-
-// ── Mosaic: hero is the largest tile, supporting fills around it ──
-function renderMosaic(ctx, photos, W, H, contentTop) {
-  const margin = 40;
-  const gap = 8;
-  const cols = 6, rows = 4;
   const innerW = W - margin * 2;
   const innerH = H - contentTop - 60;
-  const cellW = (innerW - gap * (cols - 1)) / cols;
-  const cellH = (innerH - gap * (rows - 1)) / rows;
   const supporting = photos.slice(1);
 
-  // Hero spans cols 0-3, rows 0-1 (large left-top tile)
-  const heroW = cellW * 4 + gap * 3;
-  const heroH = cellH * 2 + gap;
+  const heroW = innerW * 0.58;
+  const heroH = innerH;
   const heroX = margin;
   const heroY = contentTop;
 
-  // Slots = right column rows 0-1 (4 slots), then rows 2-3 full width (12 slots)
-  const slots = [];
-  for (let r = 0; r < 2; r++) {
-    for (let c = 4; c < 6; c++) {
-      slots.push({ x: margin + c * (cellW + gap), y: contentTop + r * (cellH + gap), w: cellW, h: cellH });
-    }
-  }
-  for (let r = 2; r < 4; r++) {
-    for (let c = 0; c < 6; c++) {
-      slots.push({ x: margin + c * (cellW + gap), y: contentTop + r * (cellH + gap), w: cellW, h: cellH });
-    }
+  const rightX = margin + heroW + 14;
+  const rightW = innerW - heroW - 14;
+  const cols = 2;
+  const count = Math.min(supporting.length, 12);
+  const rows = Math.max(1, Math.ceil(count / cols));
+  const gap = 8;
+  const cellW = (rightW - gap) / cols;
+  const cellH = (heroH - gap * (rows - 1)) / rows;
+
+  for (let i = 0; i < count; i++) {
+    const r = Math.floor(i / cols);
+    const c = i % cols;
+    const cellCx = rightX + c * (cellW + gap) + cellW / 2;
+    const cellCy = contentTop + r * (cellH + gap) + cellH / 2;
+    drawPhotoFramed(ctx, supporting[i], 0, 0, cellW, cellH, { cx: cellCx, cy: cellCy, rotation: _photoRot(rng, 2), shadow: false });
   }
 
-  supporting.forEach((p, i) => {
-    if (i >= slots.length) return;
-    const s = slots[i];
-    drawPhotoFramed(ctx, p, s.x, s.y, s.w, s.h, { shadow: false });
+  drawHeroPhoto(ctx, photos[0], heroX, heroY, heroW, heroH, { rotation: _photoRot(rng, 1) });
+}
+
+// ── Layout 3: Pyramid — hero top center, supporting in widening rows below ──
+function renderPyramid(ctx, photos, W, H, contentTop) {
+  const seed = state.shuffledSeed ?? 12345;
+  const rng = mulberry32(seed ^ 0x9991);
+  const margin = 40;
+  const innerW = W - margin * 2;
+  const innerH = H - contentTop - 60;
+  const supporting = photos.slice(1);
+
+  const heroSize = Math.min(innerW * 0.45, innerH * 0.40);
+  const heroX = (W - heroSize) / 2;
+  const heroY = contentTop + 8;
+
+  const pyTop = contentTop + heroSize + 22;
+  const pyBottom = H - 50;
+  const pyH = pyBottom - pyTop;
+
+  const rowCounts = [];
+  let remaining = Math.min(supporting.length, 18);
+  let rowCols = 2;
+  while (remaining > 0 && rowCounts.length < 4) {
+    const take = Math.min(rowCols, remaining);
+    rowCounts.push(take);
+    remaining -= take;
+    rowCols++;
+  }
+  if (rowCounts.length === 0) rowCounts.push(0);
+  const rowH = pyH / rowCounts.length;
+  const cellSize = Math.min(rowH * 0.85, innerW * 0.18);
+
+  let idx = 0;
+  rowCounts.forEach((count, r) => {
+    if (count === 0) return;
+    const totalW = count * cellSize + (count - 1) * 10;
+    let xCursor = (W - totalW) / 2;
+    const yTop = pyTop + r * rowH + (rowH - cellSize) / 2;
+    for (let c = 0; c < count; c++) {
+      drawPhotoFramed(ctx, supporting[idx], 0, 0, cellSize, cellSize, {
+        cx: xCursor + cellSize / 2,
+        cy: yTop + cellSize / 2,
+        rotation: _photoRot(rng, 2.5),
+        shadow: false,
+      });
+      idx++;
+      xCursor += cellSize + 10;
+    }
   });
 
-  drawPhotoFramed(ctx, photos[0], heroX, heroY, heroW, heroH, { shadow: true });
+  drawHeroPhoto(ctx, photos[0], heroX, heroY, heroSize, heroSize, { rotation: _photoRot(rng, 1.2) });
 }
 
-// ── Spotlight: hero centered, supporting in a halo ring around it ──
-function renderSpotlight(ctx, photos, W, H, contentTop) {
-  const supporting = photos.slice(1);
-  const cx = W / 2;
-  const cy = (contentTop + H - 40) / 2;
-  const heroSize = Math.min(W * 0.46, (H - contentTop - 80) * 0.55);
-
-  const n = Math.min(supporting.length, 18);
-  if (n > 0) {
-    const orbitR = heroSize * 0.62 + 110;
-    const tileSize = Math.max(70, Math.min(120, ((W - 80) - heroSize) / 3.2));
-    for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2 - Math.PI / 2;
-      const px = cx + Math.cos(a) * orbitR;
-      const py = cy + Math.sin(a) * orbitR;
-      drawPhotoFramed(ctx, supporting[i], 0, 0, tileSize, tileSize, { cx: px, cy: py, shadow: true });
-    }
-  }
-
-  drawPhotoFramed(ctx, photos[0], 0, 0, heroSize, heroSize, { cx, cy, shadow: true });
-}
-
-// ── Filmstrip: hero on top, supporting in horizontal film bands below ──
-function renderFilmstrip(ctx, photos, W, H, contentTop) {
-  const margin = 40;
-  const supporting = photos.slice(1);
-  const innerW = W - margin * 2;
-  const innerH = H - contentTop - 60;
-
-  const heroH = innerH * 0.55;
-  const heroW = innerW;
-
-  // Strips overlap upward into hero by 14px so hero visually sits over the top edge
-  const stripTop = contentTop + heroH - 14;
-  const stripBottom = H - 50;
-  const stripsArea = stripBottom - stripTop;
-  const stripCount = supporting.length <= 6 ? 1 : (supporting.length <= 14 ? 2 : 3);
-  const stripGap = 10;
-  const stripH = (stripsArea - stripGap * (stripCount - 1)) / stripCount;
-
-  for (let s = 0; s < stripCount; s++) {
-    const y = stripTop + s * (stripH + stripGap);
-    ctx.save();
-    ctx.fillStyle = '#0E1018';
-    ctx.fillRect(margin, y, innerW, stripH);
-    ctx.fillStyle = '#FAF8F3';
-    const perfH = Math.max(6, stripH * 0.10);
-    const perfW = perfH * 0.6;
-    const perfStep = perfW + 6;
-    for (let px = margin + 6; px < margin + innerW - 6; px += perfStep) {
-      ctx.fillRect(px, y + 4, perfW, perfH);
-      ctx.fillRect(px, y + stripH - perfH - 4, perfW, perfH);
-    }
-    ctx.restore();
-
-    const photosPerStrip = Math.ceil(supporting.length / stripCount);
-    const startI = s * photosPerStrip;
-    const endI = Math.min(supporting.length, startI + photosPerStrip);
-    const count = endI - startI;
-    if (count === 0) continue;
-    const photoSize = Math.max(40, stripH - perfH * 2 - 12);
-    const innerStripGap = 8;
-    const totalPhotoW = count * photoSize + (count - 1) * innerStripGap;
-    let photoX = margin + Math.max(8, (innerW - totalPhotoW) / 2);
-    const photoY = y + (stripH - photoSize) / 2;
-    for (let i = startI; i < endI; i++) {
-      drawPhotoFramed(ctx, supporting[i], photoX, photoY, photoSize, photoSize, { shadow: false });
-      photoX += photoSize + innerStripGap;
-    }
-  }
-
-  drawPhotoFramed(ctx, photos[0], margin, contentTop, heroW, heroH, { shadow: true });
-}
-
-// ── Stack: hero on top, supporting cards fanned out behind ──
-function renderStack(ctx, photos, W, H, contentTop) {
+// ── Layout 4: Scattered — scrapbook, ±5° rotations, overlapping edges ──
+function renderScattered(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
-  const rng = mulberry32(seed ^ 0xCAFE);
-  const supporting = photos.slice(1);
-  const cx = W / 2;
-  const cy = (contentTop + H - 40) / 2;
-  const cardW = Math.min(W * 0.52, (H - contentTop - 80) * 0.58);
-  const cardH = cardW * 1.10;
-
-  const visible = Math.min(supporting.length, 14);
-  for (let i = 0; i < visible; i++) {
-    const angle = (rng() * 70 - 35) * Math.PI / 180;
-    const offX = (rng() * 90 - 45);
-    const offY = (rng() * 60 - 30);
-    drawPhotoFramed(ctx, supporting[i], 0, 0, cardW, cardH, { cx: cx + offX, cy: cy + offY, rotation: angle, shadow: true });
-  }
-
-  drawPhotoFramed(ctx, photos[0], 0, 0, cardW, cardH, { cx, cy, shadow: true });
-}
-
-// ── Strip: big hero takes top ~70%, supporting in single bottom row ──
-function renderStrip(ctx, photos, W, H, contentTop) {
-  const margin = 40;
+  const rng = mulberry32(seed ^ 0xBEEF);
+  const margin = 30;
   const supporting = photos.slice(1);
   const innerW = W - margin * 2;
   const innerH = H - contentTop - 60;
 
-  const heroH = innerH * 0.72;
-  const heroW = innerW;
+  // Hero size — large enough to be ≥ 2.5× a collage tile
+  const heroSize = Math.min(W * 0.42, innerH * 0.45);
+  const tileSize = heroSize / 2.7;
 
-  const stripTop = contentTop + heroH - 18;
-  const stripH = innerH - heroH + 18;
-  if (supporting.length > 0) {
-    const count = Math.min(supporting.length, 12);
-    const gap = 8;
-    const maxPhotoW = (innerW - gap * (count - 1)) / count;
-    const photoSize = Math.min(maxPhotoW, stripH * 0.92);
-    const totalW = count * photoSize + (count - 1) * gap;
-    let x = margin + (innerW - totalW) / 2;
-    const y = stripTop + (stripH - photoSize) / 2;
-    for (let i = 0; i < count; i++) {
-      drawPhotoFramed(ctx, supporting[i], x, y, photoSize, photoSize, { shadow: true });
-      x += photoSize + gap;
-    }
+  const cols = 4, rows = 4;
+  const colW = innerW / cols;
+  const rowH = innerH / rows;
+  const count = Math.min(supporting.length, cols * rows);
+
+  for (let i = 0; i < count; i++) {
+    const c = i % cols;
+    const r = Math.floor(i / cols);
+    const baseCx = margin + c * colW + colW / 2;
+    const baseCy = contentTop + r * rowH + rowH / 2;
+    const jitterX = (rng() * 36 - 18);
+    const jitterY = (rng() * 36 - 18);
+    const rot = (rng() * 10 - 5) * Math.PI / 180;
+    drawPhotoFramed(ctx, supporting[i], 0, 0, tileSize, tileSize, {
+      cx: baseCx + jitterX, cy: baseCy + jitterY, rotation: rot, shadow: true,
+    });
   }
 
-  drawPhotoFramed(ctx, photos[0], margin, contentTop, heroW, heroH, { shadow: true });
+  const heroCx = W / 2;
+  const heroCy = contentTop + innerH / 2;
+  drawHeroPhoto(ctx, photos[0], 0, 0, heroSize, heroSize, { cx: heroCx, cy: heroCy, rotation: _photoRot(rng, 3) });
+}
+
+// ── Layout 5: Film Strip — single horizontal row, hero slightly larger ──
+function renderFilmstrip(ctx, photos, W, H, contentTop) {
+  const seed = state.shuffledSeed ?? 12345;
+  const rng = mulberry32(seed ^ 0xF11A);
+  const margin = 30;
+  const supporting = photos.slice(1);
+  const innerW = W - margin * 2;
+  const innerH = H - contentTop - 60;
+
+  // Lay everything (supporting + hero) on one center horizontal row, hero in the middle.
+  const stripCy = contentTop + innerH / 2;
+  const total = 1 + Math.min(supporting.length, 8); // cap so they fit
+  const supCount = total - 1;
+  // Tile size — hero is 2.5× this
+  const reservedHeroW = innerW * 0.30;
+  const heroSize = Math.min(reservedHeroW, innerH * 0.72);
+  const tileSize = Math.min(heroSize / 2.5, (innerW - heroSize - 10 * supCount) / Math.max(1, supCount));
+
+  // Half on the left of hero, half on the right
+  const leftCount = Math.ceil(supCount / 2);
+  const rightCount = supCount - leftCount;
+  const gap = 10;
+
+  // Left column of tiles
+  let lx = (W / 2) - heroSize / 2 - gap - tileSize / 2;
+  for (let i = leftCount - 1; i >= 0; i--) {
+    drawPhotoFramed(ctx, supporting[i], 0, 0, tileSize, tileSize, {
+      cx: lx, cy: stripCy, rotation: _photoRot(rng, 2), shadow: true,
+    });
+    lx -= (tileSize + gap);
+  }
+  // Right tiles
+  let rx = (W / 2) + heroSize / 2 + gap + tileSize / 2;
+  for (let i = 0; i < rightCount; i++) {
+    drawPhotoFramed(ctx, supporting[leftCount + i], 0, 0, tileSize, tileSize, {
+      cx: rx, cy: stripCy, rotation: _photoRot(rng, 2), shadow: true,
+    });
+    rx += (tileSize + gap);
+  }
+
+  drawHeroPhoto(ctx, photos[0], 0, 0, heroSize, heroSize, { cx: W / 2, cy: stripCy, rotation: _photoRot(rng, 1.5) });
+}
+
+// ── Layout 6: Mosaic — hero in center, photos on all four sides ──
+function renderMosaic(ctx, photos, W, H, contentTop) {
+  const seed = state.shuffledSeed ?? 12345;
+  const rng = mulberry32(seed ^ 0xA10C);
+  const margin = 30;
+  const supporting = photos.slice(1);
+  const innerW = W - margin * 2;
+  const innerH = H - contentTop - 60;
+
+  const cx = W / 2;
+  const cy = contentTop + innerH / 2;
+  const heroSize = Math.min(innerW * 0.42, innerH * 0.42);
+  const tileSize = heroSize / 2.7;
+  const ringPad = 14;
+
+  // Top row, bottom row: span across width above/below hero
+  const topY = cy - heroSize / 2 - ringPad - tileSize / 2;
+  const botY = cy + heroSize / 2 + ringPad + tileSize / 2;
+  const topBotCount = 5;
+  const tbStep = (innerW - tileSize) / (topBotCount - 1);
+  // Left column, right column: between top and bottom rows, alongside hero
+  const sideX = cx - heroSize / 2 - ringPad - tileSize / 2;
+  const sideXR = cx + heroSize / 2 + ringPad + tileSize / 2;
+  const sideCount = 3;
+  const sideStep = (heroSize + ringPad * 2) / (sideCount + 1);
+
+  const slots = [];
+  for (let i = 0; i < topBotCount; i++) slots.push({ cx: margin + tileSize / 2 + i * tbStep, cy: topY });
+  for (let i = 0; i < sideCount; i++) slots.push({ cx: sideX, cy: cy - heroSize / 2 - ringPad + (i + 1) * sideStep });
+  for (let i = 0; i < sideCount; i++) slots.push({ cx: sideXR, cy: cy - heroSize / 2 - ringPad + (i + 1) * sideStep });
+  for (let i = 0; i < topBotCount; i++) slots.push({ cx: margin + tileSize / 2 + i * tbStep, cy: botY });
+
+  const cap = Math.min(supporting.length, slots.length);
+  for (let i = 0; i < cap; i++) {
+    drawPhotoFramed(ctx, supporting[i], 0, 0, tileSize, tileSize, {
+      cx: slots[i].cx, cy: slots[i].cy, rotation: _photoRot(rng, 2), shadow: true,
+    });
+  }
+
+  drawHeroPhoto(ctx, photos[0], 0, 0, heroSize, heroSize, { cx, cy, rotation: _photoRot(rng, 1) });
+}
+
+// ── Layout 7: Staircase — diagonal stair from top-left to bottom-right ──
+function renderStaircase(ctx, photos, W, H, contentTop) {
+  const seed = state.shuffledSeed ?? 12345;
+  const rng = mulberry32(seed ^ 0x57A1);
+  const margin = 30;
+  const supporting = photos.slice(1);
+  const innerW = W - margin * 2;
+  const innerH = H - contentTop - 60;
+
+  const steps = Math.min(supporting.length, 8);
+  const tileSize = Math.min(innerW / 5, innerH / 6);
+  const heroSize = tileSize * 2.6; // ≥ 2.5×
+
+  // Diagonal path from top-left to bottom-right
+  const startX = margin + tileSize / 2 + 10;
+  const startY = contentTop + tileSize / 2 + 6;
+  const endX = W - margin - tileSize / 2 - 10;
+  const endY = contentTop + innerH - tileSize / 2 - 6;
+
+  for (let i = 0; i < steps; i++) {
+    const t = steps === 1 ? 0.5 : i / (steps - 1);
+    const cx = startX + (endX - startX) * t;
+    const cy = startY + (endY - startY) * t;
+    drawPhotoFramed(ctx, supporting[i], 0, 0, tileSize, tileSize, {
+      cx, cy, rotation: _photoRot(rng, 3), shadow: true,
+    });
+  }
+
+  // Hero centered, slightly below visual center, large and on top
+  const heroCx = W / 2 + 8;
+  const heroCy = contentTop + innerH / 2 + 6;
+  drawHeroPhoto(ctx, photos[0], 0, 0, heroSize, heroSize, { cx: heroCx, cy: heroCy, rotation: _photoRot(rng, 2) });
 }
 
 // ── Frame dispatch ────────────────────────────────────────────
@@ -1241,16 +1288,26 @@ function drawPhotoFramed(ctx, p, x, y, w, h, opts) {
     x = -w / 2; y = -h / 2;
   }
 
-  if (frame === 'polaroid')       drawPolaroidFrame(ctx, p.imgEl, x, y, w, h, shadow);
-  else if (frame === 'circle')    drawCircleFrame(ctx, p.imgEl, x, y, w, h, shadow);
-  else if (frame === 'gold')      drawGoldFrame(ctx, p.imgEl, x, y, w, h, shadow);
-  else if (frame === 'hexagon')   drawHexagonFrame(ctx, p.imgEl, x, y, w, h, shadow);
-  else if (frame === 'diamond')   drawDiamondFrame(ctx, p.imgEl, x, y, w, h, shadow);
-  else if (frame === 'scallop')   drawScallopFrame(ctx, p.imgEl, x, y, w, h, shadow);
-  else if (frame === 'vintage')   drawVintageFrame(ctx, p.imgEl, x, y, w, h, shadow);
-  else if (frame === 'tape')      drawTapeFrame(ctx, p.imgEl, x, y, w, h, shadow);
-  else if (frame === 'neon')      drawNeonFrame(ctx, p.imgEl, x, y, w, h, shadow);
-  else                            drawRoundedFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  if (frame === 'polaroid')         drawPolaroidFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'circle')      drawCircleFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'gold')        drawGoldFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'hexagon')     drawHexagonFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'diamond')     drawDiamondFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'scallop')     drawScallopFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'vintage')     drawVintageFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'tape')        drawTapeFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'neon')        drawNeonFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'baroque')     drawBaroqueFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'shadow-box')  drawShadowBoxFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'glitter')     drawGlitterFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'ribbon')      drawRibbonFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'crown')       drawCrownFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'white')       drawWhiteFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'shadow')      drawShadowFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'double-gold') drawDoubleGoldFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'heart')       drawHeartFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'star')        drawStarFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else                              drawRoundedFrame(ctx, p.imgEl, x, y, w, h, shadow);
 
   ctx.restore();
 }
@@ -1429,6 +1486,260 @@ function drawNeonFrame(ctx, img, x, y, w, h, shadow) {
   ctx.shadowBlur = 8;
   ctx.lineWidth = 1.5;
   roundRect(ctx, x, y, w, h, 8); ctx.stroke();
+  ctx.restore();
+}
+
+function drawBaroqueFrame(ctx, img, x, y, w, h, shadow) {
+  if (shadow) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 16; ctx.shadowOffsetY = 7;
+    ctx.fillStyle = '#000'; ctx.fillRect(x, y, w, h);
+    ctx.restore();
+  }
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  drawCover(ctx, img, x, y, w, h);
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = '#C9A84C'; ctx.lineWidth = 4;
+  ctx.strokeRect(x + 2, y + 2, w - 4, h - 4);
+  ctx.strokeStyle = '#E8C97A'; ctx.lineWidth = 1.5;
+  ctx.strokeRect(x + 9, y + 9, w - 18, h - 18);
+  // Corner diamond accents
+  ctx.fillStyle = '#E8C97A';
+  const ds = Math.max(7, Math.min(w, h) * 0.04);
+  [[x + 9, y + 9], [x + w - 9, y + 9], [x + 9, y + h - 9], [x + w - 9, y + h - 9]].forEach(function(pt) {
+    ctx.save(); ctx.translate(pt[0], pt[1]); ctx.rotate(Math.PI / 4);
+    ctx.fillRect(-ds / 2, -ds / 2, ds, ds);
+    ctx.restore();
+  });
+  ctx.restore();
+}
+
+function drawShadowBoxFrame(ctx, img, x, y, w, h, shadow) {
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.55)';
+  ctx.shadowBlur = 26; ctx.shadowOffsetY = 14;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(x, y, w, h);
+  ctx.restore();
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  drawCover(ctx, img, x, y, w, h);
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = '#C9A84C'; ctx.lineWidth = 1.5;
+  ctx.strokeRect(x + 6, y + 6, w - 12, h - 12);
+  ctx.restore();
+}
+
+function drawGlitterFrame(ctx, img, x, y, w, h, shadow) {
+  if (shadow) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 16; ctx.shadowOffsetY = 7;
+    ctx.fillStyle = '#000'; ctx.fillRect(x, y, w, h);
+    ctx.restore();
+  }
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  drawCover(ctx, img, x, y, w, h);
+  ctx.restore();
+  // Glitter dots around perimeter (deterministic-ish via fixed step)
+  ctx.save();
+  const dotR = Math.max(1.6, Math.min(w, h) * 0.012);
+  const step = dotR * 4;
+  ctx.fillStyle = '#E8C97A';
+  ctx.shadowColor = 'rgba(232,201,122,0.7)';
+  ctx.shadowBlur = 6;
+  for (let px = x; px <= x + w + 0.1; px += step) {
+    ctx.beginPath(); ctx.arc(px, y, dotR, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(px, y + h, dotR, 0, Math.PI * 2); ctx.fill();
+  }
+  for (let py = y + step; py <= y + h - step + 0.1; py += step) {
+    ctx.beginPath(); ctx.arc(x, py, dotR, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + w, py, dotR, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawRibbonFrame(ctx, img, x, y, w, h, shadow) {
+  if (shadow) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.40)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 6;
+    ctx.fillStyle = '#000'; ctx.fillRect(x, y, w, h);
+    ctx.restore();
+  }
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  drawCover(ctx, img, x, y, w, h);
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = '#C9A84C'; ctx.lineWidth = 3;
+  ctx.strokeRect(x, y, w, h);
+  ctx.restore();
+  // Bow rosettes at top corners
+  const bowR = Math.max(8, Math.min(w, h) * 0.05);
+  ctx.save();
+  ctx.fillStyle = '#C9A84C';
+  [[x, y], [x + w, y]].forEach(function(pt) {
+    const cx = pt[0], cy = pt[1];
+    ctx.beginPath(); ctx.ellipse(cx - bowR * 0.4, cy, bowR * 0.5, bowR * 0.32, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx + bowR * 0.4, cy, bowR * 0.5, bowR * 0.32, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, bowR * 0.25, 0, Math.PI * 2); ctx.fill();
+  });
+  ctx.restore();
+}
+
+function drawCrownFrame(ctx, img, x, y, w, h, shadow) {
+  if (shadow) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.40)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 6;
+    ctx.fillStyle = '#000'; ctx.fillRect(x, y, w, h);
+    ctx.restore();
+  }
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  drawCover(ctx, img, x, y, w, h);
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = '#C9A84C'; ctx.lineWidth = 3;
+  ctx.strokeRect(x, y, w, h);
+  ctx.restore();
+  // Crown above top center
+  const cw = Math.max(22, Math.min(w, h) * 0.14);
+  const ch = cw * 0.7;
+  const ccx = x + w / 2 - cw / 2;
+  const ccy = y - ch - 4;
+  ctx.save();
+  ctx.fillStyle = '#C9A84C';
+  ctx.beginPath();
+  ctx.moveTo(ccx, ccy + ch);
+  ctx.lineTo(ccx + cw, ccy + ch);
+  ctx.lineTo(ccx + cw - cw * 0.15, ccy + ch * 0.42);
+  ctx.lineTo(ccx + cw * 0.15, ccy + ch * 0.42);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(ccx + cw * 0.15, ccy + ch * 0.42);
+  ctx.lineTo(ccx + cw * 0.30, ccy);
+  ctx.lineTo(ccx + cw * 0.50, ccy + ch * 0.42);
+  ctx.lineTo(ccx + cw * 0.70, ccy);
+  ctx.lineTo(ccx + cw * 0.85, ccy + ch * 0.42);
+  ctx.fill();
+  ctx.fillStyle = '#FAF8F3';
+  [0.30, 0.50, 0.70].forEach(function(fx) {
+    ctx.beginPath(); ctx.arc(ccx + cw * fx, ccy + ch * 0.06, 1.8, 0, Math.PI * 2); ctx.fill();
+  });
+  ctx.restore();
+}
+
+function drawWhiteFrame(ctx, img, x, y, w, h, shadow) {
+  if (shadow) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.40)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 6;
+    ctx.fillStyle = '#FAF8F3'; ctx.fillRect(x, y, w, h);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = '#FAF8F3'; ctx.fillRect(x, y, w, h);
+  }
+  const pad = 3;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x + pad, y + pad, w - pad * 2, h - pad * 2); ctx.clip();
+  drawCover(ctx, img, x + pad, y + pad, w - pad * 2, h - pad * 2);
+  ctx.restore();
+}
+
+function drawShadowFrame(ctx, img, x, y, w, h, shadow) {
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 12;
+  ctx.fillStyle = '#000'; ctx.fillRect(x, y, w, h);
+  ctx.restore();
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  drawCover(ctx, img, x, y, w, h);
+  ctx.restore();
+}
+
+function drawDoubleGoldFrame(ctx, img, x, y, w, h, shadow) {
+  if (shadow) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.40)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 6;
+    ctx.fillStyle = '#000'; ctx.fillRect(x, y, w, h);
+    ctx.restore();
+  }
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  drawCover(ctx, img, x, y, w, h);
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = '#C9A84C'; ctx.lineWidth = 2;
+  ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+  ctx.strokeRect(x + 6, y + 6, w - 12, h - 12);
+  ctx.restore();
+}
+
+function heartPath(ctx, x, y, w, h) {
+  const cx = x + w / 2, cy = y + h / 2;
+  const s = Math.min(w, h) * 0.5;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + s * 0.65);
+  ctx.bezierCurveTo(cx - s * 1.0, cy + s * 0.10, cx - s * 0.7, cy - s * 0.85, cx, cy - s * 0.25);
+  ctx.bezierCurveTo(cx + s * 0.7, cy - s * 0.85, cx + s * 1.0, cy + s * 0.10, cx, cy + s * 0.65);
+  ctx.closePath();
+}
+
+function drawHeartFrame(ctx, img, x, y, w, h, shadow) {
+  if (shadow) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8;
+    ctx.fillStyle = '#000';
+    heartPath(ctx, x, y, w, h); ctx.fill();
+    ctx.restore();
+  }
+  ctx.save();
+  heartPath(ctx, x, y, w, h); ctx.clip();
+  const size = Math.min(w, h);
+  const cx = x + w / 2, cy = y + h / 2;
+  drawCover(ctx, img, cx - size / 2, cy - size / 2, size, size);
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = 'rgba(201,168,76,0.85)'; ctx.lineWidth = 1.5;
+  heartPath(ctx, x, y, w, h); ctx.stroke();
+  ctx.restore();
+}
+
+function starPath(ctx, x, y, w, h) {
+  const cx = x + w / 2, cy = y + h / 2;
+  const outer = Math.min(w, h) / 2;
+  const inner = outer * 0.45;
+  const points = 5;
+  ctx.beginPath();
+  for (let i = 0; i < points * 2; i++) {
+    const a = (i / (points * 2)) * Math.PI * 2 - Math.PI / 2;
+    const r = i % 2 === 0 ? outer : inner;
+    const px = cx + Math.cos(a) * r;
+    const py = cy + Math.sin(a) * r;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+}
+
+function drawStarFrame(ctx, img, x, y, w, h, shadow) {
+  if (shadow) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 16; ctx.shadowOffsetY = 7;
+    ctx.fillStyle = '#000';
+    starPath(ctx, x, y, w, h); ctx.fill();
+    ctx.restore();
+  }
+  ctx.save();
+  starPath(ctx, x, y, w, h); ctx.clip();
+  const size = Math.min(w, h);
+  const cx = x + w / 2, cy = y + h / 2;
+  drawCover(ctx, img, cx - size / 2, cy - size / 2, size, size);
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = 'rgba(201,168,76,0.85)'; ctx.lineWidth = 1.5;
+  starPath(ctx, x, y, w, h); ctx.stroke();
   ctx.restore();
 }
 
