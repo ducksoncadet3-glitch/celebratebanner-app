@@ -117,17 +117,19 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
 
 .gen-btn-wrap { text-align: center; margin: 1.5rem 0; }
 
-/* Mode toggle */
-.mode-toggle { display: inline-flex; background: var(--white); border: 1px solid var(--border2); border-radius: 999px; padding: 4px; margin-bottom: 1.25rem; box-shadow: var(--shadow-sm); }
-.mode-opt { padding: 9px 22px; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; border-radius: 999px; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
-.mode-opt.active { background: linear-gradient(135deg, var(--obsidian), var(--obsidian3)); color: var(--gold2); }
-.mode-opt .price-tag { font-size: 11px; padding: 2px 7px; border-radius: 10px; background: rgba(201,168,76,0.18); color: var(--gold2); }
-.mode-opt:not(.active) .price-tag { background: rgba(201,168,76,0.15); color: var(--gold-dark); }
-
 .upsell-card { background: linear-gradient(135deg, rgba(201,168,76,0.1), rgba(232,201,122,0.04)); border: 1px solid rgba(201,168,76,0.3); border-radius: var(--r2); padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .upsell-info { flex: 1; min-width: 220px; }
 .upsell-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 700; margin-bottom: 4px; }
 .upsell-sub { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+/* Arrangement grid */
+.arr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+.arr-opt { background: var(--white); border: 1.5px solid var(--border2); border-radius: var(--r2); padding: 12px 14px; cursor: pointer; transition: all 0.18s; display: flex; flex-direction: column; gap: 4px; }
+.arr-opt:hover { border-color: rgba(201,168,76,0.45); background: rgba(201,168,76,0.04); }
+.arr-opt.active { border-color: var(--gold); background: linear-gradient(135deg, rgba(201,168,76,0.12), rgba(232,201,122,0.05)); box-shadow: 0 2px 10px rgba(201,168,76,0.18); }
+.arr-opt-title { font-size: 14px; font-weight: 700; color: var(--obsidian); display: flex; align-items: center; gap: 6px; }
+.arr-opt-sub { font-size: 11px; color: var(--muted); line-height: 1.4; }
+.arr-opt .price-tag { font-size: 10px; padding: 2px 6px; border-radius: 10px; background: rgba(201,168,76,0.15); color: var(--gold-dark); font-weight: 700; margin-left: auto; }
 
 /* Delivery */
 .delivery-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 1.5rem; }
@@ -315,7 +317,7 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
   <section class="page" id="pg-3">
     <div class="sec-eyebrow">Step 3 of 4</div>
     <h1 class="sec-title">Preview your banner</h1>
-    <p class="sec-sub">When you're ready, generate a preview. You can switch between Standard and Premium layouts.</p>
+    <p class="sec-sub">Generate your preview, then pick from 7 arrangements. Classic is included; premium arrangements give a layered, hero-on-top look (+$9.99).</p>
 
     <div class="preview-frame">
       <div class="preview-label">
@@ -373,14 +375,11 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
     <div id="post-preview" style="display:none;">
       <div class="upsell-card">
         <div class="upsell-info">
-          <div class="upsell-title">Upgrade to Premium Layout</div>
-          <div class="upsell-sub">Larger hero, gentle rotations, drop shadows, layered composition. +$9.99 one-time.</div>
-        </div>
-        <div class="mode-toggle" id="mode-toggle">
-          <div class="mode-opt active" data-mode="standard" onclick="setPreviewMode('standard')">Standard</div>
-          <div class="mode-opt" data-mode="premium" onclick="setPreviewMode('premium')">Premium <span class="price-tag">+$9.99</span></div>
+          <div class="upsell-title">Pick your arrangement</div>
+          <div class="upsell-sub">Classic is included. Premium arrangements (Polaroid, Mosaic, Spotlight, Filmstrip, Stack, Strip) unlock layered composition + HD download for +$9.99.</div>
         </div>
       </div>
+      <div class="arr-grid" id="arr-grid"></div>
 
       <div class="btn-group">
         <button class="btn btn-outline" onclick="goto(2)">← Edit Design</button>
@@ -448,8 +447,18 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
 const MAX_RENDER_IMAGES = 50;
 const MAX_UPLOAD = 50;
 
-const FRAME_OPTIONS = ['rounded', 'circle', 'polaroid', 'gold', 'hexagon', 'arch'];
-const FRAME_LABELS = { rounded: 'Rounded', circle: 'Circle', polaroid: 'Polaroid', gold: 'Gold edge', hexagon: 'Hexagon', arch: 'Arch' };
+const FRAME_OPTIONS = ['rounded', 'circle', 'polaroid', 'gold', 'hexagon', 'diamond', 'scallop', 'vintage', 'tape', 'neon'];
+const FRAME_LABELS = { rounded: 'Rounded', circle: 'Circle', polaroid: 'Polaroid', gold: 'Gold edge', hexagon: 'Hexagon', diamond: 'Diamond', scallop: 'Scallop', vintage: 'Vintage', tape: 'Washi tape', neon: 'Neon glow' };
+
+const ARRANGEMENTS = [
+  { id: 'classic',   label: 'Classic',    sub: 'Hero on top, even grid below',         tier: 'standard' },
+  { id: 'polaroid',  label: 'Polaroid',   sub: 'Polaroid hero card on scattered grid', tier: 'premium' },
+  { id: 'mosaic',    label: 'Mosaic',     sub: 'Hero as the largest mosaic tile',      tier: 'premium' },
+  { id: 'spotlight', label: 'Spotlight',  sub: 'Hero center, supporting halo around',  tier: 'premium' },
+  { id: 'filmstrip', label: 'Filmstrip',  sub: 'Hero on top, supporting filmstrip',    tier: 'premium' },
+  { id: 'stack',     label: 'Stack',      sub: 'Hero on stacked supporting cards',     tier: 'premium' },
+  { id: 'strip',     label: 'Strip',      sub: 'Big hero, supporting bottom row',      tier: 'premium' },
+];
 
 const state = {
   appName: "CelebrateBanner",
@@ -461,6 +470,7 @@ const state = {
   activeFrame: 'rounded',  // currently selected palette frame
   bannerText: { name: '', year: '', school: '' },
   isPremium: false,
+  arrangement: 'classic',
   previewGenerated: false,
   selectedPreviewMode: "standard",
   previewCacheKey: "",
@@ -509,7 +519,7 @@ function computeCacheKey() {
   return djb2([
     state.heroImage || '',
     state.shuffledSeed ?? 'none',
-    state.isPremium ? 'P' : 'S',
+    state.arrangement,
     frameSig,
     t.name + '|' + t.year + '|' + t.school,
   ].join('|'));
@@ -764,6 +774,17 @@ function updateText() {
 // ─────────────────────────────────────────────────────────────
 // Step 3: Preview
 // ─────────────────────────────────────────────────────────────
+function renderArrangementGrid() {
+  const grid = document.getElementById('arr-grid');
+  if (!grid) return;
+  grid.innerHTML = ARRANGEMENTS.map(a => `
+    <div class="arr-opt${state.arrangement === a.id ? ' active' : ''}" data-arr="${a.id}" onclick="setArrangement('${a.id}')">
+      <div class="arr-opt-title">${a.label}${a.tier === 'premium' ? '<span class="price-tag">+$9.99</span>' : '<span class="price-tag" style="background:rgba(90,143,106,0.18);color:#3d6e4e;">Included</span>'}</div>
+      <div class="arr-opt-sub">${a.sub}</div>
+    </div>
+  `).join('');
+}
+
 function refreshPreviewUI() {
   const post = document.getElementById('post-preview');
   const pre = document.getElementById('pre-preview-actions');
@@ -779,12 +800,13 @@ function refreshPreviewUI() {
     empty.style.display = 'none';
     canvas.style.display = 'block';
     genBtn.style.display = 'none';
+    renderArrangementGrid();
     if (stand) stand.style.display = 'block';
     if (dlMain) dlMain.style.display = 'inline-flex';
     const hd = document.getElementById('download-hd-btn');
     if (hd) {
       hd.style.opacity = state.isPremium ? '1' : '0.45';
-      hd.title = state.isPremium ? 'Download HD (2400×3600)' : 'Toggle Premium above to unlock HD';
+      hd.title = state.isPremium ? 'Download HD (2400×3600)' : 'Pick a premium arrangement to unlock HD';
     }
   } else {
     post.style.display = 'none';
@@ -819,20 +841,23 @@ function generatePreview(force) {
     state.previewGenerated = true;
     state.previewCacheKey = newKey;
     document.getElementById('preview-spec-text').textContent =
-      `Cache: ${newKey} · ${ids.length} photos · ${state.isPremium ? 'Premium' : 'Standard'}`;
+      `Cache: ${newKey} · ${ids.length} photos · ${state.arrangement}${state.isPremium ? ' (Premium)' : ''}`;
     refreshPreviewUI();
     toast('Banner ready');
   }, 60);
 }
 
-function setPreviewMode(mode) {
-  if (state.selectedPreviewMode === mode) return;
-  state.selectedPreviewMode = mode;
-  state.isPremium = (mode === 'premium');
-  document.querySelectorAll('.mode-opt').forEach(el => {
-    el.classList.toggle('active', el.dataset.mode === mode);
+function setArrangement(id) {
+  if (state.arrangement === id) return;
+  const a = ARRANGEMENTS.find(x => x.id === id);
+  if (!a) return;
+  state.arrangement = id;
+  state.isPremium = (a.tier === 'premium');
+  state.selectedPreviewMode = state.isPremium ? 'premium' : 'standard';
+  document.querySelectorAll('.arr-opt').forEach(el => {
+    el.classList.toggle('active', el.dataset.arr === id);
   });
-  // Re-render in place
+  refreshSummary();
   generatePreview(true);
 }
 
@@ -864,8 +889,16 @@ function renderToCanvas(targetCanvas, ids, premium, scale) {
   if (photos.length === 0) return;
 
   const contentTop = textBottomY + 24;
-  if (premium) renderPremium(ctx, photos, W, H, contentTop);
-  else renderStandard(ctx, photos, W, H, contentTop);
+  switch (state.arrangement) {
+    case 'polaroid':  renderPolaroid(ctx, photos, W, H, contentTop); break;
+    case 'mosaic':    renderMosaic(ctx, photos, W, H, contentTop); break;
+    case 'spotlight': renderSpotlight(ctx, photos, W, H, contentTop); break;
+    case 'filmstrip': renderFilmstrip(ctx, photos, W, H, contentTop); break;
+    case 'stack':     renderStack(ctx, photos, W, H, contentTop); break;
+    case 'strip':     renderStrip(ctx, photos, W, H, contentTop); break;
+    case 'classic':
+    default:          renderClassic(ctx, photos, W, H, contentTop); break;
+  }
 }
 
 function renderBannerText(ctx, W, topY) {
@@ -912,43 +945,46 @@ function pickHeroFraction(n) {
   return 0.28;
 }
 
-function renderStandard(ctx, photos, W, H, contentTop) {
+function renderClassic(ctx, photos, W, H, contentTop) {
   const margin = 50;
   const innerW = W - margin * 2;
   const supporting = photos.slice(1);
   const available = H - contentTop - 60;
   const heroH = Math.round(available * pickHeroFraction(supporting.length));
 
-  drawPhotoFramed(ctx, photos[0], margin, contentTop, innerW, heroH, { shadow: false });
+  // Draw supporting grid first (so hero overlaps on top)
+  if (supporting.length > 0) {
+    const overlap = 22;
+    const gridTop = contentTop + heroH - overlap;
+    const gridBottom = H - 50;
+    const gridH = gridBottom - gridTop;
+    const cols = pickGridCols(supporting.length);
+    const rows = Math.ceil(supporting.length / cols);
+    const gap = supporting.length > 24 ? 6 : (supporting.length > 12 ? 8 : 12);
+    const cellW = (innerW - gap * (cols - 1)) / cols;
+    const cellH = (gridH - gap * (rows - 1)) / rows;
 
-  if (supporting.length === 0) return;
+    supporting.forEach((p, i) => {
+      const r = Math.floor(i / cols);
+      const c = i % cols;
+      const x = margin + c * (cellW + gap);
+      const y = gridTop + r * (cellH + gap);
+      drawPhotoFramed(ctx, p, x, y, cellW, cellH, { shadow: false });
+    });
+  }
 
-  const gridTop = contentTop + heroH + 20;
-  const gridBottom = H - 50;
-  const gridH = gridBottom - gridTop;
-  const cols = pickGridCols(supporting.length);
-  const rows = Math.ceil(supporting.length / cols);
-  const gap = supporting.length > 24 ? 6 : (supporting.length > 12 ? 8 : 12);
-  const cellW = (innerW - gap * (cols - 1)) / cols;
-  const cellH = (gridH - gap * (rows - 1)) / rows;
-
-  supporting.forEach((p, i) => {
-    const r = Math.floor(i / cols);
-    const c = i % cols;
-    const x = margin + c * (cellW + gap);
-    const y = gridTop + r * (cellH + gap);
-    drawPhotoFramed(ctx, p, x, y, cellW, cellH, { shadow: false });
-  });
+  // Hero last — sits on top of grid edge so supporting photos peek out from behind
+  drawPhotoFramed(ctx, photos[0], margin, contentTop, innerW, heroH, { shadow: true });
 }
 
-function renderPremium(ctx, photos, W, H, contentTop) {
+function renderPolaroid(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0xDEAD);
   const margin = 40;
   const innerW = W - margin * 2;
   const supporting = photos.slice(1);
 
-  // Scatter supporting photos in square cells (so circles/hexes/arches stay proportional)
+  // Scatter supporting photos in square cells (so circles/hexes/diamonds stay proportional)
   const gridTop = contentTop + 6;
   const gridBottom = H - 60;
   const gridH = gridBottom - gridTop;
@@ -1023,6 +1059,169 @@ function drawPremiumHero(ctx, p, cx, cy, w, h, rotation) {
   ctx.restore();
 }
 
+// ── Mosaic: hero is the largest tile, supporting fills around it ──
+function renderMosaic(ctx, photos, W, H, contentTop) {
+  const margin = 40;
+  const gap = 8;
+  const cols = 6, rows = 4;
+  const innerW = W - margin * 2;
+  const innerH = H - contentTop - 60;
+  const cellW = (innerW - gap * (cols - 1)) / cols;
+  const cellH = (innerH - gap * (rows - 1)) / rows;
+  const supporting = photos.slice(1);
+
+  // Hero spans cols 0-3, rows 0-1 (large left-top tile)
+  const heroW = cellW * 4 + gap * 3;
+  const heroH = cellH * 2 + gap;
+  const heroX = margin;
+  const heroY = contentTop;
+
+  // Slots = right column rows 0-1 (4 slots), then rows 2-3 full width (12 slots)
+  const slots = [];
+  for (let r = 0; r < 2; r++) {
+    for (let c = 4; c < 6; c++) {
+      slots.push({ x: margin + c * (cellW + gap), y: contentTop + r * (cellH + gap), w: cellW, h: cellH });
+    }
+  }
+  for (let r = 2; r < 4; r++) {
+    for (let c = 0; c < 6; c++) {
+      slots.push({ x: margin + c * (cellW + gap), y: contentTop + r * (cellH + gap), w: cellW, h: cellH });
+    }
+  }
+
+  supporting.forEach((p, i) => {
+    if (i >= slots.length) return;
+    const s = slots[i];
+    drawPhotoFramed(ctx, p, s.x, s.y, s.w, s.h, { shadow: false });
+  });
+
+  drawPhotoFramed(ctx, photos[0], heroX, heroY, heroW, heroH, { shadow: true });
+}
+
+// ── Spotlight: hero centered, supporting in a halo ring around it ──
+function renderSpotlight(ctx, photos, W, H, contentTop) {
+  const supporting = photos.slice(1);
+  const cx = W / 2;
+  const cy = (contentTop + H - 40) / 2;
+  const heroSize = Math.min(W * 0.46, (H - contentTop - 80) * 0.55);
+
+  const n = Math.min(supporting.length, 18);
+  if (n > 0) {
+    const orbitR = heroSize * 0.62 + 110;
+    const tileSize = Math.max(70, Math.min(120, ((W - 80) - heroSize) / 3.2));
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+      const px = cx + Math.cos(a) * orbitR;
+      const py = cy + Math.sin(a) * orbitR;
+      drawPhotoFramed(ctx, supporting[i], 0, 0, tileSize, tileSize, { cx: px, cy: py, shadow: true });
+    }
+  }
+
+  drawPhotoFramed(ctx, photos[0], 0, 0, heroSize, heroSize, { cx, cy, shadow: true });
+}
+
+// ── Filmstrip: hero on top, supporting in horizontal film bands below ──
+function renderFilmstrip(ctx, photos, W, H, contentTop) {
+  const margin = 40;
+  const supporting = photos.slice(1);
+  const innerW = W - margin * 2;
+  const innerH = H - contentTop - 60;
+
+  const heroH = innerH * 0.55;
+  const heroW = innerW;
+
+  // Strips overlap upward into hero by 14px so hero visually sits over the top edge
+  const stripTop = contentTop + heroH - 14;
+  const stripBottom = H - 50;
+  const stripsArea = stripBottom - stripTop;
+  const stripCount = supporting.length <= 6 ? 1 : (supporting.length <= 14 ? 2 : 3);
+  const stripGap = 10;
+  const stripH = (stripsArea - stripGap * (stripCount - 1)) / stripCount;
+
+  for (let s = 0; s < stripCount; s++) {
+    const y = stripTop + s * (stripH + stripGap);
+    ctx.save();
+    ctx.fillStyle = '#0E1018';
+    ctx.fillRect(margin, y, innerW, stripH);
+    ctx.fillStyle = '#FAF8F3';
+    const perfH = Math.max(6, stripH * 0.10);
+    const perfW = perfH * 0.6;
+    const perfStep = perfW + 6;
+    for (let px = margin + 6; px < margin + innerW - 6; px += perfStep) {
+      ctx.fillRect(px, y + 4, perfW, perfH);
+      ctx.fillRect(px, y + stripH - perfH - 4, perfW, perfH);
+    }
+    ctx.restore();
+
+    const photosPerStrip = Math.ceil(supporting.length / stripCount);
+    const startI = s * photosPerStrip;
+    const endI = Math.min(supporting.length, startI + photosPerStrip);
+    const count = endI - startI;
+    if (count === 0) continue;
+    const photoSize = Math.max(40, stripH - perfH * 2 - 12);
+    const innerStripGap = 8;
+    const totalPhotoW = count * photoSize + (count - 1) * innerStripGap;
+    let photoX = margin + Math.max(8, (innerW - totalPhotoW) / 2);
+    const photoY = y + (stripH - photoSize) / 2;
+    for (let i = startI; i < endI; i++) {
+      drawPhotoFramed(ctx, supporting[i], photoX, photoY, photoSize, photoSize, { shadow: false });
+      photoX += photoSize + innerStripGap;
+    }
+  }
+
+  drawPhotoFramed(ctx, photos[0], margin, contentTop, heroW, heroH, { shadow: true });
+}
+
+// ── Stack: hero on top, supporting cards fanned out behind ──
+function renderStack(ctx, photos, W, H, contentTop) {
+  const seed = state.shuffledSeed ?? 12345;
+  const rng = mulberry32(seed ^ 0xCAFE);
+  const supporting = photos.slice(1);
+  const cx = W / 2;
+  const cy = (contentTop + H - 40) / 2;
+  const cardW = Math.min(W * 0.52, (H - contentTop - 80) * 0.58);
+  const cardH = cardW * 1.10;
+
+  const visible = Math.min(supporting.length, 14);
+  for (let i = 0; i < visible; i++) {
+    const angle = (rng() * 70 - 35) * Math.PI / 180;
+    const offX = (rng() * 90 - 45);
+    const offY = (rng() * 60 - 30);
+    drawPhotoFramed(ctx, supporting[i], 0, 0, cardW, cardH, { cx: cx + offX, cy: cy + offY, rotation: angle, shadow: true });
+  }
+
+  drawPhotoFramed(ctx, photos[0], 0, 0, cardW, cardH, { cx, cy, shadow: true });
+}
+
+// ── Strip: big hero takes top ~70%, supporting in single bottom row ──
+function renderStrip(ctx, photos, W, H, contentTop) {
+  const margin = 40;
+  const supporting = photos.slice(1);
+  const innerW = W - margin * 2;
+  const innerH = H - contentTop - 60;
+
+  const heroH = innerH * 0.72;
+  const heroW = innerW;
+
+  const stripTop = contentTop + heroH - 18;
+  const stripH = innerH - heroH + 18;
+  if (supporting.length > 0) {
+    const count = Math.min(supporting.length, 12);
+    const gap = 8;
+    const maxPhotoW = (innerW - gap * (count - 1)) / count;
+    const photoSize = Math.min(maxPhotoW, stripH * 0.92);
+    const totalW = count * photoSize + (count - 1) * gap;
+    let x = margin + (innerW - totalW) / 2;
+    const y = stripTop + (stripH - photoSize) / 2;
+    for (let i = 0; i < count; i++) {
+      drawPhotoFramed(ctx, supporting[i], x, y, photoSize, photoSize, { shadow: true });
+      x += photoSize + gap;
+    }
+  }
+
+  drawPhotoFramed(ctx, photos[0], margin, contentTop, heroW, heroH, { shadow: true });
+}
+
 // ── Frame dispatch ────────────────────────────────────────────
 function drawPhotoFramed(ctx, p, x, y, w, h, opts) {
   opts = opts || {};
@@ -1042,11 +1241,15 @@ function drawPhotoFramed(ctx, p, x, y, w, h, opts) {
     x = -w / 2; y = -h / 2;
   }
 
-  if (frame === 'polaroid')      drawPolaroidFrame(ctx, p.imgEl, x, y, w, h, shadow);
-  else if (frame === 'circle')   drawCircleFrame(ctx, p.imgEl, x, y, w, h, shadow);
-  else if (frame === 'gold')     drawGoldFrame(ctx, p.imgEl, x, y, w, h, shadow);
-  else if (frame === 'hexagon')  drawHexagonFrame(ctx, p.imgEl, x, y, w, h, shadow);
-  else if (frame === 'arch')     drawArchFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  if (frame === 'polaroid')       drawPolaroidFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'circle')    drawCircleFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'gold')      drawGoldFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'hexagon')   drawHexagonFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'diamond')   drawDiamondFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'scallop')   drawScallopFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'vintage')   drawVintageFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'tape')      drawTapeFrame(ctx, p.imgEl, x, y, w, h, shadow);
+  else if (frame === 'neon')      drawNeonFrame(ctx, p.imgEl, x, y, w, h, shadow);
   else                            drawRoundedFrame(ctx, p.imgEl, x, y, w, h, shadow);
 
   ctx.restore();
@@ -1067,18 +1270,29 @@ function hexPath(ctx, x, y, w, h) {
   ctx.closePath();
 }
 
-function archPath(ctx, x, y, w, h) {
-  // Cathedral arch — sized to a portrait box (3:4) inscribed in the cell, centered
-  const aw = Math.min(w, h * 0.78);
-  const ah = Math.min(h, aw / 0.78);
-  const ax = x + (w - aw) / 2;
-  const ay = y + (h - ah) / 2;
-  const r = aw / 2;
+function diamondPath(ctx, x, y, w, h) {
+  const cx = x + w / 2, cy = y + h / 2;
+  const s = Math.min(w, h) / 2;
   ctx.beginPath();
-  ctx.moveTo(ax, ay + ah);
-  ctx.lineTo(ax, ay + r);
-  ctx.arc(ax + r, ay + r, r, Math.PI, 2 * Math.PI);
-  ctx.lineTo(ax + aw, ay + ah);
+  ctx.moveTo(cx,     cy - s);
+  ctx.lineTo(cx + s, cy);
+  ctx.lineTo(cx,     cy + s);
+  ctx.lineTo(cx - s, cy);
+  ctx.closePath();
+}
+
+function scallopPath(ctx, cx, cy, r) {
+  const lobes = 14;
+  const bump = r * 0.07;
+  ctx.beginPath();
+  for (let deg = 0; deg <= 360; deg += 1) {
+    const a = deg * Math.PI / 180;
+    const rr = r - bump + bump * Math.cos(lobes * a);
+    const px = cx + Math.cos(a) * rr;
+    const py = cy + Math.sin(a) * rr;
+    if (deg === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
   ctx.closePath();
 }
 
@@ -1103,25 +1317,118 @@ function drawHexagonFrame(ctx, img, x, y, w, h, shadow) {
   ctx.restore();
 }
 
-function drawArchFrame(ctx, img, x, y, w, h, shadow) {
-  // Image fills the arch's portrait bounding box so the dome top stays proportional
-  const aw = Math.min(w, h * 0.78);
-  const ah = Math.min(h, aw / 0.78);
-  const ax = x + (w - aw) / 2, ay = y + (h - ah) / 2;
+function drawDiamondFrame(ctx, img, x, y, w, h, shadow) {
+  const cx = x + w / 2, cy = y + h / 2;
+  const s = Math.min(w, h) / 2;
   if (shadow) {
     ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8;
     ctx.fillStyle = '#000';
-    archPath(ctx, x, y, w, h); ctx.fill();
+    diamondPath(ctx, x, y, w, h); ctx.fill();
     ctx.restore();
   }
   ctx.save();
-  archPath(ctx, x, y, w, h); ctx.clip();
-  drawCover(ctx, img, ax, ay, aw, ah);
+  diamondPath(ctx, x, y, w, h); ctx.clip();
+  drawCover(ctx, img, cx - s, cy - s, s * 2, s * 2);
   ctx.restore();
   ctx.save();
   ctx.strokeStyle = 'rgba(201,168,76,0.9)'; ctx.lineWidth = 2;
-  archPath(ctx, x, y, w, h); ctx.stroke();
+  diamondPath(ctx, x, y, w, h); ctx.stroke();
+  ctx.restore();
+}
+
+function drawScallopFrame(ctx, img, x, y, w, h, shadow) {
+  const cx = x + w / 2, cy = y + h / 2;
+  const r = Math.min(w, h) / 2;
+  if (shadow) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 16; ctx.shadowOffsetY = 7;
+    ctx.fillStyle = '#000';
+    scallopPath(ctx, cx, cy, r); ctx.fill();
+    ctx.restore();
+  }
+  ctx.save();
+  scallopPath(ctx, cx, cy, r); ctx.clip();
+  drawCover(ctx, img, cx - r, cy - r, r * 2, r * 2);
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = 'rgba(201,168,76,0.85)'; ctx.lineWidth = 1.5;
+  scallopPath(ctx, cx, cy, r); ctx.stroke();
+  ctx.restore();
+}
+
+function drawVintageFrame(ctx, img, x, y, w, h, shadow) {
+  // Cream paper card with sepia photo + thin brown inner line
+  if (shadow) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.40)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 6;
+    ctx.fillStyle = '#F5EDD8';
+    ctx.fillRect(x, y, w, h);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = '#F5EDD8';
+    ctx.fillRect(x, y, w, h);
+  }
+  const pad = Math.min(w, h) * 0.06;
+  const ix = x + pad, iy = y + pad;
+  const iw = w - pad * 2, ih = h - pad * 2;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(ix, iy, iw, ih); ctx.clip();
+  ctx.filter = 'sepia(0.55) saturate(1.05) contrast(0.95)';
+  drawCover(ctx, img, ix, iy, iw, ih);
+  ctx.filter = 'none';
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = 'rgba(139,96,32,0.55)'; ctx.lineWidth = 1;
+  ctx.strokeRect(ix - 0.5, iy - 0.5, iw + 1, ih + 1);
+  ctx.restore();
+}
+
+function drawTapeFrame(ctx, img, x, y, w, h, shadow) {
+  // Plain photo rectangle
+  if (shadow) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.40)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 6;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(x, y, w, h);
+    ctx.restore();
+  }
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  drawCover(ctx, img, x, y, w, h);
+  ctx.restore();
+  // Two washi-tape strips at top-left and bottom-right corners
+  const tapeW = Math.min(w, h) * 0.34;
+  const tapeH = Math.min(w, h) * 0.10;
+  ctx.save();
+  ctx.fillStyle = 'rgba(232,201,122,0.72)';
+  ctx.translate(x, y);
+  ctx.rotate(-22 * Math.PI / 180);
+  ctx.fillRect(-tapeW * 0.30, -tapeH / 2, tapeW, tapeH);
+  ctx.restore();
+  ctx.save();
+  ctx.fillStyle = 'rgba(232,201,122,0.72)';
+  ctx.translate(x + w, y + h);
+  ctx.rotate(-22 * Math.PI / 180);
+  ctx.fillRect(-tapeW * 0.70, -tapeH / 2, tapeW, tapeH);
+  ctx.restore();
+}
+
+function drawNeonFrame(ctx, img, x, y, w, h, shadow) {
+  // Photo clipped to rounded rect, then double cyan glow stroke
+  ctx.save();
+  roundRect(ctx, x, y, w, h, 8); ctx.clip();
+  drawCover(ctx, img, x, y, w, h);
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = '#22E8FF';
+  ctx.shadowColor = '#22E8FF';
+  ctx.shadowBlur = 18;
+  ctx.lineWidth = 3;
+  roundRect(ctx, x, y, w, h, 8); ctx.stroke();
+  ctx.shadowBlur = 8;
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, x, y, w, h, 8); ctx.stroke();
   ctx.restore();
 }
 
@@ -1214,7 +1521,8 @@ function setDelivery(type) {
 }
 
 function refreshSummary() {
-  document.getElementById('sum-mode').textContent = state.isPremium ? 'Premium' : 'Standard';
+  const arr = ARRANGEMENTS.find(a => a.id === state.arrangement) || ARRANGEMENTS[0];
+  document.getElementById('sum-mode').textContent = arr.label + (state.isPremium ? ' (Premium)' : '');
   document.getElementById('sum-count').textContent = state.selectedImages.length;
   document.getElementById('sum-premium-row').style.display = state.isPremium ? 'flex' : 'none';
 
@@ -1248,7 +1556,7 @@ function downloadJpg() {
 
 function downloadHdJpg() {
   if (!state.previewGenerated) { toast('Generate a preview first'); return; }
-  if (!state.isPremium) { toast('HD download is a Premium feature — toggle Premium above'); return; }
+  if (!state.isPremium) { toast('HD download is a Premium feature — pick a premium arrangement above'); return; }
 
   const btn = document.getElementById('download-hd-btn');
   const original = btn.innerHTML;
