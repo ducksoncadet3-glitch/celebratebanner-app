@@ -368,7 +368,7 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
       <div class="upsell-card">
         <div class="upsell-info">
           <div class="upsell-title">Pick your arrangement</div>
-          <div class="upsell-sub">Classic is included. Premium arrangements (Magazine, Pyramid, Scattered, Mosaic) unlock layered composition + HD download for +$9.99.</div>
+          <div class="upsell-sub">Classic is included. Premium arrangements (Magazine, Scattered, Mosaic) unlock layered composition + HD download for +$9.99.</div>
         </div>
       </div>
       <div class="arr-grid" id="arr-grid"></div>
@@ -531,7 +531,6 @@ const FRAME_LABELS = {
 const ARRANGEMENTS = [
   { id: 'classic',   label: 'Classic',   sub: 'Hero centered top, collage grid below · Best with 1–50 photos',               tier: 'standard', minPhotos: 1,  maxPhotos: 50 },
   { id: 'magazine',  label: 'Magazine',  sub: 'Hero on the left, 2-column grid on the right · Best with 3–25 photos',         tier: 'premium',  minPhotos: 3,  maxPhotos: 25 },
-  { id: 'pyramid',   label: 'Pyramid',   sub: 'Hero on top, photos in widening rows below · Best with 3–28 photos',           tier: 'premium',  minPhotos: 3,  maxPhotos: 28 },
   { id: 'scattered', label: 'Scattered', sub: 'Scrapbook feel — overlapping photos at slight angles · Best with 5–40 photos', tier: 'premium',  minPhotos: 5,  maxPhotos: 40 },
   { id: 'mosaic',    label: 'Mosaic',    sub: 'Hero in the center, photos on all four sides · Best with 8–40 photos',         tier: 'premium',  minPhotos: 8,  maxPhotos: 40 },
 ];
@@ -1078,8 +1077,12 @@ function renderToCanvas(targetCanvas, ids, premium, scale) {
   ctx.lineWidth = 8;
   ctx.strokeRect(20, 20, W - 40, H - 40);
 
-  // Banner text at top
+  // Banner text at top — wrapped in save/restore + source-over so background
+  // composite modes don't bleed in. textBottomY tells layouts where the safe zone ends.
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-over';
   const textBottomY = renderBannerText(ctx, W, 56, theme);
+  ctx.restore();
 
   const photos = ids.map(id => state.images.find(p => p.id === id)).filter(Boolean);
   if (photos.length === 0) return;
@@ -1087,12 +1090,19 @@ function renderToCanvas(targetCanvas, ids, premium, scale) {
   const contentTop = textBottomY + 24;
   switch (state.arrangement) {
     case 'magazine':  renderMagazine(ctx, photos, W, H, contentTop); break;
-    case 'pyramid':   renderPyramid(ctx, photos, W, H, contentTop); break;
     case 'scattered': renderScattered(ctx, photos, W, H, contentTop); break;
     case 'mosaic':    renderMosaic(ctx, photos, W, H, contentTop); break;
     case 'classic':
     default:          renderClassic(ctx, photos, W, H, contentTop); break;
   }
+
+  // Re-draw banner text on top after the photo layer so it's never covered by tiles.
+  // Necessary for Scattered (jittered/rotated tiles can drift toward the headline) and
+  // harmless for the other layouts whose text region is already photo-free.
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-over';
+  renderBannerText(ctx, W, 56, theme);
+  ctx.restore();
 }
 
 // ── Theme decorations ──────────────────────────────────────────
@@ -1278,13 +1288,15 @@ function pickHeroFraction(n) {
 
 // Hero-photo helper: drop shadow only (no gold halo, no border). Always rendered LAST
 // in every layout so the hero floats visually above the collage layer.
+// The hero is ALWAYS clipped to a rounded rectangle (rx=12) regardless of the photo's
+// configured frame — never hexagon, circle, heart, or star.
 function drawHeroPhoto(ctx, p, x, y, w, h, opts) {
   opts = opts || {};
   const cx = opts.cx != null ? opts.cx : x + w / 2;
   const cy = opts.cy != null ? opts.cy : y + h / 2;
   const rot = opts.rotation || 0;
 
-  // Drop shadow plate behind the hero photo
+  // Drop shadow plate behind the hero (rounded rect to match the clip below)
   ctx.save();
   ctx.translate(cx, cy);
   if (rot) ctx.rotate(rot);
@@ -1292,11 +1304,13 @@ function drawHeroPhoto(ctx, p, x, y, w, h, opts) {
   ctx.shadowBlur = 20;
   ctx.shadowOffsetY = 8;
   ctx.fillStyle = '#000';
-  ctx.fillRect(-w / 2, -h / 2, w, h);
+  roundRect(ctx, -w / 2, -h / 2, w, h, 12); ctx.fill();
   ctx.restore();
 
-  // Photo via the frame dispatcher — cover-fit, no inner shadow
-  drawPhotoFramed(ctx, p, x, y, w, h, { cx: opts.cx, cy: opts.cy, rotation: opts.rotation, shadow: false });
+  // Force a rounded-rect frame for the hero — never honor hexagon/circle/heart/etc.
+  drawPhotoFramed(ctx, p, x, y, w, h, {
+    cx: opts.cx, cy: opts.cy, rotation: opts.rotation, shadow: false, forceFrame: 'rounded',
+  });
 }
 
 // Slight per-photo seeded rotation so the supporting layer feels hand-placed.
@@ -1392,50 +1406,9 @@ function renderMagazine(ctx, photos, W, H, contentTop) {
   drawHeroPhoto(ctx, photos[0], heroX, heroY, heroW, heroH, { rotation: _photoRot(rng, 1) });
 }
 
-// ── Layout 3: Pyramid (+$9.99) — hero top, widening rows 2→3→4→5→6 below ──
-// Hero: x=250, y=128, w=300, h=220. Rows widen toward the base; row 5 spans full inner width.
-function renderPyramid(ctx, photos, W, H, contentTop) {
-  const seed = state.shuffledSeed ?? 12345;
-  const rng = mulberry32(seed ^ 0x9991);
-  const supporting = photos.slice(1);
-  const margin = 40;
-  const innerW = W - margin * 2;
-
-  const heroX = 250;
-  const heroY = Math.max(128, contentTop);
-  const heroW = 300;
-  const heroH = 220;
-
-  // Row 5 (6 photos at 52px wide) spans full inner width margin-to-margin.
-  const lastRowGap = (innerW - 6 * 52) / 5;
-  const rowConfigs = [
-    { count: 2, y: 360, w: 80, h: 65, gap: 20 },
-    { count: 3, y: 433, w: 72, h: 58, gap: 16 },
-    { count: 4, y: 499, w: 64, h: 52, gap: 14 },
-    { count: 5, y: 559, w: 58, h: 46, gap: 12 },
-    { count: 6, y: 613, w: 52, h: 42, gap: lastRowGap },
-  ];
-  const totalSlots = rowConfigs.reduce((s, r) => s + r.count, 0); // 20
-
-  const drawList = _tileToCount(supporting, totalSlots);
-  let idx = 0;
-  rowConfigs.forEach(row => {
-    const totalW = row.count * row.w + (row.count - 1) * row.gap;
-    let x = (W - totalW) / 2;
-    for (let c = 0; c < row.count; c++) {
-      const p = drawList[idx++];
-      if (!p) break;
-      drawPhotoFramed(ctx, p, x, row.y, row.w, row.h, { rotation: _photoRot(rng, 1), shadow: false });
-      x += row.w + row.gap;
-    }
-  });
-
-  // Hero LAST
-  drawHeroPhoto(ctx, photos[0], heroX, heroY, heroW, heroH, { rotation: _photoRot(rng, 1.2) });
-}
-
-// ── Layout 4: Scattered (+$9.99) — 4×6 rotated tiles + centered hero on top ──
-// Tile 140×140, hero 350×350 (2.5× tile), hero centered at x=225, y=425.
+// ── Layout 4: Scattered (+$9.99) — 4-col rotated grid + centered hero on top ──
+// Reserves a text-safe zone above contentTop so the headline is never covered.
+// Tile 140×140 (with jitter), hero 350×350 centered.
 function renderScattered(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0xBEEF);
@@ -1443,64 +1416,81 @@ function renderScattered(ctx, photos, W, H, contentTop) {
 
   const margin = 40;
   const innerW = W - margin * 2;
-  const cols = 4, rows = 6;
   const tileSize = 140;
-  const startY = 80;
-  const gridH = H - startY - margin;
-  const colGap = (innerW - cols * tileSize) / (cols - 1);
-  const rowGap = (gridH - rows * tileSize) / (rows - 1);
+  const cols = 4;
+  const rows = Math.max(6, Math.ceil(supporting.length / cols));
 
+  // Text-safe zone: photos can never be placed above contentTop (textBottomY + 24).
+  const safeTop = contentTop + 20;
+  const gridTop = safeTop;
+  const gridBot = H - 60;
+  const innerH = gridBot - gridTop;
+  const rowH = innerH / Math.max(rows, 6);
+  const colGap = (innerW - cols * tileSize) / (cols - 1);
+
+  // Hero stays centered between safe zone and bottom
   const heroSize = 350;
-  const heroX = 225, heroY = 425;
+  const heroX = 225;
+  const heroY = Math.max(safeTop + 40, Math.round(gridTop + (innerH - heroSize) / 2));
 
   const drawList = _tileToCount(supporting, cols * rows);
   drawList.forEach((p, i) => {
     const c = i % cols;
     const r = Math.floor(i / cols);
     const baseCx = margin + c * (tileSize + colGap) + tileSize / 2;
-    const baseCy = startY + r * (tileSize + rowGap) + tileSize / 2;
+    const baseCy = gridTop + r * rowH + rowH / 2;
     const jitterX = rng() * 40 - 20;
     const jitterY = rng() * 40 - 20;
+    let cx = baseCx + jitterX;
+    let cy = baseCy + jitterY;
+    // Enforce text-safe zone: a photo's top edge must stay below contentTop+10.
+    const minCy = safeTop + tileSize / 2 + 10;
+    if (cy < minCy) cy = minCy;
     const rot = (rng() * 10 - 5) * Math.PI / 180;
     drawPhotoFramed(ctx, p, 0, 0, tileSize, tileSize, {
-      cx: baseCx + jitterX, cy: baseCy + jitterY, rotation: rot, shadow: true,
+      cx, cy, rotation: rot, shadow: true,
     });
   });
 
-  // Hero LAST, on top of everything (tiles behind it are partially covered — intentional)
+  // Hero LAST, on top of everything
   drawHeroPhoto(ctx, photos[0], heroX, heroY, heroSize, heroSize, { rotation: _photoRot(rng, 1.5) });
 }
 
-// ── Layout 5: Mosaic (free) — hero centered, 5 top + 5 bottom + 3 left + 3 right ──
-// Hero: 320×380 at x=240, y=410. Surrounding photos align seamlessly to hero edges.
+// ── Layout 5: Mosaic (free) — hero rectangle + 5 top + 3 left + 3 right + 5+5 bottom ──
+// Hero: 320×400 rounded rectangle at x=240, y=370. 21 collage slots total.
 function renderMosaic(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0xA10C);
   const supporting = photos.slice(1);
   const margin = 40;
-  const innerW = W - margin * 2;
 
-  const heroX = 240, heroY = 410, heroW = 320, heroH = 380;
+  const heroX = 240, heroY = 370, heroW = 320, heroH = 400;
 
-  const topW = (innerW - 4 * 8) / 5;       // 136 wide
-  const sideH = (heroH - 2 * 8) / 3;       // 121.33 tall
+  const topW = 136;       // (innerW 720 - 4 gaps × 8) / 5 = 136
+  const sideH = 123;      // 3 rows × 123 + 2 gaps × 10 = 389 ≈ hero height
+  const botW = 136;
 
   const slots = [];
-  // Top row (5)
+  // Top row (5) — y=250, h=110
   for (let i = 0; i < 5; i++) {
-    slots.push({ x: margin + i * (topW + 8), y: 290, w: topW, h: 110 });
+    slots.push({ x: margin + i * (topW + 8), y: 250, w: topW, h: 110 });
   }
-  // Bottom row (5)
+  // Left column (3) — alongside hero, gap=10
+  const leftRightYs = [370, 503, 636];
+  for (const ly of leftRightYs) {
+    slots.push({ x: 40, y: ly, w: 190, h: sideH });
+  }
+  // Right column (3) — same Ys, x=570
+  for (const ly of leftRightYs) {
+    slots.push({ x: 570, y: ly, w: 190, h: sideH });
+  }
+  // Bottom row 1 (5) — y=780, h=90
   for (let i = 0; i < 5; i++) {
-    slots.push({ x: margin + i * (topW + 8), y: 800, w: topW, h: 110 });
+    slots.push({ x: margin + i * (botW + 8), y: 780, w: botW, h: 90 });
   }
-  // Left column (3) — aligned to hero top/bottom
-  for (let i = 0; i < 3; i++) {
-    slots.push({ x: 40, y: heroY + i * (sideH + 8), w: 190, h: sideH });
-  }
-  // Right column (3)
-  for (let i = 0; i < 3; i++) {
-    slots.push({ x: 570, y: heroY + i * (sideH + 8), w: 190, h: sideH });
+  // Bottom row 2 (5) — y=878, h=90
+  for (let i = 0; i < 5; i++) {
+    slots.push({ x: margin + i * (botW + 8), y: 878, w: botW, h: 90 });
   }
 
   const drawList = _tileToCount(supporting, slots.length);
@@ -1509,7 +1499,7 @@ function renderMosaic(ctx, photos, W, H, contentTop) {
     drawPhotoFramed(ctx, p, s.x, s.y, s.w, s.h, { rotation: _photoRot(rng, 0.5), shadow: false });
   });
 
-  // Hero LAST, centered on top
+  // Hero LAST, centered rectangle on top — drawHeroPhoto forces rounded-rect clip
   drawHeroPhoto(ctx, photos[0], heroX, heroY, heroW, heroH, { rotation: 0 });
 }
 
