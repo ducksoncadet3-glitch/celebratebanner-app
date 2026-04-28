@@ -930,9 +930,11 @@ function resetFrames() {
 }
 
 function mixFrames() {
-  // Shuffled round-robin: every frame style appears, ordering is randomised
+  // Shuffled round-robin auto-mix: heart/star are excluded so they don't dominate
+  // collages, but they remain available for manual selection from the frame palette.
   const seed = state.shuffledSeed ?? generateRandomSeed();
-  const order = shuffleArray(FRAME_OPTIONS, mulberry32(seed ^ 0xF1A));
+  const autoMixPool = FRAME_OPTIONS.filter(f => f !== 'heart' && f !== 'star');
+  const order = shuffleArray(autoMixPool, mulberry32(seed ^ 0xF1A));
   state.images.forEach((p, i) => { state.frames[p.id] = order[i % order.length]; });
   state.previewGenerated = false;
   renderDesignGrids();
@@ -1274,47 +1276,43 @@ function pickHeroFraction(n) {
   return 0.28;
 }
 
-// Hero-photo helper: gold halo + drop shadow + bigger emphasis. Used by every renderer.
-// Always rendered LAST so the hero floats above the collage layer.
+// Hero-photo helper: drop shadow only (no gold halo, no border). Always rendered LAST
+// in every layout so the hero floats visually above the collage layer.
 function drawHeroPhoto(ctx, p, x, y, w, h, opts) {
   opts = opts || {};
   const cx = opts.cx != null ? opts.cx : x + w / 2;
   const cy = opts.cy != null ? opts.cy : y + h / 2;
   const rot = opts.rotation || 0;
-  const pad = 5;
 
-  // Gold halo behind the photo (drop shadow comes from the gold rect's own shadow)
+  // Drop shadow plate behind the hero photo
   ctx.save();
   ctx.translate(cx, cy);
   if (rot) ctx.rotate(rot);
   ctx.shadowColor = 'rgba(0,0,0,0.55)';
-  ctx.shadowBlur = 18;
-  ctx.shadowOffsetY = 6;
-  ctx.fillStyle = '#C9A84C';
-  ctx.fillRect(-w / 2 - pad, -h / 2 - pad, w + pad * 2, h + pad * 2);
+  ctx.shadowBlur = 20;
+  ctx.shadowOffsetY = 8;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(-w / 2, -h / 2, w, h);
   ctx.restore();
 
-  // Photo via the frame dispatcher (no shadow — halo provides it).
-  // Hero opts in to contain-fit so the whole photo is visible (no face-only zoom crop).
-  if (p && p.imgEl) p.imgEl._useContain = true;
+  // Photo via the frame dispatcher — cover-fit, no inner shadow
   drawPhotoFramed(ctx, p, x, y, w, h, { cx: opts.cx, cy: opts.cy, rotation: opts.rotation, shadow: false });
-  if (p && p.imgEl) p.imgEl._useContain = false;
-
-  // Faint outer gold glow stroke for extra pop
-  ctx.save();
-  ctx.translate(cx, cy);
-  if (rot) ctx.rotate(rot);
-  ctx.strokeStyle = 'rgba(232,201,122,0.55)';
-  ctx.shadowColor = 'rgba(232,201,122,0.7)';
-  ctx.shadowBlur = 14;
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(-w / 2 - pad, -h / 2 - pad, w + pad * 2, h + pad * 2);
-  ctx.restore();
 }
 
 // Slight per-photo seeded rotation so the supporting layer feels hand-placed.
 function _photoRot(rng, maxDeg) {
   return (rng() * 2 - 1) * maxDeg * Math.PI / 180;
+}
+
+// Tile a base list to fill `count` slots. Each tiled copy is a shallow clone so any
+// per-slot state mutations (e.g. .frame overrides) don't bleed back into siblings.
+function _tileToCount(baseList, count) {
+  const out = [];
+  if (!baseList || baseList.length === 0) return out;
+  for (let i = 0; i < count; i++) {
+    out.push(Object.assign({}, baseList[i % baseList.length]));
+  }
+  return out;
 }
 
 // ── Layout 1: Classic — hero centered top, even grid below, hero on top of grid edge ──
@@ -1329,224 +1327,190 @@ function _heroRect(cx, cy, w, h) {
   return { left: cx - w / 2, right: cx + w / 2, top: cy - h / 2, bottom: cy + h / 2 };
 }
 
-// ── Layout 1: Classic — hero centered top, 32px gap, even grid below, all photos ──
+// ── Layout 1: Classic (free) — 1 hero + 8×5 collage, hero last on top ──
+// Canvas 800×1200. Hero: x=40, y=140, w=720, h=360 (full inner width).
+// Collage: y=508 to y=1180, 8 cols × 5 rows, gap=6.
 function renderClassic(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0xC1A5);
-  const margin = 50;
-  const innerW = W - margin * 2;
+  const margin = 40;
+  const innerW = W - margin * 2; // 720
   const supporting = photos.slice(1);
-  const available = H - contentTop - 60;
-  const heroH = Math.round(available * pickHeroFraction(supporting.length));
-  const heroBot = contentTop + heroH + 32;
 
-  if (supporting.length > 0) {
-    const gridTop = heroBot;
-    const gridBottom = H - 50;
-    const gridH = Math.max(60, gridBottom - gridTop);
-    const cols = pickGridCols(supporting.length);
-    const rows = Math.ceil(supporting.length / cols);
-    const gap = supporting.length > 24 ? 6 : (supporting.length > 12 ? 8 : 12);
-    const cellW = (innerW - gap * (cols - 1)) / cols;
-    const cellH = (gridH - gap * (rows - 1)) / rows;
+  const heroY = Math.max(140, contentTop);
+  const heroH = 360;
+  const heroBot = heroY + heroH;
 
-    supporting.forEach((p, i) => {
-      const r = Math.floor(i / cols);
-      const c = i % cols;
-      const cellCx = margin + c * (cellW + gap) + cellW / 2;
-      const cellCy = gridTop + r * (cellH + gap) + cellH / 2;
-      drawPhotoFramed(ctx, p, 0, 0, cellW, cellH, { cx: cellCx, cy: cellCy, rotation: _photoRot(rng, 1.5), shadow: false });
-    });
-  }
+  const cols = 8, rows = 5, gap = 6;
+  const gridTop = heroBot + 8;
+  const gridBot = H - 20;
+  const gridH = gridBot - gridTop;
+  const cellW = (innerW - gap * (cols - 1)) / cols;
+  const cellH = (gridH - gap * (rows - 1)) / rows;
 
-  // Hero drawn LAST (on top visually) at y=contentTop, height=heroH (does not eat into grid)
-  drawHeroPhoto(ctx, photos[0], margin, contentTop, innerW, heroH, { rotation: _photoRot(rng, 1.2) });
+  const drawList = _tileToCount(supporting, cols * rows);
+  drawList.forEach((p, i) => {
+    const r = Math.floor(i / cols);
+    const c = i % cols;
+    const x = margin + c * (cellW + gap);
+    const y = gridTop + r * (cellH + gap);
+    drawPhotoFramed(ctx, p, x, y, cellW, cellH, { rotation: _photoRot(rng, 1.5), shadow: false });
+  });
+
+  // Hero drawn LAST (on top of grid edge)
+  drawHeroPhoto(ctx, photos[0], margin, heroY, innerW, heroH, { rotation: _photoRot(rng, 1.2) });
 }
 
-// ── Layout 2: Magazine — hero left, 2-col grid right, all photos (rows scale down) ──
+// ── Layout 2: Magazine (+$9.99) — hero left 55%, 2×5 grid right ──
+// Hero: x=40, y=128, w=440, h=1052. Right grid: x=492, w=268, 2 cols × 5 rows, gap=8.
 function renderMagazine(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0x4A6A);
-  const margin = 40;
-  const innerW = W - margin * 2;
-  const innerH = H - contentTop - 60;
   const supporting = photos.slice(1);
 
-  const heroW = innerW * 0.58;
-  const heroH = innerH;
-  const heroX = margin;
-  const heroY = contentTop;
+  const heroX = 40;
+  const heroY = Math.max(128, contentTop);
+  const heroW = 440;
+  const heroH = (H - 20) - heroY;
 
-  const rightX = margin + heroW + 14;
-  const rightW = innerW - heroW - 14;
-  const cols = 2;
-  const count = supporting.length;
-  const rows = Math.max(1, Math.ceil(count / cols));
-  const gap = 8;
+  const rightX = 492;
+  const rightW = 268;
+  const cols = 2, rows = 5, gap = 8;
   const cellW = (rightW - gap) / cols;
   const cellH = (heroH - gap * (rows - 1)) / rows;
 
-  for (let i = 0; i < count; i++) {
+  const drawList = _tileToCount(supporting, cols * rows);
+  drawList.forEach((p, i) => {
     const r = Math.floor(i / cols);
     const c = i % cols;
-    const cellCx = rightX + c * (cellW + gap) + cellW / 2;
-    const cellCy = contentTop + r * (cellH + gap) + cellH / 2;
-    drawPhotoFramed(ctx, supporting[i], 0, 0, cellW, cellH, { cx: cellCx, cy: cellCy, rotation: _photoRot(rng, 2), shadow: false });
-  }
+    const x = rightX + c * (cellW + gap);
+    const y = heroY + r * (cellH + gap);
+    drawPhotoFramed(ctx, p, x, y, cellW, cellH, { rotation: _photoRot(rng, 1.5), shadow: false });
+  });
 
+  // Hero LAST
   drawHeroPhoto(ctx, photos[0], heroX, heroY, heroW, heroH, { rotation: _photoRot(rng, 1) });
 }
 
-// ── Layout 3: Pyramid — hero top, 32px gap, widening rows below holding ALL photos ──
+// ── Layout 3: Pyramid (+$9.99) — hero top, widening rows 2→3→4→5→6 below ──
+// Hero: x=250, y=128, w=300, h=220. Rows widen toward the base; row 5 spans full inner width.
 function renderPyramid(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0x9991);
+  const supporting = photos.slice(1);
   const margin = 40;
   const innerW = W - margin * 2;
-  const innerH = H - contentTop - 60;
-  const supporting = photos.slice(1);
 
-  const heroSize = Math.min(innerW * 0.45, innerH * 0.40);
-  const heroX = (W - heroSize) / 2;
-  const heroY = contentTop + 8;
-  const heroBot = heroY + heroSize + 32;
+  const heroX = 250;
+  const heroY = Math.max(128, contentTop);
+  const heroW = 300;
+  const heroH = 220;
 
-  // Build widening rows (2,3,4,...) until all photos are placed
-  const rowCounts = [];
-  let remaining = supporting.length;
-  let rowCols = 2;
-  while (remaining > 0) {
-    const take = Math.min(rowCols, remaining);
-    rowCounts.push(take);
-    remaining -= take;
-    rowCols++;
-  }
-  if (rowCounts.length === 0) rowCounts.push(0);
+  // Row 5 (6 photos at 52px wide) spans full inner width margin-to-margin.
+  const lastRowGap = (innerW - 6 * 52) / 5;
+  const rowConfigs = [
+    { count: 2, y: 360, w: 80, h: 65, gap: 20 },
+    { count: 3, y: 433, w: 72, h: 58, gap: 16 },
+    { count: 4, y: 499, w: 64, h: 52, gap: 14 },
+    { count: 5, y: 559, w: 58, h: 46, gap: 12 },
+    { count: 6, y: 613, w: 52, h: 42, gap: lastRowGap },
+  ];
+  const totalSlots = rowConfigs.reduce((s, r) => s + r.count, 0); // 20
 
-  const pyTop = heroBot;
-  const pyBottom = H - 50;
-  const pyH = Math.max(60, pyBottom - pyTop);
-  const rowH = pyH / rowCounts.length;
-  // Cell size shrinks if many rows so the widest row fits horizontally
-  const widestRow = Math.max.apply(null, rowCounts);
-  const maxCellByWidth = (innerW - 10 * (widestRow - 1)) / Math.max(1, widestRow);
-  const cellSize = Math.max(28, Math.min(rowH * 0.85, maxCellByWidth));
-
+  const drawList = _tileToCount(supporting, totalSlots);
   let idx = 0;
-  rowCounts.forEach((count, r) => {
-    if (count === 0) return;
-    const totalW = count * cellSize + (count - 1) * 10;
-    let xCursor = (W - totalW) / 2;
-    const yTop = pyTop + r * rowH + (rowH - cellSize) / 2;
-    for (let c = 0; c < count; c++) {
-      drawPhotoFramed(ctx, supporting[idx], 0, 0, cellSize, cellSize, {
-        cx: xCursor + cellSize / 2,
-        cy: yTop + cellSize / 2,
-        rotation: _photoRot(rng, 2.5),
-        shadow: false,
-      });
-      idx++;
-      xCursor += cellSize + 10;
+  rowConfigs.forEach(row => {
+    const totalW = row.count * row.w + (row.count - 1) * row.gap;
+    let x = (W - totalW) / 2;
+    for (let c = 0; c < row.count; c++) {
+      const p = drawList[idx++];
+      if (!p) break;
+      drawPhotoFramed(ctx, p, x, row.y, row.w, row.h, { rotation: _photoRot(rng, 1), shadow: false });
+      x += row.w + row.gap;
     }
   });
 
-  drawHeroPhoto(ctx, photos[0], heroX, heroY, heroSize, heroSize, { rotation: _photoRot(rng, 1.2) });
+  // Hero LAST
+  drawHeroPhoto(ctx, photos[0], heroX, heroY, heroW, heroH, { rotation: _photoRot(rng, 1.2) });
 }
 
-// ── Layout 4: Scattered — scrapbook, ±5° rotations, ALL photos, skip hero zone ──
+// ── Layout 4: Scattered (+$9.99) — 4×6 rotated tiles + centered hero on top ──
+// Tile 140×140, hero 350×350 (2.5× tile), hero centered at x=225, y=425.
 function renderScattered(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0xBEEF);
-  const margin = 30;
   const supporting = photos.slice(1);
+
+  const margin = 40;
   const innerW = W - margin * 2;
-  const innerH = H - contentTop - 60;
+  const cols = 4, rows = 6;
+  const tileSize = 140;
+  const startY = 80;
+  const gridH = H - startY - margin;
+  const colGap = (innerW - cols * tileSize) / (cols - 1);
+  const rowGap = (gridH - rows * tileSize) / (rows - 1);
 
-  const heroSize = Math.min(W * 0.42, innerH * 0.45);
-  const heroCx = W / 2;
-  const heroCy = contentTop + innerH / 2;
-  const heroRect = _heroRect(heroCx, heroCy, heroSize, heroSize);
+  const heroSize = 350;
+  const heroX = 225, heroY = 425;
 
-  // Expand grid rows dynamically: cols=4 fixed, rows ceil(count/cols)
-  const cols = 4;
-  const rows = Math.max(1, Math.ceil(supporting.length / cols));
-  // Tile size: hero must be ≥ 2.5× tile, so cap tile at heroSize/2.7
-  const cellW = innerW / cols;
-  const cellH = innerH / rows;
-  const tileSize = Math.max(28, Math.min(heroSize / 2.7, Math.min(cellW, cellH) * 0.9));
-
-  for (let i = 0; i < supporting.length; i++) {
+  const drawList = _tileToCount(supporting, cols * rows);
+  drawList.forEach((p, i) => {
     const c = i % cols;
     const r = Math.floor(i / cols);
-    const baseCx = margin + c * cellW + cellW / 2;
-    const baseCy = contentTop + r * cellH + cellH / 2;
-    let jitterX = (rng() * 36 - 18);
-    let jitterY = (rng() * 36 - 18);
-    let cx = baseCx + jitterX, cy = baseCy + jitterY;
-    // Push tile away from hero zone if it would land behind it
-    const half = tileSize / 2;
-    if (_hits(heroRect, cx - half, cy - half, tileSize, tileSize, 8)) {
-      const dx = cx - heroCx, dy = cy - heroCy;
-      const len = Math.max(1, Math.sqrt(dx * dx + dy * dy));
-      const push = heroSize / 2 + half + 12;
-      cx = heroCx + (dx / len) * push;
-      cy = heroCy + (dy / len) * push;
-    }
+    const baseCx = margin + c * (tileSize + colGap) + tileSize / 2;
+    const baseCy = startY + r * (tileSize + rowGap) + tileSize / 2;
+    const jitterX = rng() * 40 - 20;
+    const jitterY = rng() * 40 - 20;
     const rot = (rng() * 10 - 5) * Math.PI / 180;
-    drawPhotoFramed(ctx, supporting[i], 0, 0, tileSize, tileSize, {
-      cx, cy, rotation: rot, shadow: true,
+    drawPhotoFramed(ctx, p, 0, 0, tileSize, tileSize, {
+      cx: baseCx + jitterX, cy: baseCy + jitterY, rotation: rot, shadow: true,
     });
-  }
+  });
 
-  drawHeroPhoto(ctx, photos[0], 0, 0, heroSize, heroSize, { cx: heroCx, cy: heroCy, rotation: _photoRot(rng, 3) });
+  // Hero LAST, on top of everything (tiles behind it are partially covered — intentional)
+  drawHeroPhoto(ctx, photos[0], heroX, heroY, heroSize, heroSize, { rotation: _photoRot(rng, 1.5) });
 }
 
-// ── Layout 5: Mosaic — hero center, photos in a grid that excludes hero zone, ALL photos ──
+// ── Layout 5: Mosaic (free) — hero centered, 5 top + 5 bottom + 3 left + 3 right ──
+// Hero: 320×380 at x=240, y=410. Surrounding photos align seamlessly to hero edges.
 function renderMosaic(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0xA10C);
-  const margin = 30;
   const supporting = photos.slice(1);
+  const margin = 40;
   const innerW = W - margin * 2;
-  const innerH = H - contentTop - 60;
 
-  const cx = W / 2;
-  const cy = contentTop + innerH / 2;
-  const heroSize = Math.min(innerW * 0.42, innerH * 0.42);
-  const heroRect = _heroRect(cx, cy, heroSize, heroSize);
-  const ringPad = 14;
-  const gap = 8;
+  const heroX = 240, heroY = 410, heroW = 320, heroH = 380;
 
-  // Find a tile size such that the grid (minus hero-zone cells) holds all supporting photos.
-  let tileSize = heroSize / 2.7;
-  let layout = null;
-  for (let attempt = 0; attempt < 12; attempt++) {
-    const cols = Math.max(3, Math.floor((innerW + gap) / (tileSize + gap)));
-    const rows = Math.max(2, Math.floor((innerH + gap) / (tileSize + gap)));
-    const slots = [];
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const sx = margin + c * (tileSize + gap);
-        const sy = contentTop + r * (tileSize + gap);
-        if (_hits(heroRect, sx, sy, tileSize, tileSize, ringPad)) continue;
-        slots.push({ cx: sx + tileSize / 2, cy: sy + tileSize / 2 });
-      }
-    }
-    if (slots.length >= supporting.length || tileSize <= 28) {
-      layout = { tileSize, slots };
-      break;
-    }
-    tileSize *= 0.88;
+  const topW = (innerW - 4 * 8) / 5;       // 136 wide
+  const sideH = (heroH - 2 * 8) / 3;       // 121.33 tall
+
+  const slots = [];
+  // Top row (5)
+  for (let i = 0; i < 5; i++) {
+    slots.push({ x: margin + i * (topW + 8), y: 290, w: topW, h: 110 });
   }
-  if (!layout) layout = { tileSize: 28, slots: [] };
-
-  for (let i = 0; i < supporting.length && i < layout.slots.length; i++) {
-    drawPhotoFramed(ctx, supporting[i], 0, 0, layout.tileSize, layout.tileSize, {
-      cx: layout.slots[i].cx, cy: layout.slots[i].cy, rotation: _photoRot(rng, 2), shadow: true,
-    });
+  // Bottom row (5)
+  for (let i = 0; i < 5; i++) {
+    slots.push({ x: margin + i * (topW + 8), y: 800, w: topW, h: 110 });
+  }
+  // Left column (3) — aligned to hero top/bottom
+  for (let i = 0; i < 3; i++) {
+    slots.push({ x: 40, y: heroY + i * (sideH + 8), w: 190, h: sideH });
+  }
+  // Right column (3)
+  for (let i = 0; i < 3; i++) {
+    slots.push({ x: 570, y: heroY + i * (sideH + 8), w: 190, h: sideH });
   }
 
-  drawHeroPhoto(ctx, photos[0], 0, 0, heroSize, heroSize, { cx, cy, rotation: _photoRot(rng, 1) });
+  const drawList = _tileToCount(supporting, slots.length);
+  drawList.forEach((p, i) => {
+    const s = slots[i];
+    drawPhotoFramed(ctx, p, s.x, s.y, s.w, s.h, { rotation: _photoRot(rng, 0.5), shadow: false });
+  });
+
+  // Hero LAST, centered on top
+  drawHeroPhoto(ctx, photos[0], heroX, heroY, heroW, heroH, { rotation: 0 });
 }
 
 // ── Frame dispatch ────────────────────────────────────────────
@@ -2082,10 +2046,8 @@ function drawGoldFrame(ctx, img, x, y, w, h, shadow) {
   ctx.restore();
 }
 
-// Object-fit: cover by default. Honors per-image flags:
-//   img._rotDeg     — user-driven 90° rotation set by drawPhotoFramed
-//   img._useContain — true to fit the entire photo inside the frame (no zoom-crop)
-// Hero photos opt in to contain-fit so faces aren't cropped when aspect ratios differ.
+// Object-fit: cover. Photos always fill their frame with no white space and no empty corners.
+// Honors img._rotDeg — user-driven 90° rotation set via the Design rotate button.
 function drawCover(ctx, img, x, y, w, h) {
   if (!img) return;
   const iw = img.naturalWidth || img.width || 1;
@@ -2094,12 +2056,7 @@ function drawCover(ctx, img, x, y, w, h) {
   const swap = rotDeg === 90 || rotDeg === 270;
   const effW = swap ? ih : iw;
   const effH = swap ? iw : ih;
-  // Auto-fall-back to contain when the cover scale would crop more than ~35% of the photo
-  const coverScale = Math.max(w / effW, h / effH);
-  const containScale = Math.min(w / effW, h / effH);
-  const cropRatio = coverScale / containScale; // ≥ 1 when aspect ratios diverge
-  const useContain = img._useContain === true || cropRatio > 1.55;
-  const scale = useContain ? containScale : coverScale;
+  const scale = Math.max(w / effW, h / effH);
   const dw = iw * scale;
   const dh = ih * scale;
   const cx = x + w / 2;
