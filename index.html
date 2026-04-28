@@ -41,7 +41,24 @@ body { font-family: 'Outfit', sans-serif; background: var(--ivory); color: var(-
 .h-step-sep { color: rgba(255,255,255,0.12); font-size: 12px; padding: 0 2px; }
 
 .progress-track { height: 2px; background: rgba(12,14,20,0.06); position: sticky; top: 68px; z-index: 199; }
-.progress-bar { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2)); transition: width 0.5s cubic-bezier(0.4,0,0.2,1); width: 25%; }
+.progress-bar { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2)); transition: width 0.5s cubic-bezier(0.4,0,0.2,1); width: 20%; }
+
+/* Theme selector */
+.theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 1.5rem; }
+@media (max-width: 760px) { .theme-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 460px) { .theme-grid { grid-template-columns: 1fr; } }
+.theme-card { background: var(--white); border: 2px solid var(--border2); border-radius: var(--r2); padding: 22px 20px; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 10px; position: relative; min-height: 200px; }
+.theme-card:hover { border-color: rgba(201,168,76,0.55); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.theme-card.sel { border-color: var(--gold); background: linear-gradient(135deg, rgba(201,168,76,0.10), rgba(232,201,122,0.04)); box-shadow: 0 4px 24px rgba(201,168,76,0.25); }
+.theme-icon { font-size: 48px; line-height: 1; }
+.theme-name { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; color: var(--obsidian); }
+.theme-tagline { font-size: 13px; color: var(--muted); line-height: 1.5; flex: 1; }
+.theme-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.theme-tag { font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: rgba(12,14,20,0.06); color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; }
+.theme-card.sel .theme-tag { background: rgba(201,168,76,0.16); color: var(--gold-dark); }
+.theme-photo-cap { position: absolute; top: 14px; right: 14px; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--obsidian); color: var(--gold2); letter-spacing: 0.5px; }
+.change-theme-link { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); background: none; border: none; padding: 0; margin-bottom: 1rem; cursor: pointer; transition: color 0.18s; font-family: 'Outfit', sans-serif; }
+.change-theme-link:hover { color: var(--gold-dark); }
 
 .main { max-width: 1140px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
 .page { display: none; animation: pageIn 0.4s cubic-bezier(0.4,0,0.2,1); }
@@ -205,7 +222,9 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
     <div class="logo-text">Celebrate<em>Banner</em></div>
   </a>
   <div class="header-stepper" id="hstep">
-    <div class="h-step active" data-step="1"><span class="h-step-dot"></span>Upload</div>
+    <div class="h-step active" data-step="0"><span class="h-step-dot"></span>Theme</div>
+    <span class="h-step-sep">·</span>
+    <div class="h-step" data-step="1"><span class="h-step-dot"></span>Upload</div>
     <span class="h-step-sep">·</span>
     <div class="h-step" data-step="2"><span class="h-step-dot"></span>Design</div>
     <span class="h-step-sep">·</span>
@@ -220,22 +239,36 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
 
 <main class="main">
 
+  <!-- ── PAGE 0: THEME ─────────────────────────────────────────── -->
+  <section class="page active" id="pg-0">
+    <div class="sec-eyebrow">Step 1 of 5</div>
+    <h1 class="sec-title">Pick a theme</h1>
+    <p class="sec-sub">Each theme tunes the palette, fields, and default layout for the moment you're celebrating.</p>
+
+    <div class="theme-grid" id="theme-grid"></div>
+
+    <div class="btn-group">
+      <button class="btn btn-primary" id="theme-next-btn" disabled onclick="goto(1)">Continue to Upload →</button>
+    </div>
+  </section>
+
   <!-- ── PAGE 1: UPLOAD ────────────────────────────────────────── -->
-  <section class="page active" id="pg-1">
-    <div class="sec-eyebrow">Step 1 of 4</div>
+  <section class="page" id="pg-1">
+    <button class="change-theme-link" type="button" onclick="goto(0)">← Change Theme</button>
+    <div class="sec-eyebrow">Step 2 of 5</div>
     <h1 class="sec-title">Upload your photos</h1>
-    <p class="sec-sub">Add 1–50 images. We'll let you pick a hero and shape the layout in the next step.</p>
+    <p class="sec-sub" id="upload-sub">Add 1–50 images. We'll let you pick a hero and shape the layout in the next step.</p>
 
     <label class="upload-zone" id="upload-zone">
       <input type="file" id="file-input" accept="image/*" multiple>
       <div class="upload-icon-wrap">📷</div>
       <div class="upload-title">Drop photos here or click to upload</div>
-      <div class="upload-hint">JPG, PNG, HEIC — up to 50 photos</div>
+      <div class="upload-hint" id="upload-hint">JPG, PNG, HEIC — up to 50 photos</div>
       <div class="upload-limit">Tip: high-resolution photos print sharper at 24×36"</div>
     </label>
 
     <div class="upload-stats" id="upload-stats" style="display:none;">
-      <span class="ustat"><strong id="photo-count">0</strong> / 50 photos</span>
+      <span class="ustat"><strong id="photo-count">0</strong> / <span id="photo-cap">50</span> photos</span>
       <span class="ustat">·</span>
       <span class="ustat" id="hero-status">No hero selected</span>
     </div>
@@ -249,7 +282,7 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
 
   <!-- ── PAGE 2: DESIGN ────────────────────────────────────────── -->
   <section class="page" id="pg-2">
-    <div class="sec-eyebrow">Step 2 of 4</div>
+    <div class="sec-eyebrow">Step 3 of 5</div>
     <h1 class="sec-title">Design your banner</h1>
     <p class="sec-sub">Pick the hero photo, add your text, and choose a frame for each photo.</p>
 
@@ -267,20 +300,7 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
         <div class="design-section-title">Banner text</div>
         <div class="design-section-meta">Shown at the top of the banner</div>
       </div>
-      <div class="text-fields">
-        <label class="field">
-          <span class="field-label">Name</span>
-          <input type="text" id="text-name" placeholder="e.g., Sarah Johnson" oninput="updateText()" maxlength="40">
-        </label>
-        <label class="field">
-          <span class="field-label">Class / Year</span>
-          <input type="text" id="text-year" placeholder="e.g., Class of 2025" oninput="updateText()" maxlength="40">
-        </label>
-        <label class="field">
-          <span class="field-label">School (optional)</span>
-          <input type="text" id="text-school" placeholder="e.g., Lincoln High" oninput="updateText()" maxlength="40">
-        </label>
-      </div>
+      <div class="text-fields" id="text-fields-container"></div>
     </div>
 
     <div class="design-section">
@@ -318,7 +338,7 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
 
   <!-- ── PAGE 3: PREVIEW ───────────────────────────────────────── -->
   <section class="page" id="pg-3">
-    <div class="sec-eyebrow">Step 3 of 4</div>
+    <div class="sec-eyebrow">Step 4 of 5</div>
     <h1 class="sec-title">Preview your banner</h1>
     <p class="sec-sub">Generate your preview, then pick from 7 arrangements. Classic is included; premium arrangements give a layered, hero-on-top look (+$9.99).</p>
 
@@ -370,7 +390,7 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
 
   <!-- ── PAGE 4: DELIVERY ──────────────────────────────────────── -->
   <section class="page" id="pg-4">
-    <div class="sec-eyebrow">Step 4 of 4</div>
+    <div class="sec-eyebrow">Step 5 of 5</div>
     <h1 class="sec-title">Choose delivery</h1>
     <p class="sec-sub">Get your banner instantly as a print-ready download, or have us print and ship a 24×36" banner.</p>
 
@@ -414,10 +434,86 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
 
 <script>
 // ─────────────────────────────────────────────────────────────
+// Themes
+// ─────────────────────────────────────────────────────────────
+const THEMES = [
+  {
+    id: 'graduation',
+    icon: '🎓',
+    name: 'Graduation',
+    tagline: 'Hero portrait surrounded by a beautiful photo collage. Perfect for grad parties and keepsakes.',
+    tags: ['Milestones', 'Portraits'],
+    maxPhotos: 55,
+    palette: { bg: '#0C0E14', accent: '#C9A84C', text: '#F5E4B0' },
+    fields: ['name', 'year', 'school'],
+    defaultArrangement: 'classic',
+  },
+  {
+    id: 'champion',
+    icon: '🏆',
+    name: 'Team Champion',
+    tagline: 'Stadium atmosphere with trophy art. Sky blue & gold palette for your winning team.',
+    tags: ['Sports', 'Victory'],
+    maxPhotos: 55,
+    palette: { bg: '#0D2B45', accent: '#4A9ECC', text: '#E8C97A' },
+    fields: ['teamName', 'year', 'school'],
+    defaultArrangement: 'classic',
+  },
+  {
+    id: 'wedding',
+    icon: '💒',
+    name: 'Wedding',
+    tagline: 'Romantic wide hero with photo grid. Lavender and champagne palette for your special day.',
+    tags: ['Wedding', 'Love'],
+    maxPhotos: 55,
+    palette: { bg: '#1A1228', accent: '#C4A882', text: '#F5F0E8' },
+    fields: ['coupleNames', 'date', 'venue'],
+    defaultArrangement: 'magazine',
+  },
+  {
+    id: 'anniversary',
+    icon: '❤️',
+    name: 'Anniversary',
+    tagline: 'Circular hero portrait surrounded by warm memory grid. Rose and gold palette.',
+    tags: ['Romance', 'Milestone'],
+    maxPhotos: 55,
+    palette: { bg: '#1A0A10', accent: '#C4617A', text: '#F5E4B0' },
+    fields: ['coupleNames', 'years', 'date'],
+    defaultArrangement: 'mosaic',
+  },
+  {
+    id: 'pets',
+    icon: '🐾',
+    name: 'Pets',
+    tagline: 'Playful, warm layout celebrating your furry family member. Fresh green palette.',
+    tags: ['Pets', 'Family'],
+    maxPhotos: 30,
+    palette: { bg: '#0A1A0F', accent: '#5A8F6A', text: '#F5E4B0' },
+    fields: ['petName', 'caption'],
+    defaultArrangement: 'scattered',
+  },
+];
+
+const THEME_FIELD_META = {
+  name:        { label: 'Name',                  placeholder: 'e.g., Sarah Johnson' },
+  year:        { label: 'Year / Class',          placeholder: 'e.g., Class of 2025' },
+  school:      { label: 'School (optional)',     placeholder: 'e.g., Lincoln High' },
+  teamName:    { label: 'Team Name',             placeholder: 'e.g., Lincoln Lions' },
+  coupleNames: { label: 'Names (e.g. Sarah & James)', placeholder: 'Sarah & James' },
+  date:        { label: 'Date',                  placeholder: 'e.g., June 14, 2025' },
+  venue:       { label: 'Venue (optional)',      placeholder: 'e.g., The Breakers' },
+  years:       { label: 'Years Together',        placeholder: 'e.g., 25 Years' },
+  petName:     { label: 'Pet Name',              placeholder: 'e.g., Bella' },
+  caption:     { label: 'Caption (optional)',    placeholder: 'e.g., Best Boy 2025' },
+};
+
+// ─────────────────────────────────────────────────────────────
 // State
 // ─────────────────────────────────────────────────────────────
 const MAX_RENDER_IMAGES = 50;
 const MAX_UPLOAD = 50;
+
+function getMaxPhotos() { return state.theme ? state.theme.maxPhotos : MAX_UPLOAD; }
 
 const FRAME_OPTIONS = [
   'rounded', 'circle', 'polaroid', 'gold', 'hexagon',
@@ -442,6 +538,7 @@ const ARRANGEMENTS = [
 
 const state = {
   appName: "CelebrateBanner",
+  theme: null,             // selected theme object from THEMES
   images: [],              // [{ id, dataUrl, name, imgEl }]
   heroImage: null,         // image id
   shuffledSeed: null,
@@ -449,14 +546,14 @@ const state = {
   frames: {},              // { [photoId]: frame name }
   rotations: {},           // { [photoId]: 0 | 90 | 180 | 270 } user-controlled photo rotation
   activeFrame: 'rounded',  // currently selected palette frame
-  bannerText: { name: '', year: '', school: '' },
+  bannerText: {},          // { [fieldKey]: value } — keys depend on theme.fields
   isPremium: false,
   arrangement: 'classic',
   previewGenerated: false,
   selectedPreviewMode: "standard",
   previewCacheKey: "",
   delivery: "digital",
-  step: 1,
+  step: 0,
 };
 
 function frameOf(id) { return state.frames[id] || 'rounded'; }
@@ -495,16 +592,18 @@ function djb2(str) {
 }
 
 function computeCacheKey() {
-  const t = state.bannerText;
+  const t = state.bannerText || {};
+  const textSig = Object.keys(t).sort().map(k => k + ':' + t[k]).join(',');
   const frameSig = Object.keys(state.frames).sort().map(k => k + ':' + state.frames[k]).join(',');
   const rotSig = Object.keys(state.rotations).sort().map(k => k + ':' + state.rotations[k]).join(',');
   return djb2([
+    state.theme ? state.theme.id : 'none',
     state.heroImage || '',
     state.shuffledSeed ?? 'none',
     state.arrangement,
     frameSig,
     rotSig,
-    t.name + '|' + t.year + '|' + t.school,
+    textSig,
   ].join('|'));
 }
 
@@ -525,7 +624,8 @@ function selectImages() {
   const pool = state.images.map(i => i.id).filter(id => id !== heroId);
   const seed = state.shuffledSeed ?? 0;
   const ordered = state.shuffledSeed != null ? shuffleArray(pool, mulberry32(seed)) : pool;
-  return [heroId, ...ordered.slice(0, MAX_RENDER_IMAGES - 1)];
+  const cap = getMaxPhotos();
+  return [heroId, ...ordered.slice(0, cap - 1)];
 }
 
 function shuffleLayout() {
@@ -550,8 +650,9 @@ function goto(step) {
     el.classList.toggle('active', s === step);
     el.classList.toggle('done', s < step);
   });
-  document.getElementById('progress-bar').style.width = (step * 25) + '%';
+  document.getElementById('progress-bar').style.width = ((step + 1) * 20) + '%';
 
+  if (step === 1) { refreshUploadLimits(); renderUploadGrid(); }
   if (step === 2) renderDesignGrids();
   if (step === 3) refreshPreviewUI();
   if (step === 4) refreshSummary();
@@ -560,9 +661,10 @@ function goto(step) {
 }
 
 function canEnter(step) {
-  if (step === 1) return true;
-  if (step === 2) return state.images.length >= 1;
-  if (step === 3) return state.images.length >= 1 && state.heroImage;
+  if (step === 0) return true;
+  if (step === 1) return !!state.theme;
+  if (step === 2) return !!state.theme && state.images.length >= 1;
+  if (step === 3) return !!state.theme && state.images.length >= 1 && !!state.heroImage;
   if (step === 4) return state.previewGenerated;
   return false;
 }
@@ -573,6 +675,68 @@ document.getElementById('hstep').addEventListener('click', e => {
   if (!el || !el.classList.contains('done')) return;
   goto(parseInt(el.dataset.step, 10));
 });
+
+// ─────────────────────────────────────────────────────────────
+// Step 0: Theme
+// ─────────────────────────────────────────────────────────────
+function renderThemes() {
+  const grid = document.getElementById('theme-grid');
+  if (!grid) return;
+  grid.innerHTML = THEMES.map(t => {
+    const sel = state.theme && state.theme.id === t.id;
+    return `
+      <div class="theme-card${sel ? ' sel' : ''}" data-theme="${t.id}" onclick="selectTheme('${t.id}')">
+        <div class="theme-photo-cap">Up to ${t.maxPhotos} photos</div>
+        <div class="theme-icon">${t.icon}</div>
+        <div class="theme-name">${t.name}</div>
+        <div class="theme-tagline">${t.tagline}</div>
+        <div class="theme-tags">
+          ${t.tags.map(tag => `<span class="theme-tag">${tag}</span>`).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('theme-next-btn').disabled = !state.theme;
+}
+
+function selectTheme(id) {
+  const theme = THEMES.find(t => t.id === id);
+  if (!theme) return;
+  const switching = state.theme && state.theme.id !== theme.id;
+  state.theme = theme;
+  // Reset bannerText to only contain keys defined by the theme; keep prior values where the field carries over.
+  const next = {};
+  theme.fields.forEach(k => { next[k] = state.bannerText[k] || ''; });
+  state.bannerText = next;
+  // Set arrangement to the theme default (premium status follows)
+  const arr = ARRANGEMENTS.find(a => a.id === theme.defaultArrangement) || ARRANGEMENTS[0];
+  state.arrangement = arr.id;
+  state.isPremium = arr.tier === 'premium';
+  state.selectedPreviewMode = state.isPremium ? 'premium' : 'standard';
+  if (switching) {
+    // Drop excess photos if the new theme has a smaller cap
+    const cap = theme.maxPhotos;
+    if (state.images.length > cap) {
+      state.images = state.images.slice(0, cap);
+      if (state.heroImage && !state.images.find(p => p.id === state.heroImage)) {
+        state.heroImage = state.images[0]?.id || null;
+      }
+    }
+    state.previewGenerated = false;
+  }
+  renderThemes();
+  refreshUploadLimits();
+}
+
+function refreshUploadLimits() {
+  const cap = getMaxPhotos();
+  const subEl = document.getElementById('upload-sub');
+  const hintEl = document.getElementById('upload-hint');
+  const capEl = document.getElementById('photo-cap');
+  if (subEl) subEl.textContent = `Add 1–${cap} images. We'll let you pick a hero and shape the layout in the next step.`;
+  if (hintEl) hintEl.textContent = `JPG, PNG, HEIC — up to ${cap} photos`;
+  if (capEl) capEl.textContent = String(cap);
+}
 
 // ─────────────────────────────────────────────────────────────
 // Step 1: Upload
@@ -595,10 +759,11 @@ uploadZone.addEventListener('drop', e => {
 
 function handleFiles(fileList) {
   const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
-  const slots = MAX_UPLOAD - state.images.length;
-  if (slots <= 0) { toast('Maximum 50 photos'); return; }
+  const cap = getMaxPhotos();
+  const slots = cap - state.images.length;
+  if (slots <= 0) { toast(`Maximum ${cap} photos`); return; }
   const accepted = files.slice(0, slots);
-  if (files.length > accepted.length) toast(`Added ${accepted.length}, ignored ${files.length - accepted.length} (cap of 50)`);
+  if (files.length > accepted.length) toast(`Added ${accepted.length}, ignored ${files.length - accepted.length} (cap of ${cap})`);
 
   let pending = accepted.length;
   if (!pending) return;
@@ -695,10 +860,25 @@ function renderDesignGrids() {
     frameGrid.appendChild(fCell);
   });
 
-  document.getElementById('text-name').value = state.bannerText.name;
-  document.getElementById('text-year').value = state.bannerText.year;
-  document.getElementById('text-school').value = state.bannerText.school;
+  renderTextFields();
   renderFrameTabs();
+}
+
+function renderTextFields() {
+  const container = document.getElementById('text-fields-container');
+  if (!container) return;
+  const fields = (state.theme && state.theme.fields) || [];
+  container.innerHTML = fields.map(key => {
+    const meta = THEME_FIELD_META[key] || { label: key, placeholder: '' };
+    const val = state.bannerText[key] || '';
+    const safeVal = val.replace(/"/g, '&quot;');
+    return `
+      <label class="field">
+        <span class="field-label">${meta.label}</span>
+        <input type="text" data-text-field="${key}" placeholder="${meta.placeholder}" value="${safeVal}" oninput="updateText('${key}', this.value)" maxlength="60">
+      </label>
+    `;
+  }).join('');
 }
 
 function renderFrameTabs() {
@@ -759,10 +939,9 @@ function mixFrames() {
   toast('Mixed frames applied');
 }
 
-function updateText() {
-  state.bannerText.name = document.getElementById('text-name').value;
-  state.bannerText.year = document.getElementById('text-year').value;
-  state.bannerText.school = document.getElementById('text-school').value;
+function updateText(key, value) {
+  if (!key) return;
+  state.bannerText[key] = value;
   state.previewGenerated = false;
 }
 
@@ -860,6 +1039,16 @@ function setArrangement(id) {
   generatePreview(true);
 }
 
+// Slightly lift a hex color to give the bg-gradient a top highlight
+function _lightenHex(hex, amt) {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex || '');
+  if (!m) return hex;
+  let n = parseInt(m[1], 16);
+  let r = (n >> 16) & 0xff, g = (n >> 8) & 0xff, b = n & 0xff;
+  r = Math.min(255, r + amt); g = Math.min(255, g + amt); b = Math.min(255, b + amt);
+  return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+}
+
 // Canvas rendering — logical 800×1200 coordinate space, scaled up via ctx.scale
 function renderToCanvas(targetCanvas, ids, premium, scale) {
   scale = scale || 1;
@@ -869,20 +1058,26 @@ function renderToCanvas(targetCanvas, ids, premium, scale) {
   const ctx = targetCanvas.getContext('2d');
   ctx.scale(scale, scale);
 
-  // Background
+  const theme = state.theme || THEMES[0];
+  const palette = theme.palette;
+
+  // Background — use theme palette
   const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, '#13161F');
-  grad.addColorStop(1, '#0C0E14');
+  grad.addColorStop(0, _lightenHex(palette.bg, 12));
+  grad.addColorStop(1, palette.bg);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
 
-  // Gold border frame
-  ctx.strokeStyle = '#C9A84C';
+  // Theme-specific decorative layer (sits behind text/photos)
+  drawThemeDecorations(ctx, W, H, theme);
+
+  // Border frame in the theme accent
+  ctx.strokeStyle = palette.accent;
   ctx.lineWidth = 8;
   ctx.strokeRect(20, 20, W - 40, H - 40);
 
   // Banner text at top
-  const textBottomY = renderBannerText(ctx, W, 56);
+  const textBottomY = renderBannerText(ctx, W, 56, theme);
 
   const photos = ids.map(id => state.images.find(p => p.id === id)).filter(Boolean);
   if (photos.length === 0) return;
@@ -898,44 +1093,164 @@ function renderToCanvas(targetCanvas, ids, premium, scale) {
   }
 }
 
-function renderBannerText(ctx, W, topY) {
+// ── Theme decorations ──────────────────────────────────────────
+function drawThemeDecorations(ctx, W, H, theme) {
+  if (!theme) return;
+  switch (theme.id) {
+    case 'champion':    drawStadiumArcs(ctx, W, H, theme); break;
+    case 'wedding':     drawFloralCorners(ctx, W, H, theme); break;
+    case 'anniversary': drawHeartMotifs(ctx, W, H, theme); break;
+    case 'pets':        drawPawWatermarks(ctx, W, H, theme); break;
+  }
+}
+
+function drawStadiumArcs(ctx, W, H, theme) {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(232,201,122,0.10)';
+  ctx.lineWidth = 2;
+  const cx = W / 2;
+  const cy = H * 0.18;
+  for (let r = 220; r <= 900; r += 90) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, Math.PI * 1.05, Math.PI * 1.95);
+    ctx.stroke();
+  }
+  // Soft stadium-light bloom at top center
+  const glow = ctx.createRadialGradient(cx, cy, 20, cx, cy, 320);
+  glow.addColorStop(0, 'rgba(232,201,122,0.22)');
+  glow.addColorStop(1, 'rgba(232,201,122,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H * 0.5);
+  ctx.restore();
+}
+
+function _floralBloom(ctx, cx, cy, r, color) {
+  ctx.save();
+  ctx.fillStyle = color;
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.ellipse(cx + Math.cos(a) * r * 0.5, cy + Math.sin(a) * r * 0.5, r * 0.35, r * 0.18, a, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.20, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawFloralCorners(ctx, W, H, theme) {
+  const color = 'rgba(196,168,130,0.18)';
+  const r = 90;
+  _floralBloom(ctx, 70, 70, r, color);
+  _floralBloom(ctx, W - 70, 70, r, color);
+  _floralBloom(ctx, 70, H - 70, r, color);
+  _floralBloom(ctx, W - 70, H - 70, r, color);
+}
+
+function _heartShape(ctx, cx, cy, s) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + s * 0.65);
+  ctx.bezierCurveTo(cx - s * 1.0, cy + s * 0.10, cx - s * 0.7, cy - s * 0.85, cx, cy - s * 0.25);
+  ctx.bezierCurveTo(cx + s * 0.7, cy - s * 0.85, cx + s * 1.0, cy + s * 0.10, cx, cy + s * 0.65);
+  ctx.closePath();
+}
+
+function drawHeartMotifs(ctx, W, H, theme) {
+  ctx.save();
+  ctx.fillStyle = 'rgba(196,97,122,0.16)';
+  // Heart pattern: corners + a few floating accents
+  const placements = [
+    [60, 60, 24], [W - 60, 60, 24],
+    [60, H - 60, 24], [W - 60, H - 60, 24],
+    [W * 0.18, H * 0.42, 14], [W * 0.85, H * 0.36, 14],
+    [W * 0.12, H * 0.78, 14], [W * 0.88, H * 0.72, 14],
+  ];
+  placements.forEach(([x, y, s]) => { _heartShape(ctx, x, y, s); ctx.fill(); });
+  ctx.restore();
+}
+
+function _pawShape(ctx, cx, cy, s) {
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + s * 0.35, s * 0.55, s * 0.45, 0, 0, Math.PI * 2);
+  ctx.fill();
+  for (let i = 0; i < 4; i++) {
+    const a = -Math.PI / 2 + (i - 1.5) * 0.65;
+    const tx = cx + Math.cos(a) * s * 0.75;
+    const ty = cy + Math.sin(a) * s * 0.75;
+    ctx.beginPath();
+    ctx.ellipse(tx, ty, s * 0.22, s * 0.30, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawPawWatermarks(ctx, W, H, theme) {
+  ctx.save();
+  ctx.fillStyle = 'rgba(90,143,106,0.14)';
+  const placements = [
+    [W * 0.12, H * 0.16, 38], [W * 0.86, H * 0.22, 32],
+    [W * 0.18, H * 0.55, 28], [W * 0.82, H * 0.62, 36],
+    [W * 0.30, H * 0.85, 30], [W * 0.70, H * 0.88, 26],
+  ];
+  placements.forEach(([x, y, s]) => _pawShape(ctx, x, y, s));
+  ctx.restore();
+}
+
+// Convert a "#rrggbb" hex to "rgba(r,g,b,a)"
+function _hexToRgba(hex, alpha) {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex || '');
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  return `rgba(${(n >> 16) & 0xff},${(n >> 8) & 0xff},${n & 0xff},${alpha})`;
+}
+
+function renderBannerText(ctx, W, topY, theme) {
+  theme = theme || state.theme || THEMES[0];
+  const fields = theme.fields || [];
+  const palette = theme.palette;
   const t = state.bannerText || {};
-  // Pull live values from inputs as a safety net in case updateText() didn't fire
-  // (e.g. if the user edited an input but the focus left without an input event).
-  const liveName   = (document.getElementById('text-name')   || {}).value;
-  const liveYear   = (document.getElementById('text-year')   || {}).value;
-  const liveSchool = (document.getElementById('text-school') || {}).value;
-  const name   = (t.name   || liveName   || '').trim();
-  const year   = (t.year   || liveYear   || '').trim();
-  const school = (t.school || liveSchool || '').trim();
+
+  // Pull live input values as a safety net if updateText() hasn't fired yet
+  const values = fields.map(key => {
+    let v = (t[key] || '').trim();
+    if (!v) {
+      const live = document.querySelector(`[data-text-field="${key}"]`);
+      if (live && live.value) v = live.value.trim();
+    }
+    return { key, value: v };
+  });
 
   let y = topY;
   ctx.textAlign = 'center';
 
-  // Name — fallback placeholder in muted gold so the text area is never empty
-  if (name) {
-    ctx.fillStyle = '#F5E4B0';
-    ctx.font = 'bold 64px "Cormorant Garamond", serif';
-    ctx.fillText(name, W / 2, y + 56);
-  } else {
-    ctx.fillStyle = 'rgba(232,201,122,0.45)';
-    ctx.font = 'italic 600 56px "Cormorant Garamond", serif';
-    ctx.fillText('Your Name Here', W / 2, y + 56);
-  }
-  y += 74;
-
-  if (year) {
-    ctx.fillStyle = '#E8C97A';
-    ctx.font = 'italic 600 30px "Cormorant Garamond", serif';
-    ctx.fillText(year, W / 2, y + 30);
-    y += 40;
-  }
-  if (school) {
-    ctx.fillStyle = 'rgba(232,201,122,0.78)';
-    ctx.font = '500 18px Outfit, sans-serif';
-    ctx.fillText(school, W / 2, y + 20);
-    y += 28;
-  }
+  values.forEach((f, i) => {
+    if (i === 0) {
+      // Headline: bold serif, theme text color. Show muted placeholder if blank.
+      if (f.value) {
+        ctx.fillStyle = palette.text;
+        ctx.font = 'bold 64px "Cormorant Garamond", serif';
+        ctx.fillText(f.value, W / 2, y + 56);
+      } else {
+        ctx.fillStyle = _hexToRgba(palette.text, 0.45);
+        ctx.font = 'italic 600 56px "Cormorant Garamond", serif';
+        const meta = THEME_FIELD_META[f.key] || {};
+        ctx.fillText(meta.placeholder || `Your ${f.key}`, W / 2, y + 56);
+      }
+      y += 74;
+    } else if (i === 1) {
+      if (!f.value) return;
+      ctx.fillStyle = palette.accent;
+      ctx.font = 'italic 600 30px "Cormorant Garamond", serif';
+      ctx.fillText(f.value, W / 2, y + 30);
+      y += 40;
+    } else {
+      if (!f.value) return;
+      ctx.fillStyle = _hexToRgba(palette.text, 0.78);
+      ctx.font = '500 18px Outfit, sans-serif';
+      ctx.fillText(f.value, W / 2, y + 20);
+      y += 28;
+    }
+  });
   return y;
 }
 
@@ -2073,6 +2388,8 @@ function placeholderCheckout() {
 }
 
 // init
+renderThemes();
+refreshUploadLimits();
 refreshUploadStats();
 </script>
 
