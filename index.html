@@ -550,7 +550,7 @@ const MIX_POOL = FRAME_OPTIONS.filter(f => f !== 'heart' && f !== 'star');
 const ARRANGEMENTS = [
   { id: 'classic',   label: 'Classic',   sub: 'Hero centered top, collage grid below · Best with 1–50 photos',               tier: 'standard', minPhotos: 1,  maxPhotos: 50 },
   { id: 'magazine',  label: 'Magazine',  sub: 'Hero top-left, photos fill right column and below hero · Best with 25 photos', tier: 'premium',  minPhotos: 3,  maxPhotos: 25 },
-  { id: 'scattered', label: 'Scattered', sub: 'Scrapbook feel — overlapping photos at slight angles · Best with 5–40 photos', tier: 'premium',  minPhotos: 5,  maxPhotos: 40 },
+  { id: 'scattered', label: 'Scattered', sub: 'Hero centered large, 16 photos pinned around it · Best with 17 photos',         tier: 'premium',  minPhotos: 5,  maxPhotos: 17 },
   { id: 'mosaic',    label: 'Mosaic',    sub: 'Hero in the center, photos on all four sides · Best with 8–40 photos',         tier: 'premium',  minPhotos: 8,  maxPhotos: 40 },
 ];
 
@@ -1473,54 +1473,90 @@ function renderMagazine(ctx, photos, W, H, contentTop) {
   drawHeroPhoto(ctx, photos[0], heroX, heroY, heroW, heroH, { rotation: 0 });
 }
 
-// ── Layout 4: Scattered (+$9.99) — 4-col rotated grid + centered hero on top ──
-// Reserves a text-safe zone above contentTop so the headline is never covered.
-// Tile 140×140 (with jitter), hero 350×350 centered.
+// ── Layout 4: Scattered (+$9.99) — corkboard scrapbook ──
+// 16 supporting photos pinned in 4 zones around a dominant centered hero.
+// Hero: 340×380 rounded rect (rx=14) with deep drop shadow + thin gold border.
+// renderToCanvas re-draws the headline on top after this layout, so step-7 of the
+// spec is satisfied globally — no inline duplicate call needed here.
 function renderScattered(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0xBEEF);
   const supporting = photos.slice(1);
 
-  const margin = 40;
-  const innerW = W - margin * 2;
-  const tileSize = 140;
-  const cols = 4;
-  const rows = Math.max(6, Math.ceil(supporting.length / cols));
-
-  // Text-safe zone: photos can never be placed above contentTop (textBottomY + 24).
+  const tileSize = 130;
   const safeTop = contentTop + 20;
-  const gridTop = safeTop;
-  const gridBot = H - 60;
-  const innerH = gridBot - gridTop;
-  const rowH = innerH / Math.max(rows, 6);
-  const colGap = (innerW - cols * tileSize) / (cols - 1);
+  const contentBottom = H - 60;
+  const contentH = contentBottom - safeTop;
 
-  // Hero stays centered between safe zone and bottom
-  const heroSize = 350;
-  const heroX = 225;
-  const heroY = Math.max(safeTop + 40, Math.round(gridTop + (innerH - heroSize) / 2));
+  // Hero geometry (centered)
+  const heroW = 340, heroH = 380;
+  const heroX = (W - heroW) / 2;
+  const heroY = safeTop + (contentH - heroH) / 2;
 
-  const drawList = _tileToCount(supporting, cols * rows);
+  // 16 supporting-photo positions (top-left corners), 4 per zone — explicit per spec.
+  const basePositions = [
+    // Top-left zone
+    [60, safeTop + 20],   [180, safeTop + 40],
+    [60, safeTop + 155],  [175, safeTop + 170],
+    // Top-right zone
+    [470, safeTop + 20],  [590, safeTop + 40],
+    [475, safeTop + 155], [590, safeTop + 170],
+    // Bottom-left zone
+    [55, safeTop + 600],  [175, safeTop + 580],
+    [60, safeTop + 720],  [180, safeTop + 735],
+    // Bottom-right zone
+    [470, safeTop + 600], [590, safeTop + 580],
+    [475, safeTop + 720], [590, safeTop + 735],
+  ];
+
+  // 1) Supporting photos drawn first, each rotated -7° to +7° (deterministic via seed)
+  const drawList = _tileToCount(supporting, basePositions.length);
   drawList.forEach((p, i) => {
-    const c = i % cols;
-    const r = Math.floor(i / cols);
-    const baseCx = margin + c * (tileSize + colGap) + tileSize / 2;
-    const baseCy = gridTop + r * rowH + rowH / 2;
-    const jitterX = rng() * 40 - 20;
-    const jitterY = rng() * 40 - 20;
-    let cx = baseCx + jitterX;
-    let cy = baseCy + jitterY;
-    // Enforce text-safe zone: a photo's top edge must stay below contentTop+10.
-    const minCy = safeTop + tileSize / 2 + 10;
-    if (cy < minCy) cy = minCy;
-    const rot = (rng() * 10 - 5) * Math.PI / 180;
-    drawPhotoFramed(ctx, p, 0, 0, tileSize, tileSize, {
-      cx, cy, rotation: rot, shadow: true,
-    });
+    const [bx, by] = basePositions[i];
+    const cx = bx + tileSize / 2;
+    const cy = by + tileSize / 2;
+    const rot = (rng() * 14 - 7) * Math.PI / 180;
+    drawPhotoFramed(ctx, p, 0, 0, tileSize, tileSize, { cx, cy, rotation: rot, shadow: true });
   });
 
-  // Hero LAST, on top of everything
-  drawHeroPhoto(ctx, photos[0], heroX, heroY, heroSize, heroSize, { rotation: _photoRot(rng, 1.5) });
+  // 2) Hero LAST — inline so we can apply the spec-mandated rx=14, deep shadow, gold border
+  const hero = photos[0];
+  if (!hero || !hero.imgEl) return;
+  const heroCx = heroX + heroW / 2;
+  const heroCy = heroY + heroH / 2;
+  const heroRot = (rng() * 4 - 2) * Math.PI / 180;
+  const radius = 14;
+
+  // Plumb the user's per-photo rotation flag onto the hero image
+  hero.imgEl._rotDeg = (state.rotations && state.rotations[hero.id]) || 0;
+
+  // 2a) Drop-shadow plate
+  ctx.save();
+  ctx.translate(heroCx, heroCy);
+  ctx.rotate(heroRot);
+  ctx.shadowColor = 'rgba(0,0,0,0.65)';
+  ctx.shadowBlur = 28;
+  ctx.shadowOffsetY = 12;
+  ctx.fillStyle = '#000';
+  roundRect(ctx, -heroW / 2, -heroH / 2, heroW, heroH, radius); ctx.fill();
+  ctx.restore();
+
+  // 2b) Hero photo (rounded clip, cover-fit, no shadow)
+  ctx.save();
+  ctx.translate(heroCx, heroCy);
+  ctx.rotate(heroRot);
+  roundRect(ctx, -heroW / 2, -heroH / 2, heroW, heroH, radius); ctx.clip();
+  drawCover(ctx, hero.imgEl, -heroW / 2, -heroH / 2, heroW, heroH);
+  ctx.restore();
+
+  // 2c) Thin gold border on top
+  ctx.save();
+  ctx.translate(heroCx, heroCy);
+  ctx.rotate(heroRot);
+  ctx.strokeStyle = '#C9A84C';
+  ctx.lineWidth = 3;
+  roundRect(ctx, -heroW / 2, -heroH / 2, heroW, heroH, radius); ctx.stroke();
+  ctx.restore();
 }
 
 // ── Layout 5: Mosaic (free) — hero rectangle + 5 top + 3 left + 3 right + 5+5 bottom ──
