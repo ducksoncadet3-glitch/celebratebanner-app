@@ -131,14 +131,14 @@ body { font-family: 'Outfit', sans-serif; background: var(--ivory); color: var(-
 .photo-cell.is-hero .cell-frame-badge { background: var(--gold2); color: var(--obsidian); }
 
 /* Preview */
-.preview-frame { background: var(--obsidian2); border-radius: var(--r3); padding: 1.75rem 1.5rem 0; box-shadow: var(--shadow-lg); margin-bottom: 1.5rem; }
+.preview-frame { background: var(--obsidian2); border-radius: var(--r3); padding: 1.5rem; box-shadow: var(--shadow-lg); margin-bottom: 1.5rem; }
 .preview-label { font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
 .preview-spec { font-size: 10px; color: rgba(255,255,255,0.2); }
-#banner-preview { width: 80%; max-width: 640px; aspect-ratio: 2/3; border-radius: var(--r2); overflow: hidden; position: relative; margin: 0 auto; background: var(--obsidian3); display: flex; align-items: center; justify-content: center; }
-canvas#preview-canvas { width: 100%; height: 100%; display: block; }
-.stand-mockup { width: 90%; max-width: 640px; margin: 1rem auto 0; padding-bottom: 1rem; line-height: 0; }
+#banner-preview { width: 100%; max-width: 500px; aspect-ratio: 2 / 3; margin: 0 auto; background: var(--obsidian3); display: block; position: relative; border-radius: var(--r2); overflow: hidden; }
+canvas#preview-canvas { width: 100% !important; height: 100% !important; display: block; object-fit: contain; }
+.stand-mockup { width: 90%; max-width: 500px; margin: 1.25rem auto 0; line-height: 0; }
 .stand-mockup canvas { width: 100%; height: auto; display: block; filter: drop-shadow(0 8px 18px rgba(0,0,0,0.18)); border-radius: 4px; }
-.preview-empty { color: rgba(255,255,255,0.45); text-align: center; padding: 2rem; font-size: 14px; }
+.preview-empty { position: absolute; inset: 0; color: rgba(255,255,255,0.45); text-align: center; padding: 2rem; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .preview-loading { color: var(--gold2); display: flex; flex-direction: column; align-items: center; gap: 16px; }
 .preview-loading .spinner { width: 36px; height: 36px; border: 3px solid rgba(201,168,76,0.18); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -1009,9 +1009,9 @@ function refreshPreviewUI() {
     post.style.display = 'block';
     pre.style.display = 'none';
     empty.style.display = 'none';
-    // Plain banner canvas stays hidden — the stand mockup is the only visible preview.
-    // The canvas is still kept in the DOM so downloadJpg() can read its bytes.
-    canvas.style.display = 'none';
+    // Show the actual rendered banner in the preview frame; the stand mockup
+    // appears below it as a secondary "see it on a stand" visual.
+    canvas.style.display = 'block';
     genBtn.style.display = 'none';
     renderArrangementGrid();
     if (stand) stand.style.display = 'block';
@@ -1092,6 +1092,10 @@ function renderToCanvas(targetCanvas, ids, premium, scale) {
   const W = 800, H = 1200;
   targetCanvas.width = W * scale;
   targetCanvas.height = H * scale;
+  // Force the on-screen size to fill its container so the canvas always lays out
+  // at the same 2:3 aspect ratio as #banner-preview (no leftover dark band).
+  targetCanvas.style.width = '100%';
+  targetCanvas.style.height = '100%';
   const ctx = targetCanvas.getContext('2d');
   ctx.scale(scale, scale);
 
