@@ -1405,6 +1405,72 @@ function _photoRot(rng, maxDeg) {
   return (rng() * 2 - 1) * maxDeg * Math.PI / 180;
 }
 
+// 3D floating supporting-card effect — lighter than draw3DHero. Used in Scattered
+// to make every photo look like a physical card lifted off the table. Optional
+// shadowOffsetY / shadowBlur let the caller stagger depth so no two cards share
+// the exact same lift height (creates a natural scattered-on-a-table look).
+function draw3DPhoto(ctx, photo, cx, cy, w, h, rotation, shadowOffsetY, shadowBlur) {
+  if (!photo || !photo.imgEl) return;
+  const offY = shadowOffsetY != null ? shadowOffsetY : 10;
+  const blur = shadowBlur != null ? shadowBlur : 22;
+
+  // Plumb the user's per-photo rotation flag onto the image
+  photo.imgEl._rotDeg = (state.rotations && state.rotations[photo.id]) || 0;
+
+  ctx.save();
+  if (rotation) {
+    ctx.translate(cx, cy);
+    ctx.rotate(rotation);
+    cx = 0; cy = 0;
+  }
+  const x = cx - w / 2;
+  const y = cy - h / 2;
+  const radius = 8;
+
+  // LAYER 1 — deep drop shadow (card floating above the surface)
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.65)';
+  ctx.shadowBlur = blur;
+  ctx.shadowOffsetX = 6;
+  ctx.shadowOffsetY = offY;
+  ctx.fillStyle = '#000';
+  roundRect(ctx, x, y, w, h, radius); ctx.fill();
+  ctx.restore();
+
+  // LAYER 2 — card edge thickness (right + bottom)
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.fillRect(x + w, y + 4, 4, h - 4);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.fillRect(x + 4, y + h, w - 4, 3);
+  ctx.restore();
+
+  // LAYER 3 — photo with rounded clip
+  ctx.save();
+  roundRect(ctx, x, y, w, h, radius); ctx.clip();
+  drawCover(ctx, photo.imgEl, x, y, w, h);
+  ctx.restore();
+
+  // LAYER 4 — thin white print-edge border
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, x, y, w, h, radius); ctx.stroke();
+  ctx.restore();
+
+  // LAYER 5 — top-left specular highlight
+  ctx.save();
+  const shine = ctx.createLinearGradient(x, y, x + w * 0.5, y + h * 0.4);
+  shine.addColorStop(0, 'rgba(255,255,255,0.22)');
+  shine.addColorStop(0.5, 'rgba(255,255,255,0.06)');
+  shine.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = shine;
+  roundRect(ctx, x, y, w, h, radius); ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+}
+
 // Tile a base list to fill `count` slots. Each tiled copy is a shallow clone so any
 // per-slot state mutations (e.g. .frame overrides) don't bleed back into siblings.
 function _tileToCount(baseList, count) {
@@ -1572,18 +1638,22 @@ function renderScattered(ctx, photos, W, H, contentTop) {
     [475, safeTop + 720], [590, safeTop + 735],
   ];
 
-  // 1) Supporting photos drawn first, each rotated -7° to +7° (deterministic via seed)
+  // 1) Supporting photos as 3D floating cards. Per-photo shadow stagger so no
+  // two cards have identical lift heights — produces a natural "scattered on a
+  // table" feel where each print appears to hover at a slightly different depth.
   const drawList = _tileToCount(supporting, basePositions.length);
   drawList.forEach((p, i) => {
     const [bx, by] = basePositions[i];
     const cx = bx + tileSize / 2;
     const cy = by + tileSize / 2;
     const rot = (rng() * 14 - 7) * Math.PI / 180;
-    drawPhotoFramed(ctx, p, 0, 0, tileSize, tileSize, { cx, cy, rotation: rot, shadow: true });
+    const shadowDepth = 8 + rng() * 14;   // 8–22px vertical lift
+    const shadowBlur  = 18 + rng() * 16;  // 18–34px softness
+    draw3DPhoto(ctx, p, cx, cy, tileSize, tileSize, rot, shadowDepth, shadowBlur);
   });
 
-  // 2) Hero LAST — 3D floating-card effect (no rotation; the card looks more
-  // convincingly "lifted" when its edges stay aligned with the light direction)
+  // 2) Hero LAST — full draw3DHero treatment (deeper shadow, gold border,
+  // larger specular). Drawn axis-aligned for the strongest "lifted" illusion.
   draw3DHero(ctx, photos[0], heroX, heroY, heroW, heroH);
 }
 
