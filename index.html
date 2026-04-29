@@ -551,7 +551,7 @@ const ARRANGEMENTS = [
   { id: 'classic',   label: 'Classic',   sub: 'Hero centered top, collage grid below · Best with 1–50 photos',               tier: 'standard', minPhotos: 1,  maxPhotos: 50 },
   { id: 'magazine',  label: 'Magazine',  sub: 'Hero top-left, photos fill right column and below hero · Best with 25 photos', tier: 'premium',  minPhotos: 3,  maxPhotos: 25 },
   { id: 'scattered', label: 'Scattered', sub: 'Hero centered large, 16 photos pinned around it · Best with 17 photos',         tier: 'premium',  minPhotos: 5,  maxPhotos: 17 },
-  { id: 'mosaic',    label: 'Mosaic',    sub: 'Hero in the center, photos on all four sides · Best with 8–40 photos',         tier: 'premium',  minPhotos: 8,  maxPhotos: 40 },
+  { id: 'mosaic',    label: 'Mosaic',    sub: 'Hero centered, photos on all sides and 3 rows below · Best with 29 photos',   tier: 'premium',  minPhotos: 8,  maxPhotos: 29 },
 ];
 
 const state = {
@@ -1462,6 +1462,14 @@ function renderClassic(ctx, photos, W, H, contentTop) {
 // Hero: x=40, y=128, w=460, h=420 (rounded rect, drop shadow only).
 // Left below hero: 3 cols × 4 rows = 12 photos. Right column: 2 cols × 6 rows = 12 photos.
 function renderMagazine(ctx, photos, W, H, contentTop) {
+  // Outer save/restore + neutral stroke neutralizes any state leaked from a prior
+  // frame draw (e.g. red strokes from washi tape / ribbon) so the bottom-left no
+  // longer shows phantom diagonals after a multi-frame collage above it.
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,0,0,0)';
+  ctx.lineWidth = 0;
+  ctx.setLineDash([]);
+
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0x4A6A);
   const supporting = photos.slice(1);
@@ -1503,6 +1511,7 @@ function renderMagazine(ctx, photos, W, H, contentTop) {
     const c = i % rightCols;
     const x = rightX + c * (rightCellW + gap);
     const y = rightY + r * (rightCellH + gap);
+    ctx.strokeStyle = 'rgba(0,0,0,0)';
     drawPhotoFramed(ctx, p, x, y, rightCellW, rightCellH, { rotation: _photoRot(rng, 1), shadow: false });
   }
 
@@ -1513,11 +1522,14 @@ function renderMagazine(ctx, photos, W, H, contentTop) {
     const c = i % leftCols;
     const x = leftBelowX + c * (leftCellW + gap);
     const y = leftBelowY + r * (leftCellH + gap);
+    ctx.strokeStyle = 'rgba(0,0,0,0)';
     drawPhotoFramed(ctx, p, x, y, leftCellW, leftCellH, { rotation: _photoRot(rng, 1), shadow: false });
   }
 
   // 3) Hero LAST, top-left — 3D floating-card effect
   draw3DHero(ctx, photos[0], heroX, heroY, heroW, heroH);
+
+  ctx.restore();
 }
 
 // ── Layout 4: Scattered (+$9.99) — corkboard scrapbook ──
@@ -1571,51 +1583,56 @@ function renderScattered(ctx, photos, W, H, contentTop) {
   draw3DHero(ctx, photos[0], heroX, heroY, heroW, heroH);
 }
 
-// ── Layout 5: Mosaic (free) — hero rectangle + 5 top + 3 left + 3 right + 5+5 bottom ──
-// Hero: 320×400 rounded rectangle at x=240, y=370. 21 collage slots total.
+// ── Layout 5: Mosaic (free) — hero centered, 28 collage slots filling every gap ──
+// Hero: 320×380 at (240, 370). Top row 5, flanking 4×2 (top+mid), bottom rows 5×3.
 function renderMosaic(ctx, photos, W, H, contentTop) {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,0,0,0)';
+  ctx.lineWidth = 0;
+  ctx.setLineDash([]);
+
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0xA10C);
   const supporting = photos.slice(1);
-  const margin = 40;
 
-  const heroX = 240, heroY = 370, heroW = 320, heroH = 400;
+  const heroX = 240, heroY = 370, heroW = 320, heroH = 380;
 
-  const topW = 136;       // (innerW 720 - 4 gaps × 8) / 5 = 136
-  const sideH = 123;      // 3 rows × 123 + 2 gaps × 10 = 389 ≈ hero height
-  const botW = 136;
-
+  const topXs = [40, 184, 328, 472, 616];
   const slots = [];
-  // Top row (5) — y=250, h=110
-  for (let i = 0; i < 5; i++) {
-    slots.push({ x: margin + i * (topW + 8), y: 250, w: topW, h: 110 });
-  }
-  // Left column (3) — alongside hero, gap=10
-  const leftRightYs = [370, 503, 636];
-  for (const ly of leftRightYs) {
-    slots.push({ x: 40, y: ly, w: 190, h: sideH });
-  }
-  // Right column (3) — same Ys, x=570
-  for (const ly of leftRightYs) {
-    slots.push({ x: 570, y: ly, w: 190, h: sideH });
-  }
-  // Bottom row 1 (5) — y=780, h=90
-  for (let i = 0; i < 5; i++) {
-    slots.push({ x: margin + i * (botW + 8), y: 780, w: botW, h: 90 });
-  }
-  // Bottom row 2 (5) — y=878, h=90
-  for (let i = 0; i < 5; i++) {
-    slots.push({ x: margin + i * (botW + 8), y: 878, w: botW, h: 90 });
-  }
+
+  // Top row (5)
+  for (const tx of topXs) slots.push({ x: tx, y: 248, w: 136, h: 114 });
+
+  // Flanking — top half (4): two stacked left of hero + two right of hero
+  slots.push({ x: 40,  y: 370, w: 192, h: 86 });
+  slots.push({ x: 40,  y: 464, w: 192, h: 86 });
+  slots.push({ x: 568, y: 370, w: 192, h: 86 });
+  slots.push({ x: 568, y: 464, w: 192, h: 86 });
+
+  // Flanking — mid half (4): same x positions, lower y
+  slots.push({ x: 40,  y: 558, w: 192, h: 86 });
+  slots.push({ x: 40,  y: 652, w: 192, h: 86 });
+  slots.push({ x: 568, y: 558, w: 192, h: 86 });
+  slots.push({ x: 568, y: 652, w: 192, h: 86 });
+
+  // Bottom row 1 (5) — y=758, h=110
+  for (const tx of topXs) slots.push({ x: tx, y: 758, w: 136, h: 110 });
+  // Bottom row 2 (5) — y=876, h=110
+  for (const tx of topXs) slots.push({ x: tx, y: 876, w: 136, h: 110 });
+  // Bottom row 3 (5) — y=994, h=100
+  for (const tx of topXs) slots.push({ x: tx, y: 994, w: 136, h: 100 });
 
   const drawList = _tileToCount(supporting, slots.length);
   drawList.forEach((p, i) => {
     const s = slots[i];
+    ctx.strokeStyle = 'rgba(0,0,0,0)';
     drawPhotoFramed(ctx, p, s.x, s.y, s.w, s.h, { rotation: _photoRot(rng, 0.5), shadow: false });
   });
 
   // Hero LAST, centered rectangle on top — 3D floating-card effect
   draw3DHero(ctx, photos[0], heroX, heroY, heroW, heroH);
+
+  ctx.restore();
 }
 
 // ── Frame dispatch ────────────────────────────────────────────
