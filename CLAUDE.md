@@ -99,6 +99,22 @@ This is a **single-page, multi-step wizard** built entirely in one HTML file. No
 - These themes are in the themes grid config in JS
 - May need full implementation or are partially stubbed
 
+### America 250 (LIVE)
+- Up to 55 photos
+- Text fields: Your Name / Organization, Date (placeholder "July 4, 2026"), City / State (optional)
+- Palette: deep navy `#0A1628` + red `#B22234` + white text
+- Canvas decoration: seeded star field, top/bottom red stripe stack, gold accent lines, large corner stars
+- Theme card badge: red pill "JULY 4, 2026"
+- Anchored to the U.S. 250th Anniversary on July 4, 2026
+
+### World Cup 2026 (LIVE)
+- **Up to 10 photos** (enforced — toast: "World Cup theme is limited to 10 photos")
+- Text fields: Your Team / Country, Match Date, Watch Party Location (optional)
+- Palette: navy `#0D2B45` + sky blue `#4A9ECC` accent + gold text
+- Canvas decoration: spotlight rays from top corners, scattered ⚽, gold bottom glow, sky+gold accent bars, sparse star pattern
+- Theme card badge: sky blue pill "JUNE 12 – JULY 19"
+- Tied to the 2026 World Cup window (June 12 – July 19, 2026)
+
 ---
 
 ## Output Specs (non-negotiable)
@@ -136,8 +152,8 @@ Key endpoints used:
 ---
 
 ## Pending Items for this repo
-- [ ] Add America250 theme to themes grid
-- [ ] Add World Cup 2026 Watch Party theme
+- [x] Add America250 theme to themes grid
+- [x] Add World Cup 2026 Watch Party theme
 - [ ] Add Haitian Flag Day theme (bilingual French/Creole)
 - [ ] Wire up real Stripe Checkout (currently UI mock)
 - [ ] Connect preview canvas to API for real render

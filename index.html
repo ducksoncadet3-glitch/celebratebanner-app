@@ -57,6 +57,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--ivory); color: var(-
 .theme-tag { font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: rgba(12,14,20,0.06); color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; }
 .theme-card.sel .theme-tag { background: rgba(201,168,76,0.16); color: var(--gold-dark); }
 .theme-photo-cap { position: absolute; top: 14px; right: 14px; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--obsidian); color: var(--gold2); letter-spacing: 0.5px; }
+.theme-badge { position: absolute; top: -8px; right: -8px; font-size: 10px; font-weight: 700; padding: 5px 11px; border-radius: 999px; color: #fff; letter-spacing: 0.6px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(0,0,0,0.18); border: 1.5px solid rgba(255,255,255,0.85); white-space: nowrap; }
 .change-theme-link { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); background: none; border: none; padding: 0; margin-bottom: 1rem; cursor: pointer; transition: color 0.18s; font-family: 'Outfit', sans-serif; }
 .change-theme-link:hover { color: var(--gold-dark); }
 
@@ -502,6 +503,40 @@ const THEMES = [
     fields: ['petName', 'caption'],
     defaultArrangement: 'scattered',
   },
+  {
+    id: 'america250',
+    icon: '🇺🇸',
+    name: 'America 250',
+    tagline: 'Celebrate the U.S. 250th Anniversary — July 4, 2026. Patriotic banners for events, schools, and communities.',
+    tags: ['Patriotic', 'America250'],
+    maxPhotos: 55,
+    palette: { bg: '#0A1628', accent: '#B22234', text: '#FFFFFF' },
+    fields: ['name', 'year', 'school'],
+    fieldMeta: {
+      name:   { label: 'Your Name / Organization', placeholder: 'e.g., Riverside Community' },
+      year:   { label: 'Date',                     placeholder: 'e.g., July 4, 2026' },
+      school: { label: 'City / State (optional)',  placeholder: 'e.g., West Palm Beach, FL' },
+    },
+    defaultArrangement: 'classic',
+    badge: { label: 'July 4, 2026', color: '#B22234' },
+  },
+  {
+    id: 'worldcup2026',
+    icon: '⚽',
+    name: 'World Cup 2026',
+    tagline: 'Watch Party 2026 — represent your country. Stadium energy, sky blue and gold palette.',
+    tags: ['Sports', 'Watch Party'],
+    maxPhotos: 10,
+    palette: { bg: '#0D2B45', accent: '#4A9ECC', text: '#E8C97A' },
+    fields: ['teamName', 'date', 'school'],
+    fieldMeta: {
+      teamName: { label: 'Your Team / Country',                placeholder: 'e.g., USA · Brasil · Haiti' },
+      date:     { label: 'Match Date',                         placeholder: 'e.g., June 18, 2026' },
+      school:   { label: 'Watch Party Location (optional)',    placeholder: 'e.g., Miami, FL' },
+    },
+    defaultArrangement: 'classic',
+    badge: { label: 'June 12 – July 19', color: '#4A9ECC' },
+  },
 ];
 
 const THEME_FIELD_META = {
@@ -516,6 +551,13 @@ const THEME_FIELD_META = {
   petName:     { label: 'Pet Name',              placeholder: 'e.g., Bella' },
   caption:     { label: 'Caption (optional)',    placeholder: 'e.g., Best Boy 2025' },
 };
+
+// Look up field meta with optional per-theme override (theme.fieldMeta[key] wins).
+function getFieldMeta(theme, key) {
+  const base = THEME_FIELD_META[key] || { label: key, placeholder: '' };
+  const override = theme && theme.fieldMeta && theme.fieldMeta[key];
+  return override ? { ...base, ...override } : base;
+}
 
 // ─────────────────────────────────────────────────────────────
 // State
@@ -702,8 +744,12 @@ function renderThemes() {
   if (!grid) return;
   grid.innerHTML = THEMES.map(t => {
     const sel = state.theme && state.theme.id === t.id;
+    const badge = t.badge
+      ? `<div class="theme-badge" style="background:${t.badge.color};">${t.badge.label}</div>`
+      : '';
     return `
       <div class="theme-card${sel ? ' sel' : ''}" data-theme="${t.id}" onclick="selectTheme('${t.id}')">
+        ${badge}
         <div class="theme-photo-cap">Up to ${t.maxPhotos} photos</div>
         <div class="theme-icon">${t.icon}</div>
         <div class="theme-name">${t.name}</div>
@@ -751,7 +797,12 @@ function refreshUploadLimits() {
   const subEl = document.getElementById('upload-sub');
   const hintEl = document.getElementById('upload-hint');
   const capEl = document.getElementById('photo-cap');
-  if (subEl) subEl.textContent = `Add 1–${cap} images. We'll let you pick a hero and shape the layout in the next step.`;
+  const isWorldCup = state.theme && state.theme.id === 'worldcup2026';
+  if (subEl) {
+    subEl.textContent = isWorldCup
+      ? `World Cup theme: up to ${cap} photos. Pick your starting lineup — hero plus supporting shots.`
+      : `Add 1–${cap} images. We'll let you pick a hero and shape the layout in the next step.`;
+  }
   if (hintEl) hintEl.textContent = `JPG, PNG, HEIC — up to ${cap} photos`;
   if (capEl) capEl.textContent = String(cap);
 }
@@ -778,10 +829,12 @@ uploadZone.addEventListener('drop', e => {
 function handleFiles(fileList) {
   const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
   const cap = getMaxPhotos();
+  const isWorldCup = state.theme && state.theme.id === 'worldcup2026';
+  const overflowMsg = isWorldCup ? 'World Cup theme is limited to 10 photos' : `Maximum ${cap} photos`;
   const slots = cap - state.images.length;
-  if (slots <= 0) { toast(`Maximum ${cap} photos`); return; }
+  if (slots <= 0) { toast(overflowMsg); return; }
   const accepted = files.slice(0, slots);
-  if (files.length > accepted.length) toast(`Added ${accepted.length}, ignored ${files.length - accepted.length} (cap of ${cap})`);
+  if (files.length > accepted.length) toast(isWorldCup ? overflowMsg : `Added ${accepted.length}, ignored ${files.length - accepted.length} (cap of ${cap})`);
 
   let pending = accepted.length;
   if (!pending) return;
@@ -887,7 +940,7 @@ function renderTextFields() {
   if (!container) return;
   const fields = (state.theme && state.theme.fields) || [];
   container.innerHTML = fields.map(key => {
-    const meta = THEME_FIELD_META[key] || { label: key, placeholder: '' };
+    const meta = getFieldMeta(state.theme, key);
     const val = state.bannerText[key] || '';
     const safeVal = val.replace(/"/g, '&quot;');
     return `
@@ -1149,11 +1202,138 @@ function renderToCanvas(targetCanvas, ids, premium, scale) {
 function drawThemeDecorations(ctx, W, H, theme) {
   if (!theme) return;
   switch (theme.id) {
-    case 'champion':    drawStadiumArcs(ctx, W, H, theme); break;
-    case 'wedding':     drawFloralCorners(ctx, W, H, theme); break;
-    case 'anniversary': drawHeartMotifs(ctx, W, H, theme); break;
-    case 'pets':        drawPawWatermarks(ctx, W, H, theme); break;
+    case 'champion':     drawStadiumArcs(ctx, W, H, theme); break;
+    case 'wedding':      drawFloralCorners(ctx, W, H, theme); break;
+    case 'anniversary':  drawHeartMotifs(ctx, W, H, theme); break;
+    case 'pets':         drawPawWatermarks(ctx, W, H, theme); break;
+    case 'america250':   drawAmerica250Background(ctx, W, H); break;
+    case 'worldcup2026': drawWorldCupBackground(ctx, W, H); break;
   }
+}
+
+// Deterministic pseudo-random for repeatable star/ball placement.
+function _seededRand(seed) {
+  let s = seed | 0;
+  return function () {
+    s = (s * 1664525 + 1013904223) | 0;
+    return ((s >>> 0) % 1000) / 1000;
+  };
+}
+
+function drawAmerica250Background(ctx, W, H) {
+  ctx.save();
+
+  // 1. Star field
+  const rand = _seededRand(42);
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  ctx.font = '14px "Outfit", sans-serif';
+  ctx.textAlign = 'center';
+  for (let i = 0; i < 30; i++) {
+    const x = rand() * W;
+    const y = 40 + rand() * (H - 80);
+    ctx.fillText('★', x, y);
+  }
+
+  // 2. Red stripe accents — top and bottom
+  ctx.globalAlpha = 0.7;
+  ctx.fillStyle = '#B22234';
+  for (let i = 0; i < 3; i++) {
+    ctx.fillRect(0, i * 10, W, 4);
+    ctx.fillRect(0, H - 4 - i * 10, W, 4);
+  }
+  ctx.globalAlpha = 1;
+
+  // 3. Gold accent lines
+  ctx.strokeStyle = '#C9A84C';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, 36); ctx.lineTo(W, 36);
+  ctx.moveTo(0, H - 36); ctx.lineTo(W, H - 36);
+  ctx.stroke();
+
+  // 4. Large corner stars
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  ctx.font = '40px "Outfit", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  [[50, 70], [W - 50, 70], [50, H - 50], [W - 50, H - 50]].forEach(([x, y]) => {
+    ctx.fillText('★', x, y);
+  });
+
+  ctx.restore();
+}
+
+function drawWorldCupBackground(ctx, W, H) {
+  ctx.save();
+
+  // 1. Background gradient overlay (sits over base bg color)
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, 'rgba(13,43,69,0)');
+  grad.addColorStop(1, 'rgba(26,111,181,0.55)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // 2. Stadium spotlight rays from top corners
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 40;
+  ctx.lineCap = 'round';
+  const rayLen = Math.max(W, H) * 1.2;
+  [20, 30, 40, 50].forEach(deg => {
+    const a = deg * Math.PI / 180;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(Math.cos(a) * rayLen, Math.sin(a) * rayLen);
+    ctx.stroke();
+  });
+  [130, 140, 150, 160].forEach(deg => {
+    const a = deg * Math.PI / 180;
+    ctx.beginPath();
+    ctx.moveTo(W, 0);
+    ctx.lineTo(W + Math.cos(a) * rayLen, Math.sin(a) * rayLen);
+    ctx.stroke();
+  });
+
+  // 3. Soccer balls scattered (seeded)
+  const rand = _seededRand(99);
+  ctx.globalAlpha = 0.07;
+  ctx.font = '20px "Outfit", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i < 8; i++) {
+    const x = 60 + rand() * (W - 120);
+    const y = 80 + rand() * (H - 160);
+    ctx.fillText('⚽', x, y);
+  }
+  ctx.globalAlpha = 1;
+
+  // 4. Gold bottom glow
+  const glow = ctx.createRadialGradient(W / 2, H, 20, W / 2, H, W * 0.7);
+  glow.addColorStop(0, 'rgba(201,168,76,0.25)');
+  glow.addColorStop(1, 'rgba(201,168,76,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, H * 0.55, W, H * 0.45);
+
+  // 5. Sky blue + gold accent bars top/bottom
+  ctx.fillStyle = '#4A9ECC';
+  ctx.fillRect(0, 0, W, 4);
+  ctx.fillRect(0, H - 4, W, 4);
+  ctx.fillStyle = '#C9A84C';
+  ctx.fillRect(0, 4, W, 2);
+  ctx.fillRect(0, H - 6, W, 2);
+
+  // 6. Sparse star pattern (matches champion-tier density)
+  const rand2 = _seededRand(31);
+  ctx.fillStyle = 'rgba(232,201,122,0.10)';
+  ctx.font = '14px "Outfit", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  for (let i = 0; i < 24; i++) {
+    const x = rand2() * W;
+    const y = 60 + rand2() * (H - 120);
+    ctx.fillText('★', x, y);
+  }
+
+  ctx.restore();
 }
 
 function drawStadiumArcs(ctx, W, H, theme) {
@@ -1285,7 +1465,7 @@ function renderBannerText(ctx, W, topY, theme) {
       } else {
         ctx.fillStyle = _hexToRgba(palette.text, 0.45);
         ctx.font = 'italic 600 56px "Cormorant Garamond", serif';
-        const meta = THEME_FIELD_META[f.key] || {};
+        const meta = getFieldMeta(theme, f.key);
         ctx.fillText(meta.placeholder || `Your ${f.key}`, W / 2, y + 56);
       }
       y += 74;
