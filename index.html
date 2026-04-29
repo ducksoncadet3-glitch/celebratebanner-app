@@ -50,7 +50,12 @@ body { font-family: 'Outfit', sans-serif; background: var(--ivory); color: var(-
 .theme-card { background: var(--white); border: 2px solid var(--border2); border-radius: var(--r2); padding: 22px 20px; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 10px; position: relative; min-height: 200px; }
 .theme-card:hover { border-color: rgba(201,168,76,0.55); transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .theme-card.sel { border-color: var(--gold); background: linear-gradient(135deg, rgba(201,168,76,0.10), rgba(232,201,122,0.04)); box-shadow: 0 4px 24px rgba(201,168,76,0.25); }
-.theme-icon { font-size: 48px; line-height: 1; }
+.theme-icon { font-size: 48px; line-height: 1; font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Twemoji Mozilla', 'EmojiOne Color', 'Android Emoji', sans-serif; }
+.theme-thumb { position: relative; height: 96px; margin: -22px -20px 4px; border-radius: var(--r2) var(--r2) 0 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.theme-thumb .theme-icon { position: relative; z-index: 2; }
+.theme-thumb-america { background: linear-gradient(135deg, #B22234 0%, #0A1628 50%, #B22234 100%); }
+.theme-thumb-america::before { content: '★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★'; position: absolute; inset: 0; padding: 6px 10px; color: rgba(255,255,255,0.18); font-size: 16px; line-height: 22px; letter-spacing: 4px; word-spacing: 2px; overflow: hidden; pointer-events: none; }
+.theme-icon-america { color: #fff; text-shadow: 0 0 14px rgba(178,34,52,0.9), 0 2px 6px rgba(0,0,0,0.45); }
 .theme-name { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; color: var(--obsidian); }
 .theme-tagline { font-size: 13px; color: var(--muted); line-height: 1.5; flex: 1; }
 .theme-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
@@ -505,7 +510,7 @@ const THEMES = [
   },
   {
     id: 'america250',
-    icon: '🇺🇸',
+    icon: '★',
     name: 'America 250',
     tagline: 'Celebrate the U.S. 250th Anniversary — July 4, 2026. Patriotic banners for events, schools, and communities.',
     tags: ['Patriotic', 'America250'],
@@ -747,11 +752,14 @@ function renderThemes() {
     const badge = t.badge
       ? `<div class="theme-badge" style="background:${t.badge.color};">${t.badge.label}</div>`
       : '';
+    const iconBlock = t.id === 'america250'
+      ? `<div class="theme-thumb theme-thumb-america"><div class="theme-icon theme-icon-america">${t.icon}</div></div>`
+      : `<div class="theme-icon">${t.icon}</div>`;
     return `
       <div class="theme-card${sel ? ' sel' : ''}" data-theme="${t.id}" onclick="selectTheme('${t.id}')">
         ${badge}
         <div class="theme-photo-cap">Up to ${t.maxPhotos} photos</div>
-        <div class="theme-icon">${t.icon}</div>
+        ${iconBlock}
         <div class="theme-name">${t.name}</div>
         <div class="theme-tagline">${t.tagline}</div>
         <div class="theme-tags">
