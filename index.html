@@ -1630,12 +1630,12 @@ function renderScattered(ctx, photos, W, H, contentTop) {
     // Top-right zone
     [470, safeTop + 20],  [590, safeTop + 40],
     [475, safeTop + 155], [590, safeTop + 170],
-    // Bottom-left zone
-    [55, safeTop + 600],  [175, safeTop + 580],
-    [60, safeTop + 720],  [180, safeTop + 735],
-    // Bottom-right zone
-    [470, safeTop + 600], [590, safeTop + 580],
-    [475, safeTop + 720], [590, safeTop + 735],
+    // Bottom-left zone (pushed down +120px for more breathing room around hero)
+    [55, safeTop + 720],  [175, safeTop + 700],
+    [60, safeTop + 840],  [180, safeTop + 855],
+    // Bottom-right zone (pushed down +120px for more breathing room around hero)
+    [470, safeTop + 720], [590, safeTop + 700],
+    [475, safeTop + 840], [590, safeTop + 855],
   ];
 
   // 1) Supporting photos as 3D floating cards. Per-photo shadow stagger so no
