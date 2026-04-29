@@ -111,16 +111,24 @@ body { font-family: 'Outfit', sans-serif; background: var(--ivory); color: var(-
 .field input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.14); }
 
 /* Frame palette */
-.frame-palette { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; padding: 14px 16px; background: var(--white); border: 1px solid var(--border2); border-radius: var(--r2); }
-.frame-palette-label { font-size: 12px; font-weight: 600; color: var(--muted); }
-.frame-tabs { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 200px; }
-.frame-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.frame-tab { font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border2); background: var(--white); color: var(--text); cursor: pointer; transition: all 0.18s; }
+.frame-palette { display: flex; flex-direction: column; gap: 14px; margin-bottom: 14px; padding: 16px; background: var(--white); border: 1px solid var(--border2); border-radius: var(--r2); }
+.frame-status { font-size: 13px; color: var(--text); font-weight: 500; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.frame-status-name { color: var(--gold-dark, var(--gold)); font-weight: 700; }
+.frame-groups { display: flex; flex-direction: column; gap: 12px; }
+.frame-group { display: flex; flex-direction: column; gap: 6px; }
+.frame-group-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+.frame-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.frame-tab { font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 600; min-width: 80px; height: 32px; padding: 0 14px; border-radius: 20px; border: 1px solid var(--border2); background: var(--white); color: var(--text); cursor: pointer; transition: all 0.18s; display: inline-flex; align-items: center; justify-content: center; }
 .frame-tab:hover { border-color: var(--gold); }
-.frame-tab.active { background: var(--obsidian); color: var(--gold2); border-color: var(--obsidian); box-shadow: 0 0 0 3px rgba(201,168,76,0.18); }
+.frame-tab.active { background: var(--obsidian); color: var(--gold2); border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.18); }
+.frame-actions { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--border); }
+.frame-actions .btn { white-space: nowrap; }
+.frame-actions .btn-dark { min-width: 160px; }
+.frame-actions .btn-primary { min-width: 140px; }
+.frame-actions .btn-outline { min-width: 80px; }
 
-.cell-frame-badge { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(12,14,20,0.78); color: var(--gold2); font-size: 9px; font-weight: 700; text-align: center; padding: 4px 0; letter-spacing: 1.2px; text-transform: uppercase; backdrop-filter: blur(4px); }
-.photo-cell.is-hero .cell-frame-badge { background: var(--gold); color: var(--obsidian); }
+.cell-frame-badge { position: absolute; bottom: 0; left: 0; right: 0; background: var(--gold); color: var(--obsidian); font-size: 9px; font-weight: 700; text-align: center; padding: 2px 4px; letter-spacing: 1.2px; text-transform: uppercase; }
+.photo-cell.is-hero .cell-frame-badge { background: var(--gold2); color: var(--obsidian); }
 
 /* Preview */
 .preview-frame { background: var(--obsidian2); border-radius: var(--r3); padding: 1.75rem 1.5rem 0; box-shadow: var(--shadow-lg); margin-bottom: 1.5rem; }
@@ -309,12 +317,14 @@ canvas#preview-canvas { width: 100%; height: 100%; display: block; }
         <div class="design-section-meta">Pick a style, then click photos — or apply to all</div>
       </div>
       <div class="frame-palette">
-        <span class="frame-palette-label">Frame:</span>
-        <div class="frame-tabs" id="frame-tabs"></div>
+        <div class="frame-status" id="frame-status">
+          Selected frame: <span class="frame-status-name" id="frame-status-name">Rounded</span> — click any photo below to apply it
+        </div>
+        <div class="frame-groups" id="frame-groups"></div>
         <div class="frame-actions">
-          <button class="btn btn-dark btn-sm" onclick="applyAllFrames()">Apply to all photos</button>
-          <button class="btn btn-primary btn-sm" onclick="mixFrames()">🎨 Mix all frames</button>
-          <button class="btn btn-outline btn-sm" onclick="resetFrames()">Reset</button>
+          <button class="btn btn-dark btn-sm" onclick="applyAllFrames()" title="Applies the selected frame style to every photo">Apply to all photos</button>
+          <button class="btn btn-primary btn-sm" onclick="mixFrames()" title="Randomly assigns different frame styles to each photo">🎨 Mix all frames</button>
+          <button class="btn btn-outline btn-sm" onclick="resetFrames()" title="Clear frame choices and revert to Rounded">Reset</button>
         </div>
       </div>
       <div class="hero-tip">🖼 Click any photo to apply the selected frame. Hero gets its own too.</div>
@@ -527,6 +537,15 @@ const FRAME_LABELS = {
   baroque: 'Baroque', 'shadow-box': 'Shadow box', glitter: 'Glitter', ribbon: 'Ribbon', crown: 'Crown',
   white: 'White edge', shadow: 'Drop shadow', 'double-gold': 'Double gold', heart: 'Heart', star: 'Star'
 };
+// Visual grouping for the Photo Frames panel on the Design step.
+const FRAME_GROUPS = [
+  { label: 'Shape',  frames: ['rounded', 'circle', 'polaroid', 'hexagon', 'diamond', 'heart', 'star'] },
+  { label: 'Border', frames: ['gold', 'white', 'double-gold', 'baroque', 'shadow-box', 'shadow'] },
+  { label: 'Style',  frames: ['vintage', 'neon', 'glitter', 'ribbon', 'crown', 'tape', 'scallop'] },
+];
+// Heart/star are intentionally excluded from the auto-mix pool so they don't dominate
+// collages, but they remain available for manual selection in the Shape group.
+const MIX_POOL = FRAME_OPTIONS.filter(f => f !== 'heart' && f !== 'star');
 
 const ARRANGEMENTS = [
   { id: 'classic',   label: 'Classic',   sub: 'Hero centered top, collage grid below · Best with 1–50 photos',               tier: 'standard', minPhotos: 1,  maxPhotos: 50 },
@@ -881,17 +900,36 @@ function renderTextFields() {
 }
 
 function renderFrameTabs() {
-  const tabs = document.getElementById('frame-tabs');
-  if (!tabs) return;
-  tabs.innerHTML = '';
-  FRAME_OPTIONS.forEach(f => {
-    const b = document.createElement('button');
-    b.className = 'frame-tab' + (f === state.activeFrame ? ' active' : '');
-    b.dataset.frame = f;
-    b.textContent = FRAME_LABELS[f];
-    b.onclick = () => setActiveFrame(f);
-    tabs.appendChild(b);
+  const groupsRoot = document.getElementById('frame-groups');
+  if (!groupsRoot) return;
+  groupsRoot.innerHTML = '';
+  FRAME_GROUPS.forEach(group => {
+    const wrap = document.createElement('div');
+    wrap.className = 'frame-group';
+    const label = document.createElement('div');
+    label.className = 'frame-group-label';
+    label.textContent = group.label;
+    const tabs = document.createElement('div');
+    tabs.className = 'frame-tabs';
+    group.frames.forEach(f => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'frame-tab' + (f === state.activeFrame ? ' active' : '');
+      b.dataset.frame = f;
+      b.textContent = FRAME_LABELS[f];
+      b.onclick = () => setActiveFrame(f);
+      tabs.appendChild(b);
+    });
+    wrap.appendChild(label);
+    wrap.appendChild(tabs);
+    groupsRoot.appendChild(wrap);
   });
+  updateFrameStatus();
+}
+
+function updateFrameStatus() {
+  const nameEl = document.getElementById('frame-status-name');
+  if (nameEl) nameEl.textContent = FRAME_LABELS[state.activeFrame] || 'Rounded';
 }
 
 function setActiveFrame(frame) {
@@ -929,11 +967,9 @@ function resetFrames() {
 }
 
 function mixFrames() {
-  // Shuffled round-robin auto-mix: heart/star are excluded so they don't dominate
-  // collages, but they remain available for manual selection from the frame palette.
+  // Shuffled round-robin auto-mix using MIX_POOL (heart/star excluded — see top of file).
   const seed = state.shuffledSeed ?? generateRandomSeed();
-  const autoMixPool = FRAME_OPTIONS.filter(f => f !== 'heart' && f !== 'star');
-  const order = shuffleArray(autoMixPool, mulberry32(seed ^ 0xF1A));
+  const order = shuffleArray(MIX_POOL, mulberry32(seed ^ 0xF1A));
   state.images.forEach((p, i) => { state.frames[p.id] = order[i % order.length]; });
   state.previewGenerated = false;
   renderDesignGrids();
