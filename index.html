@@ -1322,31 +1322,78 @@ function pickHeroFraction(n) {
   return 0.28;
 }
 
-// Hero-photo helper: drop shadow only (no gold halo, no border). Always rendered LAST
-// in every layout so the hero floats visually above the collage layer.
-// The hero is ALWAYS clipped to a rounded rectangle (rx=12) regardless of the photo's
-// configured frame — never hexagon, circle, heart, or star.
-function drawHeroPhoto(ctx, p, x, y, w, h, opts) {
-  opts = opts || {};
-  const cx = opts.cx != null ? opts.cx : x + w / 2;
-  const cy = opts.cy != null ? opts.cy : y + h / 2;
-  const rot = opts.rotation || 0;
+// 3D floating hero card. Six layered passes simulate a physical card lifted off
+// the page: deep shadow, mid shadow, bottom/right edges (card thickness), the
+// photo itself with rounded clip (rx=14), a thin gold border with a soft glow,
+// and a top-left specular highlight. Always rendered LAST so the hero floats
+// visually above the collage layer.
+function draw3DHero(ctx, photo, heroX, heroY, heroW, heroH) {
+  if (!photo || !photo.imgEl) return;
+  const radius = 14;
 
-  // Drop shadow plate behind the hero (rounded rect to match the clip below)
+  // Plumb the user's per-photo rotation flag onto the hero image
+  photo.imgEl._rotDeg = (state.rotations && state.rotations[photo.id]) || 0;
+
+  // STEP 1 — Deep shadow layer (largest blur, furthest offset)
   ctx.save();
-  ctx.translate(cx, cy);
-  if (rot) ctx.rotate(rot);
-  ctx.shadowColor = 'rgba(0,0,0,0.55)';
-  ctx.shadowBlur = 20;
-  ctx.shadowOffsetY = 8;
-  ctx.fillStyle = '#000';
-  roundRect(ctx, -w / 2, -h / 2, w, h, 12); ctx.fill();
+  ctx.shadowColor = 'rgba(0,0,0,0.75)';
+  ctx.shadowBlur = 60;
+  ctx.shadowOffsetX = 18;
+  ctx.shadowOffsetY = 28;
+  ctx.fillStyle = '#000000';
+  roundRect(ctx, heroX, heroY, heroW, heroH, radius);
+  ctx.fill();
   ctx.restore();
 
-  // Force a rounded-rect frame for the hero — never honor hexagon/circle/heart/etc.
-  drawPhotoFramed(ctx, p, x, y, w, h, {
-    cx: opts.cx, cy: opts.cy, rotation: opts.rotation, shadow: false, forceFrame: 'rounded',
-  });
+  // STEP 2 — Mid shadow layer (depth thickness)
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = 30;
+  ctx.shadowOffsetX = 10;
+  ctx.shadowOffsetY = 16;
+  ctx.fillStyle = '#111111';
+  roundRect(ctx, heroX + 2, heroY + 2, heroW, heroH, radius);
+  ctx.fill();
+  ctx.restore();
+
+  // STEP 3 — Card edges (bottom + right strips for physical thickness)
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillRect(heroX + 8, heroY + heroH, heroW - 4, 6);
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.fillRect(heroX + heroW, heroY + 8, 6, heroH - 4);
+  ctx.restore();
+
+  // STEP 4 — Photo with rounded clip (cover-fit)
+  ctx.save();
+  roundRect(ctx, heroX, heroY, heroW, heroH, radius);
+  ctx.clip();
+  drawCover(ctx, photo.imgEl, heroX, heroY, heroW, heroH);
+  ctx.restore();
+
+  // STEP 5 — Gold border + soft gold glow
+  ctx.save();
+  ctx.strokeStyle = '#C9A84C';
+  ctx.lineWidth = 3;
+  ctx.shadowColor = 'rgba(201,168,76,0.6)';
+  ctx.shadowBlur = 12;
+  roundRect(ctx, heroX, heroY, heroW, heroH, radius);
+  ctx.stroke();
+  ctx.restore();
+
+  // STEP 6 — Top-left specular highlight (light hitting the card)
+  ctx.save();
+  const shine = ctx.createLinearGradient(
+    heroX, heroY,
+    heroX + heroW * 0.6, heroY + heroH * 0.4
+  );
+  shine.addColorStop(0, 'rgba(255,255,255,0.18)');
+  shine.addColorStop(0.4, 'rgba(255,255,255,0.06)');
+  shine.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = shine;
+  roundRect(ctx, heroX, heroY, heroW, heroH, radius);
+  ctx.fill();
+  ctx.restore();
 }
 
 // Slight per-photo seeded rotation so the supporting layer feels hand-placed.
@@ -1407,8 +1454,8 @@ function renderClassic(ctx, photos, W, H, contentTop) {
     drawPhotoFramed(ctx, p, x, y, cellW, cellH, { rotation: _photoRot(rng, 1.5), shadow: false });
   });
 
-  // Hero drawn LAST (on top of grid edge)
-  drawHeroPhoto(ctx, photos[0], margin, heroY, innerW, heroH, { rotation: _photoRot(rng, 1.2) });
+  // Hero drawn LAST (on top of grid edge) with 3D floating-card effect
+  draw3DHero(ctx, photos[0], margin, heroY, innerW, heroH);
 }
 
 // ── Layout 2: Magazine (+$9.99) — hero top-left + collage below + full-height right column ──
@@ -1469,8 +1516,8 @@ function renderMagazine(ctx, photos, W, H, contentTop) {
     drawPhotoFramed(ctx, p, x, y, leftCellW, leftCellH, { rotation: _photoRot(rng, 1), shadow: false });
   }
 
-  // 3) Hero LAST, top-left — drawHeroPhoto forces rounded-rect (rx=12), drop shadow only
-  drawHeroPhoto(ctx, photos[0], heroX, heroY, heroW, heroH, { rotation: 0 });
+  // 3) Hero LAST, top-left — 3D floating-card effect
+  draw3DHero(ctx, photos[0], heroX, heroY, heroW, heroH);
 }
 
 // ── Layout 4: Scattered (+$9.99) — corkboard scrapbook ──
@@ -1519,44 +1566,9 @@ function renderScattered(ctx, photos, W, H, contentTop) {
     drawPhotoFramed(ctx, p, 0, 0, tileSize, tileSize, { cx, cy, rotation: rot, shadow: true });
   });
 
-  // 2) Hero LAST — inline so we can apply the spec-mandated rx=14, deep shadow, gold border
-  const hero = photos[0];
-  if (!hero || !hero.imgEl) return;
-  const heroCx = heroX + heroW / 2;
-  const heroCy = heroY + heroH / 2;
-  const heroRot = (rng() * 4 - 2) * Math.PI / 180;
-  const radius = 14;
-
-  // Plumb the user's per-photo rotation flag onto the hero image
-  hero.imgEl._rotDeg = (state.rotations && state.rotations[hero.id]) || 0;
-
-  // 2a) Drop-shadow plate
-  ctx.save();
-  ctx.translate(heroCx, heroCy);
-  ctx.rotate(heroRot);
-  ctx.shadowColor = 'rgba(0,0,0,0.65)';
-  ctx.shadowBlur = 28;
-  ctx.shadowOffsetY = 12;
-  ctx.fillStyle = '#000';
-  roundRect(ctx, -heroW / 2, -heroH / 2, heroW, heroH, radius); ctx.fill();
-  ctx.restore();
-
-  // 2b) Hero photo (rounded clip, cover-fit, no shadow)
-  ctx.save();
-  ctx.translate(heroCx, heroCy);
-  ctx.rotate(heroRot);
-  roundRect(ctx, -heroW / 2, -heroH / 2, heroW, heroH, radius); ctx.clip();
-  drawCover(ctx, hero.imgEl, -heroW / 2, -heroH / 2, heroW, heroH);
-  ctx.restore();
-
-  // 2c) Thin gold border on top
-  ctx.save();
-  ctx.translate(heroCx, heroCy);
-  ctx.rotate(heroRot);
-  ctx.strokeStyle = '#C9A84C';
-  ctx.lineWidth = 3;
-  roundRect(ctx, -heroW / 2, -heroH / 2, heroW, heroH, radius); ctx.stroke();
-  ctx.restore();
+  // 2) Hero LAST — 3D floating-card effect (no rotation; the card looks more
+  // convincingly "lifted" when its edges stay aligned with the light direction)
+  draw3DHero(ctx, photos[0], heroX, heroY, heroW, heroH);
 }
 
 // ── Layout 5: Mosaic (free) — hero rectangle + 5 top + 3 left + 3 right + 5+5 bottom ──
@@ -1602,8 +1614,8 @@ function renderMosaic(ctx, photos, W, H, contentTop) {
     drawPhotoFramed(ctx, p, s.x, s.y, s.w, s.h, { rotation: _photoRot(rng, 0.5), shadow: false });
   });
 
-  // Hero LAST, centered rectangle on top — drawHeroPhoto forces rounded-rect clip
-  drawHeroPhoto(ctx, photos[0], heroX, heroY, heroW, heroH, { rotation: 0 });
+  // Hero LAST, centered rectangle on top — 3D floating-card effect
+  draw3DHero(ctx, photos[0], heroX, heroY, heroW, heroH);
 }
 
 // ── Frame dispatch ────────────────────────────────────────────
