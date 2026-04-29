@@ -549,7 +549,7 @@ const MIX_POOL = FRAME_OPTIONS.filter(f => f !== 'heart' && f !== 'star');
 
 const ARRANGEMENTS = [
   { id: 'classic',   label: 'Classic',   sub: 'Hero centered top, collage grid below · Best with 1–50 photos',               tier: 'standard', minPhotos: 1,  maxPhotos: 50 },
-  { id: 'magazine',  label: 'Magazine',  sub: 'Hero on the left, 2-column grid on the right · Best with 3–25 photos',         tier: 'premium',  minPhotos: 3,  maxPhotos: 25 },
+  { id: 'magazine',  label: 'Magazine',  sub: 'Hero top-left, photos fill right column and below hero · Best with 25 photos', tier: 'premium',  minPhotos: 3,  maxPhotos: 25 },
   { id: 'scattered', label: 'Scattered', sub: 'Scrapbook feel — overlapping photos at slight angles · Best with 5–40 photos', tier: 'premium',  minPhotos: 5,  maxPhotos: 40 },
   { id: 'mosaic',    label: 'Mosaic',    sub: 'Hero in the center, photos on all four sides · Best with 8–40 photos',         tier: 'premium',  minPhotos: 8,  maxPhotos: 40 },
 ];
@@ -1411,35 +1411,66 @@ function renderClassic(ctx, photos, W, H, contentTop) {
   drawHeroPhoto(ctx, photos[0], margin, heroY, innerW, heroH, { rotation: _photoRot(rng, 1.2) });
 }
 
-// ── Layout 2: Magazine (+$9.99) — hero left 55%, 2×5 grid right ──
-// Hero: x=40, y=128, w=440, h=1052. Right grid: x=492, w=268, 2 cols × 5 rows, gap=8.
+// ── Layout 2: Magazine (+$9.99) — hero top-left + collage below + full-height right column ──
+// Hero: x=40, y=128, w=460, h=420 (rounded rect, drop shadow only).
+// Left below hero: 3 cols × 4 rows = 12 photos. Right column: 2 cols × 6 rows = 12 photos.
 function renderMagazine(ctx, photos, W, H, contentTop) {
   const seed = state.shuffledSeed ?? 12345;
   const rng = mulberry32(seed ^ 0x4A6A);
   const supporting = photos.slice(1);
+  const gap = 8;
 
+  // Hero (top-left)
   const heroX = 40;
   const heroY = Math.max(128, contentTop);
-  const heroW = 440;
-  const heroH = (H - 20) - heroY;
+  const heroW = 460;
+  const heroH = 420;
 
-  const rightX = 492;
-  const rightW = 268;
-  const cols = 2, rows = 5, gap = 8;
-  const cellW = (rightW - gap) / cols;
-  const cellH = (heroH - gap * (rows - 1)) / rows;
+  // Left collage zone (below hero)
+  const leftBelowX = 40;
+  const leftBelowY = heroY + heroH + gap;
+  const leftBelowW = 460;
+  const leftBelowH = 1170 - leftBelowY;
+  const leftCols = 3, leftRows = 4;
+  const leftCellW = (leftBelowW - gap * (leftCols - 1)) / leftCols;
+  const leftCellH = (leftBelowH - gap * (leftRows - 1)) / leftRows;
 
-  const drawList = _tileToCount(supporting, cols * rows);
-  drawList.forEach((p, i) => {
-    const r = Math.floor(i / cols);
-    const c = i % cols;
-    const x = rightX + c * (cellW + gap);
-    const y = heroY + r * (cellH + gap);
-    drawPhotoFramed(ctx, p, x, y, cellW, cellH, { rotation: _photoRot(rng, 1.5), shadow: false });
-  });
+  // Right column (full content height)
+  const rightX = 508;
+  const rightY = heroY;
+  const rightW = 252;
+  const rightH = 1170 - rightY;
+  const rightCols = 2, rightRows = 6;
+  const rightCellW = (rightW - gap * (rightCols - 1)) / rightCols;
+  const rightCellH = (rightH - gap * (rightRows - 1)) / rightRows;
 
-  // Hero LAST
-  drawHeroPhoto(ctx, photos[0], heroX, heroY, heroW, heroH, { rotation: _photoRot(rng, 1) });
+  // Tile supporting photos to fill all 24 slots; right column gets the first 12,
+  // left-below gets the next 12, so the cycle staggers across the two zones.
+  const totalSlots = leftCols * leftRows + rightCols * rightRows; // 24
+  const drawList = _tileToCount(supporting, totalSlots);
+
+  // 1) Right column first (drawn behind hero)
+  for (let i = 0; i < rightCols * rightRows; i++) {
+    const p = drawList[i];
+    const r = Math.floor(i / rightCols);
+    const c = i % rightCols;
+    const x = rightX + c * (rightCellW + gap);
+    const y = rightY + r * (rightCellH + gap);
+    drawPhotoFramed(ctx, p, x, y, rightCellW, rightCellH, { rotation: _photoRot(rng, 1), shadow: false });
+  }
+
+  // 2) Left-below grid
+  for (let i = 0; i < leftCols * leftRows; i++) {
+    const p = drawList[rightCols * rightRows + i];
+    const r = Math.floor(i / leftCols);
+    const c = i % leftCols;
+    const x = leftBelowX + c * (leftCellW + gap);
+    const y = leftBelowY + r * (leftCellH + gap);
+    drawPhotoFramed(ctx, p, x, y, leftCellW, leftCellH, { rotation: _photoRot(rng, 1), shadow: false });
+  }
+
+  // 3) Hero LAST, top-left — drawHeroPhoto forces rounded-rect (rx=12), drop shadow only
+  drawHeroPhoto(ctx, photos[0], heroX, heroY, heroW, heroH, { rotation: 0 });
 }
 
 // ── Layout 4: Scattered (+$9.99) — 4-col rotated grid + centered hero on top ──
