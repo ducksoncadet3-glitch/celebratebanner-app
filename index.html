@@ -218,6 +218,49 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
   .h-step { display: none; }
   .h-step.active { display: flex; }
   .h-step-sep { display: none; }
+@media (max-width: 460px) {
+  .h-step { display: none; }
+  .h-step.active { display: flex; }
+  .h-step-sep { display: none; }
+}/* ── A+C Security System ─────────────────────────────────── */
+#preview-lock-overlay {
+  position: absolute; inset: 0;
+  background: rgba(12,14,20,0.72);
+  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  border-radius: var(--r2);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+  z-index: 10; cursor: default; transition: opacity 0.4s ease;
+}
+#preview-lock-overlay.unlocked { opacity: 0; pointer-events: none; }
+.lock-icon-wrap {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  display: flex; align-items: center; justify-content: center; font-size: 32px;
+  box-shadow: 0 8px 32px rgba(201,168,76,0.45);
+  animation: lockPulse 2.5s ease-in-out infinite;
+}
+@keyframes lockPulse {
+  0%,100% { box-shadow: 0 8px 32px rgba(201,168,76,0.45); transform: scale(1); }
+  50%     { box-shadow: 0 8px 48px rgba(201,168,76,0.70); transform: scale(1.04); }
+}
+.lock-title { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:700; color:var(--white); text-align:center; padding:0 1.5rem; line-height:1.3; }
+.lock-sub { font-size:12px; color:rgba(255,255,255,0.55); text-align:center; padding:0 2rem; line-height:1.5; }
+.lock-unlock-btn {
+  background:linear-gradient(135deg,var(--gold),var(--gold2)); color:var(--obsidian); border:none;
+  border-radius:var(--r2); padding:13px 32px; font-family:'Outfit',sans-serif; font-size:15px;
+  font-weight:700; cursor:pointer; transition:all 0.22s; box-shadow:0 4px 20px rgba(201,168,76,0.35);
+}
+.lock-unlock-btn:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(201,168,76,0.55); filter:brightness(1.06); }
+.lock-security-note { font-size:10px; color:rgba(255,255,255,0.3); text-align:center; letter-spacing:0.5px; }
+#preview-watermark-canvas {
+  position:absolute; inset:0; width:100%; height:100%;
+  pointer-events:none; z-index:5; border-radius:var(--r2);
+  opacity:1; transition:opacity 0.4s ease;
+}
+#preview-watermark-canvas.unlocked { opacity:0; }
+#download-jpg-main.locked { opacity:0.35; cursor:not-allowed; pointer-events:none; }
+
+</style>
 }
 </style>
 </head>
@@ -2750,7 +2793,151 @@ function placeholderCheckout() {
   toast('Checkout not wired — confirm pricing first');
 }
 
+// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// A+C Security System — Blur Lock + Watermark
+// ─────────────────────────────────────────────────────────────
+const SEC = { paid: false, sessionKey: null };
+
+function drawWatermarkOverlay() {
+  const container = document.getElementById('banner-preview');
+  if (!container) return;
+  const existing = document.getElementById('preview-watermark-canvas');
+  if (existing) existing.remove();
+  if (SEC.paid) return;
+  const previewCanvas = document.getElementById('preview-canvas');
+  if (!previewCanvas || previewCanvas.style.display === 'none') return;
+  const wCanvas = document.createElement('canvas');
+  wCanvas.id = 'preview-watermark-canvas';
+  wCanvas.width = previewCanvas.offsetWidth || 400;
+  wCanvas.height = previewCanvas.offsetHeight || 600;
+  wCanvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;border-radius:var(--r2);';
+  container.appendChild(wCanvas);
+  const ctx = wCanvas.getContext('2d');
+  const W = wCanvas.width, H = wCanvas.height;
+  ctx.save();
+  ctx.translate(W/2, H/2);
+  ctx.rotate(-35 * Math.PI / 180);
+  const passes = [
+    { text:'CELEBRATEBANNER.COM', fontSize:Math.round(W*0.055), opacity:0.22, dy:0 },
+    { text:'PREVIEW ONLY · NOT FOR PRINT', fontSize:Math.round(W*0.032), opacity:0.16, dy:Math.round(H*0.06) },
+  ];
+  passes.forEach(pass => {
+    ctx.font = `700 ${pass.fontSize}px 'Outfit',sans-serif`;
+    ctx.fillStyle = `rgba(255,255,255,${pass.opacity})`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const spacing = pass.fontSize * 3.5;
+    const cols = Math.ceil(Math.max(W,H)*1.6/spacing)+2;
+    const rows = Math.ceil(Math.max(W,H)*1.6/(pass.fontSize*2.5))+2;
+    for (let r=-rows; r<=rows; r++) {
+      for (let c=-cols; c<=cols; c++) {
+        ctx.fillText(pass.text, c*spacing, r*pass.fontSize*2.5+pass.dy);
+      }
+    }
+  });
+  ctx.restore();
+}
+
+function showLockOverlay() {
+  const container = document.getElementById('banner-preview');
+  if (!container || SEC.paid) return;
+  const existing = document.getElementById('preview-lock-overlay');
+  if (existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'preview-lock-overlay';
+  overlay.innerHTML = `
+    <div class="lock-icon-wrap">🔒</div>
+    <div class="lock-title">Your banner is ready — unlock it below</div>
+    <div class="lock-sub">This preview is protected. Pay to receive your<br>full-resolution file with no watermark.</div>
+    <button class="lock-unlock-btn" onclick="initiatePayment()">✦ Unlock My Banner</button>
+    <div class="lock-security-note">SSL SECURED · STRIPE CHECKOUT · NO CARD DATA STORED</div>
+  `;
+  container.appendChild(overlay);
+}
+
+function unlockPreview() {
+  SEC.paid = true;
+  SEC.sessionKey = 'paid_' + Date.now();
+  const overlay = document.getElementById('preview-lock-overlay');
+  if (overlay) { overlay.classList.add('unlocked'); setTimeout(() => overlay.remove(), 450); }
+  const wCanvas = document.getElementById('preview-watermark-canvas');
+  if (wCanvas) { wCanvas.classList.add('unlocked'); setTimeout(() => wCanvas.remove(), 450); }
+  const dlBtn = document.getElementById('download-jpg-main');
+  if (dlBtn) { dlBtn.classList.remove('locked'); dlBtn.onclick = downloadJpg; }
+  if (state.previewGenerated && state.selectedImages.length > 0) {
+    const previewCanvas = document.getElementById('preview-canvas');
+    renderToCanvas(previewCanvas, state.selectedImages, state.isPremium, 1);
+    try { renderStandMockup(previewCanvas); } catch(e) {}
+  }
+  toast('✓ Payment confirmed — banner unlocked!');
+}
+
+function blockCanvasRightClick() {
+  const canvas = document.getElementById('preview-canvas');
+  if (canvas) {
+    canvas.addEventListener('contextmenu', function(e) {
+      if (!SEC.paid) { e.preventDefault(); toast('🔒 Pay to download your banner'); return false; }
+    });
+  }
+  document.addEventListener('contextmenu', function(e) {
+    if (e.target && e.target.id === 'preview-watermark-canvas') {
+      e.preventDefault(); toast('🔒 Pay to download your banner');
+    }
+  });
+}
+
+function initiatePayment() { goto(4); toast('Choose your delivery option below'); }
+
+function downloadJpg() {
+  if (!SEC.paid) { toast('🔒 Please complete payment to download'); showLockOverlay(); return; }
+  if (!state.previewGenerated) { toast('Generate a preview first'); return; }
+  const canvas = document.getElementById('preview-canvas');
+  triggerDownload(canvas.toDataURL('image/jpeg', 0.95), `celebratebanner-${Date.now()}.jpg`);
+  toast('✓ Downloaded — thank you!');
+}
+
+function downloadHdJpg() {
+  if (!SEC.paid) { toast('🔒 Please complete payment to download HD'); showLockOverlay(); return; }
+  if (!state.previewGenerated) { toast('Generate a preview first'); return; }
+  if (!state.isPremium) { toast('HD download requires a Premium arrangement'); return; }
+  const btn = document.getElementById('download-hd-btn');
+  const original = btn.innerHTML;
+  btn.disabled = true; btn.textContent = 'Rendering HD…';
+  setTimeout(() => {
+    const off = document.createElement('canvas');
+    renderToCanvas(off, state.selectedImages, state.isPremium, 3);
+    off.toBlob(blob => {
+      triggerDownload(blob, `celebratebanner-hd-${Date.now()}.jpg`);
+      btn.disabled = false; btn.innerHTML = original;
+      toast('HD downloaded · 2400×3600');
+    }, 'image/jpeg', 0.95);
+  }, 50);
+}
+
+function placeholderCheckout() {
+  toast('Processing payment…');
+  setTimeout(() => { unlockPreview(); goto(3); }, 1500);
+}
+
+const _origRefreshPreviewUI = refreshPreviewUI;
+function refreshPreviewUI() {
+  _origRefreshPreviewUI();
+  if (state.previewGenerated && !SEC.paid) {
+    const dlBtn = document.getElementById('download-jpg-main');
+    if (dlBtn) {
+      dlBtn.classList.add('locked');
+      dlBtn.onclick = function() { toast('🔒 Please complete payment'); showLockOverlay(); };
+    }
+    setTimeout(() => { drawWatermarkOverlay(); showLockOverlay(); }, 200);
+  }
+}
+
+setTimeout(blockCanvasRightClick, 100);
+
 // init
+renderThemes();
+refreshUploadLimits();
+refreshUploadStats();
 renderThemes();
 refreshUploadLimits();
 refreshUploadStats();
