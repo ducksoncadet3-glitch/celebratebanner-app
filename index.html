@@ -356,7 +356,7 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
     <div class="disclaimer-note">⚠️ Confirm Printmoz reseller pricing before launching checkout.</div>
     <div class="btn-group">
       <button class="btn btn-outline" onclick="goto(3)">← Back to Preview</button>
-      <button class="btn btn-dark" onclick="placeholderCheckout()">🔒 Pay & Get My Banner</button>
+      <button class="btn btn-primary btn-lg" onclick="placeholderCheckout()">🔒 Pay & Get My Banner</button>
     </div>
   </section>
 </main>
@@ -560,12 +560,12 @@ function placeholderCheckout() {
     return;
   }
 
-  var DIGITAL_URL = 'https://buy.stripe.com/7sY8wHeEUb9n27KgxR83C00';
+  var DIGITAL_URL = 'https://buy.stripe.com/00w00bgN25P3eUw4P983C01';
   var PRINT_URL   = 'https://buy.stripe.com/7sY8wHeEUb9n27KgxR83C00';
 
   var url = (state.delivery === 'print') ? PRINT_URL : DIGITAL_URL;
 
-  toast('Redirecting to secure checkout…');
+  toast('Redirecting to secure Stripe checkout…');
   setTimeout(function() {
     window.open(url, '_blank');
   }, 600);
