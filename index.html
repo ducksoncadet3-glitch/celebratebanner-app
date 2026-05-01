@@ -356,7 +356,7 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
     <div class="disclaimer-note">⚠️ Confirm Printmoz reseller pricing before launching checkout.</div>
     <div class="btn-group">
       <button class="btn btn-outline" onclick="goto(3)">← Back to Preview</button>
-      <button class="btn btn-dark" onclick="placeholderCheckout()">Proceed to Checkout (not wired)</button>
+      <button class="btn btn-dark" onclick="placeholderCheckout()">🔒 Pay & Get My Banner</button>
     </div>
   </section>
 </main>
@@ -553,7 +553,23 @@ function downloadJpg(){if(!SEC.paid){toast('🔒 Please complete payment to down
 
 function downloadHdJpg(){if(!SEC.paid){toast('🔒 Please complete payment to download HD');showLockOverlay();return;}if(!state.previewGenerated){toast('Generate a preview first');return;}if(!state.isPremium){toast('HD download requires a Premium arrangement');return;}const btn=document.getElementById('download-hd-btn');const original=btn.innerHTML;btn.disabled=true;btn.textContent='Rendering HD…';setTimeout(()=>{const off=document.createElement('canvas');renderToCanvas(off,state.selectedImages,state.isPremium,3);off.toBlob(blob=>{triggerDownload(blob,`celebratebanner-hd-${Date.now()}.jpg`);btn.disabled=false;btn.innerHTML=original;toast('HD downloaded · 2400×3600');},'image/jpeg',0.95);},50);}
 
-function placeholderCheckout(){toast('Processing payment…');setTimeout(()=>{unlockPreview();goto(3);},1500);}
+function placeholderCheckout() {
+  if (!state.previewGenerated) {
+    toast('Generate your preview first');
+    goto(3);
+    return;
+  }
+
+  var DIGITAL_URL = 'https://buy.stripe.com/7sY8wHeEUb9n27KgxR83C00';
+  var PRINT_URL   = 'https://buy.stripe.com/7sY8wHeEUb9n27KgxR83C00';
+
+  var url = (state.delivery === 'print') ? PRINT_URL : DIGITAL_URL;
+
+  toast('Redirecting to secure checkout…');
+  setTimeout(function() {
+    window.open(url, '_blank');
+  }, 600);
+}
 
 setTimeout(blockCanvasRightClick,100);
 
