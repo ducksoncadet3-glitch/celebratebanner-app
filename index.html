@@ -2746,8 +2746,12 @@ function downloadHdJpg() {
   }, 50);
 }
 
-function placeholderCheckout() {
-  toast('Checkout not wired — confirm pricing first');
+function placeholderCheckout(){
+  const link = state.isPremium
+    ? 'https://buy.stripe.com/7sY8wHeEUb9n27KgxR83C00'
+    : 'https://buy.stripe.com/7sY8wHeEUb9n27KgxR83C00';
+  window.open(link, '_blank');
+  toast('Opening secure checkout…');
 }
 
 // init
