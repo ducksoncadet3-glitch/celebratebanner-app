@@ -11,31 +11,45 @@ without any business logic in the frontend.
 backend-stub/
 ├── env.example                       # ALL server env vars
 ├── db/
-│   ├── schema.sql                    # Postgres DDL (users, projects, uploads, renders, payments, download_tokens)
+│   ├── schema.sql                    # one-shot bootstrap (equivalent to migrations 0001)
+│   ├── migrate.js                    # versioned migration runner (idempotent, checksum-guarded)
+│   ├── migrations/
+│   │   ├── 0001_initial.sql          # core tables: users, projects, uploads, renders, payments, download_tokens
+│   │   ├── 0002_webhook_events.sql   # Stripe webhook idempotency table
+│   │   └── 0003_audit_log.sql        # append-only audit log
 │   ├── index.js                      # pg pool + query/tx helpers
-│   └── projects.js                   # project repository
+│   ├── projects.js                   # project repository
+│   └── webhook-events.js             # Stripe replay-protection helpers
 ├── services/
 │   ├── logger.js                     # pino structured logger
 │   ├── metrics.js                    # prom-client (exposes /metrics)
 │   ├── s3.js                         # presigned uploads + signed GETs
-│   ├── queue.js                      # BullMQ wrapper
+│   ├── queue.js                      # BullMQ wrapper (production)
 │   ├── tokens.js                     # HMAC-signed download tokens
-│   ├── mailer.js                     # transactional email (Postmark)
+│   ├── mailer.js                     # transactional email via template files
+│   ├── audit.js                      # audit_log helper
+│   ├── image-optimizer.js            # sharp-based thumb/medium variants
 │   ├── projects.js                   # facade — delegates to db/projects.js
 │   ├── render.js                     # node-canvas render via shared engine
-│   └── render-queue.js               # LEGACY in-memory queue (used only if Redis missing)
+│   └── render-queue.js               # DEPRECATED — in-memory fallback for local dev only
+├── email/templates/
+│   ├── delivery.js                   # banner-ready email
+│   ├── recovery.js                   # abandoned-checkout recovery email
+│   └── failure.js                    # async-payment-failed email
 ├── middleware/
 │   ├── rate-limit.js                 # token-bucket rate limiter (Redis-backed)
 │   └── validate.js                   # Zod request validator
 ├── routes/
 │   ├── payments.checkout.js          # POST /api/payments/checkout
-│   ├── payments.webhook.js           # POST /api/payments/webhook (signature-verified)
-│   ├── uploads.signed.js             # POST /api/uploads/signed
+│   ├── payments.webhook.js           # POST /api/payments/webhook (idempotency + audit)
+│   ├── uploads.signed.js             # POST /api/uploads/signed + auto-optimizer trigger
 │   ├── downloads.js                  # GET  /api/downloads/:projectId/:assetType/:token
-│   ├── render.hd.js                  # POST /api/render/hd (admin / retry)
-│   └── render.preview.js             # POST /api/render/preview (OG images etc.)
+│   ├── render.hd.js                  # POST /api/render/hd
+│   ├── render.preview.js             # POST /api/render/preview
+│   └── admin.js                      # GET/POST /api/admin/* (every endpoint the admin dashboard calls)
 ├── workers/
-│   └── render.worker.js              # BullMQ worker — run as a SEPARATE process
+│   ├── render.worker.js              # BullMQ render worker
+│   └── abandoned-checkout.worker.js  # abandoned-cart recovery cron
 ├── video/
 │   └── encoder.js                    # ffmpeg-based MP4 slideshow ($19 upsell)
 └── utils/
@@ -72,13 +86,30 @@ npm install ../celebratebanner-app/shared/render-engine
 # npm install @celebratebanner/render-engine
 ```
 
-## Apply the schema
+Plus sharp for image variants:
 
 ```bash
-psql "$DATABASE_URL" -f db/schema.sql
+npm install sharp@^0.33
 ```
 
-Idempotent — safe to re-run on every deploy.
+## Apply migrations
+
+```bash
+# First deploy + every subsequent deploy. Idempotent and checksum-guarded
+# (refuses to run a migration that's been modified after it was applied).
+node db/migrate.js
+
+# Inspect pending vs applied
+node db/migrate.js --status
+
+# Create a new migration
+node db/migrate.js --create rename_thing
+```
+
+`db/schema.sql` is a one-shot bootstrap that produces the same state as
+running migrations `0001`. Use it for ephemeral test databases; production
+should always use the migrate runner so the `schema_migrations` ledger stays
+in sync.
 
 ## Wire into your Express app
 
@@ -93,6 +124,8 @@ import { signedUploadHandler, middlewares as uploadMw } from './routes/uploads.s
 import { downloadHandler, middlewares as downloadMw } from './routes/downloads.js';
 import { hdRenderHandler, hdStatusHandler } from './routes/render.hd.js';
 import { previewHandler } from './routes/render.preview.js';
+import * as admin from './routes/admin.js';
+import { adminAuth } from './middleware/admin-auth.js'; // YOUR auth — Clerk, Auth.js, bearer, etc.
 
 const app = express();
 app.disable('x-powered-by');
@@ -111,6 +144,21 @@ app.get ('/api/render/hd/:jobId/status',  hdStatusHandler);
 app.post('/api/render/preview',           previewHandler);
 app.get ('/metrics',                      metricsHandler);
 
+// Admin — every route in here MUST be gated by your auth. The admin user is
+// expected on req.user; routes/admin.js writes req.user.id into audit_log.
+app.use('/api/admin', adminAuth);
+app.get ('/api/admin/overview',                       admin.overviewHandler);
+app.get ('/api/admin/projects',                       admin.listProjectsHandler);
+app.get ('/api/admin/projects/:id',                   admin.getProjectHandler);
+app.post('/api/admin/projects/:id/rerender',          admin.rerenderHandler);
+app.post('/api/admin/projects/:id/refund',            admin.refundHandler);
+app.post('/api/admin/projects/:id/resend-delivery',   admin.resendDeliveryHandler);
+app.get ('/api/admin/queue',                          admin.queueHandler);
+app.post('/api/admin/queue/:jobId/retry',             admin.retryJobHandler);
+app.post('/api/admin/queue/:jobId/cancel',            admin.cancelJobHandler);
+app.get ('/api/admin/payments',                       admin.paymentsHandler);
+app.get ('/api/admin/webhooks',                       admin.webhookLogHandler);
+
 // Graceful shutdown
 async function shutdown(signal) {
   logger.info({ signal }, 'api.shutdown.start');
@@ -124,11 +172,19 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT',  () => shutdown('SIGINT'));
 ```
 
-## Run the worker SEPARATELY
+## Run the workers SEPARATELY
+
+Three Node processes per environment:
 
 ```bash
-# In a separate process / deploy unit:
+# 1) API server (Express)
+node src/app.js
+
+# 2) BullMQ render worker (HD renders + slideshow encoding)
 node workers/render.worker.js
+
+# 3) Abandoned-checkout recovery cron (low CPU, no Redis required)
+node workers/abandoned-checkout.worker.js
 ```
 
 Workers and API share env + Redis + Postgres but should be deployed as

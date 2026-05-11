@@ -1,0 +1,110 @@
+name: deploy-web
+
+# Deploys /web to a configurable host. The default `build-artifact` job uploads
+# the Next.js build as a workflow artifact, then a deploy job ships it to whichever
+# host you choose. Uncomment + fill in the deploy step for your target.
+#
+# Triggers: push to main that touches /web or shared/render-engine.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - 'shared/render-engine/**'
+      - '.github/workflows/deploy-web.yml'
+  workflow_dispatch:                # allow manual deploys from the Actions tab
+
+concurrency:
+  group: deploy-web-${{ github.ref }}
+  cancel-in-progress: false        # never cancel a deploy mid-flight
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: build render engine
+        working-directory: shared/render-engine
+        run: |
+          npm ci
+          npm run build
+
+      - name: install web deps
+        working-directory: web
+        run: npm ci
+
+      - name: build
+        working-directory: web
+        env:
+          NEXT_PUBLIC_SITE_URL:               ${{ vars.PUBLIC_SITE_URL }}
+          NEXT_PUBLIC_API_BASE_URL:           ${{ vars.API_BASE_URL }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_LEGACY_STRIPE_LINK:     ${{ vars.LEGACY_STRIPE_LINK }}
+        run: npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: |
+            web/.next
+            web/public
+            web/package.json
+            web/package-lock.json
+            web/next.config.mjs
+          retention-days: 7
+
+  deploy:
+    name: deploy
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: web-build
+
+      # Pick ONE of the deploy paths below and uncomment.
+      # All three honor `DEPLOY_HOST` repo variable so swapping targets is one knob.
+
+      # ── Option A · Cloudflare Pages (recommended for static + edge) ─────────
+      # - name: deploy to Cloudflare Pages
+      #   uses: cloudflare/wrangler-action@v3
+      #   with:
+      #     apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      #     accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      #     command: pages deploy web-build/.next/standalone --project-name=celebratebanner-web --branch=main
+
+      # ── Option B · Fly.io (best if you also host the API/worker there) ─────
+      # - uses: superfly/flyctl-actions/setup-flyctl@master
+      # - run: flyctl deploy --remote-only --config web/fly.toml
+      #   env:
+      #     FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      # ── Option C · Raw rsync to a VPS (Hetzner/DO/lightsail) ───────────────
+      # - name: rsync to host
+      #   uses: easingthemes/ssh-deploy@v5
+      #   with:
+      #     SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      #     REMOTE_HOST:     ${{ secrets.DEPLOY_HOST }}
+      #     REMOTE_USER:     deploy
+      #     SOURCE:          'web-build/'
+      #     TARGET:          '/srv/celebratebanner-web/releases/${{ github.sha }}'
+      #     SCRIPT_AFTER: |
+      #       ln -sfn /srv/celebratebanner-web/releases/${{ github.sha }} /srv/celebratebanner-web/current
+      #       systemctl restart celebratebanner-web
+
+      - name: deploy not configured
+        if: ${{ vars.DEPLOY_HOST == '' }}
+        run: |
+          echo "::warning::No deploy target configured. Uncomment the host of your choice in .github/workflows/deploy-web.yml."
+          echo "Build artifact 'web-build' is available for manual deploy from the Actions tab."

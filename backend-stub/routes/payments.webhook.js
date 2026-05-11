@@ -17,11 +17,13 @@ const crypto = require('node:crypto');
 const Stripe = require('stripe');
 const express = require('express');
 const { markPaid, markFailed, markRefunded, getById } = require('../db/projects');
+const { claimEvent, markEventOk, markEventFailed } = require('../db/webhook-events');
 const { revokeProjectTokens } = require('../services/tokens');
 const { enqueueRender } = require('../services/queue');
 const { sendFailureEmail } = require('../services/mailer');
 const { logger } = require('../services/logger');
 const { metrics } = require('../services/metrics');
+const { record: auditRecord } = require('../services/audit');
 const { deserializeRenderInput } = require('../utils/render-input');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-12-18.acacia' });
@@ -40,33 +42,46 @@ async function webhookHandler(req, res) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
+  // Replay protection: Stripe retries deliveries for up to 3 days. Insert
+  // the event into webhook_events keyed by stripe_event_id. If we've seen
+  // it before, return 200 without running any side effects.
+  const claim = await claimEvent(event);
+  if (!claim.firstSeen) {
+    metrics.incWebhookOk();
+    logger.info({ eventId: event.id, type: event.type, prior: claim.status }, 'webhook.replay');
+    return res.status(200).json({ received: true, deduped: true });
+  }
+
   // Acknowledge fast — Stripe needs 2xx within ~10s. The slow work happens
   // in the BullMQ worker, not here.
   try {
     switch (event.type) {
       case 'checkout.session.completed':
       case 'checkout.session.async_payment_succeeded':
-        await handleSessionSucceeded(event.data.object);
+        await handleSessionSucceeded(event);
         break;
       case 'checkout.session.async_payment_failed':
-        await handleSessionFailed(event.data.object);
+        await handleSessionFailed(event);
         break;
       case 'charge.refunded':
-        await handleRefund(event.data.object);
+        await handleRefund(event);
         break;
       default:
         break; // ignore uninteresting events
     }
+    await markEventOk(event.id);
     metrics.incWebhookOk();
     return res.status(200).json({ received: true });
   } catch (err) {
-    logger.error({ err: err.message, eventType: event.type }, 'webhook.handler-failed');
+    await markEventFailed(event.id, err.message);
+    logger.error({ err: err.message, eventType: event.type, eventId: event.id }, 'webhook.handler-failed');
     // 500 makes Stripe retry — appropriate for transient failures (DB, queue).
     return res.status(500).send('Handler error');
   }
 }
 
-async function handleSessionSucceeded(session) {
+async function handleSessionSucceeded(event) {
+  const session = event.data.object;
   const projectId = session.metadata?.projectId;
   if (!projectId) {
     logger.warn({ sessionId: session.id }, 'webhook.no-project');
@@ -84,6 +99,11 @@ async function handleSessionSucceeded(session) {
     customerEmail,
     productIds,
     shippingAddress: session.shipping_details?.address ?? null,
+  });
+  await auditRecord({
+    actorKind: 'webhook', actorId: event.id, action: 'payment.succeeded',
+    subjectKind: 'project', subjectId: projectId,
+    metadata: { sessionId: session.id, amountTotalCents: session.amount_total, productIds },
   });
 
   // Load the saved canonical RenderInput from the project row.
@@ -104,18 +124,25 @@ async function handleSessionSucceeded(session) {
     { dedupeKey: `paid:${session.id}` },
   );
   metrics.incRendersEnqueued();
-  logger.info({ projectId, renderId, productIds }, 'webhook.render-enqueued');
+  logger.info({ projectId, renderId, productIds, eventId: event.id }, 'webhook.render-enqueued');
 }
 
-async function handleSessionFailed(session) {
+async function handleSessionFailed(event) {
+  const session = event.data.object;
   const projectId = session.metadata?.projectId;
   if (!projectId) return;
   await markFailed({ projectId, reason: 'async_payment_failed', stripeSessionId: session.id });
+  await auditRecord({
+    actorKind: 'webhook', actorId: event.id, action: 'payment.failed',
+    subjectKind: 'project', subjectId: projectId,
+    metadata: { sessionId: session.id },
+  });
   const customerEmail = session.customer_details?.email || session.metadata?.customerEmail;
   if (customerEmail) await sendFailureEmail({ to: customerEmail, projectId });
 }
 
-async function handleRefund(charge) {
+async function handleRefund(event) {
+  const charge = event.data.object;
   // Stripe attaches our projectId to payment_intent metadata when we set it
   // via payment_intent_data.metadata in payments.checkout.js.
   const projectId =
@@ -128,7 +155,12 @@ async function handleRefund(charge) {
     amountRefundedCents: charge.amount_refunded,
   });
   await revokeProjectTokens(projectId);
-  logger.info({ projectId, chargeId: charge.id }, 'webhook.refunded');
+  await auditRecord({
+    actorKind: 'webhook', actorId: event.id, action: 'payment.refunded',
+    subjectKind: 'project', subjectId: projectId,
+    metadata: { chargeId: charge.id, amountRefundedCents: charge.amount_refunded },
+  });
+  logger.info({ projectId, chargeId: charge.id, eventId: event.id }, 'webhook.refunded');
 }
 
 module.exports = { webhookHandler, webhookRawParser };

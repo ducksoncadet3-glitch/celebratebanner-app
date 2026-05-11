@@ -1,0 +1,63 @@
+name: sync-backend-stub
+
+# When backend-stub/ changes, open a PR against celebratebanner-api with the
+# updated drop-in files. Lets us keep the canonical copy here while still
+# shipping changes to the api repo without manual copy-paste.
+#
+# Setup:
+#   - In celebratebanner-api repo: create a PAT with `repo` scope (or use a
+#     GitHub App) and set BACKEND_REPO_PAT secret on THIS repo with that token.
+#   - Set BACKEND_REPO variable to "ducksoncadet3-glitch/celebratebanner-api"
+#     (or wherever the api lives).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend-stub/**'
+      - '.github/workflows/sync-backend-stub.yml'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: open PR on celebratebanner-api
+    runs-on: ubuntu-latest
+    if: vars.BACKEND_REPO != ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: clone target repo
+        env:
+          GH_TOKEN: ${{ secrets.BACKEND_REPO_PAT }}
+        run: |
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/${{ vars.BACKEND_REPO }}.git" target
+          cd target
+          git config user.name  "celebratebanner-bot"
+          git config user.email "bot@celebratebanner.com"
+
+      - name: copy backend-stub/ into target/api/
+        run: |
+          mkdir -p target/api
+          rsync -a --delete \
+            --exclude='node_modules' \
+            backend-stub/ target/api/
+
+      - name: open PR
+        env:
+          GH_TOKEN: ${{ secrets.BACKEND_REPO_PAT }}
+        working-directory: target
+        run: |
+          BRANCH="sync/backend-stub-${{ github.sha }}"
+          git checkout -b "$BRANCH"
+          if git diff --quiet; then
+            echo "no changes — skipping PR"
+            exit 0
+          fi
+          git add -A
+          git commit -m "sync: backend-stub from celebratebanner-app@${{ github.sha }}"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "sync: backend-stub @ ${{ github.sha }}" \
+            --body  "Auto-generated PR mirroring backend-stub/ from celebratebanner-app commit ${{ github.sha }}." \
+            --base main \
+            --head "$BRANCH"

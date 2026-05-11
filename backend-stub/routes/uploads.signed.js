@@ -14,10 +14,17 @@
 const { z } = require('zod');
 const { validate } = require('../middleware/validate');
 const { rateLimit } = require('../middleware/rate-limit');
-const { createUploadPolicy, cdnUrl, uploadKey } = require('../services/s3');
+const { createUploadPolicy } = require('../services/s3');
+const { optimize: optimizeImage } = require('../services/image-optimizer');
 const { query, one } = require('../db/index');
 const { metrics } = require('../services/metrics');
 const { logger } = require('../services/logger');
+
+// Delay before kicking off image-variant generation. Just long enough that
+// most browser→S3 uploads have finished. For the production-correct path,
+// wire S3 ObjectCreated → SNS → this handler so it fires the moment the upload
+// completes (no guesswork). See backend-stub/README.md for the SNS template.
+const OPTIMIZE_DELAY_MS = Number.parseInt(process.env.IMAGE_OPT_DELAY_MS || '8000', 10);
 
 const Body = z.object({
   projectId:   z.string().regex(/^proj_[a-zA-Z0-9_-]{6,32}$/),
@@ -67,6 +74,19 @@ async function signedUploadHandler(req, res) {
       assetUrl: policy.assetUrl,
       expiresAt: policy.expiresAt,
     });
+
+    // Fire-and-forget: schedule image-variant generation after the browser
+    // has had time to complete the S3 upload. The optimizer is idempotent and
+    // catches its own errors — if the file isn't there yet, it just logs.
+    setTimeout(() => {
+      optimizeImage({
+        projectId: body.projectId,
+        s3Key: policy.key,
+        bucket: policy.bucket,
+      }).catch((err) => {
+        logger.warn({ err: err.message, s3Key: policy.key }, 'uploads.optimize-failed');
+      });
+    }, OPTIMIZE_DELAY_MS);
   } catch (err) {
     logger.error({ err: err.message, projectId: body.projectId }, 'uploads.signed.failed');
     res.status(500).json({ error: 'Could not start upload' });

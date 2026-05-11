@@ -1,14 +1,9 @@
 /**
- * Render queue — keeps HD render jobs off the request thread and serialized
- * per-machine so we don't OOM by rendering 4× 7200×10800 canvases in parallel.
+ * DEPRECATED — kept only as a single-process fallback for local development
+ * when Redis isn't available. Production uses services/queue.js (BullMQ).
  *
- * Tiny in-memory implementation that:
- *   • caps concurrency to N (default 2 — node-canvas peaks at ~600MB per HD render)
- *   • exposes `enqueue(job)` returning a Promise that resolves with the job result
- *   • exposes `status(jobId)` so /api/projects/:id/status can report progress
- *
- * For multi-process deployment, swap this for BullMQ + Redis. The function
- * signatures stay the same; the route + webhook code is unchanged.
+ * Tiny in-memory queue: concurrency-capped, no retries, dies with the process.
+ * Do NOT import this from production code paths.
  */
 
 const crypto = require('node:crypto');

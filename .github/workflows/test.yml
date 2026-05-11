@@ -1,0 +1,67 @@
+name: test
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - 'shared/render-engine/**'
+      - 'backend-stub/**'
+      - '.github/workflows/test.yml'
+
+jobs:
+  web:
+    name: web · typecheck + lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      # The render engine is a `file:` dependency. Install + build it so the
+      # web app can type-check against the compiled .d.ts files.
+      - name: build render engine
+        working-directory: shared/render-engine
+        run: |
+          npm ci
+          npm run build
+      - run: npm run typecheck
+      - run: npm run lint --if-present
+
+  engine:
+    name: render-engine · typecheck
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: shared/render-engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: shared/render-engine/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+
+  backend-syntax:
+    name: backend-stub · syntax check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      # Catch JS parse errors in the backend stub even though it isn't a
+      # real npm project (it lives here as drop-in code for celebratebanner-api).
+      - name: node --check every .js file
+        run: |
+          find backend-stub -name '*.js' -not -path '*/node_modules/*' -print0 \
+            | xargs -0 -n1 node --check
