@@ -1,0 +1,163 @@
+# Copy this file into celebratebanner-api/.github/workflows/deploy-api.yml.
+# It deploys the API + worker + recovery processes from a single repo.
+#
+# Required GitHub repo settings on celebratebanner-api:
+#   Variables:
+#     DEPLOY_HOST          which Fly app / Render service / VPS we're targeting
+#     PUBLIC_SITE_URL      https://celebratebanner.com
+#     API_PUBLIC_URL       https://api.celebratebanner.com
+#   Secrets:
+#     DATABASE_URL, REDIS_URL, S3_*, STRIPE_*, POSTMARK_API_TOKEN, etc.
+#     plus FLY_API_TOKEN (or your host's equivalent)
+#
+# Zero-downtime is provided by the host (Fly/Render/Railway do rolling restarts
+# by default). On a VPS, this workflow assumes a systemd unit + reverse proxy
+# in front that drains gracefully on SIGTERM (covered in services/queue.js).
+
+name: deploy-api
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'db/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'Dockerfile'
+      - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Commit SHA to deploy (defaults to HEAD of branch)'
+        required: false
+
+concurrency:
+  group: deploy-api-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      # Validates required env vars for each process. Fails fast on misconfig.
+      - name: validate API env
+        env:
+          # Mirror every secret the API needs. The script doesn't read values
+          # — just presence + shape.
+          NODE_ENV: production
+          DATABASE_URL:          ${{ secrets.DATABASE_URL }}
+          PG_SSL:                require
+          PUBLIC_SITE_URL:       ${{ vars.PUBLIC_SITE_URL }}
+          API_PUBLIC_URL:        ${{ vars.API_PUBLIC_URL }}
+          REDIS_URL:             ${{ secrets.REDIS_URL }}
+          STRIPE_SECRET_KEY:     ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          AWS_REGION:            ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          S3_BUCKET:             ${{ secrets.S3_BUCKET }}
+          S3_CDN_BASE:           ${{ vars.S3_CDN_BASE }}
+          DOWNLOAD_TOKEN_SECRET: ${{ secrets.DOWNLOAD_TOKEN_SECRET }}
+          POSTMARK_API_TOKEN:    ${{ secrets.POSTMARK_API_TOKEN }}
+          MAIL_FROM:             ${{ vars.MAIL_FROM }}
+          ADMIN_JWT_SECRET:      ${{ secrets.ADMIN_JWT_SECRET }}
+        run: node scripts/check-env.js api
+
+  migrate:
+    name: migrate
+    needs: preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: ${{ github.event.inputs.sha || github.sha }} }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      # Migrations run with the migrator role (escalated permissions),
+      # NOT the runtime app role. Keep these secrets separate.
+      - run: node db/migrate.js
+        env:
+          DATABASE_URL: ${{ secrets.MIGRATOR_DATABASE_URL }}
+          PG_SSL:       require
+
+  deploy:
+    name: deploy
+    needs: migrate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: ${{ github.event.inputs.sha || github.sha }} }
+
+      # ── Pick ONE deploy block below and uncomment ────────────────────────
+
+      # Option A · Fly.io (recommended — workers + api in one config)
+      # - uses: superfly/flyctl-actions/setup-flyctl@master
+      # - run: flyctl deploy --remote-only --strategy bluegreen
+      #   env:
+      #     FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      # Option B · Render
+      # - uses: bencox/render-deploy-action@v1
+      #   with:
+      #     render-api-key: ${{ secrets.RENDER_API_KEY }}
+      #     service-id:     ${{ vars.RENDER_SERVICE_ID }}
+
+      # Option C · Docker → VPS via SSH (rolling restart of a systemd unit)
+      # - uses: easingthemes/ssh-deploy@v5
+      #   with:
+      #     SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      #     REMOTE_HOST:     ${{ vars.DEPLOY_HOST }}
+      #     REMOTE_USER:     deploy
+      #     SOURCE:          '.'
+      #     TARGET:          '/srv/celebratebanner-api/releases/${{ github.sha }}'
+      #     SCRIPT_AFTER: |
+      #       cd /srv/celebratebanner-api/releases/${{ github.sha }}
+      #       npm ci --omit=dev
+      #       ln -sfn /srv/celebratebanner-api/releases/${{ github.sha }} \
+      #               /srv/celebratebanner-api/current
+      #       sudo systemctl reload celebratebanner-api
+      #       sudo systemctl restart celebratebanner-worker
+      #       sudo systemctl restart celebratebanner-recovery
+
+      - name: not configured
+        if: ${{ vars.DEPLOY_HOST == '' }}
+        run: |
+          echo "::error::No deploy target configured. Uncomment one of the blocks above."
+          exit 1
+
+  verify:
+    name: verify (smoke test)
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      # Health check first — fast, doesn't touch Stripe.
+      - name: /health/ready returns 200
+        run: |
+          for i in {1..20}; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' "${{ vars.API_PUBLIC_URL }}/health/ready")
+            echo "attempt $i: $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 6
+          done
+          echo "::error::/health/ready never returned 200"
+          exit 1
+      # Full E2E smoke test against Stripe test mode.
+      - name: smoke test
+        env:
+          API_BASE_URL:       ${{ vars.API_PUBLIC_URL }}
+          STRIPE_SECRET_KEY:  ${{ secrets.STRIPE_TEST_SECRET_KEY }}
+          SMOKE_TIMEOUT_MS:   180000
+        run: node scripts/smoke-test.js

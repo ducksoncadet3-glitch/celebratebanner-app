@@ -144,8 +144,23 @@ app.get ('/api/render/hd/:jobId/status',  hdStatusHandler);
 app.post('/api/render/preview',           previewHandler);
 app.get ('/metrics',                      metricsHandler);
 
-// Admin — every route in here MUST be gated by your auth. The admin user is
-// expected on req.user; routes/admin.js writes req.user.id into audit_log.
+// Health checks — wire before everything else so even a broken middleware
+// chain keeps the liveness probe happy.
+import { liveHandler, readyHandler, depsHandler } from './routes/health.js';
+app.get('/health/live',         liveHandler);
+app.get('/health/ready',        readyHandler);
+app.get('/health/dependencies', depsHandler);
+
+// Admin auth — login/logout/csrf are NOT behind adminAuth (login is how a user
+// obtains a session). Everything else under /api/admin/* is.
+import {
+  loginHandler, logoutHandler, csrfHandler, adminAuth, loginRateLimit,
+} from './middleware/admin-auth.js';
+app.post('/api/admin/auth/login', loginRateLimit, loginHandler);
+app.post('/api/admin/auth/logout',                logoutHandler);
+app.get ('/api/admin/auth/csrf',                  csrfHandler);
+
+// All other /api/admin/* routes — gated by adminAuth (JWT + DB lookup + CSRF + audit).
 app.use('/api/admin', adminAuth);
 app.get ('/api/admin/overview',                       admin.overviewHandler);
 app.get ('/api/admin/projects',                       admin.listProjectsHandler);

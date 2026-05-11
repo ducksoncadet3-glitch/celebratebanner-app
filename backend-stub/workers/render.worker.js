@@ -17,6 +17,7 @@ const { Worker } = require('bullmq');
 const { QUEUE_NAME, CONCURRENCY, connection, shutdown: queueShutdown } = require('../services/queue');
 const { logger } = require('../services/logger');
 const { metrics } = require('../services/metrics');
+const { captureError } = require('../services/alerts');
 const { renderBannerHD, renderStandMockupBuffer } = require('../services/render');
 const { renderVideoSlideshow } = require('../video/encoder');
 const { putBuffer, renderKey } = require('../services/s3');
@@ -138,6 +139,17 @@ const worker = new Worker(
       );
       metrics.incRenderFailures();
       logger.error({ jobId: job.id, projectId, err: err.message }, 'render.failed');
+      // Alert only on the FINAL attempt — BullMQ will retry transient failures
+      // automatically and we don't want to page on every retry.
+      const isLastAttempt = (job.attemptsMade + 1) >= (job.opts?.attempts ?? 1);
+      if (isLastAttempt) {
+        await captureError(err, {
+          event: 'render.failed-final',
+          jobId: String(job.id),
+          projectId,
+          attempts: job.attemptsMade + 1,
+        });
+      }
       throw err; // BullMQ retry policy takes over
     }
   },

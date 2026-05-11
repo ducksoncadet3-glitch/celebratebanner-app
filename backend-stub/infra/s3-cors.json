@@ -1,0 +1,16 @@
+{
+  "CORSRules": [
+    {
+      "AllowedOrigins": [
+        "https://celebratebanner.com",
+        "https://app.celebratebanner.com",
+        "https://admin.celebratebanner.com",
+        "http://localhost:3000"
+      ],
+      "AllowedMethods": ["POST", "GET", "HEAD"],
+      "AllowedHeaders": ["*"],
+      "ExposeHeaders": ["ETag"],
+      "MaxAgeSeconds": 3600
+    }
+  ]
+}

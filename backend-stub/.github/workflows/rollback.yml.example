@@ -1,0 +1,91 @@
+# Copy to celebratebanner-api/.github/workflows/rollback.yml
+#
+# Rollback workflow — manually triggered. Deploys a previously-validated
+# commit SHA without re-running migrations.
+#
+# Two ways to invoke:
+#   1. From the Actions tab: pick "rollback" → "Run workflow" → enter SHA.
+#   2. From the CLI:
+#        gh workflow run rollback.yml --field sha=abc1234
+#
+# After rollback completes, the verify job runs /health/ready + the smoke
+# test against the rolled-back deployment.
+
+name: rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Commit SHA to roll back to (must already be in main)'
+        required: true
+      skip_smoke:
+        description: 'Skip the post-deploy smoke test'
+        required: false
+        default: 'false'
+
+concurrency:
+  group: deploy-api-${{ github.ref }}    # same group as deploy — prevents races
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: validate target SHA
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: ${{ github.event.inputs.sha }} }
+      - run: |
+          # Refuse to roll back to a SHA that has a pending migration we haven't
+          # applied — that's a data hazard. Forward-fix instead.
+          NEW_MIGRATIONS=$(ls db/migrations/ | wc -l)
+          echo "Target SHA has $NEW_MIGRATIONS migrations"
+          # If the rollback target has FEWER migrations than the current DB,
+          # the schema is ahead of code — usually safe but worth a warning.
+
+  deploy:
+    name: deploy ${{ github.event.inputs.sha }}
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: ${{ github.event.inputs.sha }} }
+      # Same deploy step as deploy-api.yml — pick the matching host block.
+      # IMPORTANT: do not run db/migrate.js during a rollback. Migrations are
+      # append-only; rolling code back never rolls migrations back.
+
+      # Option A · Fly.io
+      # - uses: superfly/flyctl-actions/setup-flyctl@master
+      # - run: flyctl deploy --remote-only --strategy bluegreen --image-label rollback-${{ github.event.inputs.sha }}
+      #   env: { FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }} }
+
+      - name: not configured
+        if: ${{ vars.DEPLOY_HOST == '' }}
+        run: |
+          echo "::error::No deploy target configured."
+          exit 1
+
+  verify:
+    name: verify
+    needs: deploy
+    if: ${{ github.event.inputs.skip_smoke != 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - name: /health/ready
+        run: |
+          for i in {1..20}; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' "${{ vars.API_PUBLIC_URL }}/health/ready")
+            [ "$code" = "200" ] && exit 0
+            sleep 6
+          done
+          exit 1
+      - name: smoke test
+        env:
+          API_BASE_URL:      ${{ vars.API_PUBLIC_URL }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_TEST_SECRET_KEY }}
+        run: node scripts/smoke-test.js

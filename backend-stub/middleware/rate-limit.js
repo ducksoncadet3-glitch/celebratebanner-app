@@ -15,8 +15,6 @@
  *   "rate-limiter-flexible": "^5.0.4"
  */
 
-const { logger } = require('../services/logger');
-
 let RateLimiterRedis, RateLimiterMemory, IORedis;
 try {
   ({ RateLimiterRedis, RateLimiterMemory } = require('rate-limiter-flexible'));
@@ -45,10 +43,12 @@ function makeLimiter(name, { points, durationSec }) {
 }
 
 const limiters = {
-  checkout: makeLimiter('checkout', { points: 30, durationSec: 60 * 60 }),
-  uploads:  makeLimiter('uploads',  { points: 200, durationSec: 60 * 60 }),
-  autosave: makeLimiter('autosave', { points: 600, durationSec: 60 * 60 }),
-  downloads: makeLimiter('downloads', { points: 100, durationSec: 5 * 60 }),
+  checkout:    makeLimiter('checkout',    { points: 30,  durationSec: 60 * 60 }),
+  uploads:     makeLimiter('uploads',     { points: 200, durationSec: 60 * 60 }),
+  autosave:    makeLimiter('autosave',    { points: 600, durationSec: 60 * 60 }),
+  downloads:   makeLimiter('downloads',   { points: 100, durationSec: 5 * 60 }),
+  // Aggressive limit on admin login to deter credential-stuffing attacks.
+  'admin-login': makeLimiter('admin-login', { points: 10, durationSec: 60 }),
 };
 
 function clientIp(req) {

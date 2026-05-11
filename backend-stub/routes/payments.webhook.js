@@ -24,6 +24,7 @@ const { sendFailureEmail } = require('../services/mailer');
 const { logger } = require('../services/logger');
 const { metrics } = require('../services/metrics');
 const { record: auditRecord } = require('../services/audit');
+const { captureWarning, captureError } = require('../services/alerts');
 const { deserializeRenderInput } = require('../utils/render-input');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-12-18.acacia' });
@@ -39,6 +40,13 @@ async function webhookHandler(req, res) {
   } catch (err) {
     metrics.incWebhookBad();
     logger.warn({ err: err.message }, 'webhook.bad-signature');
+    // A bad signature with a sustained pattern means either the secret was
+    // rotated without re-deploying, or someone is probing the endpoint.
+    // Either way it's worth a page — but heavily deduped (~5/min).
+    void captureWarning('Stripe webhook signature verification failed', {
+      fingerprintKey: 'webhook.bad-signature',
+      error: err.message,
+    });
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
@@ -75,6 +83,13 @@ async function webhookHandler(req, res) {
   } catch (err) {
     await markEventFailed(event.id, err.message);
     logger.error({ err: err.message, eventType: event.type, eventId: event.id }, 'webhook.handler-failed');
+    // Handler failures cause Stripe retries — page someone, deduped per event type
+    // so a sustained DB outage doesn't fan out into 100 identical alerts.
+    void captureError(err, {
+      event: 'webhook.handler-failed',
+      eventType: event.type,
+      eventId: event.id,
+    });
     // 500 makes Stripe retry — appropriate for transient failures (DB, queue).
     return res.status(500).send('Handler error');
   }
