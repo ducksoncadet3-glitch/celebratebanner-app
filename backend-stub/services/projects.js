@@ -1,107 +1,98 @@
 /**
  * Project lifecycle service.
  *
- * Replace the in-memory Map with your real persistence layer (Postgres, Mongo,
- * DynamoDB, etc.). The function signatures and shapes are stable — callers
- * (the webhook + checkout route) don't need to change.
+ * Production implementation backed by Postgres (db/projects.js). This module
+ * is a thin facade so existing callers (payments routes, webhooks) keep their
+ * imports stable while the persistence layer migrates underneath.
+ *
+ * For local dev without a database, set USE_MEMORY_PROJECT_STORE=1 to fall
+ * back to an in-memory Map — handy when developing the Stripe flow in
+ * isolation.
  */
 
-const crypto = require('node:crypto');
+const projects = require('../db/projects');
+const { issueDownloadToken } = require('./tokens');
+const { logger } = require('./logger');
 
-// ── Replace with your DB ─────────────────────────────────────────────────────
-const PROJECTS = new Map(); // projectId -> project record
+const MEMORY = process.env.USE_MEMORY_PROJECT_STORE === '1';
+const MEM = new Map();
 
-async function createProjectIfMissing({ projectId, templateId, renderType, customerEmail, items }) {
-  if (PROJECTS.has(projectId)) return PROJECTS.get(projectId);
-  const project = {
-    projectId,
-    templateId,
-    renderType,
-    customerEmail,
-    items,
-    status: 'pending',
-    createdAt: new Date().toISOString(),
-  };
-  PROJECTS.set(projectId, project);
-  return project;
+async function createProjectIfMissing(payload) {
+  if (MEMORY) {
+    if (MEM.has(payload.projectId)) return MEM.get(payload.projectId);
+    const row = { ...payload, status: 'pending', createdAt: new Date().toISOString() };
+    MEM.set(payload.projectId, row);
+    return row;
+  }
+  return projects.createIfMissing(payload);
 }
 
-async function markProjectPaid({ projectId, stripeSessionId, paymentIntentId, amountTotalCents, currency, customerEmail, productIds, shippingAddress }) {
-  const existing = PROJECTS.get(projectId) || { projectId };
-  const updated = {
-    ...existing,
-    status: 'paid',
-    paidAt: new Date().toISOString(),
-    stripeSessionId,
-    paymentIntentId,
-    amountTotalCents,
-    currency,
-    customerEmail: existing.customerEmail || customerEmail,
-    productIds: productIds && productIds.length ? productIds : existing.items || [],
-    shippingAddress,
-  };
-  PROJECTS.set(projectId, updated);
-  return updated;
+async function markProjectPaid(payload) {
+  if (MEMORY) {
+    const existing = MEM.get(payload.projectId) || { projectId: payload.projectId };
+    MEM.set(payload.projectId, { ...existing, ...payload, status: 'paid', paidAt: new Date().toISOString() });
+    return;
+  }
+  return projects.markPaid(payload);
 }
 
-async function markProjectFailed({ projectId, reason, stripeSessionId }) {
-  const existing = PROJECTS.get(projectId) || { projectId };
-  const updated = { ...existing, status: 'failed', failedAt: new Date().toISOString(), failureReason: reason, stripeSessionId };
-  PROJECTS.set(projectId, updated);
-  return updated;
+async function markProjectFailed(payload) {
+  if (MEMORY) {
+    const existing = MEM.get(payload.projectId) || { projectId: payload.projectId };
+    MEM.set(payload.projectId, { ...existing, ...payload, status: 'failed', failedAt: new Date().toISOString() });
+    return;
+  }
+  return projects.markFailed(payload);
 }
 
-async function markProjectRefunded({ projectId, stripeChargeId, amountRefundedCents }) {
-  const existing = PROJECTS.get(projectId) || { projectId };
-  const updated = { ...existing, status: 'refunded', refundedAt: new Date().toISOString(), stripeChargeId, amountRefundedCents };
-  PROJECTS.set(projectId, updated);
-  // Real impl: revoke any active signed URLs.
-  return updated;
+async function markProjectRefunded(payload) {
+  if (MEMORY) {
+    const existing = MEM.get(payload.projectId) || { projectId: payload.projectId };
+    MEM.set(payload.projectId, { ...existing, ...payload, status: 'refunded', refundedAt: new Date().toISOString() });
+    return;
+  }
+  return projects.markRefunded(payload);
 }
 
 async function getProjectStatus(projectId) {
-  const p = PROJECTS.get(projectId);
-  if (!p) return { projectId, status: 'pending' };
-  return {
-    projectId: p.projectId,
-    status: p.status,
-    renderProgress: p.renderProgress ?? (p.status === 'ready' ? 100 : p.status === 'paid' ? 35 : 0),
-    downloadUrl: p.downloadUrl,
-    videoUrl: p.videoUrl,
-    expiresAt: p.expiresAt,
-    errorMessage: p.failureReason,
-  };
+  if (MEMORY) {
+    const p = MEM.get(projectId);
+    if (!p) return { projectId, status: 'pending' };
+    return {
+      projectId,
+      status: p.status,
+      renderProgress: p.renderProgress ?? (p.status === 'ready' ? 100 : 0),
+      downloadUrl: p.downloadUrl,
+      videoUrl: p.videoUrl,
+    };
+  }
+  return projects.getStatus(projectId);
 }
 
-// ── Render trigger ───────────────────────────────────────────────────────────
-async function triggerRender({ projectId, templateId, renderType, productIds }) {
-  // Enqueue a render job. Replace with your real queue (BullMQ, SQS, etc.).
-  const renderId = `r_${crypto.randomBytes(6).toString('hex')}`;
-  // Pretend it's instant for now:
-  const project = PROJECTS.get(projectId) || { projectId };
-  PROJECTS.set(projectId, { ...project, renderId, renderType, templateId, renderProgress: 100 });
-  return { renderId };
+/**
+ * Compatibility shim — the old webhook called these to trigger render +
+ * signed-download generation. With BullMQ + render worker the work now happens
+ * asynchronously; these functions remain as no-ops in case any legacy caller
+ * still references them.
+ */
+async function triggerRender({ projectId }) {
+  logger.warn({ projectId }, 'projects.triggerRender called — render now lives in BullMQ worker; ignoring');
+  return { renderId: 'noop' };
 }
 
-// ── Signed downloads ─────────────────────────────────────────────────────────
-const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
-
-async function generateSignedDownloads({ projectId, renderId, productIds }) {
-  // In real life: sign a CloudFront/Cloudinary/S3 URL with an expiry.
-  // Here we just synthesize a placeholder that the frontend can show.
-  const expiresAt = new Date(Date.now() + SIGNED_URL_TTL_SECONDS * 1000).toISOString();
-  const base = process.env.API_PUBLIC_URL || 'https://api.celebratebanner.com';
+async function generateSignedDownloads({ projectId, productIds = [] }) {
+  // Delegate to tokens service. Used only by legacy paths; new code calls
+  // issueDownloadToken directly inside the render worker.
+  const downloadUrl = await issueDownloadToken({ projectId, assetType: 'jpeg', s3Key: `renders/${projectId}/latest/jpeg.jpeg` });
   const wantsVideo = productIds.includes('video');
-  const links = {
-    downloadUrl: `${base}/files/${projectId}/${renderId}/banner.zip?sig=stub&exp=${encodeURIComponent(expiresAt)}`,
-    videoUrl: wantsVideo
-      ? `${base}/files/${projectId}/${renderId}/slideshow.mp4?sig=stub&exp=${encodeURIComponent(expiresAt)}`
-      : undefined,
-    expiresAt,
+  const video = wantsVideo
+    ? await issueDownloadToken({ projectId, assetType: 'video', s3Key: `renders/${projectId}/latest/video.mp4` })
+    : undefined;
+  return {
+    downloadUrl: downloadUrl.url,
+    videoUrl: video?.url,
+    expiresAt: downloadUrl.expiresAt,
   };
-  const project = PROJECTS.get(projectId) || { projectId };
-  PROJECTS.set(projectId, { ...project, ...links, status: 'ready' });
-  return links;
 }
 
 module.exports = {

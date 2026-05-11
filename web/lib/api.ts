@@ -123,14 +123,35 @@ export const api = {
     return request<ProjectStatus>(`/api/projects/${encodeURIComponent(projectId)}/status`);
   },
 
-  /** POST /api/upload/photos — multipart upload, returns uploaded asset metadata. */
-  async uploadPhotos(projectId: string, files: File[]): Promise<UploadedPhoto[]> {
-    const form = new FormData();
-    form.append('projectId', projectId);
-    files.forEach((f) => form.append('photos', f, f.name));
-    return request<UploadedPhoto[]>('/api/upload/photos', {
-      method: 'POST',
-      body: form,
+  /**
+   * POST /api/uploads/signed — exchange file metadata for a presigned S3 POST
+   * policy. The browser then uploads directly to S3 (no API bytes).
+   */
+  requestSignedUpload(input: {
+    projectId: string;
+    filename: string;
+    contentType: string;
+    bytes: number;
+    sha256: string;
+    width: number;
+    height: number;
+  }): Promise<{
+    url: string;
+    fields: Record<string, string>;
+    assetUrl: string;
+    expiresAt: string;
+  }> {
+    return request('/api/uploads/signed', { method: 'POST', json: input });
+  },
+
+  /**
+   * PATCH /api/projects/:id — autosave the canonical RenderInput. Versioned;
+   * the server rejects payloads whose `version` field is unknown.
+   */
+  saveProject(projectId: string, body: { renderInput: unknown; rev: number }): Promise<{ rev: number }> {
+    return request<{ rev: number }>(`/api/projects/${encodeURIComponent(projectId)}`, {
+      method: 'PATCH',
+      json: body,
     });
   },
 };

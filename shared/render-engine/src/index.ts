@@ -36,3 +36,4 @@ export { mulberry32, photoRot } from './canvas/rng.js';
 export { drawBannerBackground } from './theme/background.js';
 export { renderBannerText } from './theme/text.js';
 export { drawHero3D, drawPhoto3D, drawPhotoFramed } from './frames/dispatch.js';
+export { RENDER_INPUT_VERSION, type RenderInputVersion } from './schema/version.js';
