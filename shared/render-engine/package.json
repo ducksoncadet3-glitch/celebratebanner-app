@@ -1,0 +1,24 @@
+{
+  "name": "@celebratebanner/render-engine",
+  "version": "0.1.0",
+  "description": "Deterministic, reusable banner rendering engine. Runs in the browser for previews and in Node (via node-canvas / skia-canvas) for HD exports.",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".":              { "types": "./dist/index.d.ts",              "default": "./dist/index.js"              },
+    "./pipeline":     { "types": "./dist/pipeline/index.d.ts",     "default": "./dist/pipeline/index.js"     },
+    "./arrangements": { "types": "./dist/arrangements/index.d.ts", "default": "./dist/arrangements/index.js" },
+    "./frames":       { "types": "./dist/frames/index.d.ts",       "default": "./dist/frames/index.js"       },
+    "./mockups":      { "types": "./dist/mockups/index.d.ts",      "default": "./dist/mockups/index.js"      }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  },
+  "files": ["dist", "src", "README.md"]
+}
