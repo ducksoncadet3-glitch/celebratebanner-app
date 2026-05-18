@@ -288,7 +288,7 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
   <section class="page" id="pg-3">
     <div class="sec-eyebrow">Step 4 of 5</div>
     <h1 class="sec-title">Preview your banner</h1>
-    <p class="sec-sub">Generate your preview, then pick an arrangement. Classic is free; premium arrangements are +$9.99.</p>
+    <p class="sec-sub">Generate your preview, then pick an arrangement. Each layout arranges your photos differently — choose the one that fits your moment.</p>
     <div class="preview-frame">
       <div class="preview-label">
         <span>Banner Preview · 24×36 in</span>
@@ -312,7 +312,7 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
       <div class="upsell-card">
         <div class="upsell-info">
           <div class="upsell-title">Pick your arrangement</div>
-          <div class="upsell-sub">Classic is free. Premium arrangements unlock layered composition + HD download for +$9.99.</div>
+          <div class="upsell-sub">Each layout arranges your photos differently — choose the one that fits your moment. Magazine, Scattered, and Mosaic add $9.99 to printed orders due to layered print production.</div>
         </div>
       </div>
       <div class="arr-grid" id="arr-grid"></div>
@@ -353,10 +353,20 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
       <div class="sum-row"><span class="sum-key" id="sum-delivery-key">Digital download</span><span id="sum-delivery-price">$9.99</span></div>
       <div class="sum-row total"><span>Total</span><span id="sum-total">$9.99</span></div>
     </div>
-    <div class="disclaimer-note">⚠️ Confirm Printmoz reseller pricing before launching checkout.</div>
     <div class="btn-group">
       <button class="btn btn-outline" onclick="goto(3)">← Back to Preview</button>
-      <button class="btn btn-primary btn-lg" onclick="placeholderCheckout()">🔒 Pay & Get My Banner</button>
+      <div class="consent-row" style="margin: 1.25rem 0; display: flex; align-items: flex-start; gap: 0.65rem; font-size: 13px; line-height: 1.5; color: var(--ivory); text-align: left;">
+        <input type="checkbox" id="terms-consent" style="margin-top: 3px; accent-color: var(--gold); flex-shrink: 0;" onchange="onConsentToggle()">
+        <label for="terms-consent" style="cursor: pointer;">
+          I agree to the
+          <a href="https://celebratebanner.com/terms" target="_blank" rel="noopener" style="color: var(--gold); text-decoration: underline;">Terms of Service</a>
+          and
+          <a href="https://celebratebanner.com/privacy" target="_blank" rel="noopener" style="color: var(--gold); text-decoration: underline;">Privacy Policy</a>
+          and understand the
+          <a href="https://celebratebanner.com/returns" target="_blank" rel="noopener" style="color: var(--gold); text-decoration: underline;">Return &amp; Refund Policy</a>.
+        </label>
+      </div>
+      <button class="btn btn-primary btn-lg" id="pay-button" onclick="placeholderCheckout()" disabled style="opacity: 0.5; cursor: not-allowed;">🔒 Pay &amp; Get My Banner</button>
     </div>
   </section>
 </main>
@@ -386,7 +396,7 @@ const ARRANGEMENTS=[
   {id:'scattered',label:'Scattered',sub:'Hero centered, 16 photos pinned around it · Best with 17 photos',tier:'premium',minPhotos:5,maxPhotos:17},
   {id:'mosaic',label:'Mosaic',sub:'Hero centered, photos fill every side · Best with 27 photos',tier:'premium',minPhotos:8,maxPhotos:27},
 ];
-const state={theme:null,images:[],heroImage:null,shuffledSeed:null,selectedImages:[],frames:{},rotations:{},activeFrame:'rounded',bannerText:{},isPremium:false,arrangement:'classic',previewGenerated:false,previewCacheKey:'',delivery:'digital',step:0};
+const state={theme:null,images:[],heroImage:null,shuffledSeed:null,selectedImages:[],frames:{},rotations:{},activeFrame:'rounded',bannerText:{},isPremium:false,arrangement:'classic',previewGenerated:false,previewCacheKey:'',delivery:'digital',step:0,termsAcceptedAt:null};
 const SEC={paid:false,sessionKey:null};
 function frameOf(id){return state.frames[id]||'rounded';}
 function getMaxPhotos(){return state.theme?state.theme.maxPhotos:50;}
@@ -438,7 +448,7 @@ function mixFrames(){const seed=state.shuffledSeed??generateRandomSeed();const o
 function updateText(key,value){if(!key)return;state.bannerText[key]=value;state.previewGenerated=false;}
 
 // ── STEP 3: PREVIEW ──────────────────────────────────────────
-function renderArrangementGrid(){const grid=document.getElementById('arr-grid');if(!grid)return;grid.innerHTML=ARRANGEMENTS.map(a=>`<div class="arr-opt${state.arrangement===a.id?' active':''}" data-arr="${a.id}" onclick="setArrangement('${a.id}')"><div class="arr-opt-title">${a.label}${a.tier==='premium'?'<span class="price-tag">+$9.99</span>':'<span class="price-tag" style="background:rgba(90,143,106,0.18);color:#3d6e4e;">Free</span>'}</div><div class="arr-opt-sub">${a.sub}</div></div>`).join('');}
+function renderArrangementGrid(){const grid=document.getElementById('arr-grid');if(!grid)return;grid.innerHTML=ARRANGEMENTS.map(a=>`<div class="arr-opt${state.arrangement===a.id?' active':''}" data-arr="${a.id}" onclick="setArrangement('${a.id}')"><div class="arr-opt-title">${a.label}${a.tier==='premium'?'<span class="price-tag">+$9.99 on print</span>':''}</div><div class="arr-opt-sub">${a.sub}</div></div>`).join('');}
 
 function refreshPreviewUI(){const post=document.getElementById('post-preview');const pre=document.getElementById('pre-preview-actions');const empty=document.getElementById('preview-empty');const canvas=document.getElementById('preview-canvas');const genBtn=document.getElementById('generate-btn');const stand=document.getElementById('stand-mockup');const dlMain=document.getElementById('download-jpg-main');if(state.previewGenerated){post.style.display='block';pre.style.display='none';empty.style.display='none';canvas.style.display='block';genBtn.style.display='none';renderArrangementGrid();if(stand)stand.style.display='block';if(dlMain)dlMain.style.display='inline-flex';const hd=document.getElementById('download-hd-btn');if(hd){hd.style.opacity=state.isPremium?'1':'0.45';hd.title=state.isPremium?'Download HD (2400×3600)':'Pick a premium arrangement to unlock HD';}if(!SEC.paid){if(dlMain){dlMain.classList.add('locked');dlMain.onclick=function(){toast('🔒 Please complete payment');showLockOverlay();};}setTimeout(()=>{drawWatermarkOverlay();showLockOverlay();},200);}}else{post.style.display='none';pre.style.display='block';empty.style.display='block';canvas.style.display='none';genBtn.style.display='inline-flex';if(stand)stand.style.display='none';if(dlMain)dlMain.style.display='none';}}
 
@@ -535,7 +545,22 @@ function renderStandMockup(bannerCanvas){const container=document.getElementById
 
 // ── STEP 4: DELIVERY ─────────────────────────────────────────
 function setDelivery(type){state.delivery=type;document.querySelectorAll('.delivery-card').forEach(el=>{el.classList.toggle('sel',el.dataset.delivery===type);});refreshSummary();}
-function refreshSummary(){const arr=ARRANGEMENTS.find(a=>a.id===state.arrangement)||ARRANGEMENTS[0];document.getElementById('sum-mode').textContent=arr.label+(state.isPremium?' (Premium)':'');document.getElementById('sum-count').textContent=state.selectedImages.length;document.getElementById('sum-premium-row').style.display=state.isPremium?'flex':'none';const isPrint=state.delivery==='print';const base=isPrint?39.99:9.99;const total=base+(state.isPremium?9.99:0);document.getElementById('sum-delivery-key').textContent=isPrint?'Printed banner (24×36)':'Digital download';document.getElementById('sum-delivery-price').textContent='$'+base.toFixed(2);document.getElementById('sum-total').textContent='$'+total.toFixed(2);}
+function onConsentToggle(){
+  var checkbox=document.getElementById('terms-consent');
+  var button=document.getElementById('pay-button');
+  if(checkbox.checked){
+    state.termsAcceptedAt=new Date().toISOString();
+    button.disabled=false;
+    button.style.opacity='1';
+    button.style.cursor='pointer';
+  }else{
+    state.termsAcceptedAt=null;
+    button.disabled=true;
+    button.style.opacity='0.5';
+    button.style.cursor='not-allowed';
+  }
+}
+function refreshSummary(){const arr=ARRANGEMENTS.find(a=>a.id===state.arrangement)||ARRANGEMENTS[0];document.getElementById('sum-mode').textContent=arr.label+(state.isPremium?' (Premium)':'');document.getElementById('sum-count').textContent=state.selectedImages.length;const isPrint=state.delivery==='print';document.getElementById('sum-premium-row').style.display=(state.isPremium&&isPrint)?'flex':'none';const base=isPrint?39.99:9.99;const total=isPrint?base+(state.isPremium?9.99:0):base;document.getElementById('sum-delivery-key').textContent=isPrint?'Printed banner (24×36)':'Digital download';document.getElementById('sum-delivery-price').textContent='$'+base.toFixed(2);document.getElementById('sum-total').textContent='$'+total.toFixed(2);}
 function triggerDownload(blobOrUrl,filename){const url=typeof blobOrUrl==='string'?blobOrUrl:URL.createObjectURL(blobOrUrl);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);if(typeof blobOrUrl!=='string')setTimeout(()=>URL.revokeObjectURL(url),1000);}
 
 // ── SECURITY SYSTEM ──────────────────────────────────────────
@@ -560,10 +585,16 @@ function placeholderCheckout() {
     return;
   }
 
-  var DIGITAL_URL = 'https://buy.stripe.com/00w00bgN25P3eUw4P983C01';
-  var PRINT_URL   = 'https://buy.stripe.com/7sY8wHeEUb9n27KgxR83C00';
+  var DIGITAL_URL        = 'https://buy.stripe.com/00w00bgN25P3eUw4P983C01';
+  var PRINT_CLASSIC_URL  = 'https://buy.stripe.com/28EcMXgN2a5jeUw1CX83C04';
+  var PRINT_PREMIUM_URL  = 'https://buy.stripe.com/3cI7sDcwM7XbeUw4P983C03';
 
-  var url = (state.delivery === 'print') ? PRINT_URL : DIGITAL_URL;
+  var url;
+  if (state.delivery === 'print') {
+    url = state.isPremium ? PRINT_PREMIUM_URL : PRINT_CLASSIC_URL;
+  } else {
+    url = DIGITAL_URL;
+  }
 
   toast('Redirecting to secure Stripe checkout…');
   setTimeout(function() {
@@ -578,5 +609,20 @@ renderThemes();
 refreshUploadLimits();
 refreshUploadStats();
 </script>
+<footer style="background: var(--obsidian, #0C0E14); border-top: 1px solid rgba(201,168,76,0.1); padding: 2.5rem 1.5rem; margin-top: 4rem; color: rgba(255,255,255,0.6); font-size: 13px;">
+  <div style="max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.25rem;">
+    <div style="font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 700; color: #fff;">
+      Celebrate<em style="color: #E8C97A; font-style: normal;">Banner</em>
+    </div>
+    <div style="display: flex; gap: 1.25rem; flex-wrap: wrap;">
+      <a href="https://celebratebanner.com/privacy" target="_blank" rel="noopener" style="color: rgba(255,255,255,0.4); text-decoration: none;">Privacy</a>
+      <a href="https://celebratebanner.com/terms" target="_blank" rel="noopener" style="color: rgba(255,255,255,0.4); text-decoration: none;">Terms</a>
+      <a href="https://celebratebanner.com/returns" target="_blank" rel="noopener" style="color: rgba(255,255,255,0.4); text-decoration: none;">Returns</a>
+      <a href="https://celebratebanner.com/shipping" target="_blank" rel="noopener" style="color: rgba(255,255,255,0.4); text-decoration: none;">Shipping</a>
+      <a href="mailto:info@celebratebanner.com" style="color: rgba(255,255,255,0.4); text-decoration: none;">Contact</a>
+    </div>
+    <div style="font-size: 12px; color: rgba(255,255,255,0.25);">© 2026 CelebrateBanner · West Palm Beach, FL</div>
+  </div>
+</footer>
 </body>
 </html>

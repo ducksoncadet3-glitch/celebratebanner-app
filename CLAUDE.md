@@ -129,12 +129,13 @@ This is a **single-page, multi-step wizard** built entirely in one HTML file. No
 ---
 
 ## Pricing (DO NOT CHANGE without Printmoz confirmation)
-| Size | Price |
+| Item | Price |
 |------|-------|
-| 24×36 in | $49 |
-| 18×24 in | $39 |
-| Print add-on | +$18 |
-| Digital download | Included |
+| Print 24×36 in (Classic) | $39.99 |
+| Print 24×36 in (Premium arrangement) | $49.98 |
+| Digital download | $9.99 (flat) |
+
+Digital download is flat $9.99 regardless of arrangement. Premium arrangements add $9.99 only on printed orders.
 
 ---
 
@@ -196,15 +197,14 @@ Key endpoints used:
 ---
 
 ## Quick Start for Claude Code
+Use Codespaces + Claude Code workflow. Edit files locally in the workspace, commit on a feature branch, push, open a PR for review.
+
 ```bash
-# Clone the repo
-git clone https://github.com/ducksoncadet3-glitch/celebratebanner-app
-cd celebratebanner-app
-
-# Open and edit
-# No npm install needed — pure HTML
-open index.html   # preview in browser
-
-# After editing, commit via GitHub web editor
-# Vercel auto-deploys on commit
+# In Codespaces (or local clone)
+git checkout -b my-feature-branch
+# edit index.html with Claude Code
+git add index.html
+git commit -m "describe change"
+git push -u origin my-feature-branch
+gh pr create   # then review + merge
 ```
