@@ -342,7 +342,7 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
         <div class="delivery-icon">📦</div>
         <div class="delivery-name">Printed Banner</div>
         <div class="delivery-desc">Pro-printed 24×36" vinyl banner, shipped to your door.</div>
-        <div class="delivery-price" id="price-print">$39.99</div>
+        <div class="delivery-price" id="price-print">$79.99</div>
       </div>
     </div>
     <div class="summary-card">
@@ -560,7 +560,7 @@ function onConsentToggle(){
     button.style.cursor='not-allowed';
   }
 }
-function refreshSummary(){const arr=ARRANGEMENTS.find(a=>a.id===state.arrangement)||ARRANGEMENTS[0];document.getElementById('sum-mode').textContent=arr.label+(state.isPremium?' (Premium)':'');document.getElementById('sum-count').textContent=state.selectedImages.length;const isPrint=state.delivery==='print';document.getElementById('sum-premium-row').style.display=(state.isPremium&&isPrint)?'flex':'none';const base=isPrint?39.99:9.99;const total=isPrint?base+(state.isPremium?9.99:0):base;document.getElementById('sum-delivery-key').textContent=isPrint?'Printed banner (24×36)':'Digital download';document.getElementById('sum-delivery-price').textContent='$'+base.toFixed(2);document.getElementById('sum-total').textContent='$'+total.toFixed(2);}
+function refreshSummary(){const arr=ARRANGEMENTS.find(a=>a.id===state.arrangement)||ARRANGEMENTS[0];document.getElementById('sum-mode').textContent=arr.label+(state.isPremium?' (Premium)':'');document.getElementById('sum-count').textContent=state.selectedImages.length;const isPrint=state.delivery==='print';document.getElementById('sum-premium-row').style.display=(state.isPremium&&isPrint)?'flex':'none';const base=isPrint?79.99:9.99;const total=isPrint?base+(state.isPremium?9.99:0):base;document.getElementById('sum-delivery-key').textContent=isPrint?'Printed banner (24×36)':'Digital download';document.getElementById('sum-delivery-price').textContent='$'+base.toFixed(2);document.getElementById('sum-total').textContent='$'+total.toFixed(2);}
 function triggerDownload(blobOrUrl,filename){const url=typeof blobOrUrl==='string'?blobOrUrl:URL.createObjectURL(blobOrUrl);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);if(typeof blobOrUrl!=='string')setTimeout(()=>URL.revokeObjectURL(url),1000);}
 
 // ── SECURITY SYSTEM ──────────────────────────────────────────
@@ -586,8 +586,8 @@ function placeholderCheckout() {
   }
 
   var DIGITAL_URL        = 'https://buy.stripe.com/7sY8wHeEUb9n27KgxR83C00';
-  var PRINT_CLASSIC_URL  = 'https://buy.stripe.com/28EcMXgN2a5jeUw1CX83C04';
-  var PRINT_PREMIUM_URL  = 'https://buy.stripe.com/3cI7sDcwM7XbeUw4P983C03';
+  var PRINT_CLASSIC_URL  = 'https://buy.stripe.com/bJe28j1S8fpDdQs81l83C05';
+  var PRINT_PREMIUM_URL  = 'https://buy.stripe.com/aFa3cn40g3GVbIkepJ83C06';
 
   var url;
   if (state.delivery === 'print') {
