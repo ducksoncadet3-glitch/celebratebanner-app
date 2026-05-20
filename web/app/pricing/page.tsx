@@ -5,7 +5,7 @@ import { buildMetadata } from '@/lib/seo';
 export const metadata = buildMetadata({
   title: 'Pricing — Digital, Printed, and Video',
   description:
-    'Digital banner $9.99, printed 24×36" banner $49, optional video slideshow +$19. Pay once. No subscriptions.',
+    'Digital banner $9.99, printed 24×36" banner $79.99 with free shipping, optional video slideshow +$19. Pay once. No subscriptions.',
   path: '/pricing',
 });
 
