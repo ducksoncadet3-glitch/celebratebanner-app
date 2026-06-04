@@ -11,7 +11,7 @@
 
 ## What this repo is
 This is the **banner builder front-end app** — a single-file HTML/CSS/JS canvas-based application deployed at:
-- **Live URL:** https://celebratebanner-app.vercel.app
+- **Live URL:** https://app.celebratebanner.com (GitHub Pages — serves `index.html` from repo root)
 - **Production URL:** https://app.celebratebanner.com
 - **GitHub:** ducksoncadet3-glitch/celebratebanner-app
 - **Deploy:** Commit to GitHub → Vercel auto-deploys
@@ -169,11 +169,21 @@ Key endpoints used:
 2. Open GitHub: github.com/ducksoncadet3-glitch/celebratebanner-app
 3. Click index.html → Edit (pencil icon)
 4. Select All → Paste updated file → Commit changes
-5. Vercel auto-deploys to celebratebanner-app.vercel.app
+5. GitHub Pages auto-deploys `index.html` from the repo root → https://app.celebratebanner.com
 ```
 
 > ⚠️ Always deliver the **complete index.html** — never partial snippets.
 > This is a single-file app. Every edit = full file replacement.
+
+---
+
+## Deployment (authoritative)
+- **This app deploys via GitHub Pages**, serving `index.html` from the root of the
+  `celebratebanner-app` repo. It is **NOT** deployed on Vercel.
+- The **marketing site** (`celebratebanner` repo) is also GitHub Pages.
+- Any **Vercel checks appearing on PRs** are a dead/abandoned integration and do
+  **not** reflect the real deploy. They can be ignored, and the Vercel GitHub-app
+  integration should be disconnected in repo **Settings**.
 
 ---
 
