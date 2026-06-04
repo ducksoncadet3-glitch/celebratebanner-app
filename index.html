@@ -420,8 +420,9 @@ const PRODUCTS={
     // Vinyl is printed and shipped to the contiguous US (used by later PRs; harmless now).
     fulfillment:'ship',
     shipScope:'lower48',
-    // Vinyl is printed with zero bleed (the canvas renders edge-to-edge, no bleed margin).
-    bleed:{mode:'none',inches:0},
+    // Vinyl prints edge-to-edge with no keep-out zone, so the generalized safe-zone
+    // overlay draws nothing for it (replaces the old zero-bleed marker).
+    safeZone:{mode:'none',inches:0},
     // Export size = canvasBase × exportScale = 2400×3600 px (≈100 DPI at 24×36").
     canvasBase:{w:800,h:1200},
     exportScale:3,
@@ -435,21 +436,27 @@ const PRODUCTS={
   tabletop:{
     // Display-only trim label (NOT a numeric dimension; see the vinyl note above).
     trimLabel:'11.5×17.5',
+    // Numeric trim size in inches. Drives the safe-zone overlay proportion and a future
+    // DPI-based export. (trimLabel above stays the display-only string.)
+    trimInches:{w:11.5,h:17.5},
     // Product noun used in on-screen delivery copy (".js-product-noun").
     displayName:'table top',
     // Printed and shipped to the contiguous US, same as vinyl.
     fulfillment:'ship',
     shipScope:'lower48',
-    // Tabletop prints with a 1.5" bleed on the BOTTOM edge ONLY (it slots into a base),
-    // not a uniform bleed on all four sides.
-    bleed:{mode:'bottom',inches:1.5},
+    // B2Sign spec: the bottom 1.5" is a SAFETY MARGIN (keep-out), NOT bleed — it gets
+    // covered by the stand base, so text/logos must stay above it. Rendered as a visual
+    // guide only (drawSafeZoneOverlay); never baked into the export or print render.
+    safeZone:{mode:'bottom',inches:1.5},
     // Preview geometry reflects the real 11.5×17.5 trim aspect (~0.657) — close to vinyl's
     // 0.667, so the canvas barely reshapes when switching products.
     canvasBase:{w:789,h:1200},
-    // exportScale / final print DPI are NOT finalized for tabletop. Mirroring vinyl's scale
-    // for now so the preview/HD path keeps working; the real value is set in a later PR.
-    // Do NOT treat this as the production tabletop export size or DPI.
+    // Mirror vinyl's preview/HD scale so the on-screen render keeps working.
     exportScale:3,
+    // Confirmed via B2Sign: JPEG export at 300 DPI (150 min / 300 max; we use 300).
+    // RECORDED ONLY this PR — export is NOT wired to this value yet (later PR). Export
+    // geometry stays on canvasBase×exportScale and is left untouched.
+    exportDPI:300,
     // Single price (no classic/premium split like vinyl has).
     price:59.99,
     // PLACEHOLDER ONLY — tabletop checkout is intentionally NOT wired in this PR. The real
@@ -524,7 +531,7 @@ function updateText(key,value){if(!key)return;state.bannerText[key]=value;state.
 // ── STEP 3: PREVIEW ──────────────────────────────────────────
 function renderArrangementGrid(){const grid=document.getElementById('arr-grid');if(!grid)return;grid.innerHTML=ARRANGEMENTS.map(a=>`<div class="arr-opt${state.arrangement===a.id?' active':''}" data-arr="${a.id}" onclick="setArrangement('${a.id}')"><div class="arr-opt-title">${a.label}${a.tier==='premium'?'<span class="price-tag">+$9.99 on print</span>':''}</div><div class="arr-opt-sub">${a.sub}</div></div>`).join('');}
 
-function refreshPreviewUI(){const post=document.getElementById('post-preview');const pre=document.getElementById('pre-preview-actions');const empty=document.getElementById('preview-empty');const canvas=document.getElementById('preview-canvas');const genBtn=document.getElementById('generate-btn');const stand=document.getElementById('stand-mockup');const dlMain=document.getElementById('download-jpg-main');if(state.previewGenerated){post.style.display='block';pre.style.display='none';empty.style.display='none';canvas.style.display='block';genBtn.style.display='none';renderArrangementGrid();if(stand)stand.style.display='block';if(dlMain)dlMain.style.display='inline-flex';const hd=document.getElementById('download-hd-btn');if(hd){hd.style.opacity=state.isPremium?'1':'0.45';hd.title=state.isPremium?'Download HD (2400×3600)':'Pick a premium arrangement to unlock HD';}if(!SEC.paid){if(dlMain){dlMain.classList.add('locked');dlMain.onclick=function(){toast('🔒 Please complete payment');showLockOverlay();};}setTimeout(()=>{drawWatermarkOverlay();showLockOverlay();},200);}}else{post.style.display='none';pre.style.display='block';empty.style.display='block';canvas.style.display='none';genBtn.style.display='inline-flex';if(stand)stand.style.display='none';if(dlMain)dlMain.style.display='none';}}
+function refreshPreviewUI(){const post=document.getElementById('post-preview');const pre=document.getElementById('pre-preview-actions');const empty=document.getElementById('preview-empty');const canvas=document.getElementById('preview-canvas');const genBtn=document.getElementById('generate-btn');const stand=document.getElementById('stand-mockup');const dlMain=document.getElementById('download-jpg-main');if(state.previewGenerated){post.style.display='block';pre.style.display='none';empty.style.display='none';canvas.style.display='block';genBtn.style.display='none';renderArrangementGrid();if(stand)stand.style.display='block';if(dlMain)dlMain.style.display='inline-flex';drawSafeZoneOverlay();const hd=document.getElementById('download-hd-btn');if(hd){hd.style.opacity=state.isPremium?'1':'0.45';hd.title=state.isPremium?'Download HD (2400×3600)':'Pick a premium arrangement to unlock HD';}if(!SEC.paid){if(dlMain){dlMain.classList.add('locked');dlMain.onclick=function(){toast('🔒 Please complete payment');showLockOverlay();};}setTimeout(()=>{drawWatermarkOverlay();showLockOverlay();},200);}}else{post.style.display='none';pre.style.display='block';empty.style.display='block';canvas.style.display='none';genBtn.style.display='inline-flex';if(stand)stand.style.display='none';if(dlMain)dlMain.style.display='none';const szc=document.getElementById('preview-safezone-canvas');if(szc)szc.remove();}}
 
 function generatePreview(force){const ids=selectImages();if(ids.length===0){toast('Pick a hero first');return;}state.selectedImages=ids;const newKey=computeCacheKey();if(!force&&state.previewCacheKey===newKey&&state.previewGenerated){toast('Preview already up to date');return;}const empty=document.getElementById('preview-empty');empty.innerHTML=`<div class="preview-loading"><div class="spinner"></div><div>Rendering preview…</div></div>`;empty.style.display='flex';document.getElementById('preview-canvas').style.display='none';setTimeout(()=>{const pc=document.getElementById('preview-canvas');renderToCanvas(pc,ids,state.isPremium,1);state.previewGenerated=true;state.previewCacheKey=newKey;document.getElementById('preview-spec-text').textContent=`${ids.length} photos · ${state.arrangement}${state.isPremium?' (Premium)':''}`;refreshPreviewUI();try{renderStandMockup(pc);}catch(e){console.warn('Stand mockup error:',e);}toast('Banner ready');},60);}
 
@@ -637,12 +644,47 @@ function onConsentToggle(){
 function refreshSummary(){const arr=ARRANGEMENTS.find(a=>a.id===state.arrangement)||ARRANGEMENTS[0];document.getElementById('sum-mode').textContent=arr.label+(state.isPremium?' (Premium)':'');document.getElementById('sum-count').textContent=state.selectedImages.length;const isPrint=state.delivery==='print';const prod=activeProduct();const vv=prod.stripe&&prod.stripe.variants;document.getElementById('sum-premium-row').style.display=(state.isPremium&&isPrint&&!!vv)?'flex':'none';const printBase=vv?vv.classic.price:prod.price;const base=isPrint?printBase:9.99;const total=isPrint?(vv?(state.isPremium?vv.premium:vv.classic).price:prod.price):base;document.getElementById('sum-delivery-key').textContent=isPrint?'Printed banner ('+prod.trimLabel+')':'Digital download';document.getElementById('sum-delivery-price').textContent='$'+base.toFixed(2);document.getElementById('sum-total').textContent='$'+total.toFixed(2);}
 function triggerDownload(blobOrUrl,filename){const url=typeof blobOrUrl==='string'?blobOrUrl:URL.createObjectURL(blobOrUrl);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);if(typeof blobOrUrl!=='string')setTimeout(()=>URL.revokeObjectURL(url),1000);}
 
+// ── SAFE-ZONE OVERLAY ────────────────────────────────────────
+// Per-product keep-out guide, drawn on a SEPARATE layered canvas (same pattern as the
+// watermark) so it is purely visual: it is never part of preview-canvas pixels, so it is
+// never baked into the SD export (downloadJpg → preview-canvas.toDataURL) or the HD export
+// (downloadHdJpg → fresh renderToCanvas offscreen). Reads activeProduct().safeZone; for
+// mode 'none' (vinyl) it draws nothing, leaving vinyl exactly as before.
+function drawSafeZoneOverlay(){
+  const container=document.getElementById('banner-preview');if(!container)return;
+  const existing=document.getElementById('preview-safezone-canvas');if(existing)existing.remove();
+  const pc=document.getElementById('preview-canvas');if(!pc||pc.style.display==='none')return;
+  const p=activeProduct();const sz=p.safeZone,trim=p.trimInches;
+  if(!sz||sz.mode==='none'||!(sz.inches>0)||!trim||!(trim.h>0))return;
+  const W=container.clientWidth||pc.offsetWidth||400,H=container.clientHeight||pc.offsetHeight||600;
+  const oc=document.createElement('canvas');oc.id='preview-safezone-canvas';oc.width=W;oc.height=H;
+  oc.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;border-radius:var(--r2);';
+  container.appendChild(oc);
+  const ctx=oc.getContext('2d');
+  if(sz.mode==='bottom'){
+    const zoneH=H*(sz.inches/trim.h),lineY=H-zoneH;
+    // Subtle shaded keep-out band (rose tint) across the covered area.
+    ctx.fillStyle='rgba(196,97,122,0.16)';ctx.fillRect(0,lineY,W,zoneH);
+    // Dashed gold boundary line at the trim-proportional position.
+    ctx.save();ctx.strokeStyle='rgba(245,228,176,0.95)';ctx.lineWidth=Math.max(1.5,W*0.005);
+    ctx.setLineDash([Math.max(6,W*0.03),Math.max(4,W*0.02)]);
+    ctx.beginPath();ctx.moveTo(0,lineY);ctx.lineTo(W,lineY);ctx.stroke();ctx.restore();
+    // Two-line label, centered in the band, with a soft dark halo for legibility.
+    const fs=Math.max(9,Math.round(W*0.030)),cx=W/2,cy=lineY+zoneH/2;
+    ctx.save();ctx.font=`600 ${fs}px 'Outfit',sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle='rgba(250,248,243,0.96)';ctx.shadowColor='rgba(12,14,20,0.9)';ctx.shadowBlur=4;
+    ctx.fillText('Keep important content above this line',cx,cy-fs*0.7);
+    ctx.fillText('(bottom area covered by the stand base)',cx,cy+fs*0.7);
+    ctx.restore();
+  }
+}
+
 // ── SECURITY SYSTEM ──────────────────────────────────────────
 function drawWatermarkOverlay(){const container=document.getElementById('banner-preview');if(!container)return;const existing=document.getElementById('preview-watermark-canvas');if(existing)existing.remove();if(SEC.paid)return;const pc=document.getElementById('preview-canvas');if(!pc||pc.style.display==='none')return;const wc=document.createElement('canvas');wc.id='preview-watermark-canvas';wc.width=pc.offsetWidth||400;wc.height=pc.offsetHeight||600;wc.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;border-radius:var(--r2);';container.appendChild(wc);const ctx=wc.getContext('2d');const W=wc.width,H=wc.height;ctx.save();ctx.translate(W/2,H/2);ctx.rotate(-35*Math.PI/180);[{text:'CELEBRATEBANNER.COM',fontSize:Math.round(W*0.055),opacity:0.22,dy:0},{text:'PREVIEW ONLY · NOT FOR PRINT',fontSize:Math.round(W*0.032),opacity:0.16,dy:Math.round(H*0.06)}].forEach(pass=>{ctx.font=`700 ${pass.fontSize}px 'Outfit',sans-serif`;ctx.fillStyle=`rgba(255,255,255,${pass.opacity})`;ctx.textAlign='center';ctx.textBaseline='middle';const spacing=pass.fontSize*3.5;const cols=Math.ceil(Math.max(W,H)*1.6/spacing)+2;const rows=Math.ceil(Math.max(W,H)*1.6/(pass.fontSize*2.5))+2;for(let r=-rows;r<=rows;r++)for(let c=-cols;c<=cols;c++)ctx.fillText(pass.text,c*spacing,r*pass.fontSize*2.5+pass.dy);});ctx.restore();}
 
 function showLockOverlay(){const container=document.getElementById('banner-preview');if(!container||SEC.paid)return;const existing=document.getElementById('preview-lock-overlay');if(existing)existing.remove();const overlay=document.createElement('div');overlay.id='preview-lock-overlay';overlay.innerHTML=`<div class="lock-icon-wrap">🔒</div><div class="lock-title">Your banner is ready — unlock it below</div><div class="lock-sub">This preview is protected. Pay to receive your full-resolution file with no watermark.</div><button class="lock-unlock-btn" onclick="initiatePayment()">✦ Unlock My Banner</button><div class="lock-security-note">SSL SECURED · STRIPE CHECKOUT · NO CARD DATA STORED</div>`;container.appendChild(overlay);}
 
-function unlockPreview(){SEC.paid=true;SEC.sessionKey='paid_'+Date.now();const overlay=document.getElementById('preview-lock-overlay');if(overlay){overlay.classList.add('unlocked');setTimeout(()=>overlay.remove(),450);}const wc=document.getElementById('preview-watermark-canvas');if(wc){wc.classList.add('unlocked');setTimeout(()=>wc.remove(),450);}const dlBtn=document.getElementById('download-jpg-main');if(dlBtn){dlBtn.classList.remove('locked');dlBtn.onclick=downloadJpg;}if(state.previewGenerated&&state.selectedImages.length>0){const pc=document.getElementById('preview-canvas');renderToCanvas(pc,state.selectedImages,state.isPremium,1);try{renderStandMockup(pc);}catch(e){}}toast('✓ Payment confirmed — banner unlocked!');}
+function unlockPreview(){SEC.paid=true;SEC.sessionKey='paid_'+Date.now();const overlay=document.getElementById('preview-lock-overlay');if(overlay){overlay.classList.add('unlocked');setTimeout(()=>overlay.remove(),450);}const wc=document.getElementById('preview-watermark-canvas');if(wc){wc.classList.add('unlocked');setTimeout(()=>wc.remove(),450);}const dlBtn=document.getElementById('download-jpg-main');if(dlBtn){dlBtn.classList.remove('locked');dlBtn.onclick=downloadJpg;}if(state.previewGenerated&&state.selectedImages.length>0){const pc=document.getElementById('preview-canvas');renderToCanvas(pc,state.selectedImages,state.isPremium,1);try{renderStandMockup(pc);}catch(e){}drawSafeZoneOverlay();}toast('✓ Payment confirmed — banner unlocked!');}
 
 function blockCanvasRightClick(){const canvas=document.getElementById('preview-canvas');if(canvas)canvas.addEventListener('contextmenu',function(e){if(!SEC.paid){e.preventDefault();toast('🔒 Pay to download your banner');return false;}});document.addEventListener('contextmenu',function(e){if(e.target&&e.target.id==='preview-watermark-canvas'){e.preventDefault();toast('🔒 Pay to download your banner');}});}
 
