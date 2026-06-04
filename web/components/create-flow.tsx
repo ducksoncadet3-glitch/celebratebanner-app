@@ -289,7 +289,7 @@ export function CreateFlow() {
               renderType="premium"
               variant="primary"
             >
-              Order printed — $49
+              Order printed — $79.99
             </CheckoutButton>
           </div>
 
