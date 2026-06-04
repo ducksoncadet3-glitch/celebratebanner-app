@@ -688,7 +688,7 @@ function placeholderCheckout() {
 setTimeout(blockCanvasRightClick,100);
 
 // ── INIT ─────────────────────────────────────────────────────
-function applyProductLabels(){const p=activeProduct();document.querySelectorAll('.js-trim-label').forEach(el=>{el.textContent=p.trimLabel;});document.querySelectorAll('.js-product-noun').forEach(el=>{el.textContent=p.displayName;});}
+function applyProductLabels(){const p=activeProduct();const printBase=(p.stripe&&p.stripe.variants)?p.stripe.variants.classic.price:p.price;document.querySelectorAll('.js-trim-label').forEach(el=>{el.textContent=p.trimLabel;});document.querySelectorAll('.js-product-noun').forEach(el=>{el.textContent=p.displayName;});const pp=document.getElementById('price-print');if(pp)pp.textContent='$'+printBase.toFixed(2);}
 applyProductLabels();
 renderProducts();
 renderThemes();
