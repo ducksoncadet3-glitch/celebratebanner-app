@@ -236,7 +236,7 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
       <div class="upload-icon-wrap">📷</div>
       <div class="upload-title">Drop photos here or click to upload</div>
       <div class="upload-hint" id="upload-hint">JPG, PNG, HEIC — up to 50 photos</div>
-      <div class="upload-limit">Tip: high-resolution photos print sharper at 24×36"</div>
+      <div class="upload-limit">Tip: high-resolution photos print sharper at <span class="js-trim-label">24×36</span>"</div>
     </label>
     <div class="upload-stats" id="upload-stats" style="display:none;">
       <span class="ustat"><strong id="photo-count">0</strong> / <span id="photo-cap">50</span> photos</span>
@@ -291,7 +291,7 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
     <p class="sec-sub">Generate your preview, then pick an arrangement. Each layout arranges your photos differently — choose the one that fits your moment.</p>
     <div class="preview-frame">
       <div class="preview-label">
-        <span>Banner Preview · 24×36 in</span>
+        <span>Banner Preview · <span class="js-trim-label">24×36</span> in</span>
         <span class="preview-spec" id="preview-spec-text">Click "Generate" to render</span>
       </div>
       <div id="banner-preview">
@@ -341,7 +341,7 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
       <div class="delivery-card" data-delivery="print" onclick="setDelivery('print')">
         <div class="delivery-icon">📦</div>
         <div class="delivery-name">Printed Banner</div>
-        <div class="delivery-desc">Pro-printed 24×36" vinyl banner, shipped to your door.</div>
+        <div class="delivery-desc">Pro-printed <span class="js-trim-label">24×36</span>" vinyl banner, shipped to your door.</div>
         <div class="delivery-price" id="price-print">$79.99</div>
       </div>
     </div>
@@ -398,6 +398,31 @@ const ARRANGEMENTS=[
 ];
 const state={theme:null,images:[],heroImage:null,shuffledSeed:null,selectedImages:[],frames:{},rotations:{},activeFrame:'rounded',bannerText:{},isPremium:false,arrangement:'classic',previewGenerated:false,previewCacheKey:'',delivery:'digital',step:0,termsAcceptedAt:null};
 const SEC={paid:false,sessionKey:null};
+// ── PRODUCTS ─────────────────────────────────────────────────
+// Source of truth for the printed vinyl banner: print specs, export sizing,
+// and Stripe SKUs. Behavior here matches what the code already does today —
+// values are sourced from config so a later generalized exporter can read them.
+const PRODUCTS={
+  vinyl:{
+    // Display-only trim label. NOT a numeric dimension — export geometry stays on
+    // canvasBase × exportScale below; nothing keys export off this string.
+    trimLabel:'24×36',
+    // Vinyl is printed and shipped to the contiguous US (used by later PRs; harmless now).
+    fulfillment:'ship',
+    shipScope:'lower48',
+    // Vinyl is printed with zero bleed (the canvas renders edge-to-edge, no bleed margin).
+    bleed:{mode:'none',inches:0},
+    // Export size = canvasBase × exportScale = 2400×3600 px (≈100 DPI at 24×36").
+    canvasBase:{w:800,h:1200},
+    exportScale:3,
+    stripe:{
+      variants:{
+        classic:{price:79.99,stripeLink:'https://buy.stripe.com/bJe28j1S8fpDdQs81l83C05'},
+        premium:{price:89.98,stripeLink:'https://buy.stripe.com/aFa3cn40g3GVbIkepJ83C06'}
+      }
+    }
+  }
+};
 function frameOf(id){return state.frames[id]||'rounded';}
 function getMaxPhotos(){return state.theme?state.theme.maxPhotos:50;}
 
@@ -463,7 +488,7 @@ function _seededRand(seed){let s=seed|0;return function(){s=(s*1664525+101390422
 function _tileToCount(base,count){const out=[];if(!base||!base.length)return out;for(let i=0;i<count;i++)out.push(Object.assign({},base[i%base.length]));return out;}
 function _photoRot(rng,maxDeg){return(rng()*2-1)*maxDeg*Math.PI/180;}
 
-function renderToCanvas(tc,ids,premium,scale){scale=scale||1;const W=800,H=1200;tc.width=W*scale;tc.height=H*scale;tc.style.width='100%';tc.style.height='100%';const ctx=tc.getContext('2d');ctx.scale(scale,scale);const theme=state.theme||THEMES[0];const palette=theme.palette;const grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,_lightenHex(palette.bg,12));grad.addColorStop(1,palette.bg);ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);drawThemeDecorations(ctx,W,H,theme);ctx.strokeStyle=palette.accent;ctx.lineWidth=8;ctx.strokeRect(20,20,W-40,H-40);ctx.save();ctx.globalCompositeOperation='source-over';const textBottomY=renderBannerText(ctx,W,56,theme);ctx.restore();const photos=ids.map(id=>state.images.find(p=>p.id===id)).filter(Boolean);if(!photos.length)return;const contentTop=textBottomY+24;switch(state.arrangement){case'magazine':renderMagazine(ctx,photos,W,H,contentTop);break;case'scattered':renderScattered(ctx,photos,W,H,contentTop);break;case'mosaic':renderMosaic(ctx,photos,W,H,contentTop);break;default:renderClassic(ctx,photos,W,H,contentTop);}ctx.save();ctx.globalCompositeOperation='source-over';renderBannerText(ctx,W,56,theme);ctx.restore();}
+function renderToCanvas(tc,ids,premium,scale){scale=scale||1;const W=PRODUCTS.vinyl.canvasBase.w,H=PRODUCTS.vinyl.canvasBase.h;tc.width=W*scale;tc.height=H*scale;tc.style.width='100%';tc.style.height='100%';const ctx=tc.getContext('2d');ctx.scale(scale,scale);const theme=state.theme||THEMES[0];const palette=theme.palette;const grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,_lightenHex(palette.bg,12));grad.addColorStop(1,palette.bg);ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);drawThemeDecorations(ctx,W,H,theme);ctx.strokeStyle=palette.accent;ctx.lineWidth=8;ctx.strokeRect(20,20,W-40,H-40);ctx.save();ctx.globalCompositeOperation='source-over';const textBottomY=renderBannerText(ctx,W,56,theme);ctx.restore();const photos=ids.map(id=>state.images.find(p=>p.id===id)).filter(Boolean);if(!photos.length)return;const contentTop=textBottomY+24;switch(state.arrangement){case'magazine':renderMagazine(ctx,photos,W,H,contentTop);break;case'scattered':renderScattered(ctx,photos,W,H,contentTop);break;case'mosaic':renderMosaic(ctx,photos,W,H,contentTop);break;default:renderClassic(ctx,photos,W,H,contentTop);}ctx.save();ctx.globalCompositeOperation='source-over';renderBannerText(ctx,W,56,theme);ctx.restore();}
 
 function drawThemeDecorations(ctx,W,H,theme){if(!theme)return;switch(theme.id){case'champion':drawStadiumArcs(ctx,W,H,theme);break;case'wedding':drawFloralCorners(ctx,W,H,theme);break;case'anniversary':drawHeartMotifs(ctx,W,H,theme);break;case'pets':drawPawWatermarks(ctx,W,H,theme);break;case'america250':drawAmerica250Background(ctx,W,H);break;case'worldcup2026':drawWorldCupBackground(ctx,W,H);break;}}
 
@@ -560,7 +585,7 @@ function onConsentToggle(){
     button.style.cursor='not-allowed';
   }
 }
-function refreshSummary(){const arr=ARRANGEMENTS.find(a=>a.id===state.arrangement)||ARRANGEMENTS[0];document.getElementById('sum-mode').textContent=arr.label+(state.isPremium?' (Premium)':'');document.getElementById('sum-count').textContent=state.selectedImages.length;const isPrint=state.delivery==='print';document.getElementById('sum-premium-row').style.display=(state.isPremium&&isPrint)?'flex':'none';const base=isPrint?79.99:9.99;const total=isPrint?base+(state.isPremium?9.99:0):base;document.getElementById('sum-delivery-key').textContent=isPrint?'Printed banner (24×36)':'Digital download';document.getElementById('sum-delivery-price').textContent='$'+base.toFixed(2);document.getElementById('sum-total').textContent='$'+total.toFixed(2);}
+function refreshSummary(){const arr=ARRANGEMENTS.find(a=>a.id===state.arrangement)||ARRANGEMENTS[0];document.getElementById('sum-mode').textContent=arr.label+(state.isPremium?' (Premium)':'');document.getElementById('sum-count').textContent=state.selectedImages.length;const isPrint=state.delivery==='print';document.getElementById('sum-premium-row').style.display=(state.isPremium&&isPrint)?'flex':'none';const vv=PRODUCTS.vinyl.stripe.variants;const base=isPrint?vv.classic.price:9.99;const total=isPrint?(state.isPremium?vv.premium.price:vv.classic.price):base;document.getElementById('sum-delivery-key').textContent=isPrint?'Printed banner ('+PRODUCTS.vinyl.trimLabel+')':'Digital download';document.getElementById('sum-delivery-price').textContent='$'+base.toFixed(2);document.getElementById('sum-total').textContent='$'+total.toFixed(2);}
 function triggerDownload(blobOrUrl,filename){const url=typeof blobOrUrl==='string'?blobOrUrl:URL.createObjectURL(blobOrUrl);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);if(typeof blobOrUrl!=='string')setTimeout(()=>URL.revokeObjectURL(url),1000);}
 
 // ── SECURITY SYSTEM ──────────────────────────────────────────
@@ -576,7 +601,7 @@ function initiatePayment(){goto(4);toast('Choose your delivery option below');}
 
 function downloadJpg(){if(!SEC.paid){toast('🔒 Please complete payment to download');showLockOverlay();return;}if(!state.previewGenerated){toast('Generate a preview first');return;}const canvas=document.getElementById('preview-canvas');triggerDownload(canvas.toDataURL('image/jpeg',0.95),`celebratebanner-${Date.now()}.jpg`);toast('✓ Downloaded — thank you!');}
 
-function downloadHdJpg(){if(!SEC.paid){toast('🔒 Please complete payment to download HD');showLockOverlay();return;}if(!state.previewGenerated){toast('Generate a preview first');return;}if(!state.isPremium){toast('HD download requires a Premium arrangement');return;}const btn=document.getElementById('download-hd-btn');const original=btn.innerHTML;btn.disabled=true;btn.textContent='Rendering HD…';setTimeout(()=>{const off=document.createElement('canvas');renderToCanvas(off,state.selectedImages,state.isPremium,3);off.toBlob(blob=>{triggerDownload(blob,`celebratebanner-hd-${Date.now()}.jpg`);btn.disabled=false;btn.innerHTML=original;toast('HD downloaded · 2400×3600');},'image/jpeg',0.95);},50);}
+function downloadHdJpg(){if(!SEC.paid){toast('🔒 Please complete payment to download HD');showLockOverlay();return;}if(!state.previewGenerated){toast('Generate a preview first');return;}if(!state.isPremium){toast('HD download requires a Premium arrangement');return;}const btn=document.getElementById('download-hd-btn');const original=btn.innerHTML;btn.disabled=true;btn.textContent='Rendering HD…';setTimeout(()=>{const off=document.createElement('canvas');renderToCanvas(off,state.selectedImages,state.isPremium,PRODUCTS.vinyl.exportScale);off.toBlob(blob=>{triggerDownload(blob,`celebratebanner-hd-${Date.now()}.jpg`);btn.disabled=false;btn.innerHTML=original;toast('HD downloaded · 2400×3600');},'image/jpeg',0.95);},50);}
 
 function placeholderCheckout() {
   if (!state.previewGenerated) {
@@ -585,13 +610,12 @@ function placeholderCheckout() {
     return;
   }
 
-  var DIGITAL_URL        = 'https://buy.stripe.com/7sY8wHeEUb9n27KgxR83C00';
-  var PRINT_CLASSIC_URL  = 'https://buy.stripe.com/bJe28j1S8fpDdQs81l83C05';
-  var PRINT_PREMIUM_URL  = 'https://buy.stripe.com/aFa3cn40g3GVbIkepJ83C06';
+  var DIGITAL_URL = 'https://buy.stripe.com/7sY8wHeEUb9n27KgxR83C00';
+  var vinylVariants = PRODUCTS.vinyl.stripe.variants;
 
   var url;
   if (state.delivery === 'print') {
-    url = state.isPremium ? PRINT_PREMIUM_URL : PRINT_CLASSIC_URL;
+    url = (state.isPremium ? vinylVariants.premium : vinylVariants.classic).stripeLink;
   } else {
     url = DIGITAL_URL;
   }
@@ -605,6 +629,8 @@ function placeholderCheckout() {
 setTimeout(blockCanvasRightClick,100);
 
 // ── INIT ─────────────────────────────────────────────────────
+function applyProductLabels(){document.querySelectorAll('.js-trim-label').forEach(el=>{el.textContent=PRODUCTS.vinyl.trimLabel;});}
+applyProductLabels();
 renderThemes();
 refreshUploadLimits();
 refreshUploadStats();
