@@ -622,7 +622,55 @@ function drawHeartFrame(ctx,img,x,y,w,h,shadow){const cx=x+w/2,cy=y+h/2,s=Math.m
 function drawStarFrame(ctx,img,x,y,w,h,shadow){const cx=x+w/2,cy=y+h/2,outer=Math.min(w,h)/2,inner=outer*0.45;function sp(){ctx.beginPath();for(let i=0;i<10;i++){const a=(i/10)*Math.PI*2-Math.PI/2,r=i%2===0?outer:inner;if(i===0)ctx.moveTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);else ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);}ctx.closePath();}if(shadow){ctx.save();ctx.shadowColor='rgba(0,0,0,0.45)';ctx.shadowBlur=16;ctx.shadowOffsetY=7;ctx.fillStyle='#000';sp();ctx.fill();ctx.restore();}ctx.save();sp();ctx.clip();const size=Math.min(w,h);drawCover(ctx,img,cx-size/2,cy-size/2,size,size);ctx.restore();ctx.save();ctx.strokeStyle='rgba(201,168,76,0.85)';ctx.lineWidth=1.5;sp();ctx.stroke();ctx.restore();}
 
 // ── STAND MOCKUP ─────────────────────────────────────────────
-function renderStandMockup(bannerCanvas){const container=document.getElementById('stand-mockup');if(!container)return null;container.innerHTML='';const dpr=2,W=600,H=900;const canvas=document.createElement('canvas');canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.cssText='width:100%;height:auto;display:block;max-width:640px;margin:0 auto;';const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);ctx.fillStyle='#F8F8F8';ctx.fillRect(0,0,W,H);const margin=30,topBarH=Math.round(H*0.015),banH=Math.round(H*0.78),baseH=Math.round(banH*0.06),poleW=Math.max(5,Math.round(W*0.010));const bannerL=margin,bannerR=W-margin,bannerW=bannerR-bannerL,bannerT=margin+topBarH,bannerB=bannerT+banH;const tbGrad=ctx.createLinearGradient(bannerL,0,bannerR,0);tbGrad.addColorStop(0,'#E0E0E0');tbGrad.addColorStop(0.5,'#FFFFFF');tbGrad.addColorStop(1,'#C0C0C0');ctx.fillStyle=tbGrad;ctx.fillRect(bannerL,margin,bannerW,topBarH);ctx.fillStyle='#7B7F86';const capR=topBarH*0.85;ctx.beginPath();ctx.arc(bannerL,margin+topBarH/2,capR,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(bannerR,margin+topBarH/2,capR,0,Math.PI*2);ctx.fill();const taper=bannerW*0.02,topLx=bannerL+taper,topRx=bannerR-taper;ctx.save();ctx.beginPath();ctx.moveTo(topLx,bannerT);ctx.lineTo(topRx,bannerT);ctx.lineTo(bannerR,bannerB);ctx.lineTo(bannerL,bannerB);ctx.closePath();ctx.clip();ctx.drawImage(bannerCanvas,bannerL,bannerT,bannerW,banH);ctx.restore();ctx.save();ctx.strokeStyle='rgba(0,0,0,0.45)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(topLx,bannerT);ctx.lineTo(topRx,bannerT);ctx.lineTo(bannerR,bannerB);ctx.lineTo(bannerL,bannerB);ctx.closePath();ctx.stroke();ctx.restore();const poleX=bannerR-poleW/2,poleTop=margin+topBarH,poleBot=bannerB+baseH*0.85;ctx.save();ctx.beginPath();ctx.moveTo(poleX,poleTop);ctx.lineTo(poleX+poleW,poleTop);ctx.lineTo(poleX+poleW*1.25,poleBot);ctx.lineTo(poleX-poleW*0.25,poleBot);ctx.closePath();const pg=ctx.createLinearGradient(poleX-poleW,0,poleX+poleW*2,0);pg.addColorStop(0,'#3F4654');pg.addColorStop(0.5,'#FFFFFF');pg.addColorStop(1,'#9CA3AF');ctx.fillStyle=pg;ctx.fill();ctx.restore();const baseW=Math.round(bannerW*0.70),baseCx=(bannerL+bannerR)/2,baseCy=bannerB+baseH;const bg=ctx.createRadialGradient(baseCx-baseW*0.12,baseCy-baseH*0.5,4,baseCx,baseCy+baseH*0.2,baseW/2);bg.addColorStop(0,'#FFFFFF');bg.addColorStop(0.45,'#9CA3AF');bg.addColorStop(1,'#1F2937');ctx.fillStyle=bg;ctx.beginPath();ctx.ellipse(baseCx,baseCy,baseW/2,baseH,0,0,Math.PI*2);ctx.fill();container.appendChild(canvas);return canvas;}
+// Product-aware preview mockup ROUTER. Display-only: it reads pixels FROM bannerCanvas
+// (#preview-canvas) via drawImage and paints into its OWN canvas inside #stand-mockup. It
+// never writes back to bannerCanvas, so neither the SD export (downloadJpg → preview-canvas
+// .toDataURL) nor the HD export (downloadHdJpg → fresh offscreen renderToCanvas) is affected.
+// tabletop → roll-up stand; vinyl (and the default fallback) → hanging wall banner.
+function renderStandMockup(bannerCanvas){return state.product==='tabletop'?renderTabletopStand(bannerCanvas):renderHangingBanner(bannerCanvas);}
+// VINYL hanging wall banner mockup: the design shown at the 24×36 aspect (w/h≈0.667) with
+// metallic grommet eyelets in the corners and edge midpoints, the way a vinyl banner mounts
+// to a wall. Grommets are MOCKUP-ONLY — drawn here, never in preview-canvas, so they can't
+// reach the exported/printed file (same principle as the safe-zone overlay and watermark).
+function renderHangingBanner(bannerCanvas){
+  const container=document.getElementById('stand-mockup');if(!container)return null;container.innerHTML='';
+  const dpr=2,W=600,H=900;
+  const canvas=document.createElement('canvas');canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.cssText='width:100%;height:auto;display:block;max-width:640px;margin:0 auto;';
+  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  // Soft wall backdrop.
+  const wall=ctx.createLinearGradient(0,0,0,H);wall.addColorStop(0,'#EFEFEC');wall.addColorStop(1,'#DCDCD7');
+  ctx.fillStyle=wall;ctx.fillRect(0,0,W,H);
+  // Banner geometry locked to the 24×36 trim aspect (height = width × 36/24).
+  const margin=42,bannerW=W-margin*2,bannerH=Math.round(bannerW*36/24);
+  const bannerL=margin,bannerT=Math.round((H-bannerH)/2),bannerR=bannerL+bannerW,bannerB=bannerT+bannerH;
+  // Drop shadow so the banner reads as hanging off the wall.
+  ctx.save();ctx.shadowColor='rgba(0,0,0,0.26)';ctx.shadowBlur=22;ctx.shadowOffsetY=10;
+  ctx.fillStyle='#FFFFFF';ctx.fillRect(bannerL,bannerT,bannerW,bannerH);ctx.restore();
+  // Artwork, clipped to the banner rect.
+  ctx.save();ctx.beginPath();ctx.rect(bannerL,bannerT,bannerW,bannerH);ctx.clip();
+  ctx.drawImage(bannerCanvas,bannerL,bannerT,bannerW,bannerH);ctx.restore();
+  // Crisp trim edge.
+  ctx.strokeStyle='rgba(0,0,0,0.30)';ctx.lineWidth=1;ctx.strokeRect(bannerL+0.5,bannerT+0.5,bannerW-1,bannerH-1);
+  // Grommet eyelet: punch a hole (wall shows through) ringed by a metallic eyelet.
+  function drawGrommet(cx,cy,r){
+    ctx.save();ctx.beginPath();ctx.arc(cx,cy,r*0.55,0,Math.PI*2);ctx.fillStyle=wall;ctx.fill();ctx.restore();
+    ctx.save();
+    const ring=ctx.createRadialGradient(cx-r*0.4,cy-r*0.4,r*0.15,cx,cy,r);
+    ring.addColorStop(0,'#FFFFFF');ring.addColorStop(0.5,'#BCC0C7');ring.addColorStop(1,'#6B7079');
+    ctx.lineWidth=r*0.5;ctx.strokeStyle=ring;ctx.beginPath();ctx.arc(cx,cy,r*0.78,0,Math.PI*2);ctx.stroke();
+    ctx.lineWidth=1;ctx.strokeStyle='rgba(0,0,0,0.35)';
+    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,cy,r*0.55,0,Math.PI*2);ctx.stroke();
+    ctx.restore();
+  }
+  const inset=Math.round(bannerW*0.045),gr=Math.max(5,Math.round(bannerW*0.020));
+  const gx0=bannerL+inset,gx1=bannerR-inset,gxm=(bannerL+bannerR)/2;
+  const gy0=bannerT+inset,gy1=bannerB-inset,gym=(bannerT+bannerB)/2;
+  [[gx0,gy0],[gx1,gy0],[gxm,gy0],[gx0,gym],[gx1,gym],[gx0,gy1],[gx1,gy1],[gxm,gy1]].forEach(([gx,gy])=>drawGrommet(gx,gy,gr));
+  container.appendChild(canvas);return canvas;
+}
+function renderTabletopStand(bannerCanvas){const container=document.getElementById('stand-mockup');if(!container)return null;container.innerHTML='';const dpr=2,W=600,H=900;const canvas=document.createElement('canvas');canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.cssText='width:100%;height:auto;display:block;max-width:640px;margin:0 auto;';const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);ctx.fillStyle='#F8F8F8';ctx.fillRect(0,0,W,H);const margin=30,topBarH=Math.round(H*0.015),banH=Math.round(H*0.78),baseH=Math.round(banH*0.06),poleW=Math.max(5,Math.round(W*0.010));const bannerL=margin,bannerR=W-margin,bannerW=bannerR-bannerL,bannerT=margin+topBarH,bannerB=bannerT+banH;const tbGrad=ctx.createLinearGradient(bannerL,0,bannerR,0);tbGrad.addColorStop(0,'#E0E0E0');tbGrad.addColorStop(0.5,'#FFFFFF');tbGrad.addColorStop(1,'#C0C0C0');ctx.fillStyle=tbGrad;ctx.fillRect(bannerL,margin,bannerW,topBarH);ctx.fillStyle='#7B7F86';const capR=topBarH*0.85;ctx.beginPath();ctx.arc(bannerL,margin+topBarH/2,capR,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(bannerR,margin+topBarH/2,capR,0,Math.PI*2);ctx.fill();const taper=bannerW*0.02,topLx=bannerL+taper,topRx=bannerR-taper;ctx.save();ctx.beginPath();ctx.moveTo(topLx,bannerT);ctx.lineTo(topRx,bannerT);ctx.lineTo(bannerR,bannerB);ctx.lineTo(bannerL,bannerB);ctx.closePath();ctx.clip();ctx.drawImage(bannerCanvas,bannerL,bannerT,bannerW,banH);ctx.restore();ctx.save();ctx.strokeStyle='rgba(0,0,0,0.45)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(topLx,bannerT);ctx.lineTo(topRx,bannerT);ctx.lineTo(bannerR,bannerB);ctx.lineTo(bannerL,bannerB);ctx.closePath();ctx.stroke();ctx.restore();const poleX=bannerR-poleW/2,poleTop=margin+topBarH,poleBot=bannerB+baseH*0.85;ctx.save();ctx.beginPath();ctx.moveTo(poleX,poleTop);ctx.lineTo(poleX+poleW,poleTop);ctx.lineTo(poleX+poleW*1.25,poleBot);ctx.lineTo(poleX-poleW*0.25,poleBot);ctx.closePath();const pg=ctx.createLinearGradient(poleX-poleW,0,poleX+poleW*2,0);pg.addColorStop(0,'#3F4654');pg.addColorStop(0.5,'#FFFFFF');pg.addColorStop(1,'#9CA3AF');ctx.fillStyle=pg;ctx.fill();ctx.restore();const baseW=Math.round(bannerW*0.70),baseCx=(bannerL+bannerR)/2,baseCy=bannerB+baseH;const bg=ctx.createRadialGradient(baseCx-baseW*0.12,baseCy-baseH*0.5,4,baseCx,baseCy+baseH*0.2,baseW/2);bg.addColorStop(0,'#FFFFFF');bg.addColorStop(0.45,'#9CA3AF');bg.addColorStop(1,'#1F2937');ctx.fillStyle=bg;ctx.beginPath();ctx.ellipse(baseCx,baseCy,baseW/2,baseH,0,0,Math.PI*2);ctx.fill();container.appendChild(canvas);return canvas;}
 
 // ── STEP 4: DELIVERY ─────────────────────────────────────────
 function setDelivery(type){state.delivery=type;document.querySelectorAll('.delivery-card').forEach(el=>{el.classList.toggle('sel',el.dataset.delivery===type);});refreshSummary();}
