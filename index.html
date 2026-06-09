@@ -360,6 +360,10 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
       <div class="sum-row"><span class="sum-key" id="sum-delivery-key">Digital download</span><span id="sum-delivery-price">$9.99</span></div>
       <div class="sum-row total"><span>Total</span><span id="sum-total">$9.99</span></div>
     </div>
+    <div id="ship-state-row" style="display:none; margin: 1rem 0; text-align: left;">
+      <label for="ship-state" style="display:block; font-size:13px; color:var(--ivory); margin-bottom:0.4rem;">Shipping state (US only — lower 48)</label>
+      <select id="ship-state" style="width:100%; padding:0.65rem; background:var(--obsidian); color:var(--ivory); border:1px solid var(--border); border-radius:var(--r1); font-family:inherit; font-size:14px;"></select>
+    </div>
     <div class="btn-group">
       <button class="btn btn-outline" onclick="goto(3)">← Back to Preview</button>
       <div class="consent-row" style="margin: 1.25rem 0; display: flex; align-items: flex-start; gap: 0.65rem; font-size: 13px; line-height: 1.5; color: var(--ivory); text-align: left;">
@@ -671,7 +675,7 @@ function renderHangingBanner(bannerCanvas){
 function renderTabletopStand(bannerCanvas){const container=document.getElementById('stand-mockup');if(!container)return null;container.innerHTML='';const dpr=2,W=600,H=900;const canvas=document.createElement('canvas');canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.cssText='width:100%;height:auto;display:block;max-width:640px;margin:0 auto;';const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);ctx.fillStyle='#F8F8F8';ctx.fillRect(0,0,W,H);const margin=30,topBarH=Math.round(H*0.015),banH=Math.round(H*0.78),baseH=Math.round(banH*0.06),poleW=Math.max(5,Math.round(W*0.010));const bannerL=margin,bannerR=W-margin,bannerW=bannerR-bannerL,bannerT=margin+topBarH,bannerB=bannerT+banH;const tbGrad=ctx.createLinearGradient(bannerL,0,bannerR,0);tbGrad.addColorStop(0,'#E0E0E0');tbGrad.addColorStop(0.5,'#FFFFFF');tbGrad.addColorStop(1,'#C0C0C0');ctx.fillStyle=tbGrad;ctx.fillRect(bannerL,margin,bannerW,topBarH);ctx.fillStyle='#7B7F86';const capR=topBarH*0.85;ctx.beginPath();ctx.arc(bannerL,margin+topBarH/2,capR,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(bannerR,margin+topBarH/2,capR,0,Math.PI*2);ctx.fill();const taper=bannerW*0.02,topLx=bannerL+taper,topRx=bannerR-taper;ctx.save();ctx.beginPath();ctx.moveTo(topLx,bannerT);ctx.lineTo(topRx,bannerT);ctx.lineTo(bannerR,bannerB);ctx.lineTo(bannerL,bannerB);ctx.closePath();ctx.clip();ctx.drawImage(bannerCanvas,bannerL,bannerT,bannerW,banH);ctx.restore();ctx.save();ctx.strokeStyle='rgba(0,0,0,0.45)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(topLx,bannerT);ctx.lineTo(topRx,bannerT);ctx.lineTo(bannerR,bannerB);ctx.lineTo(bannerL,bannerB);ctx.closePath();ctx.stroke();ctx.restore();const poleX=bannerR-poleW/2,poleTop=margin+topBarH,poleBot=bannerB+baseH*0.85;ctx.save();ctx.beginPath();ctx.moveTo(poleX,poleTop);ctx.lineTo(poleX+poleW,poleTop);ctx.lineTo(poleX+poleW*1.25,poleBot);ctx.lineTo(poleX-poleW*0.25,poleBot);ctx.closePath();const pg=ctx.createLinearGradient(poleX-poleW,0,poleX+poleW*2,0);pg.addColorStop(0,'#3F4654');pg.addColorStop(0.5,'#FFFFFF');pg.addColorStop(1,'#9CA3AF');ctx.fillStyle=pg;ctx.fill();ctx.restore();const baseW=Math.round(bannerW*0.70),baseCx=(bannerL+bannerR)/2,baseCy=bannerB+baseH;const bg=ctx.createRadialGradient(baseCx-baseW*0.12,baseCy-baseH*0.5,4,baseCx,baseCy+baseH*0.2,baseW/2);bg.addColorStop(0,'#FFFFFF');bg.addColorStop(0.45,'#9CA3AF');bg.addColorStop(1,'#1F2937');ctx.fillStyle=bg;ctx.beginPath();ctx.ellipse(baseCx,baseCy,baseW/2,baseH,0,0,Math.PI*2);ctx.fill();container.appendChild(canvas);return canvas;}
 
 // ── STEP 4: DELIVERY ─────────────────────────────────────────
-function setDelivery(type){state.delivery=type;document.querySelectorAll('.delivery-card').forEach(el=>{el.classList.toggle('sel',el.dataset.delivery===type);});refreshSummary();}
+function setDelivery(type){state.delivery=type;document.querySelectorAll('.delivery-card').forEach(el=>{el.classList.toggle('sel',el.dataset.delivery===type);});const row=document.getElementById('ship-state-row');if(row)row.style.display=(type==='print')?'block':'none';refreshSummary();}
 function onConsentToggle(){
   var checkbox=document.getElementById('terms-consent');
   var button=document.getElementById('pay-button');
@@ -741,11 +745,56 @@ function downloadJpg(){if(!SEC.paid){toast('🔒 Please complete payment to down
 
 function downloadHdJpg(){if(!SEC.paid){toast('🔒 Please complete payment to download HD');showLockOverlay();return;}if(!state.previewGenerated){toast('Generate a preview first');return;}const p=activeProduct();if(p.exportDPI){exportAtDpi(p,true);return;}if(!state.isPremium){toast('HD download requires a Premium arrangement');return;}const btn=document.getElementById('download-hd-btn');const original=btn.innerHTML;btn.disabled=true;btn.textContent='Rendering HD…';setTimeout(()=>{const off=document.createElement('canvas');renderToCanvas(off,state.selectedImages,state.isPremium,activeProduct().exportScale);off.toBlob(blob=>{triggerDownload(blob,`celebratebanner-hd-${Date.now()}.jpg`);btn.disabled=false;btn.innerHTML=original;toast(`HD downloaded · ${off.width}×${off.height}`);},'image/jpeg',0.95);},50);}
 
+// US shipping destinations the dropdown offers, alphabetical by display name.
+// LOWER48_BLOCKED is what the gate rejects: Alaska, Hawaii, the five US territories,
+// and the three Armed Forces APO/FPO codes (B2Sign + Printmoz don't ship to any of these).
+const US_STATES = [
+  {c:'AL',n:'Alabama'},{c:'AK',n:'Alaska'},{c:'AS',n:'American Samoa'},{c:'AZ',n:'Arizona'},{c:'AR',n:'Arkansas'},
+  {c:'AA',n:'Armed Forces Americas'},{c:'AE',n:'Armed Forces Europe'},{c:'AP',n:'Armed Forces Pacific'},
+  {c:'CA',n:'California'},{c:'CO',n:'Colorado'},{c:'CT',n:'Connecticut'},
+  {c:'DE',n:'Delaware'},{c:'DC',n:'District of Columbia'},
+  {c:'FL',n:'Florida'},{c:'GA',n:'Georgia'},{c:'GU',n:'Guam'},{c:'HI',n:'Hawaii'},
+  {c:'ID',n:'Idaho'},{c:'IL',n:'Illinois'},{c:'IN',n:'Indiana'},{c:'IA',n:'Iowa'},
+  {c:'KS',n:'Kansas'},{c:'KY',n:'Kentucky'},{c:'LA',n:'Louisiana'},
+  {c:'ME',n:'Maine'},{c:'MD',n:'Maryland'},{c:'MA',n:'Massachusetts'},{c:'MI',n:'Michigan'},{c:'MN',n:'Minnesota'},{c:'MS',n:'Mississippi'},{c:'MO',n:'Missouri'},{c:'MT',n:'Montana'},
+  {c:'NE',n:'Nebraska'},{c:'NV',n:'Nevada'},{c:'NH',n:'New Hampshire'},{c:'NJ',n:'New Jersey'},{c:'NM',n:'New Mexico'},{c:'NY',n:'New York'},{c:'NC',n:'North Carolina'},{c:'ND',n:'North Dakota'},{c:'MP',n:'Northern Mariana Islands'},
+  {c:'OH',n:'Ohio'},{c:'OK',n:'Oklahoma'},{c:'OR',n:'Oregon'},
+  {c:'PA',n:'Pennsylvania'},{c:'PR',n:'Puerto Rico'},
+  {c:'RI',n:'Rhode Island'},{c:'SC',n:'South Carolina'},{c:'SD',n:'South Dakota'},
+  {c:'TN',n:'Tennessee'},{c:'TX',n:'Texas'},
+  {c:'VI',n:'U.S. Virgin Islands'},{c:'UT',n:'Utah'},
+  {c:'VT',n:'Vermont'},{c:'VA',n:'Virginia'},
+  {c:'WA',n:'Washington'},{c:'WV',n:'West Virginia'},{c:'WI',n:'Wisconsin'},{c:'WY',n:'Wyoming'},
+];
+const LOWER48_BLOCKED = ['AK','HI','PR','GU','VI','AS','MP','AA','AE','AP'];
+
+function populateShipStateOptions(){
+  const sel=document.getElementById('ship-state');
+  if(!sel||sel.options.length>1)return; // idempotent — safe to call repeatedly
+  sel.innerHTML='<option value="">Select your state…</option>'+
+    US_STATES.map(s=>'<option value="'+s.c+'">'+s.n+'</option>').join('');
+}
+
 function placeholderCheckout() {
   if (!state.previewGenerated) {
     toast('Generate your preview first');
     goto(3);
     return;
+  }
+
+  // Lower-48 shipping gate — runs only for print. Digital path falls through unchanged.
+  if (state.delivery === 'print') {
+    const sel = document.getElementById('ship-state');
+    const ship = sel ? sel.value : '';
+    if (!ship) {
+      toast('Please pick your US shipping state to continue.');
+      if (sel) sel.focus();
+      return;
+    }
+    if (LOWER48_BLOCKED.includes(ship)) {
+      toast("We currently ship to the lower 48 states only. The digital download ($9.99) is available everywhere — you'll get a print-ready file you can print locally.");
+      return;
+    }
   }
 
   var DIGITAL_URL = 'https://buy.stripe.com/7sY8wHeEUb9n27KgxR83C00';
@@ -777,6 +826,7 @@ renderProducts();
 renderThemes();
 refreshUploadLimits();
 refreshUploadStats();
+populateShipStateOptions();
 </script>
 <footer style="background: var(--obsidian, #0C0E14); border-top: 1px solid rgba(201,168,76,0.1); padding: 2.5rem 1.5rem; margin-top: 4rem; color: rgba(255,255,255,0.6); font-size: 13px;">
   <div style="max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.25rem;">
