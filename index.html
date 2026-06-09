@@ -461,6 +461,9 @@ const PRODUCTS={
     // RECORDED ONLY this PR — export is NOT wired to this value yet (later PR). Export
     // geometry stays on canvasBase×exportScale and is left untouched.
     exportDPI:300,
+    // Tabletop is a small 11.5×17.5 sign — cap at 15 photos so layouts don't get visually crammed.
+    // Vinyl has no maxPhotos field; getMaxPhotos() applies min(themeMax, productMax) only when set.
+    maxPhotos:15,
     // Single price (no classic/premium split like vinyl has).
     price:59.99,
     stripeLink:'https://buy.stripe.com/eVq00b7cs1yN5jWa9t83C07'
@@ -470,7 +473,7 @@ const PRODUCTS={
 // vinyl so rendering never breaks before a product is picked.
 function activeProduct(){return PRODUCTS[state.product]||PRODUCTS.vinyl;}
 function frameOf(id){return state.frames[id]||'rounded';}
-function getMaxPhotos(){return state.theme?state.theme.maxPhotos:50;}
+function getMaxPhotos(){const themeMax=state.theme?state.theme.maxPhotos:50;const prodMax=activeProduct().maxPhotos;return prodMax!=null?Math.min(themeMax,prodMax):themeMax;}
 
 // ── UTILS ────────────────────────────────────────────────────
 function uid(){return 'p_'+Math.random().toString(36).slice(2,10);}
@@ -497,7 +500,7 @@ const PRODUCT_PICKER=[
 ];
 function productBasePrice(id){const p=PRODUCTS[id];if(!p)return 0;return(p.stripe&&p.stripe.variants)?p.stripe.variants.classic.price:p.price;}
 function renderProducts(){const grid=document.getElementById('product-grid');if(!grid)return;grid.innerHTML=PRODUCT_PICKER.map(pp=>{const p=PRODUCTS[pp.id];if(!p)return'';const sel=state.product===pp.id;return`<div class="theme-card${sel?' sel':''}" data-product="${pp.id}" onclick="selectProduct('${pp.id}')"><div class="theme-name">${pp.name}</div><div class="theme-tagline">${pp.tagline}</div><div class="theme-tags"><span class="theme-tag">${p.trimLabel} in</span><span class="theme-tag">$${productBasePrice(pp.id).toFixed(2)}</span></div></div>`;}).join('');}
-function selectProduct(id){if(!PRODUCTS[id])return;const switching=state.product&&state.product!==id;state.product=id;if(switching)state.previewGenerated=false;document.getElementById('hstep').style.display='';document.getElementById('progress-track').style.display='';renderProducts();applyProductLabels();goto(0);}
+function selectProduct(id){if(!PRODUCTS[id])return;const switching=state.product&&state.product!==id;state.product=id;if(switching){state.previewGenerated=false;const cap=getMaxPhotos();if(state.images.length>cap){state.images=state.images.slice(0,cap);if(state.heroImage&&!state.images.find(p=>p.id===state.heroImage))state.heroImage=state.images[0]?.id||null;const name=(PRODUCT_PICKER.find(p=>p.id===id)||{}).name||id;toast(`Trimmed to ${cap} photos for ${name}`);}}document.getElementById('hstep').style.display='';document.getElementById('progress-track').style.display='';renderProducts();applyProductLabels();goto(0);}
 function showProductPicker(){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('pg-product').classList.add('active');document.getElementById('hstep').style.display='none';document.getElementById('progress-track').style.display='none';renderProducts();window.scrollTo({top:0,behavior:'smooth'});}
 
 // ── STEP 0: THEME ────────────────────────────────────────────
