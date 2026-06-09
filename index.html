@@ -459,9 +459,7 @@ const PRODUCTS={
     exportDPI:300,
     // Single price (no classic/premium split like vinyl has).
     price:59.99,
-    // PLACEHOLDER ONLY — tabletop checkout is intentionally NOT wired in this PR. The real
-    // Stripe payment link is added in a later PR. Nothing should ever charge against this.
-    stripeLink:'PLACEHOLDER_TABLETOP_STRIPE_LINK'
+    stripeLink:'https://buy.stripe.com/eVq00b7cs1yN5jWa9t83C07'
   }
 };
 // Active product the builder reads from (canvas size, trim label, pricing). Falls back to
@@ -750,22 +748,16 @@ function placeholderCheckout() {
     return;
   }
 
-  // Tabletop checkout is intentionally NOT wired in this PR — for ANY delivery method.
-  // Its export spec/DPI is still a placeholder (see PRODUCTS.tabletop), so even a digital
-  // download would sell a file whose dimensions aren't finalized; print would also fall
-  // through to the vinyl charge. Block both before any Stripe redirect so tabletop never
-  // takes money until its export is locked in a later PR. Vinyl is unchanged.
-  if (state.product === 'tabletop') {
-    toast('Table Top checkout coming soon — it isn’t live yet.');
-    return;
-  }
-
   var DIGITAL_URL = 'https://buy.stripe.com/7sY8wHeEUb9n27KgxR83C00';
   var vinylVariants = PRODUCTS.vinyl.stripe.variants;
 
   var url;
   if (state.delivery === 'print') {
-    url = (state.isPremium ? vinylVariants.premium : vinylVariants.classic).stripeLink;
+    if (state.product === 'tabletop') {
+      url = PRODUCTS.tabletop.stripeLink;
+    } else {
+      url = (state.isPremium ? vinylVariants.premium : vinylVariants.classic).stripeLink;
+    }
   } else {
     url = DIGITAL_URL;
   }
