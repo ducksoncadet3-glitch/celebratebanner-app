@@ -111,6 +111,19 @@ body { font-family: 'Outfit', sans-serif; background: var(--ivory); color: var(-
 .upsell-callout-benefits li::before { content: '✓'; position: absolute; left: 0; color: var(--gold); font-weight: 700; font-size: 14px; }
 .upsell-callout-cta { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--obsidian); color: var(--ivory); font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600; padding: 14px 28px; border-radius: 10px; border: none; cursor: pointer; transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease; width: 100%; }
 .upsell-callout-cta:hover { background: var(--gold); color: var(--obsidian); transform: translateY(-1px); }
+/* ── Free Team Banner Proof section (sits under the Digital Download upsell) ── */
+.team-proof-section { margin: 3rem 0 1rem; text-align: center; }
+.team-proof-title { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 700; color: var(--obsidian); margin: 0 0 0.5rem; letter-spacing: 0.2px; line-height: 1.15; }
+.team-proof-subtitle { font-size: 15px; color: var(--muted); margin: 0 auto 2rem; line-height: 1.5; max-width: 560px; }
+.team-proof-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 2rem; }
+@media (max-width: 760px) { .team-proof-grid { grid-template-columns: 1fr; gap: 14px; } }
+.team-proof-card { background: var(--white); border-radius: 16px; padding: 32px 24px 28px; box-shadow: 0 6px 22px rgba(12,14,20,0.07); text-align: center; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.team-proof-card:hover { transform: translateY(-3px); box-shadow: 0 14px 32px rgba(12,14,20,0.12); }
+.team-proof-step-num { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--gold2)); color: var(--obsidian); font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; margin: 0 auto 14px; box-shadow: 0 4px 12px rgba(201,168,76,0.3); }
+.team-proof-step-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 700; color: var(--obsidian); margin: 0 0 8px; }
+.team-proof-step-desc { font-size: 14px; color: var(--muted); line-height: 1.55; margin: 0; }
+.team-proof-cta { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--obsidian); color: var(--ivory); font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600; padding: 14px 32px; border-radius: 10px; border: none; cursor: pointer; transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease; }
+.team-proof-cta:hover { background: var(--gold); color: var(--obsidian); transform: translateY(-1px); }
 .main { max-width: 1140px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
 .page { display: none; animation: pageIn 0.4s cubic-bezier(0.4,0,0.2,1); }
 .page.active { display: block; }
@@ -315,6 +328,28 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
         </ul>
         <button class="upsell-callout-cta" type="button" onclick="document.getElementById('product-grid').scrollIntoView({behavior:'smooth',block:'start'})">Start Creating Now</button>
       </div>
+    </div>
+    <div class="team-proof-section">
+      <h2 class="team-proof-title">Free Team Banner Proof</h2>
+      <p class="team-proof-subtitle">Upload your team photo and preview a custom banner before you order.</p>
+      <div class="team-proof-grid">
+        <div class="team-proof-card">
+          <div class="team-proof-step-num">1</div>
+          <h3 class="team-proof-step-title">Upload Team Photo</h3>
+          <p class="team-proof-step-desc">Send us your team photo or player images.</p>
+        </div>
+        <div class="team-proof-card">
+          <div class="team-proof-step-num">2</div>
+          <h3 class="team-proof-step-title">Get a Free Banner Proof</h3>
+          <p class="team-proof-step-desc">We create a custom preview for your school, league, or club.</p>
+        </div>
+        <div class="team-proof-card">
+          <div class="team-proof-step-num">3</div>
+          <h3 class="team-proof-step-title">Order Only If You Love It</h3>
+          <p class="team-proof-step-desc">Approve the design, then choose print or digital download.</p>
+        </div>
+      </div>
+      <button class="team-proof-cta" type="button" onclick="document.getElementById('product-grid').scrollIntoView({behavior:'smooth',block:'start'})">Start Your Free Team Proof</button>
     </div>
   </section>
   <section class="page" id="pg-0">
