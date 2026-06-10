@@ -96,6 +96,21 @@ body { font-family: 'Outfit', sans-serif; background: var(--ivory); color: var(-
 .why-card-icon { font-size: 38px; line-height: 1; margin-bottom: 14px; }
 .why-card-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; color: var(--obsidian); margin: 0 0 8px; }
 .why-card-desc { font-size: 14px; color: var(--muted); line-height: 1.55; margin: 0; }
+/* ── Digital Download upsell callout (sits under the Why CelebrateBanner section) ── */
+.upsell-callout { margin: 2.5rem 0 1rem; text-align: center; }
+.upsell-callout-title { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 700; color: var(--obsidian); margin: 0 0 0.5rem; letter-spacing: 0.2px; }
+.upsell-callout-subtitle { font-size: 14px; color: var(--muted); margin: 0 0 1.5rem; }
+.upsell-callout-card { background: var(--white); border: 2px solid var(--gold); border-radius: 18px; padding: 28px 32px; box-shadow: 0 12px 32px rgba(201,168,76,0.18); max-width: 520px; margin: 0 auto; text-align: left; position: relative; }
+.upsell-callout-card-top { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
+.upsell-callout-card-product { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; color: var(--obsidian); line-height: 1.2; }
+.upsell-callout-card-price { font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--muted); }
+.upsell-callout-card-price span { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 700; color: var(--gold-dark); margin-left: 6px; line-height: 1; }
+.upsell-callout-benefits { list-style: none; margin: 0 0 24px; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 18px; }
+@media (max-width: 540px) { .upsell-callout-benefits { grid-template-columns: 1fr; } .upsell-callout-card { padding: 24px 22px; } }
+.upsell-callout-benefits li { font-size: 13px; color: var(--obsidian); padding-left: 22px; position: relative; line-height: 1.4; font-weight: 500; }
+.upsell-callout-benefits li::before { content: '✓'; position: absolute; left: 0; color: var(--gold); font-weight: 700; font-size: 14px; }
+.upsell-callout-cta { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--obsidian); color: var(--ivory); font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600; padding: 14px 28px; border-radius: 10px; border: none; cursor: pointer; transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease; width: 100%; }
+.upsell-callout-cta:hover { background: var(--gold); color: var(--obsidian); transform: translateY(-1px); }
 .main { max-width: 1140px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
 .page { display: none; animation: pageIn 0.4s cubic-bezier(0.4,0,0.2,1); }
 .page.active { display: block; }
@@ -282,6 +297,23 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
           <h3 class="why-card-title">Made for Every Celebration</h3>
           <p class="why-card-desc">Graduations, weddings, sports champions, birthdays and more.</p>
         </div>
+      </div>
+    </div>
+    <div class="upsell-callout">
+      <h2 class="upsell-callout-title">Need It Today?</h2>
+      <p class="upsell-callout-subtitle">Get your finished banner immediately.</p>
+      <div class="upsell-callout-card">
+        <div class="upsell-callout-card-top">
+          <div class="upsell-callout-card-product">Digital Download</div>
+          <div class="upsell-callout-card-price">Only <span>$9.99</span></div>
+        </div>
+        <ul class="upsell-callout-benefits">
+          <li>Instant Delivery</li>
+          <li>High Resolution JPG</li>
+          <li>Perfect for Social Media</li>
+          <li>Print Anywhere</li>
+        </ul>
+        <button class="upsell-callout-cta" type="button" onclick="document.getElementById('product-grid').scrollIntoView({behavior:'smooth',block:'start'})">Start Creating Now</button>
       </div>
     </div>
   </section>
