@@ -59,6 +59,25 @@ body { font-family: 'Outfit', sans-serif; background: var(--ivory); color: var(-
 .theme-card.sel .theme-tag { background: rgba(201,168,76,0.16); color: var(--gold-dark); }
 .theme-photo-cap { position: absolute; top: 14px; right: 14px; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--obsidian); color: var(--gold2); letter-spacing: 0.5px; }
 .theme-badge { position: absolute; top: -8px; right: -8px; font-size: 10px; font-weight: 700; padding: 5px 11px; border-radius: 999px; color: #fff; letter-spacing: 0.6px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(0,0,0,0.18); border: 1.5px solid rgba(255,255,255,0.85); white-space: nowrap; }
+/* ── Product picker (premium ecommerce cards) — scoped classes; does not restyle .theme-card ── */
+.product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin: 2rem 0; }
+@media (max-width: 760px) { .product-grid { grid-template-columns: 1fr; gap: 18px; } }
+.product-card-v2 { position: relative; background: var(--white); border: 1px solid rgba(12,14,20,0.08); border-radius: 20px; overflow: hidden; cursor: pointer; transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease; box-shadow: 0 4px 16px rgba(12,14,20,0.06); display: flex; flex-direction: column; }
+.product-card-v2:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(12,14,20,0.14); border-color: rgba(201,168,76,0.4); }
+.product-card-v2.sel { border-color: var(--gold); box-shadow: 0 18px 40px rgba(201,168,76,0.28), inset 0 0 0 2px rgba(201,168,76,0.35); }
+.product-card-v2-badge { position: absolute; top: 16px; right: 16px; background: var(--gold); color: var(--obsidian); font-size: 11px; font-weight: 700; letter-spacing: 0.6px; padding: 6px 12px; border-radius: 999px; z-index: 2; box-shadow: 0 4px 12px rgba(201,168,76,0.4); text-transform: uppercase; }
+.product-card-v2-mockup { background: linear-gradient(135deg, #F8F6F0 0%, #EFEAE0 100%); padding: 28px; display: flex; align-items: center; justify-content: center; min-height: 280px; border-bottom: 1px solid rgba(12,14,20,0.06); }
+.product-card-v2-mockup svg { width: 100%; height: auto; max-width: 340px; display: block; filter: drop-shadow(0 8px 20px rgba(12,14,20,0.18)); }
+.product-card-v2-body { padding: 26px 28px 28px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.product-card-v2-title { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 700; color: var(--obsidian); line-height: 1.15; margin: 0; }
+.product-card-v2-dims { font-family: 'Outfit', sans-serif; font-size: 13px; color: var(--muted); letter-spacing: 0.4px; }
+.product-card-v2-price { font-family: 'Cormorant Garamond', serif; font-size: 34px; font-weight: 700; color: var(--gold-dark); margin: 6px 0 14px; line-height: 1; }
+.product-card-v2-features { list-style: none; margin: 0 0 18px; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.product-card-v2-features li { font-size: 13px; color: rgba(12,14,20,0.78); padding-left: 22px; position: relative; line-height: 1.5; }
+.product-card-v2-features li::before { content: '✓'; position: absolute; left: 0; top: 0; color: var(--gold); font-weight: 700; font-size: 14px; }
+.product-card-v2-cta { display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: var(--obsidian); color: var(--ivory); font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; padding: 13px 22px; border-radius: 10px; transition: background 0.2s, color 0.2s; margin-top: auto; }
+.product-card-v2:hover .product-card-v2-cta { background: var(--gold); color: var(--obsidian); }
+.product-card-v2.sel .product-card-v2-cta { background: var(--gold); color: var(--obsidian); }
 .change-theme-link { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); background: none; border: none; padding: 0; margin-bottom: 1rem; cursor: pointer; transition: color 0.18s; font-family: 'Outfit', sans-serif; }
 .change-theme-link:hover { color: var(--gold-dark); }
 .main { max-width: 1140px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
@@ -221,7 +240,7 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
     <div class="sec-eyebrow">Choose your product</div>
     <h1 class="sec-title">What are you making?</h1>
     <p class="sec-sub">Pick a format to begin. You can switch products later from the theme step.</p>
-    <div class="theme-grid" id="product-grid"></div>
+    <div class="product-grid" id="product-grid"></div>
   </section>
   <section class="page" id="pg-0">
     <button class="change-theme-link" type="button" onclick="showProductPicker()">← Change product</button>
@@ -494,12 +513,38 @@ document.getElementById('hstep').addEventListener('click',e=>{const el=e.target.
 // ── PRODUCT PICKER (pre-wizard gate) ─────────────────────────
 // Presentation order for the picker. Tabletop first, then vinyl. Copy lives here;
 // price + trim are read from PRODUCTS so they can't drift from the source of truth.
+// PRODUCT_PICKER drives the order, headline, feature bullets, and inline SVG mockup
+// of the redesigned product cards. Pricing + dimensions still come from PRODUCTS via
+// productBasePrice() and PRODUCTS[id].trimLabel — never hard-coded into markup.
 const PRODUCT_PICKER=[
-  {id:'tabletop',name:'Table Top',tagline:'Compact tabletop banner — perfect for desks, registration tables, and centerpieces.'},
-  {id:'vinyl',name:'24×36 Vinyl',tagline:'Large-format vinyl banner for walls, backdrops, and big celebrations.'}
+  {
+    id:'tabletop',
+    name:'Table Top Banner Stand',
+    tagline:'Compact tabletop banner — perfect for desks, registration tables, and centerpieces.',
+    features:[
+      'Compact retractable stand',
+      'Sets up in under a minute',
+      'Great for desks, parties, and events',
+      '300 DPI print-ready file included',
+    ],
+    mockupSvg:`<svg viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="ttg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#C9A84C" stop-opacity="0.5"/><stop offset="1" stop-color="#0C0E14" stop-opacity="0"/></linearGradient><radialGradient id="ttb" cx="0.4" cy="0.3"><stop offset="0" stop-color="#FFFFFF"/><stop offset="0.55" stop-color="#9CA3AF"/><stop offset="1" stop-color="#1F2937"/></radialGradient></defs><rect x="130" y="40" width="140" height="220" rx="4" fill="#0C0E14"/><rect x="130" y="40" width="140" height="220" rx="4" fill="url(#ttg)"/><rect x="120" y="36" width="160" height="10" rx="2" fill="#D6D9DD"/><circle cx="120" cy="41" r="4" fill="#7B7F86"/><circle cx="280" cy="41" r="4" fill="#7B7F86"/><g transform="translate(200,92)"><polygon points="-22,-4 0,-13 22,-4 0,5" fill="#C9A84C"/><line x1="22" y1="-4" x2="30" y2="18" stroke="#C9A84C" stroke-width="2" fill="none"/><circle cx="30" cy="18" r="3" fill="#C9A84C"/></g><text x="200" y="148" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="20" fill="#F5E4B0" font-weight="700">Class of 2026</text><text x="200" y="170" text-anchor="middle" font-family="Outfit, sans-serif" font-size="10" fill="#FAF8F3" opacity="0.7" letter-spacing="1">YOUR NAME</text><line x1="160" y1="186" x2="240" y2="186" stroke="#C9A84C" stroke-width="1" opacity="0.55"/><text x="200" y="204" text-anchor="middle" font-family="Outfit, sans-serif" font-size="9" fill="#FAF8F3" opacity="0.6" letter-spacing="1">RIVERSIDE HIGH</text><rect x="148" y="222" width="20" height="20" rx="2" fill="#C9A84C" opacity="0.28"/><rect x="174" y="222" width="20" height="20" rx="2" fill="#C9A84C" opacity="0.22"/><rect x="200" y="222" width="20" height="20" rx="2" fill="#C9A84C" opacity="0.28"/><rect x="226" y="222" width="20" height="20" rx="2" fill="#C9A84C" opacity="0.22"/><rect x="195" y="260" width="10" height="40" fill="#3F4654"/><ellipse cx="200" cy="305" rx="84" ry="11" fill="url(#ttb)"/></svg>`,
+  },
+  {
+    id:'vinyl',
+    name:'24×36 Vinyl Banner',
+    tagline:'Large-format vinyl banner for walls, backdrops, and big celebrations.',
+    badge:'Most Popular',
+    features:[
+      'Heavy-duty vinyl with reinforced edges',
+      'Grommets at all four corners',
+      'Vivid, weather-resistant inks',
+      '300 DPI print-ready file included',
+    ],
+    mockupSvg:`<svg viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="vyg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#C9A84C" stop-opacity="0.42"/><stop offset="1" stop-color="#0C0E14" stop-opacity="0"/></linearGradient></defs><rect x="48" y="48" width="304" height="232" rx="3" fill="#0C0E14"/><rect x="48" y="48" width="304" height="232" rx="3" fill="url(#vyg)"/><circle cx="64" cy="64" r="6" fill="#FAF8F3" stroke="#7B7F86" stroke-width="1"/><circle cx="64" cy="64" r="2.5" fill="#1F2937"/><circle cx="336" cy="64" r="6" fill="#FAF8F3" stroke="#7B7F86" stroke-width="1"/><circle cx="336" cy="64" r="2.5" fill="#1F2937"/><circle cx="64" cy="264" r="6" fill="#FAF8F3" stroke="#7B7F86" stroke-width="1"/><circle cx="64" cy="264" r="2.5" fill="#1F2937"/><circle cx="336" cy="264" r="6" fill="#FAF8F3" stroke="#7B7F86" stroke-width="1"/><circle cx="336" cy="264" r="2.5" fill="#1F2937"/><ellipse cx="200" cy="294" rx="170" ry="6" fill="#1F2937" opacity="0.22"/><g transform="translate(200,116) scale(1.55)"><polygon points="-22,-4 0,-13 22,-4 0,5" fill="#C9A84C"/><line x1="22" y1="-4" x2="30" y2="18" stroke="#C9A84C" stroke-width="2" fill="none"/><circle cx="30" cy="18" r="3" fill="#C9A84C"/></g><text x="200" y="188" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="28" fill="#F5E4B0" font-weight="700">Class of 2026</text><text x="200" y="214" text-anchor="middle" font-family="Outfit, sans-serif" font-size="13" fill="#FAF8F3" opacity="0.75" letter-spacing="1.5">YOUR NAME</text><line x1="120" y1="232" x2="280" y2="232" stroke="#C9A84C" stroke-width="1.4" opacity="0.6"/><text x="200" y="253" text-anchor="middle" font-family="Outfit, sans-serif" font-size="11" fill="#FAF8F3" opacity="0.6" letter-spacing="1.5">RIVERSIDE HIGH</text></svg>`,
+  },
 ];
 function productBasePrice(id){const p=PRODUCTS[id];if(!p)return 0;return(p.stripe&&p.stripe.variants)?p.stripe.variants.classic.price:p.price;}
-function renderProducts(){const grid=document.getElementById('product-grid');if(!grid)return;grid.innerHTML=PRODUCT_PICKER.map(pp=>{const p=PRODUCTS[pp.id];if(!p)return'';const sel=state.product===pp.id;return`<div class="theme-card${sel?' sel':''}" data-product="${pp.id}" onclick="selectProduct('${pp.id}')"><div class="theme-name">${pp.name}</div><div class="theme-tagline">${pp.tagline}</div><div class="theme-tags"><span class="theme-tag">${p.trimLabel} in</span><span class="theme-tag">$${productBasePrice(pp.id).toFixed(2)}</span></div></div>`;}).join('');}
+function renderProducts(){const grid=document.getElementById('product-grid');if(!grid)return;grid.innerHTML=PRODUCT_PICKER.map(pp=>{const p=PRODUCTS[pp.id];if(!p)return'';const sel=state.product===pp.id;const dims=p.trimLabel.replace('×','" × ')+'"';const features=(pp.features||[]).map(f=>`<li>${f}</li>`).join('');const badge=pp.badge?`<div class="product-card-v2-badge">${pp.badge}</div>`:'';return`<div class="product-card-v2${sel?' sel':''}" data-product="${pp.id}" onclick="selectProduct('${pp.id}')">${badge}<div class="product-card-v2-mockup">${pp.mockupSvg||''}</div><div class="product-card-v2-body"><h3 class="product-card-v2-title">${pp.name}</h3><div class="product-card-v2-dims">${dims}</div><div class="product-card-v2-price">$${productBasePrice(pp.id).toFixed(2)}</div><ul class="product-card-v2-features">${features}</ul><span class="product-card-v2-cta">${sel?'Selected ✓':'Select →'}</span></div></div>`;}).join('');}
 function selectProduct(id){if(!PRODUCTS[id])return;const switching=state.product&&state.product!==id;state.product=id;if(switching){state.previewGenerated=false;const cap=getMaxPhotos();if(state.images.length>cap){state.images=state.images.slice(0,cap);if(state.heroImage&&!state.images.find(p=>p.id===state.heroImage))state.heroImage=state.images[0]?.id||null;const name=(PRODUCT_PICKER.find(p=>p.id===id)||{}).name||id;toast(`Trimmed to ${cap} photos for ${name}`);}}document.getElementById('hstep').style.display='';document.getElementById('progress-track').style.display='';renderProducts();applyProductLabels();goto(0);}
 function showProductPicker(){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('pg-product').classList.add('active');document.getElementById('hstep').style.display='none';document.getElementById('progress-track').style.display='none';renderProducts();window.scrollTo({top:0,behavior:'smooth'});}
 
