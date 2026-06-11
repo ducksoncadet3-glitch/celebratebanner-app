@@ -614,7 +614,7 @@ function computeCacheKey(){const t=state.bannerText||{};const ts=Object.keys(t).
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),1800);}
 
 // ── NAVIGATION ───────────────────────────────────────────────
-function selectImages(){if(!state.heroImage)return[];const heroId=state.heroImage;const pool=state.images.map(i=>i.id).filter(id=>id!==heroId);const ordered=state.shuffledSeed!=null?shuffleArray(pool,mulberry32(state.shuffledSeed)):pool;return[heroId,...ordered.slice(0,getMaxPhotos()-1)];}
+function selectImages(){if(!state.heroImage)return[];const heroId=state.heroImage;const pool=state.images.map(i=>i.id).filter(id=>id!==heroId);const ordered=state.shuffledSeed!=null?shuffleArray(pool,mulberry32(state.shuffledSeed)):pool;let ids=[heroId,...ordered.slice(0,getMaxPhotos()-1)];if(state.product==='tabletop'){const cap=PRODUCTS.tabletop.maxPhotos||15;if(ids.length>cap)ids=ids.slice(0,cap);}return ids;}
 function shuffleLayout(){state.shuffledSeed=generateRandomSeed();state.previewGenerated=false;document.getElementById('shuffle-status').textContent='Shuffled · seed '+state.shuffledSeed.toString(36);toast('Layout shuffled');}
 function goto(step){if(!canEnter(step))return;state.step=step;document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('pg-'+step).classList.add('active');document.querySelectorAll('.h-step').forEach(el=>{const s=parseInt(el.dataset.step,10);el.classList.toggle('active',s===step);el.classList.toggle('done',s<step);});document.getElementById('progress-bar').style.width=((step+1)*20)+'%';if(step===1){refreshUploadLimits();renderUploadGrid();}if(step===2)renderDesignGrids();if(step===3)refreshPreviewUI();if(step===4)refreshSummary();window.scrollTo({top:0,behavior:'smooth'});}
 function canEnter(step){if(step===0)return true;if(step===1)return!!state.theme;if(step===2)return!!state.theme&&state.images.length>=1;if(step===3)return!!state.theme&&state.images.length>=1&&!!state.heroImage;if(step===4)return state.previewGenerated;return false;}
@@ -798,18 +798,29 @@ function renderHangingBanner(bannerCanvas){
   const canvas=document.createElement('canvas');canvas.width=W*dpr;canvas.height=H*dpr;
   canvas.style.cssText='width:100%;height:auto;display:block;max-width:640px;margin:0 auto;';
   const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
-  // Soft wall backdrop.
-  const wall=ctx.createLinearGradient(0,0,0,H);wall.addColorStop(0,'#EFEFEC');wall.addColorStop(1,'#DCDCD7');
+  // Soft wall backdrop with a gentle vignette so the banner reads against a real surface.
+  const wall=ctx.createLinearGradient(0,0,0,H);wall.addColorStop(0,'#F1F1EE');wall.addColorStop(0.55,'#E6E6E1');wall.addColorStop(1,'#D6D6D0');
   ctx.fillStyle=wall;ctx.fillRect(0,0,W,H);
+  const vig=ctx.createRadialGradient(W/2,H*0.44,W*0.22,W/2,H*0.5,W*0.9);
+  vig.addColorStop(0,'rgba(255,255,255,0.22)');vig.addColorStop(0.7,'rgba(255,255,255,0)');vig.addColorStop(1,'rgba(40,40,36,0.14)');
+  ctx.fillStyle=vig;ctx.fillRect(0,0,W,H);
   // Banner geometry locked to the 24×36 trim aspect (height = width × 36/24).
   const margin=42,bannerW=W-margin*2,bannerH=Math.round(bannerW*36/24);
   const bannerL=margin,bannerT=Math.round((H-bannerH)/2),bannerR=bannerL+bannerW,bannerB=bannerT+bannerH;
-  // Drop shadow so the banner reads as hanging off the wall.
-  ctx.save();ctx.shadowColor='rgba(0,0,0,0.26)';ctx.shadowBlur=22;ctx.shadowOffsetY=10;
+  // Drop shadow so the banner reads as hanging off the wall, lifted slightly off the surface.
+  ctx.save();ctx.shadowColor='rgba(0,0,0,0.32)';ctx.shadowBlur=28;ctx.shadowOffsetX=5;ctx.shadowOffsetY=16;
   ctx.fillStyle='#FFFFFF';ctx.fillRect(bannerL,bannerT,bannerW,bannerH);ctx.restore();
   // Artwork, clipped to the banner rect.
   ctx.save();ctx.beginPath();ctx.rect(bannerL,bannerT,bannerW,bannerH);ctx.clip();
-  ctx.drawImage(bannerCanvas,bannerL,bannerT,bannerW,bannerH);ctx.restore();
+  ctx.drawImage(bannerCanvas,bannerL,bannerT,bannerW,bannerH);
+  // Subtle vinyl sheen + edge depth so the surface reads as printed vinyl rather than flat art.
+  const sheen=ctx.createLinearGradient(bannerL,bannerT,bannerR,bannerB);
+  sheen.addColorStop(0,'rgba(255,255,255,0.12)');sheen.addColorStop(0.16,'rgba(255,255,255,0.05)');sheen.addColorStop(0.5,'rgba(255,255,255,0)');sheen.addColorStop(0.84,'rgba(0,0,0,0.04)');sheen.addColorStop(1,'rgba(0,0,0,0.11)');
+  ctx.fillStyle=sheen;ctx.fillRect(bannerL,bannerT,bannerW,bannerH);
+  // Faint vinyl-weave texture: hairline horizontal striping, barely visible.
+  ctx.globalAlpha=0.04;ctx.strokeStyle='#000';ctx.lineWidth=1;
+  for(let y=bannerT+3;y<bannerB;y+=4){ctx.beginPath();ctx.moveTo(bannerL,y+0.5);ctx.lineTo(bannerR,y+0.5);ctx.stroke();}
+  ctx.globalAlpha=1;ctx.restore();
   // Crisp trim edge.
   ctx.strokeStyle='rgba(0,0,0,0.30)';ctx.lineWidth=1;ctx.strokeRect(bannerL+0.5,bannerT+0.5,bannerW-1,bannerH-1);
   // Grommet eyelet: punch a hole (wall shows through) ringed by a metallic eyelet.
@@ -830,7 +841,67 @@ function renderHangingBanner(bannerCanvas){
   [[gx0,gy0],[gx1,gy0],[gxm,gy0],[gx0,gym],[gx1,gym],[gx0,gy1],[gx1,gy1],[gxm,gy1]].forEach(([gx,gy])=>drawGrommet(gx,gy,gr));
   container.appendChild(canvas);return canvas;
 }
-function renderTabletopStand(bannerCanvas){const container=document.getElementById('stand-mockup');if(!container)return null;container.innerHTML='';const dpr=2,W=600,H=900;const canvas=document.createElement('canvas');canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.cssText='width:100%;height:auto;display:block;max-width:640px;margin:0 auto;';const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);ctx.fillStyle='#F8F8F8';ctx.fillRect(0,0,W,H);const margin=30,topBarH=Math.round(H*0.015),banH=Math.round(H*0.78),baseH=Math.round(banH*0.06),poleW=Math.max(5,Math.round(W*0.010));const bannerL=margin,bannerR=W-margin,bannerW=bannerR-bannerL,bannerT=margin+topBarH,bannerB=bannerT+banH;const tbGrad=ctx.createLinearGradient(bannerL,0,bannerR,0);tbGrad.addColorStop(0,'#E0E0E0');tbGrad.addColorStop(0.5,'#FFFFFF');tbGrad.addColorStop(1,'#C0C0C0');ctx.fillStyle=tbGrad;ctx.fillRect(bannerL,margin,bannerW,topBarH);ctx.fillStyle='#7B7F86';const capR=topBarH*0.85;ctx.beginPath();ctx.arc(bannerL,margin+topBarH/2,capR,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(bannerR,margin+topBarH/2,capR,0,Math.PI*2);ctx.fill();const taper=bannerW*0.02,topLx=bannerL+taper,topRx=bannerR-taper;ctx.save();ctx.beginPath();ctx.moveTo(topLx,bannerT);ctx.lineTo(topRx,bannerT);ctx.lineTo(bannerR,bannerB);ctx.lineTo(bannerL,bannerB);ctx.closePath();ctx.clip();ctx.drawImage(bannerCanvas,bannerL,bannerT,bannerW,banH);ctx.restore();ctx.save();ctx.strokeStyle='rgba(0,0,0,0.45)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(topLx,bannerT);ctx.lineTo(topRx,bannerT);ctx.lineTo(bannerR,bannerB);ctx.lineTo(bannerL,bannerB);ctx.closePath();ctx.stroke();ctx.restore();const poleX=bannerR-poleW/2,poleTop=margin+topBarH,poleBot=bannerB+baseH*0.85;ctx.save();ctx.beginPath();ctx.moveTo(poleX,poleTop);ctx.lineTo(poleX+poleW,poleTop);ctx.lineTo(poleX+poleW*1.25,poleBot);ctx.lineTo(poleX-poleW*0.25,poleBot);ctx.closePath();const pg=ctx.createLinearGradient(poleX-poleW,0,poleX+poleW*2,0);pg.addColorStop(0,'#3F4654');pg.addColorStop(0.5,'#FFFFFF');pg.addColorStop(1,'#9CA3AF');ctx.fillStyle=pg;ctx.fill();ctx.restore();const baseW=Math.round(bannerW*0.70),baseCx=(bannerL+bannerR)/2,baseCy=bannerB+baseH;const bg=ctx.createRadialGradient(baseCx-baseW*0.12,baseCy-baseH*0.5,4,baseCx,baseCy+baseH*0.2,baseW/2);bg.addColorStop(0,'#FFFFFF');bg.addColorStop(0.45,'#9CA3AF');bg.addColorStop(1,'#1F2937');ctx.fillStyle=bg;ctx.beginPath();ctx.ellipse(baseCx,baseCy,baseW/2,baseH,0,0,Math.PI*2);ctx.fill();container.appendChild(canvas);return canvas;}
+// TABLETOP retractable banner stand mockup, VistaPrint-style: the design sits inside an
+// aluminum stand with a top rail/clamp, a support pole, a silver weighted base disc, a
+// floor shadow and a light-gray product card. Stand parts are MOCKUP-ONLY (drawn here,
+// never on preview-canvas) so they can't reach the exported/printed file.
+function renderTabletopStand(bannerCanvas){
+  const container=document.getElementById('stand-mockup');if(!container)return null;container.innerHTML='';
+  const dpr=2,W=600,H=900;
+  const canvas=document.createElement('canvas');canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.cssText='width:100%;height:auto;display:block;max-width:640px;margin:0 auto;';
+  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  const rr=(x,y,w,h,r)=>{ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();};
+  // Light-gray product card backdrop.
+  const card=ctx.createLinearGradient(0,0,0,H);card.addColorStop(0,'#F5F6F8');card.addColorStop(1,'#E5E7EB');
+  ctx.fillStyle=card;ctx.fillRect(0,0,W,H);
+  // Banner geometry — tabletop retractable proportions, leaving room for the base below.
+  const margin=78,topRailH=16;
+  const bannerL=margin,bannerR=W-margin,bannerW=bannerR-bannerL;
+  // Real Table Top trim is 11.5×17.5 → height = width × 17.5/11.5 (≈1.522), so the mockup
+  // matches the actual product proportion instead of vinyl's 24×36 (1.5). Data-driven from
+  // trimInches; the small 1.5%→1.522% bump keeps it from looking overly tall.
+  const ti=activeProduct().trimInches;const ratio=(ti&&ti.w&&ti.h)?ti.h/ti.w:17.5/11.5;
+  const bannerT=66+topRailH,bannerH=Math.round(bannerW*ratio),bannerB=bannerT+bannerH;
+  const cx=(bannerL+bannerR)/2;
+  // Base + shadow geometry.
+  const baseW=bannerW*0.56,baseRy=22,baseThick=20,baseCy=bannerB+58,baseTopCy=baseCy-baseThick;
+  // Soft floor shadow beneath the whole stand.
+  ctx.save();if('filter' in ctx)ctx.filter='blur(9px)';ctx.fillStyle='rgba(0,0,0,0.20)';
+  ctx.beginPath();ctx.ellipse(cx+10,baseCy+baseRy*0.8,baseW*0.7,baseRy*0.95,0,0,Math.PI*2);ctx.fill();ctx.restore();
+  // Aluminum base disc — bottom curve, metallic side band, brushed top surface.
+  ctx.fillStyle='#5B626D';ctx.beginPath();ctx.ellipse(cx,baseCy,baseW/2,baseRy,0,0,Math.PI*2);ctx.fill();
+  const sideG=ctx.createLinearGradient(0,baseTopCy,0,baseCy);sideG.addColorStop(0,'#C9CED5');sideG.addColorStop(0.5,'#8E96A1');sideG.addColorStop(1,'#646B76');
+  ctx.fillStyle=sideG;ctx.fillRect(cx-baseW/2,baseTopCy,baseW,baseThick);
+  const topG=ctx.createLinearGradient(cx-baseW/2,0,cx+baseW/2,0);topG.addColorStop(0,'#A8AEB8');topG.addColorStop(0.5,'#F2F4F6');topG.addColorStop(1,'#8E96A1');
+  ctx.fillStyle=topG;ctx.beginPath();ctx.ellipse(cx,baseTopCy,baseW/2,baseRy,0,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.55)';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(cx,baseTopCy,baseW/2,baseRy,0,0,Math.PI*2);ctx.stroke();
+  // Support pole rising from the base into the banner.
+  const poleW=11,poleTop=bannerB-6,poleBot=baseTopCy+2;
+  const pg=ctx.createLinearGradient(cx-poleW/2,0,cx+poleW/2,0);pg.addColorStop(0,'#8B929D');pg.addColorStop(0.45,'#EEF0F3');pg.addColorStop(0.55,'#EEF0F3');pg.addColorStop(1,'#646B76');
+  ctx.fillStyle=pg;ctx.fillRect(cx-poleW/2,poleTop,poleW,poleBot-poleTop);
+  // Banner backing shadow for depth.
+  ctx.save();ctx.shadowColor='rgba(0,0,0,0.24)';ctx.shadowBlur=20;ctx.shadowOffsetX=6;ctx.shadowOffsetY=9;
+  ctx.fillStyle='#FFFFFF';ctx.fillRect(bannerL,bannerT,bannerW,bannerH);ctx.restore();
+  // Artwork, clipped to the banner rect.
+  ctx.save();ctx.beginPath();ctx.rect(bannerL,bannerT,bannerW,bannerH);ctx.clip();
+  ctx.drawImage(bannerCanvas,bannerL,bannerT,bannerW,bannerH);
+  // Subtle curvature shading so the printed face reads as vinyl on a stand.
+  const curve=ctx.createLinearGradient(bannerL,0,bannerR,0);
+  curve.addColorStop(0,'rgba(0,0,0,0.12)');curve.addColorStop(0.12,'rgba(255,255,255,0.06)');curve.addColorStop(0.5,'rgba(255,255,255,0)');curve.addColorStop(0.9,'rgba(0,0,0,0.05)');curve.addColorStop(1,'rgba(0,0,0,0.14)');
+  ctx.fillStyle=curve;ctx.fillRect(bannerL,bannerT,bannerW,bannerH);ctx.restore();
+  // Crisp trim edge.
+  ctx.strokeStyle='rgba(0,0,0,0.28)';ctx.lineWidth=1;ctx.strokeRect(bannerL+0.5,bannerT+0.5,bannerW-1,bannerH-1);
+  // Aluminum top rail / clamp spanning the banner head, with rounded end caps.
+  const railL=bannerL-6,railTop=bannerT-topRailH,railW=(bannerR+6)-railL;
+  const railG=ctx.createLinearGradient(0,railTop,0,railTop+topRailH);railG.addColorStop(0,'#EAECEF');railG.addColorStop(0.5,'#BBC1C9');railG.addColorStop(1,'#7C838E');
+  ctx.fillStyle=railG;rr(railL,railTop,railW,topRailH,topRailH/2);ctx.fill();
+  ctx.fillStyle='#6B727D';
+  ctx.beginPath();ctx.arc(railL+topRailH/2,railTop+topRailH/2,topRailH*0.6,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(railL+railW-topRailH/2,railTop+topRailH/2,topRailH*0.6,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.45)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(railL+topRailH/2,railTop+1.5);ctx.lineTo(railL+railW-topRailH/2,railTop+1.5);ctx.stroke();
+  container.appendChild(canvas);return canvas;
+}
 
 // ── STEP 4: DELIVERY ─────────────────────────────────────────
 function setDelivery(type){state.delivery=type;document.querySelectorAll('.delivery-card').forEach(el=>{el.classList.toggle('sel',el.dataset.delivery===type);});const row=document.getElementById('ship-state-row');if(row)row.style.display=(type==='print')?'block':'none';refreshSummary();}
