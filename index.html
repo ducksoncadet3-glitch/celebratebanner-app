@@ -852,10 +852,18 @@ function renderTabletopStand(bannerCanvas){
   canvas.style.cssText='width:100%;height:auto;display:block;max-width:640px;margin:0 auto;';
   const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
   const rr=(x,y,w,h,r)=>{ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();};
-  // Light-gray product card backdrop.
-  const card=ctx.createLinearGradient(0,0,0,H);card.addColorStop(0,'#F5F6F8');card.addColorStop(1,'#E5E7EB');
-  ctx.fillStyle=card;ctx.fillRect(0,0,W,H);
-  // Banner geometry — tabletop retractable proportions, leaving room for the base below.
+  // Desk-and-wall scene: pale wall above, warm wood-tone desk below, with a soft horizon
+  // band between them. Replaces the previous flat product-card backdrop so the stand
+  // reads as sitting on a real surface, not floating on gray.
+  const horizonY=Math.round(H*0.38);
+  const wall=ctx.createLinearGradient(0,0,0,horizonY);wall.addColorStop(0,'#F0EDE5');wall.addColorStop(1,'#E5DFD2');
+  ctx.fillStyle=wall;ctx.fillRect(0,0,W,horizonY);
+  const desk=ctx.createLinearGradient(0,horizonY,0,H);desk.addColorStop(0,'#DCCFB6');desk.addColorStop(0.45,'#CFC0A2');desk.addColorStop(1,'#A89376');
+  ctx.fillStyle=desk;ctx.fillRect(0,horizonY,W,H-horizonY);
+  // Faint horizon-line shadow where the desk meets the wall.
+  const horizon=ctx.createLinearGradient(0,horizonY-4,0,horizonY+6);horizon.addColorStop(0,'rgba(60,40,15,0)');horizon.addColorStop(0.4,'rgba(60,40,15,0.10)');horizon.addColorStop(1,'rgba(60,40,15,0)');
+  ctx.fillStyle=horizon;ctx.fillRect(0,horizonY-4,W,10);
+  // Banner geometry — tabletop retractable proportions, leaving room for the cassette below.
   const margin=78,topRailH=16;
   const bannerL=margin,bannerR=W-margin,bannerW=bannerR-bannerL;
   // Real Table Top trim is 11.5×17.5 → height = width × 17.5/11.5 (≈1.522), so the mockup
@@ -864,23 +872,20 @@ function renderTabletopStand(bannerCanvas){
   const ti=activeProduct().trimInches;const ratio=(ti&&ti.w&&ti.h)?ti.h/ti.w:17.5/11.5;
   const bannerT=66+topRailH,bannerH=Math.round(bannerW*ratio),bannerB=bannerT+bannerH;
   const cx=(bannerL+bannerR)/2;
-  // Base + shadow geometry.
-  const baseW=bannerW*0.56,baseRy=22,baseThick=20,baseCy=bannerB+58,baseTopCy=baseCy-baseThick;
-  // Soft floor shadow beneath the whole stand.
-  ctx.save();if('filter' in ctx)ctx.filter='blur(9px)';ctx.fillStyle='rgba(0,0,0,0.20)';
-  ctx.beginPath();ctx.ellipse(cx+10,baseCy+baseRy*0.8,baseW*0.7,baseRy*0.95,0,0,Math.PI*2);ctx.fill();ctx.restore();
-  // Aluminum base disc — bottom curve, metallic side band, brushed top surface.
-  ctx.fillStyle='#5B626D';ctx.beginPath();ctx.ellipse(cx,baseCy,baseW/2,baseRy,0,0,Math.PI*2);ctx.fill();
-  const sideG=ctx.createLinearGradient(0,baseTopCy,0,baseCy);sideG.addColorStop(0,'#C9CED5');sideG.addColorStop(0.5,'#8E96A1');sideG.addColorStop(1,'#646B76');
-  ctx.fillStyle=sideG;ctx.fillRect(cx-baseW/2,baseTopCy,baseW,baseThick);
-  const topG=ctx.createLinearGradient(cx-baseW/2,0,cx+baseW/2,0);topG.addColorStop(0,'#A8AEB8');topG.addColorStop(0.5,'#F2F4F6');topG.addColorStop(1,'#8E96A1');
-  ctx.fillStyle=topG;ctx.beginPath();ctx.ellipse(cx,baseTopCy,baseW/2,baseRy,0,0,Math.PI*2);ctx.fill();
-  ctx.strokeStyle='rgba(255,255,255,0.55)';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(cx,baseTopCy,baseW/2,baseRy,0,0,Math.PI*2);ctx.stroke();
-  // Support pole rising from the base into the banner.
-  const poleW=11,poleTop=bannerB-6,poleBot=baseTopCy+2;
-  const pg=ctx.createLinearGradient(cx-poleW/2,0,cx+poleW/2,0);pg.addColorStop(0,'#8B929D');pg.addColorStop(0.45,'#EEF0F3');pg.addColorStop(0.55,'#EEF0F3');pg.addColorStop(1,'#646B76');
+  // Cassette (retractable mechanism) geometry — replaces the prior elliptical base disc.
+  // Horizontal rounded rectangle with end-cap zones, brushed-aluminum gradient, slot at top.
+  const cassetteW=Math.round(bannerW*0.94),cassetteH=56;
+  const cassetteL=cx-cassetteW/2,cassetteR=cx+cassetteW/2;
+  const cassetteT=bannerB+6,cassetteB=cassetteT+cassetteH;
+  const cornerR=10,endCapW=22;
+  // Support pole connecting cassette to top rail — drawn BEFORE the banner so the banner
+  // covers most of the pole, and only the tiny stubs above bannerT / inside the cassette
+  // are visible. Reads like a real retractable banner pole hidden behind the print.
+  const poleW=8,poleTop=bannerT-4,poleBot=cassetteT+12;
+  const pg=ctx.createLinearGradient(cx-poleW/2,0,cx+poleW/2,0);pg.addColorStop(0,'#7B828E');pg.addColorStop(0.42,'#E4E7EC');pg.addColorStop(0.55,'#FFFFFF');pg.addColorStop(1,'#5F6772');
   ctx.fillStyle=pg;ctx.fillRect(cx-poleW/2,poleTop,poleW,poleBot-poleTop);
-  // Banner backing shadow for depth.
+  ctx.fillStyle='rgba(0,0,0,0.22)';ctx.fillRect(cx+poleW/2-1.4,poleTop,1.4,poleBot-poleTop);
+  // Banner backing shadow for depth (directional from upper-left light source).
   ctx.save();ctx.shadowColor='rgba(0,0,0,0.24)';ctx.shadowBlur=20;ctx.shadowOffsetX=6;ctx.shadowOffsetY=9;
   ctx.fillStyle='#FFFFFF';ctx.fillRect(bannerL,bannerT,bannerW,bannerH);ctx.restore();
   // Artwork, clipped to the banner rect.
@@ -889,17 +894,51 @@ function renderTabletopStand(bannerCanvas){
   // Subtle curvature shading so the printed face reads as vinyl on a stand.
   const curve=ctx.createLinearGradient(bannerL,0,bannerR,0);
   curve.addColorStop(0,'rgba(0,0,0,0.12)');curve.addColorStop(0.12,'rgba(255,255,255,0.06)');curve.addColorStop(0.5,'rgba(255,255,255,0)');curve.addColorStop(0.9,'rgba(0,0,0,0.05)');curve.addColorStop(1,'rgba(0,0,0,0.14)');
-  ctx.fillStyle=curve;ctx.fillRect(bannerL,bannerT,bannerW,bannerH);ctx.restore();
+  ctx.fillStyle=curve;ctx.fillRect(bannerL,bannerT,bannerW,bannerH);
+  // Banner left-edge catch-light — sells the single directional light source.
+  const litStrip=ctx.createLinearGradient(bannerL,0,bannerL+10,0);
+  litStrip.addColorStop(0,'rgba(255,255,255,0.18)');litStrip.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=litStrip;ctx.fillRect(bannerL,bannerT,10,bannerH);ctx.restore();
   // Crisp trim edge.
   ctx.strokeStyle='rgba(0,0,0,0.28)';ctx.lineWidth=1;ctx.strokeRect(bannerL+0.5,bannerT+0.5,bannerW-1,bannerH-1);
-  // Aluminum top rail / clamp spanning the banner head, with rounded end caps.
+  // Cassette cast shadow on the desk — 3-pass elliptical stack approximating Gaussian blur
+  // without relying on ctx.filter. Light upper-left → shadow falls bottom-right.
+  ctx.save();
+  for(let i=0;i<3;i++){
+    const o=[0.22,0.13,0.07][i],dy=[6,12,20][i],dx=[4,9,16][i],ry=[6,11,18][i];
+    ctx.fillStyle='rgba(20,12,4,'+o+')';
+    ctx.beginPath();ctx.ellipse(cx+dx,cassetteB+dy,cassetteW/2+6,ry,0,0,Math.PI*2);ctx.fill();
+  }
+  ctx.restore();
+  // Cassette body — rounded rect with brushed-aluminum vertical gradient.
+  const cassBody=ctx.createLinearGradient(0,cassetteT,0,cassetteB);
+  cassBody.addColorStop(0,'#A8AEB7');cassBody.addColorStop(0.35,'#F4F6F9');cassBody.addColorStop(0.5,'#FFFFFF');cassBody.addColorStop(0.7,'#D7DBE2');cassBody.addColorStop(1,'#6F7682');
+  ctx.fillStyle=cassBody;rr(cassetteL,cassetteT,cassetteW,cassetteH,cornerR);ctx.fill();
+  // Faint vertical micro-stripes (brushed-metal feel), clipped to the cassette body.
+  ctx.save();rr(cassetteL,cassetteT,cassetteW,cassetteH,cornerR);ctx.clip();
+  ctx.globalAlpha=0.05;ctx.strokeStyle='#000';ctx.lineWidth=1;
+  for(let x=cassetteL+3;x<cassetteR;x+=4){ctx.beginPath();ctx.moveTo(x+0.5,cassetteT);ctx.lineTo(x+0.5,cassetteB);ctx.stroke();}
+  // End caps — darker injection-molded zones overlaid on the body ends.
+  ctx.globalAlpha=1;
+  const lCap=ctx.createLinearGradient(cassetteL,0,cassetteL+endCapW,0);
+  lCap.addColorStop(0,'#3A404B');lCap.addColorStop(0.55,'#5B626D');lCap.addColorStop(1,'rgba(91,98,109,0)');
+  ctx.fillStyle=lCap;ctx.fillRect(cassetteL,cassetteT,endCapW,cassetteH);
+  const rCap=ctx.createLinearGradient(cassetteR-endCapW,0,cassetteR,0);
+  rCap.addColorStop(0,'rgba(58,64,75,0)');rCap.addColorStop(0.45,'#4C545F');rCap.addColorStop(1,'#2C313A');
+  ctx.fillStyle=rCap;ctx.fillRect(cassetteR-endCapW,cassetteT,endCapW,cassetteH);
+  ctx.restore();
+  // Banner-emerges slot at cassette top — thin dark line between the two end caps.
+  ctx.fillStyle='rgba(0,0,0,0.55)';ctx.fillRect(cassetteL+endCapW+2,cassetteT-1,cassetteW-2*(endCapW+2),2);
+  // Cassette outline + bottom-edge contact line.
+  ctx.strokeStyle='rgba(0,0,0,0.30)';ctx.lineWidth=1;rr(cassetteL+0.5,cassetteT+0.5,cassetteW-1,cassetteH-1,cornerR);ctx.stroke();
+  // Aluminum top rail / clamp spanning the banner head, with smaller end caps.
   const railL=bannerL-6,railTop=bannerT-topRailH,railW=(bannerR+6)-railL;
   const railG=ctx.createLinearGradient(0,railTop,0,railTop+topRailH);railG.addColorStop(0,'#EAECEF');railG.addColorStop(0.5,'#BBC1C9');railG.addColorStop(1,'#7C838E');
   ctx.fillStyle=railG;rr(railL,railTop,railW,topRailH,topRailH/2);ctx.fill();
-  ctx.fillStyle='#6B727D';
-  ctx.beginPath();ctx.arc(railL+topRailH/2,railTop+topRailH/2,topRailH*0.6,0,Math.PI*2);ctx.fill();
-  ctx.beginPath();ctx.arc(railL+railW-topRailH/2,railTop+topRailH/2,topRailH*0.6,0,Math.PI*2);ctx.fill();
-  ctx.strokeStyle='rgba(255,255,255,0.45)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(railL+topRailH/2,railTop+1.5);ctx.lineTo(railL+railW-topRailH/2,railTop+1.5);ctx.stroke();
+  ctx.fillStyle='#7C838E';
+  ctx.beginPath();ctx.arc(railL+topRailH/2,railTop+topRailH/2,topRailH*0.5,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(railL+railW-topRailH/2,railTop+topRailH/2,topRailH*0.5,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(railL+topRailH/2,railTop+1.5);ctx.lineTo(railL+railW-topRailH/2,railTop+1.5);ctx.stroke();
   container.appendChild(canvas);return canvas;
 }
 
