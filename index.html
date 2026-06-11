@@ -614,7 +614,7 @@ function computeCacheKey(){const t=state.bannerText||{};const ts=Object.keys(t).
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),1800);}
 
 // ── NAVIGATION ───────────────────────────────────────────────
-function selectImages(){if(!state.heroImage)return[];const heroId=state.heroImage;const pool=state.images.map(i=>i.id).filter(id=>id!==heroId);const ordered=state.shuffledSeed!=null?shuffleArray(pool,mulberry32(state.shuffledSeed)):pool;return[heroId,...ordered.slice(0,getMaxPhotos()-1)];}
+function selectImages(){if(!state.heroImage)return[];const heroId=state.heroImage;const pool=state.images.map(i=>i.id).filter(id=>id!==heroId);const ordered=state.shuffledSeed!=null?shuffleArray(pool,mulberry32(state.shuffledSeed)):pool;let ids=[heroId,...ordered.slice(0,getMaxPhotos()-1)];if(state.product==='tabletop'){const cap=PRODUCTS.tabletop.maxPhotos||15;if(ids.length>cap)ids=ids.slice(0,cap);}return ids;}
 function shuffleLayout(){state.shuffledSeed=generateRandomSeed();state.previewGenerated=false;document.getElementById('shuffle-status').textContent='Shuffled · seed '+state.shuffledSeed.toString(36);toast('Layout shuffled');}
 function goto(step){if(!canEnter(step))return;state.step=step;document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('pg-'+step).classList.add('active');document.querySelectorAll('.h-step').forEach(el=>{const s=parseInt(el.dataset.step,10);el.classList.toggle('active',s===step);el.classList.toggle('done',s<step);});document.getElementById('progress-bar').style.width=((step+1)*20)+'%';if(step===1){refreshUploadLimits();renderUploadGrid();}if(step===2)renderDesignGrids();if(step===3)refreshPreviewUI();if(step===4)refreshSummary();window.scrollTo({top:0,behavior:'smooth'});}
 function canEnter(step){if(step===0)return true;if(step===1)return!!state.theme;if(step===2)return!!state.theme&&state.images.length>=1;if(step===3)return!!state.theme&&state.images.length>=1&&!!state.heroImage;if(step===4)return state.previewGenerated;return false;}
@@ -858,7 +858,11 @@ function renderTabletopStand(bannerCanvas){
   // Banner geometry — tabletop retractable proportions, leaving room for the base below.
   const margin=78,topRailH=16;
   const bannerL=margin,bannerR=W-margin,bannerW=bannerR-bannerL;
-  const bannerT=66+topRailH,bannerH=Math.round(bannerW*1.5),bannerB=bannerT+bannerH;
+  // Real Table Top trim is 11.5×17.5 → height = width × 17.5/11.5 (≈1.522), so the mockup
+  // matches the actual product proportion instead of vinyl's 24×36 (1.5). Data-driven from
+  // trimInches; the small 1.5%→1.522% bump keeps it from looking overly tall.
+  const ti=activeProduct().trimInches;const ratio=(ti&&ti.w&&ti.h)?ti.h/ti.w:17.5/11.5;
+  const bannerT=66+topRailH,bannerH=Math.round(bannerW*ratio),bannerB=bannerT+bannerH;
   const cx=(bannerL+bannerR)/2;
   // Base + shadow geometry.
   const baseW=bannerW*0.56,baseRy=22,baseThick=20,baseCy=bannerB+58,baseTopCy=baseCy-baseThick;
