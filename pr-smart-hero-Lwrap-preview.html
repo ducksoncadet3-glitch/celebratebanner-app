@@ -1,0 +1,168 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PR — Smart Hero L-wrap (tabletop) preview</title>
+<style>
+  :root{--obsidian:#0C0E14;--gold:#C9A84C;--ivory:#FAF8F3;--border:rgba(201,168,76,.18)}
+  body{margin:0;background:#07080c;color:var(--ivory);font:14px/1.4 system-ui,sans-serif}
+  header{padding:18px 22px;border-bottom:1px solid var(--border)}
+  h1{font:600 22px/1.2 "Cormorant Garamond",Georgia,serif;color:var(--gold);margin:0 0 4px}
+  .sub{opacity:.7;font-size:13px}
+  .controls{display:flex;gap:18px;flex-wrap:wrap;align-items:center;padding:14px 22px;border-bottom:1px solid var(--border);background:#0b0d14}
+  .controls label{display:flex;gap:8px;align-items:center}
+  button{background:#15171f;color:var(--ivory);border:1px solid var(--border);border-radius:8px;padding:7px 12px;cursor:pointer}
+  button.on{background:var(--gold);color:#1a1206;font-weight:700;border-color:var(--gold)}
+  input[type=range]{width:220px}
+  .stage{display:flex;gap:30px;flex-wrap:wrap;padding:22px;justify-content:center}
+  .panel{text-align:center}
+  .panel h2{font:600 15px/1 sans-serif;letter-spacing:.04em;text-transform:uppercase;margin:0 0 10px;opacity:.85}
+  .panel canvas{border:1px solid var(--border);border-radius:6px;background:#000;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  .note{max-width:430px;font-size:12.5px;opacity:.78;margin:10px auto 0;text-align:left}
+  .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(201,168,76,.15);color:var(--gold);margin-left:6px}
+  code{color:#E8C97A}
+</style></head><body>
+<header>
+  <h1>Smart Hero — Magazine-style L-wrap <span class="tag">tabletop only · proposed</span></h1>
+  <div class="sub">Left = CURRENT (fixed wide hero → black bars on a portrait photo). Right = PROPOSED (hero reshapes to the photo; supporting photos wrap beside &amp; below). Rotation-aware. Landscape heroes are left unchanged.</div>
+</header>
+<div class="controls">
+  <label>Hero photo:
+    <span id="orient-btns"></span>
+  </label>
+  <label>Supporting photos (N): <input id="nrange" type="range" min="1" max="15" value="15"><b id="nval">15</b></label>
+  <label><input id="zones" type="checkbox"> show zone tint</label>
+</div>
+<div class="stage">
+  <div class="panel"><h2>Current (wide hero)</h2><canvas id="cur" width="789" height="1200"></canvas></div>
+  <div class="panel"><h2>Proposed (L-wrap)</h2><canvas id="prop" width="789" height="1200"></canvas>
+    <div class="note" id="readout"></div></div>
+</div>
+<script>
+// ---- tabletop geometry constants (mirror PRODUCTS.tabletop + renderClassic) ----
+const W=789,H=1200,margin=40,gap=6;
+const innerW=W-margin*2, rightEdge=margin+innerW;
+const availTop=140, availBot=H-20, availH=availBot-availTop;
+const HERO_W_CAP=Math.round(innerW*0.6);
+const BELOW_COLS=3, BELOW_CELL_MAX=232, BELOW_CELL_MIN=120;
+
+// ---- orientation presets (w,h,rot) ----
+const ORIENTS={
+  portrait:{w:900,h:1200,rot:0,label:'Portrait 3:4'},
+  thin:{w:900,h:1600,rot:0,label:'Tall 9:16'},
+  square:{w:1000,h:1000,rot:0,label:'Square 1:1'},
+  rotated:{w:900,h:1200,rot:90,label:'Portrait rot 90° (→landscape)'},
+  landscape:{w:1500,h:1000,rot:0,label:'Landscape 3:2'}
+};
+let cur='portrait', N=15, showZones=false;
+
+function classify(w,h,rot){rot=((rot||0)%360+360)%360;const sw=rot===90||rot===270;const eW=sw?h:w,eH=sw?w:h;const a=eW/eH;return{a,eW,eH,kind:a<=0.85?'portrait':a<1.18?'square':'landscape'};}
+
+// THE PROPOSED LAYOUT (same math validated in /tmp/lwrap3.js)
+function lwrap(w,h,rot,N){
+  const cl=classify(w,h,rot);
+  if(cl.kind==='landscape')return{landscape:true,cl};
+  const heroH=cl.kind==='portrait'?520:430;
+  const heroW=Math.min(HERO_W_CAP,Math.round(heroH*cl.a));
+  const sideX=margin+heroW+gap, sideW=rightEdge-sideX, sideCols=sideW>=230?2:1;
+  const sideCellW=(sideW-gap*(sideCols-1))/sideCols;
+  const sideRows=Math.min(4,Math.max(2,Math.round(heroH/sideCellW)));
+  const sideCellH=(heroH-gap*(sideRows-1))/sideRows;
+  const sideCap=sideCols*sideRows, sideCount=Math.min(N,sideCap), belowCount=N-sideCount;
+  let band=null;
+  if(belowCount>0){
+    const bCols=Math.min(belowCount,BELOW_COLS), bRows=Math.ceil(belowCount/bCols);
+    let cell=Math.min(BELOW_CELL_MAX,(innerW-gap*(bCols-1))/bCols);
+    let bandH=bRows*cell+(bRows-1)*gap;
+    if(heroH+gap+bandH>availH){cell=Math.max(BELOW_CELL_MIN,(availH-heroH-gap-(bRows-1)*gap)/bRows);bandH=bRows*cell+(bRows-1)*gap;}
+    band={bCols,bRows,cell,bandH};
+  }
+  const blockH=heroH+(band?gap+band.bandH:0);
+  const topPad=Math.max(0,(availH-blockH)/2);
+  const heroY=availTop+topPad;
+  return{cl,heroX:margin,heroY,heroW,heroH,sideX,sideW,sideCols,sideRows,sideCellW,sideCellH,sideCount,belowCount,band,heroBot:heroY+heroH};
+}
+
+// ---- synthetic test photos: portrait/landscape/square gradient "people" ----
+const PALS=[['#3a6ea5','#bcd4ec'],['#a5563a','#ecd2bc'],['#5a8f6a','#cfe8d4'],['#7a5aa0','#ddd0ec'],['#a08a3a','#ece2bc'],['#9a3a5a','#ecbcd0']];
+function makePhoto(i,kind){
+  const pw= kind==='landscape'?480:(kind==='square'?400:300);
+  const ph= kind==='landscape'?320:(kind==='square'?400:400);
+  const c=document.createElement('canvas');c.width=pw;c.height=ph;const x=c.getContext('2d');
+  const[a,b]=PALS[i%PALS.length];const g=x.createLinearGradient(0,0,0,ph);g.addColorStop(0,b);g.addColorStop(1,a);
+  x.fillStyle=g;x.fillRect(0,0,pw,ph);
+  // a head+shoulders so head-cropping is obvious if it ever happens
+  x.fillStyle='rgba(0,0,0,.28)';x.beginPath();x.arc(pw/2,ph*0.34,pw*0.17,0,7);x.fill();
+  x.beginPath();x.moveTo(pw*0.5,ph*0.5);x.arc(pw/2,ph*0.95,pw*0.34,Math.PI,0);x.fill();
+  x.fillStyle='rgba(255,255,255,.92)';x.font='bold '+Math.round(pw*0.18)+'px sans-serif';x.textAlign='center';x.fillText(i+1,pw/2,ph*0.40);
+  const img=new Image();img.src=c.toDataURL();return img;
+}
+let HERO_IMG=null, SUP=[];
+function rebuildPhotos(){const k=ORIENTS[cur];HERO_IMG=makePhoto(0,classify(k.w,k.h,k.rot).kind);SUP=[];for(let i=0;i<15;i++)SUP.push(makePhoto(i+1,'portrait'));}
+
+// ---- drawing helpers (mirror drawContain / draw3DHero / drawPhotoFramed) ----
+function roundRect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+function drawContain(c,img,x,y,w,h,rot){const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;rot=((rot||0)%360+360)%360;const sw=rot===90||rot===270;const eW=sw?ih:iw,eH=sw?iw:ih;const s=Math.min(w/eW,h/eH);const dw=iw*s,dh=ih*s;c.save();c.translate(x+w/2,y+h/2);if(rot)c.rotate(rot*Math.PI/180);c.drawImage(img,-dw/2,-dh/2,dw,dh);c.restore();}
+function hero(c,img,x,y,w,h,rot){c.save();c.shadowColor='rgba(0,0,0,.7)';c.shadowBlur=40;c.shadowOffsetY=22;c.fillStyle='#000';roundRect(c,x,y,w,h,14);c.fill();c.restore();c.save();roundRect(c,x,y,w,h,14);c.clip();drawContain(c,img,x,y,w,h,rot);c.restore();c.save();c.strokeStyle='#C9A84C';c.lineWidth=3;roundRect(c,x,y,w,h,14);c.stroke();c.restore();}
+function tile(c,img,x,y,w,h){c.save();c.shadowColor='rgba(0,0,0,.5)';c.shadowBlur=10;c.shadowOffsetY=5;c.fillStyle='#111';roundRect(c,x,y,w,h,8);c.fill();c.restore();c.save();roundRect(c,x,y,w,h,8);c.clip();drawContain(c,img,x,y,w,h,0);c.restore();c.save();c.strokeStyle='rgba(255,255,255,.4)';c.lineWidth=1;roundRect(c,x,y,w,h,8);c.stroke();c.restore();}
+function bg(c){c.clearRect(0,0,W,H);const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#141826');g.addColorStop(1,'#0A1628');c.fillStyle=g;c.fillRect(0,0,W,H);c.strokeStyle='#B22234';c.lineWidth=8;c.strokeRect(20,20,W-40,H-40);c.fillStyle='rgba(250,248,243,.9)';c.textAlign='center';c.font='bold 60px Georgia,serif';c.fillText('Celebrate',W/2,96);}
+function zone(c,x,y,w,h,col){if(!showZones)return;c.save();c.fillStyle=col;c.fillRect(x,y,w,h);c.restore();}
+
+// ---- CURRENT render: fixed wide hero 709x360 (shows bars) + grid below ----
+function renderCurrent(){const c=document.getElementById('cur').getContext('2d');bg(c);
+  const heroY=140,heroH=360;
+  // supporting grid (same as today: tabletop adaptive grid, simplified to a fill)
+  const GRIDS=[[1,1],[1,2],[2,2],[2,2],[2,3],[2,3],[3,3],[3,3],[3,3],[3,4],[3,4],[3,4],[3,5],[3,5],[3,5]];
+  const n=Math.min(N,15);const[rows,cols]=GRIDS[n-1];
+  const gTop=heroY+heroH+8,gBot=H-20,gH=gBot-gTop;
+  const cw=(innerW-gap*(cols-1))/cols,ch=(gH-gap*(rows-1))/rows;
+  for(let i=0;i<n;i++){const r=(i/cols)|0,col=i%cols;tile(c,SUP[i],margin+col*(cw+gap),gTop+r*(ch+gap),cw,ch);}
+  zone(c,margin,heroY,innerW,heroH,'rgba(196,97,122,.35)');
+  hero(c,HERO_IMG,margin,heroY,innerW,heroH,ORIENTS[cur].rot);
+}
+
+// ---- PROPOSED render: L-wrap ----
+function renderProposed(){const cv=document.getElementById('prop'),c=cv.getContext('2d');bg(c);
+  const L=lwrap(ORIENTS[cur].w,ORIENTS[cur].h,ORIENTS[cur].rot,N);
+  const ro=document.getElementById('readout');
+  if(L.landscape){ // unchanged path = same as current
+    const heroY=140,heroH=360;
+    const GRIDS=[[1,1],[1,2],[2,2],[2,2],[2,3],[2,3],[3,3],[3,3],[3,3],[3,4],[3,4],[3,4],[3,5],[3,5],[3,5]];
+    const n=Math.min(N,15);const[rows,cols]=GRIDS[n-1];const gTop=heroY+heroH+8,gBot=H-20,gH=gBot-gTop;
+    const cw=(innerW-gap*(cols-1))/cols,ch=(gH-gap*(rows-1))/rows;
+    for(let i=0;i<n;i++){const r=(i/cols)|0,col=i%cols;tile(c,SUP[i],margin+col*(cw+gap),gTop+r*(ch+gap),cw,ch);}
+    hero(c,HERO_IMG,margin,heroY,innerW,heroH,ORIENTS[cur].rot);
+    ro.innerHTML='<b>Landscape hero → unchanged.</b> Keeps the full-width '+innerW+'×360 hero + standard adaptive grid below. The L-wrap only triggers for portrait/square heroes.';
+    return;
+  }
+  let idx=0;
+  // side column (right of hero), row-major
+  zone(c,L.sideX,L.heroY,L.sideW,L.heroH,'rgba(74,158,204,.30)');
+  for(let r=0;r<L.sideRows && idx<L.sideCount;r++)for(let col=0;col<L.sideCols && idx<L.sideCount;col++){
+    const x=L.sideX+col*(L.sideCellW+gap),y=L.heroY+r*(L.sideCellH+gap);tile(c,SUP[idx++],x,y,L.sideCellW,L.sideCellH);}
+  // below grid (centered partial rows)
+  if(L.band){const{bCols,bRows,cell,bandH}=L.band;const belowTop=L.heroBot+gap;
+    zone(c,margin,belowTop,innerW,bandH,'rgba(90,143,106,.30)');
+    let bi=0,rem=L.belowCount;
+    for(let r=0;r<bRows;r++){const inRow=Math.min(bCols,rem);const rowW=inRow*cell+(inRow-1)*gap;const sx=margin+(innerW-rowW)/2;
+      for(let col=0;col<inRow;col++){tile(c,SUP[L.sideCount+bi++],sx+col*(cell+gap),belowTop+r*(cell+gap),cell,cell);}rem-=inRow;}
+  }
+  zone(c,L.heroX,L.heroY,L.heroW,L.heroH,'rgba(201,168,76,.18)');
+  hero(c,HERO_IMG,L.heroX,L.heroY,L.heroW,L.heroH,ORIENTS[cur].rot);
+  ro.innerHTML='<b>'+L.cl.kind+'</b> hero (aspect '+L.cl.a.toFixed(2)+') → cell <code>'+L.heroW+'×'+L.heroH+'</code>, left-anchored.<br>'+
+    '<b>Side</b> column <code>'+L.sideCols+'×'+L.sideRows+'</code> holds '+L.sideCount+' photo(s) in the gutter.<br>'+
+    '<b>Below</b> grid: '+(L.band?('<code>'+L.band.bCols+'×'+L.band.bRows+'</code> · '+L.belowCount+' photo(s) · '+Math.round(L.band.cell)+'px sq cells, centered'):'(none — all photos fit beside the hero)')+'.<br>'+
+    'Whole block vertically centered (top margin '+Math.round(L.heroY-availTop)+'px). No black bars on the hero.';
+}
+function renderProposedSafe(){try{renderProposed();}catch(e){document.getElementById('readout').textContent='err: '+e.message;}}
+function renderAll(){renderCurrent();renderProposedSafe();}
+
+// ---- UI wiring ----
+const ob=document.getElementById('orient-btns');
+Object.keys(ORIENTS).forEach(k=>{const b=document.createElement('button');b.textContent=ORIENTS[k].label;b.onclick=()=>{cur=k;rebuildPhotos();setTimeout(renderAll,40);document.querySelectorAll('#orient-btns button').forEach(x=>x.classList.toggle('on',x===b));};if(k===cur)b.classList.add('on');ob.appendChild(b);});
+document.getElementById('nrange').oninput=e=>{N=+e.target.value;document.getElementById('nval').textContent=N;renderAll();};
+document.getElementById('zones').onchange=e=>{showZones=e.target.checked;renderAll();};
+rebuildPhotos();
+// images load async; render after a tick and again on load
+window.addEventListener('load',()=>setTimeout(renderAll,120));
+setTimeout(renderAll,200);
+</script>
+</body></html>

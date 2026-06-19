@@ -1,0 +1,186 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 789 1200" font-family="sans-serif">
+<defs><linearGradient id="bgg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#141826"/><stop offset="1" stop-color="#0A1628"/></linearGradient></defs>
+<rect width="789" height="1200" fill="url(#bgg)"/>
+<rect x="20" y="20" width="749" height="1160" fill="none" stroke="#B22234" stroke-width="8"/>
+<text x="394.5" y="96" font-family="Georgia,serif" font-weight="bold" font-size="60" fill="rgba(250,248,243,0.92)" text-anchor="middle">Celebrate</text>
+<clipPath id="c1_40_508"><rect x="40.0" y="508.0" width="137.0" height="220.0" rx="8"/></clipPath>
+<linearGradient id="gc1_40_508" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ecd2bc"/><stop offset="1" stop-color="#a5563a"/></linearGradient>
+<rect x="40.0" y="508.0" width="137.0" height="220.0" rx="8" fill="#0a0a0a"/>
+<g clip-path="url(#c1_40_508)">
+<g transform="translate(108.5,618.0) rotate(0)">
+<rect x="-68.5" y="-91.3" width="137.0" height="182.7" fill="url(#gc1_40_508)"/>
+<circle cx="0.0" cy="-29.2" r="23.3" fill="rgba(0,0,0,0.28)"/>
+<path d="M -46.6 82.2 A 46.6 46.6 0 0 1 46.6 82.2 Z" fill="rgba(0,0,0,0.28)"/>
+<text x="0" y="-18.3" font-family="sans-serif" font-weight="bold" font-size="25" fill="rgba(255,255,255,0.92)" text-anchor="middle">2</text>
+</g></g>
+<rect x="40.0" y="508.0" width="137.0" height="220.0" rx="8" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+<clipPath id="c2_183_508"><rect x="183.0" y="508.0" width="137.0" height="220.0" rx="8"/></clipPath>
+<linearGradient id="gc2_183_508" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfe8d4"/><stop offset="1" stop-color="#5a8f6a"/></linearGradient>
+<rect x="183.0" y="508.0" width="137.0" height="220.0" rx="8" fill="#0a0a0a"/>
+<g clip-path="url(#c2_183_508)">
+<g transform="translate(251.5,618.0) rotate(0)">
+<rect x="-68.5" y="-91.3" width="137.0" height="182.7" fill="url(#gc2_183_508)"/>
+<circle cx="0.0" cy="-29.2" r="23.3" fill="rgba(0,0,0,0.28)"/>
+<path d="M -46.6 82.2 A 46.6 46.6 0 0 1 46.6 82.2 Z" fill="rgba(0,0,0,0.28)"/>
+<text x="0" y="-18.3" font-family="sans-serif" font-weight="bold" font-size="25" fill="rgba(255,255,255,0.92)" text-anchor="middle">3</text>
+</g></g>
+<rect x="183.0" y="508.0" width="137.0" height="220.0" rx="8" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+<clipPath id="c3_326_508"><rect x="326.0" y="508.0" width="137.0" height="220.0" rx="8"/></clipPath>
+<linearGradient id="gc3_326_508" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ddd0ec"/><stop offset="1" stop-color="#7a5aa0"/></linearGradient>
+<rect x="326.0" y="508.0" width="137.0" height="220.0" rx="8" fill="#0a0a0a"/>
+<g clip-path="url(#c3_326_508)">
+<g transform="translate(394.5,618.0) rotate(0)">
+<rect x="-68.5" y="-91.3" width="137.0" height="182.7" fill="url(#gc3_326_508)"/>
+<circle cx="0.0" cy="-29.2" r="23.3" fill="rgba(0,0,0,0.28)"/>
+<path d="M -46.6 82.2 A 46.6 46.6 0 0 1 46.6 82.2 Z" fill="rgba(0,0,0,0.28)"/>
+<text x="0" y="-18.3" font-family="sans-serif" font-weight="bold" font-size="25" fill="rgba(255,255,255,0.92)" text-anchor="middle">4</text>
+</g></g>
+<rect x="326.0" y="508.0" width="137.0" height="220.0" rx="8" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+<clipPath id="c4_469_508"><rect x="469.0" y="508.0" width="137.0" height="220.0" rx="8"/></clipPath>
+<linearGradient id="gc4_469_508" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ece2bc"/><stop offset="1" stop-color="#a08a3a"/></linearGradient>
+<rect x="469.0" y="508.0" width="137.0" height="220.0" rx="8" fill="#0a0a0a"/>
+<g clip-path="url(#c4_469_508)">
+<g transform="translate(537.5,618.0) rotate(0)">
+<rect x="-68.5" y="-91.3" width="137.0" height="182.7" fill="url(#gc4_469_508)"/>
+<circle cx="0.0" cy="-29.2" r="23.3" fill="rgba(0,0,0,0.28)"/>
+<path d="M -46.6 82.2 A 46.6 46.6 0 0 1 46.6 82.2 Z" fill="rgba(0,0,0,0.28)"/>
+<text x="0" y="-18.3" font-family="sans-serif" font-weight="bold" font-size="25" fill="rgba(255,255,255,0.92)" text-anchor="middle">5</text>
+</g></g>
+<rect x="469.0" y="508.0" width="137.0" height="220.0" rx="8" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+<clipPath id="c5_612_508"><rect x="612.0" y="508.0" width="137.0" height="220.0" rx="8"/></clipPath>
+<linearGradient id="gc5_612_508" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ecbcd0"/><stop offset="1" stop-color="#9a3a5a"/></linearGradient>
+<rect x="612.0" y="508.0" width="137.0" height="220.0" rx="8" fill="#0a0a0a"/>
+<g clip-path="url(#c5_612_508)">
+<g transform="translate(680.5,618.0) rotate(0)">
+<rect x="-68.5" y="-91.3" width="137.0" height="182.7" fill="url(#gc5_612_508)"/>
+<circle cx="0.0" cy="-29.2" r="23.3" fill="rgba(0,0,0,0.28)"/>
+<path d="M -46.6 82.2 A 46.6 46.6 0 0 1 46.6 82.2 Z" fill="rgba(0,0,0,0.28)"/>
+<text x="0" y="-18.3" font-family="sans-serif" font-weight="bold" font-size="25" fill="rgba(255,255,255,0.92)" text-anchor="middle">6</text>
+</g></g>
+<rect x="612.0" y="508.0" width="137.0" height="220.0" rx="8" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+<clipPath id="c6_40_734"><rect x="40.0" y="734.0" width="137.0" height="220.0" rx="8"/></clipPath>
+<linearGradient id="gc6_40_734" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bcd4ec"/><stop offset="1" stop-color="#3a6ea5"/></linearGradient>
+<rect x="40.0" y="734.0" width="137.0" height="220.0" rx="8" fill="#0a0a0a"/>
+<g clip-path="url(#c6_40_734)">
+<g transform="translate(108.5,844.0) rotate(0)">
+<rect x="-68.5" y="-91.3" width="137.0" height="182.7" fill="url(#gc6_40_734)"/>
+<circle cx="0.0" cy="-29.2" r="23.3" fill="rgba(0,0,0,0.28)"/>
+<path d="M -46.6 82.2 A 46.6 46.6 0 0 1 46.6 82.2 Z" fill="rgba(0,0,0,0.28)"/>
+<text x="0" y="-18.3" font-family="sans-serif" font-weight="bold" font-size="25" fill="rgba(255,255,255,0.92)" text-anchor="middle">7</text>
+</g></g>
+<rect x="40.0" y="734.0" width="137.0" height="220.0" rx="8" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+<clipPath id="c7_183_734"><rect x="183.0" y="734.0" width="137.0" height="220.0" rx="8"/></clipPath>
+<linearGradient id="gc7_183_734" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ecd2bc"/><stop offset="1" stop-color="#a5563a"/></linearGradient>
+<rect x="183.0" y="734.0" width="137.0" height="220.0" rx="8" fill="#0a0a0a"/>
+<g clip-path="url(#c7_183_734)">
+<g transform="translate(251.5,844.0) rotate(0)">
+<rect x="-68.5" y="-91.3" width="137.0" height="182.7" fill="url(#gc7_183_734)"/>
+<circle cx="0.0" cy="-29.2" r="23.3" fill="rgba(0,0,0,0.28)"/>
+<path d="M -46.6 82.2 A 46.6 46.6 0 0 1 46.6 82.2 Z" fill="rgba(0,0,0,0.28)"/>
+<text x="0" y="-18.3" font-family="sans-serif" font-weight="bold" font-size="25" fill="rgba(255,255,255,0.92)" text-anchor="middle">8</text>
+</g></g>
+<rect x="183.0" y="734.0" width="137.0" height="220.0" rx="8" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+<clipPath id="c8_326_734"><rect x="326.0" y="734.0" width="137.0" height="220.0" rx="8"/></clipPath>
+<linearGradient id="gc8_326_734" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfe8d4"/><stop offset="1" stop-color="#5a8f6a"/></linearGradient>
+<rect x="326.0" y="734.0" width="137.0" height="220.0" rx="8" fill="#0a0a0a"/>
+<g clip-path="url(#c8_326_734)">
+<g transform="translate(394.5,844.0) rotate(0)">
+<rect x="-68.5" y="-91.3" width="137.0" height="182.7" fill="url(#gc8_326_734)"/>
+<circle cx="0.0" cy="-29.2" r="23.3" fill="rgba(0,0,0,0.28)"/>
+<path d="M -46.6 82.2 A 46.6 46.6 0 0 1 46.6 82.2 Z" fill="rgba(0,0,0,0.28)"/>
+<text x="0" y="-18.3" font-family="sans-serif" font-weight="bold" font-size="25" fill="rgba(255,255,255,0.92)" text-anchor="middle">9</text>
+</g></g>
+<rect x="326.0" y="734.0" width="137.0" height="220.0" rx="8" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+<clipPath id="c9_469_734"><rect x="469.0" y="734.0" width="137.0" height="220.0" rx="8"/></clipPath>
+<linearGradient id="gc9_469_734" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ddd0ec"/><stop offset="1" stop-color="#7a5aa0"/></linearGradient>
+<rect x="469.0" y="734.0" width="137.0" height="220.0" rx="8" fill="#0a0a0a"/>
+<g clip-path="url(#c9_469_734)">
+<g transform="translate(537.5,844.0) rotate(0)">
+<rect x="-68.5" y="-91.3" width="137.0" height="182.7" fill="url(#gc9_469_734)"/>
+<circle cx="0.0" cy="-29.2" r="23.3" fill="rgba(0,0,0,0.28)"/>
+<path d="M -46.6 82.2 A 46.6 46.6 0 0 1 46.6 82.2 Z" fill="rgba(0,0,0,0.28)"/>
+<text x="0" y="-18.3" font-family="sans-serif" font-weight="bold" font-size="25" fill="rgba(255,255,255,0.92)" text-anchor="middle">10</text>
+</g></g>
+<rect x="469.0" y="734.0" width="137.0" height="220.0" rx="8" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+<clipPath id="c10_612_734"><rect x="612.0" y="734.0" width="137.0" height="220.0" rx="8"/></clipPath>
+<linearGradient id="gc10_612_734" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ece2bc"/><stop offset="1" stop-color="#a08a3a"/></linearGradient>
+<rect x="612.0" y="734.0" width="137.0" height="220.0" rx="8" fill="#0a0a0a"/>
+<g clip-path="url(#c10_612_734)">
+<g transform="translate(680.5,844.0) rotate(0)">
+<rect x="-68.5" y="-91.3" width="137.0" height="182.7" fill="url(#gc10_612_734)"/>
+<circle cx="0.0" cy="-29.2" r="23.3" fill="rgba(0,0,0,0.28)"/>
+<path d="M -46.6 82.2 A 46.6 46.6 0 0 1 46.6 82.2 Z" fill="rgba(0,0,0,0.28)"/>
+<text x="0" y="-18.3" font-family="sans-serif" font-weight="bold" font-size="25" fill="rgba(255,255,255,0.92)" text-anchor="middle">11</text>
+</g></g>
+<rect x="612.0" y="734.0" width="137.0" height="220.0" rx="8" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+<clipPath id="c11_40_960"><rect x="40.0" y="960.0" width="137.0" height="220.0" rx="8"/></clipPath>
+<linearGradient id="gc11_40_960" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ecbcd0"/><stop offset="1" stop-color="#9a3a5a"/></linearGradient>
+<rect x="40.0" y="960.0" width="137.0" height="220.0" rx="8" fill="#0a0a0a"/>
+<g clip-path="url(#c11_40_960)">
+<g transform="translate(108.5,1070.0) rotate(0)">
+<rect x="-68.5" y="-91.3" width="137.0" height="182.7" fill="url(#gc11_40_960)"/>
+<circle cx="0.0" cy="-29.2" r="23.3" fill="rgba(0,0,0,0.28)"/>
+<path d="M -46.6 82.2 A 46.6 46.6 0 0 1 46.6 82.2 Z" fill="rgba(0,0,0,0.28)"/>
+<text x="0" y="-18.3" font-family="sans-serif" font-weight="bold" font-size="25" fill="rgba(255,255,255,0.92)" text-anchor="middle">12</text>
+</g></g>
+<rect x="40.0" y="960.0" width="137.0" height="220.0" rx="8" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+<clipPath id="c12_183_960"><rect x="183.0" y="960.0" width="137.0" height="220.0" rx="8"/></clipPath>
+<linearGradient id="gc12_183_960" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bcd4ec"/><stop offset="1" stop-color="#3a6ea5"/></linearGradient>
+<rect x="183.0" y="960.0" width="137.0" height="220.0" rx="8" fill="#0a0a0a"/>
+<g clip-path="url(#c12_183_960)">
+<g transform="translate(251.5,1070.0) rotate(0)">
+<rect x="-68.5" y="-91.3" width="137.0" height="182.7" fill="url(#gc12_183_960)"/>
+<circle cx="0.0" cy="-29.2" r="23.3" fill="rgba(0,0,0,0.28)"/>
+<path d="M -46.6 82.2 A 46.6 46.6 0 0 1 46.6 82.2 Z" fill="rgba(0,0,0,0.28)"/>
+<text x="0" y="-18.3" font-family="sans-serif" font-weight="bold" font-size="25" fill="rgba(255,255,255,0.92)" text-anchor="middle">13</text>
+</g></g>
+<rect x="183.0" y="960.0" width="137.0" height="220.0" rx="8" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+<clipPath id="c13_326_960"><rect x="326.0" y="960.0" width="137.0" height="220.0" rx="8"/></clipPath>
+<linearGradient id="gc13_326_960" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ecd2bc"/><stop offset="1" stop-color="#a5563a"/></linearGradient>
+<rect x="326.0" y="960.0" width="137.0" height="220.0" rx="8" fill="#0a0a0a"/>
+<g clip-path="url(#c13_326_960)">
+<g transform="translate(394.5,1070.0) rotate(0)">
+<rect x="-68.5" y="-91.3" width="137.0" height="182.7" fill="url(#gc13_326_960)"/>
+<circle cx="0.0" cy="-29.2" r="23.3" fill="rgba(0,0,0,0.28)"/>
+<path d="M -46.6 82.2 A 46.6 46.6 0 0 1 46.6 82.2 Z" fill="rgba(0,0,0,0.28)"/>
+<text x="0" y="-18.3" font-family="sans-serif" font-weight="bold" font-size="25" fill="rgba(255,255,255,0.92)" text-anchor="middle">14</text>
+</g></g>
+<rect x="326.0" y="960.0" width="137.0" height="220.0" rx="8" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+<clipPath id="c14_469_960"><rect x="469.0" y="960.0" width="137.0" height="220.0" rx="8"/></clipPath>
+<linearGradient id="gc14_469_960" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfe8d4"/><stop offset="1" stop-color="#5a8f6a"/></linearGradient>
+<rect x="469.0" y="960.0" width="137.0" height="220.0" rx="8" fill="#0a0a0a"/>
+<g clip-path="url(#c14_469_960)">
+<g transform="translate(537.5,1070.0) rotate(0)">
+<rect x="-68.5" y="-91.3" width="137.0" height="182.7" fill="url(#gc14_469_960)"/>
+<circle cx="0.0" cy="-29.2" r="23.3" fill="rgba(0,0,0,0.28)"/>
+<path d="M -46.6 82.2 A 46.6 46.6 0 0 1 46.6 82.2 Z" fill="rgba(0,0,0,0.28)"/>
+<text x="0" y="-18.3" font-family="sans-serif" font-weight="bold" font-size="25" fill="rgba(255,255,255,0.92)" text-anchor="middle">15</text>
+</g></g>
+<rect x="469.0" y="960.0" width="137.0" height="220.0" rx="8" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+<clipPath id="c15_612_960"><rect x="612.0" y="960.0" width="137.0" height="220.0" rx="8"/></clipPath>
+<linearGradient id="gc15_612_960" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ddd0ec"/><stop offset="1" stop-color="#7a5aa0"/></linearGradient>
+<rect x="612.0" y="960.0" width="137.0" height="220.0" rx="8" fill="#0a0a0a"/>
+<g clip-path="url(#c15_612_960)">
+<g transform="translate(680.5,1070.0) rotate(0)">
+<rect x="-68.5" y="-91.3" width="137.0" height="182.7" fill="url(#gc15_612_960)"/>
+<circle cx="0.0" cy="-29.2" r="23.3" fill="rgba(0,0,0,0.28)"/>
+<path d="M -46.6 82.2 A 46.6 46.6 0 0 1 46.6 82.2 Z" fill="rgba(0,0,0,0.28)"/>
+<text x="0" y="-18.3" font-family="sans-serif" font-weight="bold" font-size="25" fill="rgba(255,255,255,0.92)" text-anchor="middle">16</text>
+</g></g>
+<rect x="612.0" y="960.0" width="137.0" height="220.0" rx="8" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+<clipPath id="c0_40_140"><rect x="40.0" y="140.0" width="709.0" height="360.0" rx="8"/></clipPath>
+<linearGradient id="gc0_40_140" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bcd4ec"/><stop offset="1" stop-color="#3a6ea5"/></linearGradient>
+<rect x="40.0" y="140.0" width="709.0" height="360.0" rx="8" fill="#0a0a0a"/>
+<g clip-path="url(#c0_40_140)">
+<g transform="translate(394.5,320.0) rotate(0)">
+<rect x="-270.0" y="-180.0" width="540.0" height="360.0" fill="url(#gc0_40_140)"/>
+<circle cx="0.0" cy="-57.6" r="91.8" fill="rgba(0,0,0,0.28)"/>
+<path d="M -183.6 162.0 A 183.6 183.6 0 0 1 183.6 162.0 Z" fill="rgba(0,0,0,0.28)"/>
+<text x="0" y="-36.0" font-family="sans-serif" font-weight="bold" font-size="97" fill="rgba(255,255,255,0.92)" text-anchor="middle">1</text>
+</g></g>
+<rect x="40.0" y="140.0" width="709.0" height="360.0" rx="8" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+<rect x="40.0" y="140.0" width="709.0" height="360.0" rx="14" fill="none" stroke="#C9A84C" stroke-width="3"/>
+<rect x="0" y="1154" width="789" height="46" fill="rgba(0,0,0,0.55)"/>
+<text x="394.5" y="1174" font-size="17" font-weight="bold" fill="#E8C97A" text-anchor="middle">Landscape hero · 15 photos (UNCHANGED)</text>
+<text x="394.5" y="1191" font-size="12" fill="rgba(250,248,243,0.8)" text-anchor="middle">LANDSCAPE hero (a=1.50) — UNCHANGED: full-width 709x360 hero + standard grid.</text>
+</svg>
