@@ -250,6 +250,19 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
   .photo-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
   .progress-track { top: 58px; }
 }
+/* Tabletop v2 — Design-page debug panel (source of truth before Preview) */
+.v2-debug-section { border: 1px dashed rgba(201, 168, 76, 0.55); background: var(--obsidian); border-radius: 12px; padding: 18px 22px; }
+.v2-debug-section .design-section-title { color: var(--gold2); }
+.v2-debug-section .design-section-meta { color: rgba(250, 248, 243, 0.65); }
+.v2-debug-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px 32px; margin-top: 14px; }
+.v2-debug-cell { display: flex; flex-direction: column; gap: 6px; }
+.v2-debug-cell-wide { grid-column: 1 / -1; }
+.v2-debug-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gold); font-weight: 700; }
+.v2-debug-value { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; color: var(--ivory); white-space: pre; line-height: 1.55; word-break: break-all; }
+.v2-debug-value.v2-debug-empty { color: rgba(250, 248, 243, 0.45); font-style: italic; white-space: normal; }
+.v2-debug-arrange { color: var(--gold2); font-weight: 700; font-size: 17px; letter-spacing: 0.04em; }
+.v2-debug-family { color: var(--gold3); font-weight: 700; font-size: 17px; letter-spacing: 0.04em; }
+.v2-debug-count { color: var(--gold2); font-weight: 700; font-size: 18px; }
 </style>
 </head>
 <body>
@@ -410,6 +423,19 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
       </div>
       <div class="hero-tip">🖼 Click any photo to apply the selected frame.</div>
       <div class="photo-grid" id="design-frame-grid"></div>
+    </div>
+    <div class="design-section v2-debug-section" id="tabletop-v2-debug" style="display:none;">
+      <div class="design-section-head"><div class="design-section-title">🎯 Tabletop v2 — layout assignment</div><div class="design-section-meta">Source of truth — Preview & Download use this exact assignment</div></div>
+      <div class="v2-debug-grid">
+        <div class="v2-debug-cell"><div class="v2-debug-label">Hero</div><div class="v2-debug-value" id="v2-debug-hero">—</div></div>
+        <div class="v2-debug-cell"><div class="v2-debug-label">Supporting photos</div><div class="v2-debug-value" id="v2-debug-supporting">—</div></div>
+        <div class="v2-debug-cell"><div class="v2-debug-label">Orientation detected</div><div class="v2-debug-value" id="v2-debug-orientations">—</div></div>
+        <div class="v2-debug-cell"><div class="v2-debug-label">Portrait count</div><div class="v2-debug-value v2-debug-count" id="v2-debug-p-count">—</div></div>
+        <div class="v2-debug-cell"><div class="v2-debug-label">Landscape count</div><div class="v2-debug-value v2-debug-count" id="v2-debug-l-count">—</div></div>
+        <div class="v2-debug-cell"><div class="v2-debug-label">Selected family</div><div class="v2-debug-value v2-debug-family" id="v2-debug-family">—</div></div>
+        <div class="v2-debug-cell"><div class="v2-debug-label">Selected arrangement</div><div class="v2-debug-value v2-debug-arrange" id="v2-debug-arrangement">—</div></div>
+        <div class="v2-debug-cell v2-debug-cell-wide"><div class="v2-debug-label">Cell assignment</div><div class="v2-debug-value" id="v2-debug-assignment">—</div></div>
+      </div>
     </div>
     <div class="design-section">
       <div class="design-section-head"><div class="design-section-title">Layout</div><div class="design-section-meta">All uploaded photos render in the final banner</div></div>
@@ -678,7 +704,11 @@ function refreshUploadStats(){const stats=document.getElementById('upload-stats'
 function removePhoto(id){state.images=state.images.filter(p=>p.id!==id);delete state.frames[id];if(state.heroImage===id)state.heroImage=state.images[0]?.id||null;state.previewGenerated=false;_tabletopV2InvalidatePlacement();renderUploadGrid();}
 
 // ── STEP 2: DESIGN ───────────────────────────────────────────
-function renderDesignGrids(){const hg=document.getElementById('design-hero-grid');const fg=document.getElementById('design-frame-grid');hg.innerHTML='';fg.innerHTML='';state.images.forEach(p=>{const hCell=document.createElement('div');hCell.className='photo-cell'+(p.id===state.heroImage?' is-hero':'');hCell.innerHTML=`<img src="${p.dataUrl}" alt="${p.name}">${p.id===state.heroImage?'<div class="cell-badge">Hero</div>':''}`;hCell.addEventListener('click',()=>{state.heroImage=p.id;state.previewGenerated=false;_tabletopV2InvalidatePlacement();renderDesignGrids();});hg.appendChild(hCell);const fr=frameOf(p.id);const rot=state.rotations[p.id]||0;const fCell=document.createElement('div');fCell.className='photo-cell'+(p.id===state.heroImage?' is-hero':'');fCell.innerHTML=`<img src="${p.dataUrl}" alt="${p.name}" style="transform:rotate(${rot}deg);"><button class="cell-rot-btn" type="button" title="Rotate 90°">↻</button><div class="cell-frame-badge">${p.id===state.heroImage?'Hero · ':''}${FRAME_LABELS[fr]}${rot?' · '+rot+'°':''}</div>`;fCell.addEventListener('click',e=>{if(e.target.closest('.cell-rot-btn')){rotatePhoto(p.id);return;}applyFrameTo(p.id);});fg.appendChild(fCell);});renderTextFields();renderFrameTabs();}
+function renderDesignGrids(){const hg=document.getElementById('design-hero-grid');const fg=document.getElementById('design-frame-grid');hg.innerHTML='';fg.innerHTML='';state.images.forEach(p=>{const hCell=document.createElement('div');hCell.className='photo-cell'+(p.id===state.heroImage?' is-hero':'');hCell.innerHTML=`<img src="${p.dataUrl}" alt="${p.name}">${p.id===state.heroImage?'<div class="cell-badge">Hero</div>':''}`;hCell.addEventListener('click',()=>{state.heroImage=p.id;state.previewGenerated=false;_tabletopV2InvalidatePlacement();renderDesignGrids();});hg.appendChild(hCell);const fr=frameOf(p.id);const rot=state.rotations[p.id]||0;const fCell=document.createElement('div');fCell.className='photo-cell'+(p.id===state.heroImage?' is-hero':'');fCell.innerHTML=`<img src="${p.dataUrl}" alt="${p.name}" style="transform:rotate(${rot}deg);"><button class="cell-rot-btn" type="button" title="Rotate 90°">↻</button><div class="cell-frame-badge">${p.id===state.heroImage?'Hero · ':''}${FRAME_LABELS[fr]}${rot?' · '+rot+'°':''}</div>`;fCell.addEventListener('click',e=>{if(e.target.closest('.cell-rot-btn')){rotatePhoto(p.id);return;}applyFrameTo(p.id);});fg.appendChild(fCell);});renderTextFields();renderFrameTabs();renderTabletopV2DebugPanel();}
+// Design-page debug panel — visualizes the v2 layout assignment that Preview and Download will use.
+// Calls _tabletopV2GetFrozenPlacement(photos) so this panel IS the source of truth: building the
+// freeze here means subsequent Preview/Download renders read the same cached placement object.
+function renderTabletopV2DebugPanel(){const panel=document.getElementById('tabletop-v2-debug');if(!panel)return;if(state.product!=='tabletop'){panel.style.display='none';return;}panel.style.display='';const set=(id,val,empty)=>{const el=document.getElementById(id);if(!el)return;el.textContent=val;el.classList.toggle('v2-debug-empty',!!empty);};if(!state.heroImage||state.images.length===0){set('v2-debug-hero','—',true);set('v2-debug-supporting','Upload photos and pick a hero on Step 2 to compute the layout assignment.',true);set('v2-debug-orientations','—',true);set('v2-debug-p-count','—',true);set('v2-debug-l-count','—',true);set('v2-debug-family','—',true);set('v2-debug-arrangement','—',true);set('v2-debug-assignment','—',true);return;}const ids=selectImages();const photos=ids.map(id=>state.images.find(p=>p.id===id)).filter(Boolean);const hero=photos[0];const supporting=photos.slice(1,9);const placement=_tabletopV2GetFrozenPlacement(photos);set('v2-debug-hero',hero.id||'—');const supLines=[];for(let i=0;i<8;i++)supLines.push((i+1)+'. '+(supporting[i]?supporting[i].id:'—'));set('v2-debug-supporting',supLines.join('\n'));const oriCodes=supporting.map(p=>{const k=orientationOf(p);return k==='portrait'?'P':k==='landscape'?'L':'S';});const oriLines=[];for(let i=0;i<8;i++)oriLines.push(oriCodes[i]||'—');set('v2-debug-orientations',oriLines.join('\n'));set('v2-debug-p-count',String(oriCodes.filter(o=>o==='P').length));set('v2-debug-l-count',String(oriCodes.filter(o=>o==='L').length));set('v2-debug-family',placement.family);set('v2-debug-arrangement',placement.layoutId);let pIdx=0,lIdx=0;const lines=[];for(let i=0;i<placement.cellTypes.length;i++){const t=placement.cellTypes[i];const label=t==='P'?'P'+(++pIdx):'L'+(++lIdx);const pid=placement.photoIdsByCell[i]||'(none)';lines.push(label+' -> '+pid);}set('v2-debug-assignment',lines.join('\n'));}
 function renderTextFields(){const c=document.getElementById('text-fields-container');if(!c)return;const fields=(state.theme&&state.theme.fields)||[];c.innerHTML=fields.map(key=>{const meta=getFieldMeta(state.theme,key);const val=(state.bannerText[key]||'').replace(/"/g,'&quot;');return`<label class="field"><span class="field-label">${meta.label}</span><input type="text" data-text-field="${key}" placeholder="${meta.placeholder}" value="${val}" oninput="updateText('${key}',this.value)" maxlength="60"></label>`;}).join('');}
 function renderFrameTabs(){const gr=document.getElementById('frame-groups');if(!gr)return;gr.innerHTML='';FRAME_GROUPS.forEach(group=>{const wrap=document.createElement('div');wrap.className='frame-group';const lbl=document.createElement('div');lbl.className='frame-group-label';lbl.textContent=group.label;const tabs=document.createElement('div');tabs.className='frame-tabs';group.frames.forEach(f=>{const b=document.createElement('button');b.type='button';b.className='frame-tab'+(f===state.activeFrame?' active':'');b.dataset.frame=f;b.textContent=FRAME_LABELS[f];b.onclick=()=>setActiveFrame(f);tabs.appendChild(b);});wrap.appendChild(lbl);wrap.appendChild(tabs);gr.appendChild(wrap);});updateFrameStatus();}
 function updateFrameStatus(){const n=document.getElementById('frame-status-name');if(n)n.textContent=FRAME_LABELS[state.activeFrame]||'Rounded';}
