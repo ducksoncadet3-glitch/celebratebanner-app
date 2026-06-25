@@ -205,6 +205,35 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
 .delivery-card { border: 2px solid var(--border2); border-radius: var(--r2); padding: 22px; cursor: pointer; transition: all 0.2s; background: var(--white); position: relative; }
 .delivery-card:hover { border-color: var(--gold); }
 .delivery-card.sel { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.15); }
+/* Revenue Engine Phase 1 — package + add-on UI */
+.package-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 1.5rem; }
+.package-card { position: relative; border: 2px solid var(--border2); border-radius: var(--r2); padding: 22px; background: var(--white); cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; }
+.package-card:hover { border-color: var(--gold); transform: translateY(-2px); }
+.package-card.sel { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.18); }
+.package-card.recommended { border-color: rgba(201,168,76,0.65); background: linear-gradient(180deg, rgba(201,168,76,0.04), rgba(255,255,255,1)); }
+.package-card-badge { position: absolute; top: -10px; left: 16px; background: linear-gradient(135deg, var(--gold), var(--gold2)); color: var(--ink); font-size: 10px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; padding: 5px 11px; border-radius: 999px; box-shadow: 0 4px 14px rgba(201,168,76,0.35); }
+.package-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.package-card-name { font-family: 'Cormorant Garamond', serif; font-size: 21px; font-weight: 700; color: var(--ink); margin: 0; }
+.package-card-price { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 700; color: var(--gold-dark); }
+.package-card-tagline { font-size: 13.5px; color: var(--muted); margin: 4px 0 14px; line-height: 1.45; }
+.package-card-includes { list-style: none; padding: 0; margin: 0 0 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.package-card-includes li { font-size: 12.5px; color: rgba(12,14,20,0.78); padding-left: 18px; position: relative; line-height: 1.45; }
+.package-card-includes li::before { content: '✓'; position: absolute; left: 0; top: 0; color: var(--gold); font-weight: 700; font-size: 12px; }
+.package-card-cta { display: inline-block; padding: 9px 16px; background: var(--ink); color: var(--ivory); border-radius: 8px; font-size: 13px; font-weight: 700; text-align: center; align-self: flex-start; }
+.package-card.sel .package-card-cta { background: var(--gold); color: var(--ink); }
+.addons-section { margin-bottom: 1.5rem; padding: 22px; border: 1px dashed rgba(201,168,76,0.35); border-radius: var(--r2); background: rgba(201,168,76,0.04); }
+.addons-section-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; color: var(--ink); margin: 0 0 4px; }
+.addons-section-sub { font-size: 13.5px; color: var(--muted); margin: 0 0 16px; }
+.addons-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.addon-card { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border: 1px solid var(--border2); border-radius: var(--r1); background: var(--white); cursor: pointer; transition: 0.18s; }
+.addon-card:hover { border-color: var(--gold); }
+.addon-card.sel { border-color: var(--gold); background: rgba(201,168,76,0.08); }
+.addon-card-check { margin-top: 3px; flex-shrink: 0; width: 18px; height: 18px; accent-color: var(--gold); cursor: pointer; }
+.addon-card-body { flex: 1; }
+.addon-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.addon-card-name { font-size: 14px; font-weight: 700; color: var(--ink); }
+.addon-card-price { font-size: 13.5px; font-weight: 700; color: var(--gold-dark); }
+.addon-card-tagline { font-size: 12.5px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
 .delivery-icon { font-size: 32px; margin-bottom: 12px; }
 .delivery-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
 .delivery-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
@@ -495,28 +524,20 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
   </section>
   <section class="page" id="pg-4">
     <div class="sec-eyebrow">Step 5 of 5</div>
-    <h1 class="sec-title">Choose delivery</h1>
-    <p class="sec-sub">Get your banner instantly as a download, or have us print and ship.</p>
-    <div class="delivery-cards">
-      <div class="delivery-card sel" data-delivery="digital" onclick="setDelivery('digital')">
-        <div class="delivery-icon">⬇️</div>
-        <div class="delivery-name">Digital Download</div>
-        <div class="delivery-desc">High-resolution JPG + PDF, ready in seconds.</div>
-        <div class="delivery-price" id="price-digital">$9.99</div>
-      </div>
-      <div class="delivery-card" data-delivery="print" onclick="setDelivery('print')">
-        <div class="delivery-icon">📦</div>
-        <div class="delivery-name">Printed Banner</div>
-        <div class="delivery-desc">Pro-printed <span class="js-trim-label">24×36</span>" <span class="js-product-noun">vinyl banner</span>, shipped to your door.</div>
-        <div class="delivery-price" id="price-print">$79.99</div>
-      </div>
+    <h1 class="sec-title">Choose your package</h1>
+    <p class="sec-sub">Pick the package that fits your celebration. Add extras to expand the bundle.</p>
+    <div class="package-cards" id="package-cards"></div>
+    <div class="addons-section">
+      <h3 class="addons-section-title">Add-ons</h3>
+      <p class="addons-section-sub">Optional — toggle any to add to your package.</p>
+      <div class="addons-grid" id="addons-grid"></div>
     </div>
     <div class="summary-card">
       <div class="summary-title">Order Summary</div>
       <div class="sum-row"><span class="sum-key">Banner layout</span><span id="sum-mode">Standard</span></div>
       <div class="sum-row"><span class="sum-key">Photos in render</span><span id="sum-count">—</span></div>
-      <div class="sum-row" id="sum-premium-row" style="display:none;"><span class="sum-key">Premium upgrade</span><span>+$9.99</span></div>
-      <div class="sum-row"><span class="sum-key" id="sum-delivery-key">Digital download</span><span id="sum-delivery-price">$9.99</span></div>
+      <div class="sum-row" id="sum-package-row"><span class="sum-key" id="sum-package-name">Digital Download</span><span id="sum-package-price">$9.99</span></div>
+      <div id="sum-addons-rows"></div>
       <div class="sum-row total"><span>Total</span><span id="sum-total">$9.99</span></div>
     </div>
     <div id="ship-state-row" style="display:none; margin: 1rem 0; text-align: left;">
@@ -566,7 +587,85 @@ const ARRANGEMENTS=[
   {id:'scattered',label:'Scattered',sub:'Hero centered, 16 photos pinned around it · Best with 17 photos',tier:'premium',minPhotos:5,maxPhotos:17},
   {id:'mosaic',label:'Mosaic',sub:'Hero centered, photos fill every side · Best with 27 photos',tier:'premium',minPhotos:8,maxPhotos:27},
 ];
-const state={theme:null,images:[],heroImage:null,shuffledSeed:null,selectedImages:[],frames:{},rotations:{},activeFrame:'rounded',bannerText:{},isPremium:false,arrangement:'classic',previewGenerated:false,previewCacheKey:'',delivery:'digital',step:0,product:null,marketingProduct:null,termsAcceptedAt:null,tabletopFrozenPlacement:null};
+const state={theme:null,images:[],heroImage:null,shuffledSeed:null,selectedImages:[],frames:{},rotations:{},activeFrame:'rounded',bannerText:{},isPremium:false,arrangement:'classic',previewGenerated:false,previewCacheKey:'',delivery:'digital',step:0,product:null,marketingProduct:null,termsAcceptedAt:null,tabletopFrozenPlacement:null,selectedPackage:'digital',selectedAddOns:[]};
+// ── PRICING CONFIG (Revenue Engine · Phase 2 — per-product pricing) ────────────
+// basePackages = the package types' meta (name, tagline, includes, stripe link, kind).
+// byProduct    = which packages are available per marketing product, and at what price.
+// addOns       = global add-ons (apply to every product).
+// _activePackage() merges basePackages[id] with byProduct[marketingProduct][id].price
+// so callers (renderPackages / refreshSummary / placeholderCheckout) keep their existing shape.
+const PRICING={
+  basePackages:{
+    digital:{
+      id:'digital',
+      name:'Digital Download',
+      tagline:'Instant high-resolution JPG + PDF.',
+      includes:['High-resolution JPG + PDF','300 DPI print-ready file','Delivered in seconds','Email + on-screen download'],
+      stripeLink:'https://buy.stripe.com/7sY8wHeEUb9n27KgxR83C00',
+      kind:'digital',
+    },
+    premium:{
+      id:'premium',
+      name:'Premium Printed Product',
+      tagline:'Pro-printed, shipped to your door.',
+      includes:['Premium vinyl print','24×36" trim with bleed','Reinforced grommets','Ground shipping (lower 48)'],
+      stripeLink:'https://buy.stripe.com/bJe28j1S8fpDdQs81l83C05',
+      kind:'print',
+    },
+    bundle:{
+      id:'bundle',
+      name:'Celebration Bundle',
+      tagline:'Print + digital + social graphics — the full set.',
+      includes:['Premium printed product','Digital download (JPG + PDF)','5 social media graphics','Ground shipping (lower 48)'],
+      stripeLink:'https://buy.stripe.com/bJe28j1S8fpDdQs81l83C05', // Phase 1: reuses premium link; backend will pull bundle SKU from client_reference_id
+      kind:'bundle',
+      recommended:true,
+    },
+    social_pack:{
+      id:'social_pack',
+      name:'Social Pack',
+      tagline:'5 platform-ready graphics for IG, FB, TikTok.',
+      includes:['Instagram square (1080×1080)','Story / Reel vertical (1080×1920)','Facebook header (1200×630)','TikTok cover','Announcement card'],
+      stripeLink:'https://buy.stripe.com/7sY8wHeEUb9n27KgxR83C00', // digital fulfillment — backend will route via client_reference_id
+      kind:'digital',
+    },
+  },
+  // Per-marketing-product available packages. Key order = display order on the picker.
+  // Adding a new product = add a new key here + add entry to MARKETING_PRODUCT_PICKER.
+  byProduct:{
+    'team-banner':         {digital:9.99,  premium:79.99,  bundle:99.99},
+    'graduation-poster':   {digital:14.99, premium:79.99,  bundle:99.99},
+    'championship-poster': {digital:14.99, premium:89.99,  bundle:109.99},
+    'social-graphics':     {digital:9.99,  social_pack:24.99},
+    'senior-night-package':{premium:149.99,bundle:199.99},
+  },
+  addOns:{
+    extra_print:{
+      id:'extra_print',
+      name:'Extra Printed Copy',
+      price:24.99,
+      tagline:'Additional 24×36" vinyl copy, same design.',
+    },
+    social_pack:{
+      id:'social_pack',
+      name:'Social Graphics Pack',
+      price:19.99,
+      tagline:'5 platform-ready graphics (IG, FB, TikTok, Story, Announcement).',
+    },
+    rush_production:{
+      id:'rush_production',
+      name:'Rush Production',
+      price:14.99,
+      tagline:'Production in 1 business day instead of 2–3.',
+    },
+    extra_digital:{
+      id:'extra_digital',
+      name:'Extra Digital Copy',
+      price:4.99,
+      tagline:'Second high-resolution download (different format).',
+    },
+  },
+};
 const SEC={paid:false,sessionKey:null};
 // ── PRODUCTS ─────────────────────────────────────────────────
 // Source of truth for the printed vinyl banner: print specs, export sizing,
@@ -648,7 +747,7 @@ function toast(msg){const el=document.getElementById('toast');el.textContent=msg
 // ── NAVIGATION ───────────────────────────────────────────────
 function selectImages(){if(!state.heroImage)return[];const heroId=state.heroImage;const pool=state.images.map(i=>i.id).filter(id=>id!==heroId);const ordered=state.shuffledSeed!=null?shuffleArray(pool,mulberry32(state.shuffledSeed)):pool;let ids=[heroId,...ordered.slice(0,getMaxPhotos()-1)];if(state.product==='tabletop'){const cap=PRODUCTS.tabletop.maxPhotos||9;if(ids.length>cap)ids=ids.slice(0,cap);}return ids;}
 function shuffleLayout(){state.shuffledSeed=generateRandomSeed();state.previewGenerated=false;_tabletopV2InvalidatePlacement();document.getElementById('shuffle-status').textContent='Shuffled · seed '+state.shuffledSeed.toString(36);toast('Layout shuffled');}
-function goto(step){if(!canEnter(step))return;state.step=step;document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('pg-'+step).classList.add('active');document.querySelectorAll('.h-step').forEach(el=>{const s=parseInt(el.dataset.step,10);el.classList.toggle('active',s===step);el.classList.toggle('done',s<step);});document.getElementById('progress-bar').style.width=((step+1)*20)+'%';if(step===1){refreshUploadLimits();renderUploadGrid();}if(step===2)renderDesignGrids();if(step===3)refreshPreviewUI();if(step===4)refreshSummary();window.scrollTo({top:0,behavior:'smooth'});}
+function goto(step){if(!canEnter(step))return;state.step=step;document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('pg-'+step).classList.add('active');document.querySelectorAll('.h-step').forEach(el=>{const s=parseInt(el.dataset.step,10);el.classList.toggle('active',s===step);el.classList.toggle('done',s<step);});document.getElementById('progress-bar').style.width=((step+1)*20)+'%';if(step===1){refreshUploadLimits();renderUploadGrid();}if(step===2)renderDesignGrids();if(step===3)refreshPreviewUI();if(step===4){renderPackages();renderAddOns();refreshSummary();const _row=document.getElementById('ship-state-row');if(_row)_row.style.display=_packageNeedsShipping(_activePackage())?'block':'none';}window.scrollTo({top:0,behavior:'smooth'});}
 function canEnter(step){if(step===0)return true;if(step===1)return!!state.theme;if(step===2)return!!state.theme&&state.images.length>=1;if(step===3)return!!state.theme&&state.images.length>=1&&!!state.heroImage;if(step===4)return state.previewGenerated;return false;}
 document.getElementById('hstep').addEventListener('click',e=>{const el=e.target.closest('.h-step');if(!el||!el.classList.contains('done'))return;goto(parseInt(el.dataset.step,10));});
 
@@ -753,7 +852,8 @@ function activeMarketingProduct(){if(!state.marketingProduct)return null;return 
 function effectiveCanvasBase(){const mp=activeMarketingProduct();if(mp&&mp.canvasBase)return mp.canvasBase;return activeProduct().canvasBase;}
 // Marketing → technical product selector. Wraps selectProduct() and additionally pre-selects a
 // sensible theme for the chosen marketing category (user can still override on the theme step).
-function selectMarketingProduct(mid){const mp=MARKETING_PRODUCT_PICKER.find(p=>p.id===mid);if(!mp)return;state.marketingProduct=mid;if(mp.defaultTheme){const t=THEMES.find(t=>t.id===mp.defaultTheme);if(t){state.theme=t;const next={};t.fields.forEach(k=>{next[k]=state.bannerText[k]||'';});state.bannerText=next;}}state.previewGenerated=false;_tabletopV2InvalidatePlacement();selectProduct(mp.mapsTo);if(typeof renderThemes==='function')renderThemes();if(typeof refreshUploadLimits==='function')refreshUploadLimits();}
+function selectMarketingProduct(mid){const mp=MARKETING_PRODUCT_PICKER.find(p=>p.id===mid);if(!mp)return;state.marketingProduct=mid;if(mp.defaultTheme){const t=THEMES.find(t=>t.id===mp.defaultTheme);if(t){state.theme=t;const next={};t.fields.forEach(k=>{next[k]=state.bannerText[k]||'';});state.bannerText=next;}}// Reset selectedPackage to a valid choice for the new product if needed (e.g. senior-night has no digital)
+if(typeof _resolvePackageId==='function'){const resolved=_resolvePackageId();if(state.selectedPackage!==resolved)state.selectedPackage=resolved;}state.previewGenerated=false;_tabletopV2InvalidatePlacement();selectProduct(mp.mapsTo);if(typeof renderThemes==='function')renderThemes();if(typeof refreshUploadLimits==='function')refreshUploadLimits();}
 function renderProducts(){const grid=document.getElementById('product-grid');if(!grid)return;grid.innerHTML=MARKETING_PRODUCT_PICKER.map(mp=>{const sel=state.marketingProduct===mp.id;const opts=mp.options.map(o=>`<li>${o}</li>`).join('');return`<div class="product-card-v2${sel?' sel':''}" data-marketing-product="${mp.id}" data-maps-to="${mp.mapsTo}" onclick="selectMarketingProduct('${mp.id}')"><div class="product-card-v2-mockup">${mp.mockupSvg||''}</div><div class="product-card-v2-body"><h3 class="product-card-v2-title">${mp.name}</h3><p class="product-card-v2-desc">${mp.description}</p><ul class="product-card-v2-features">${opts}</ul><span class="product-card-v2-cta">${sel?'Selected ✓':'Select →'}</span></div></div>`;}).join('');}
 function selectProduct(id){if(!PRODUCTS[id])return;const switching=state.product&&state.product!==id;state.product=id;if(id==='tabletop'&&state.arrangement!=='classic'){state.arrangement='classic';state.isPremium=false;}if(switching){state.previewGenerated=false;_tabletopV2InvalidatePlacement();const cap=getMaxPhotos();if(state.images.length>cap){state.images=state.images.slice(0,cap);if(state.heroImage&&!state.images.find(p=>p.id===state.heroImage))state.heroImage=state.images[0]?.id||null;const name=(PRODUCT_PICKER.find(p=>p.id===id)||{}).name||id;toast(`Trimmed to ${cap} photos for ${name}`);}}document.getElementById('hstep').style.display='';document.getElementById('progress-track').style.display='';renderProducts();applyProductLabels();goto(0);}
 function showProductPicker(){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('pg-product').classList.add('active');document.getElementById('hstep').style.display='none';document.getElementById('progress-track').style.display='none';renderProducts();window.scrollTo({top:0,behavior:'smooth'});}
@@ -1138,6 +1238,20 @@ function renderTabletopStand(bannerCanvas){
 
 // ── STEP 4: DELIVERY ─────────────────────────────────────────
 function setDelivery(type){state.delivery=type;document.querySelectorAll('.delivery-card').forEach(el=>{el.classList.toggle('sel',el.dataset.delivery===type);});const row=document.getElementById('ship-state-row');if(row)row.style.display=(type==='print')?'block':'none';refreshSummary();}
+// Revenue Engine Phase 2: per-product package + global add-on selection + summary + ship-row gating.
+// _availablePackages reads the byProduct map for the current state.marketingProduct (with
+// 'team-banner' as a fallback for the no-product-yet edge case at init). _activePackage merges
+// base meta with the per-product price so refreshSummary / placeholderCheckout / renderPackages
+// keep their existing shape.
+function _packageNeedsShipping(pkg){return pkg&&(pkg.kind==='print'||pkg.kind==='bundle');}
+function _availablePackages(){const pid=state.marketingProduct||'team-banner';return PRICING.byProduct[pid]||PRICING.byProduct['team-banner'];}
+function _resolvePackageId(){const avail=_availablePackages();if(state.selectedPackage in avail)return state.selectedPackage;// fall back: prefer bundle if available (it's the recommended tier), else digital, else first
+const order=['bundle','digital','premium','social_pack'];return order.find(id=>id in avail)||Object.keys(avail)[0];}
+function _activePackage(){const pkgId=_resolvePackageId();const base=PRICING.basePackages[pkgId];if(!base)return null;return Object.assign({},base,{price:_availablePackages()[pkgId]});}
+function renderPackages(){const grid=document.getElementById('package-cards');if(!grid)return;const avail=_availablePackages();const resolvedId=_resolvePackageId();if(state.selectedPackage!==resolvedId)state.selectedPackage=resolvedId;grid.innerHTML=Object.keys(avail).map(id=>{const base=PRICING.basePackages[id];if(!base)return'';const pkg=Object.assign({},base,{price:avail[id]});const sel=state.selectedPackage===pkg.id;const badge=pkg.recommended?'<div class="package-card-badge">Recommended</div>':'';const inc=pkg.includes.map(i=>`<li>${i}</li>`).join('');return`<div class="package-card${sel?' sel':''}${pkg.recommended?' recommended':''}" data-package="${pkg.id}" onclick="selectPackage('${pkg.id}')">${badge}<div class="package-card-head"><h3 class="package-card-name">${pkg.name}</h3><div class="package-card-price">$${pkg.price.toFixed(2)}</div></div><p class="package-card-tagline">${pkg.tagline}</p><ul class="package-card-includes">${inc}</ul><span class="package-card-cta">${sel?'Selected ✓':'Select →'}</span></div>`;}).join('');}
+function renderAddOns(){const grid=document.getElementById('addons-grid');if(!grid)return;grid.innerHTML=Object.values(PRICING.addOns).map(ad=>{const sel=state.selectedAddOns.includes(ad.id);return`<label class="addon-card${sel?' sel':''}" data-addon="${ad.id}"><input type="checkbox" class="addon-card-check"${sel?' checked':''} onchange="toggleAddOn('${ad.id}')"><div class="addon-card-body"><div class="addon-card-head"><span class="addon-card-name">${ad.name}</span><span class="addon-card-price">+$${ad.price.toFixed(2)}</span></div><div class="addon-card-tagline">${ad.tagline}</div></div></label>`;}).join('');}
+function selectPackage(id){const avail=_availablePackages();if(!(id in avail))return;state.selectedPackage=id;const base=PRICING.basePackages[id];state.delivery=base&&base.kind==='digital'?'digital':'print';const row=document.getElementById('ship-state-row');if(row)row.style.display=_packageNeedsShipping(base)?'block':'none';renderPackages();refreshSummary();}
+function toggleAddOn(id){if(!PRICING.addOns[id])return;const i=state.selectedAddOns.indexOf(id);if(i>=0)state.selectedAddOns.splice(i,1);else state.selectedAddOns.push(id);renderAddOns();refreshSummary();}
 function onConsentToggle(){
   var checkbox=document.getElementById('terms-consent');
   var button=document.getElementById('pay-button');
@@ -1153,7 +1267,7 @@ function onConsentToggle(){
     button.style.cursor='not-allowed';
   }
 }
-function refreshSummary(){const arr=ARRANGEMENTS.find(a=>a.id===state.arrangement)||ARRANGEMENTS[0];document.getElementById('sum-mode').textContent=arr.label+(state.isPremium?' (Premium)':'');document.getElementById('sum-count').textContent=state.selectedImages.length;const isPrint=state.delivery==='print';const prod=activeProduct();const vv=prod.stripe&&prod.stripe.variants;document.getElementById('sum-premium-row').style.display=(state.isPremium&&isPrint&&!!vv)?'flex':'none';const printBase=vv?vv.classic.price:prod.price;const base=isPrint?printBase:9.99;const total=isPrint?(vv?(state.isPremium?vv.premium:vv.classic).price:prod.price):base;document.getElementById('sum-delivery-key').textContent=isPrint?'Printed banner ('+prod.trimLabel+')':'Digital download';document.getElementById('sum-delivery-price').textContent='$'+base.toFixed(2);document.getElementById('sum-total').textContent='$'+total.toFixed(2);}
+function refreshSummary(){const arr=ARRANGEMENTS.find(a=>a.id===state.arrangement)||ARRANGEMENTS[0];const mode=document.getElementById('sum-mode');if(mode)mode.textContent=arr.label+(state.isPremium?' (Premium)':'');const cnt=document.getElementById('sum-count');if(cnt)cnt.textContent=state.selectedImages.length;const pkg=_activePackage();const pname=document.getElementById('sum-package-name');if(pname)pname.textContent=pkg.name;const pprice=document.getElementById('sum-package-price');if(pprice)pprice.textContent='$'+pkg.price.toFixed(2);const addonsRow=document.getElementById('sum-addons-rows');if(addonsRow){addonsRow.innerHTML=state.selectedAddOns.map(id=>{const a=PRICING.addOns[id];return a?`<div class="sum-row"><span class="sum-key">+ ${a.name}</span><span>+$${a.price.toFixed(2)}</span></div>`:'';}).join('');}const addonsTotal=state.selectedAddOns.reduce((s,id)=>s+(PRICING.addOns[id]?PRICING.addOns[id].price:0),0);const total=pkg.price+addonsTotal;const totEl=document.getElementById('sum-total');if(totEl)totEl.textContent='$'+total.toFixed(2);}
 function triggerDownload(blobOrUrl,filename){const url=typeof blobOrUrl==='string'?blobOrUrl:URL.createObjectURL(blobOrUrl);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);if(typeof blobOrUrl!=='string')setTimeout(()=>URL.revokeObjectURL(url),1000);}
 
 // ── SAFE-ZONE OVERLAY ────────────────────────────────────────
@@ -1244,8 +1358,10 @@ function placeholderCheckout() {
     return;
   }
 
-  // Lower-48 shipping gate — runs only for print. Digital path falls through unchanged.
-  if (state.delivery === 'print') {
+  const pkg = _activePackage();
+
+  // Lower-48 shipping gate — runs only when the chosen package needs shipping.
+  if (_packageNeedsShipping(pkg)) {
     const sel = document.getElementById('ship-state');
     const ship = sel ? sel.value : '';
     if (!ship) {
@@ -1259,19 +1375,20 @@ function placeholderCheckout() {
     }
   }
 
-  var DIGITAL_URL = 'https://buy.stripe.com/7sY8wHeEUb9n27KgxR83C00';
-  var vinylVariants = PRODUCTS.vinyl.stripe.variants;
-
-  var url;
-  if (state.delivery === 'print') {
-    if (state.product === 'tabletop') {
-      url = PRODUCTS.tabletop.stripeLink;
-    } else {
-      url = (state.isPremium ? vinylVariants.premium : vinylVariants.classic).stripeLink;
-    }
-  } else {
-    url = DIGITAL_URL;
-  }
+  // Build Stripe URL from PRICING (single source of truth) + pass package + add-ons through
+  // client_reference_id so the backend (Phase 2) can read the exact selection. Stripe ignores
+  // unknown query params, so they're safe to attach as a fallback channel for Phase 1.
+  const cref = ['pkg', pkg.id]
+    .concat(state.selectedAddOns.length ? ['addons'].concat(state.selectedAddOns) : [])
+    .concat(state.marketingProduct ? ['mkt', state.marketingProduct] : [])
+    .join('_').slice(0, 200);
+  const base = pkg.stripeLink;
+  const sep = base.includes('?') ? '&' : '?';
+  const url = base + sep
+    + 'client_reference_id=' + encodeURIComponent(cref)
+    + '&package=' + encodeURIComponent(pkg.id)
+    + (state.selectedAddOns.length ? '&addons=' + encodeURIComponent(state.selectedAddOns.join(',')) : '')
+    + (state.marketingProduct ? '&marketing_product=' + encodeURIComponent(state.marketingProduct) : '');
 
   toast('Redirecting to secure Stripe checkout…');
   setTimeout(function() {
@@ -1286,6 +1403,9 @@ function applyProductLabels(){const p=activeProduct();const printBase=(p.stripe&
 applyProductLabels();
 renderProducts();
 renderThemes();
+renderPackages();
+renderAddOns();
+refreshSummary();
 refreshUploadLimits();
 refreshUploadStats();
 populateShipStateOptions();
