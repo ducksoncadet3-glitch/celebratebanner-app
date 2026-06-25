@@ -695,6 +695,8 @@ const MARKETING_PRODUCT_PICKER=[
   {
     id:'team-banner',
     mapsTo:'vinyl',
+    canvasBase:{w:1200,h:789},
+    defaultTheme:'champion',
     name:'Team Banner',
     description:'Custom roster banner for youth teams, coaches, schools, and sports clubs.',
     options:['Printed banner','Digital download','Team roster layout'],
@@ -703,6 +705,8 @@ const MARKETING_PRODUCT_PICKER=[
   {
     id:'graduation-poster',
     mapsTo:'vinyl',
+    canvasBase:{w:789,h:1200},
+    defaultTheme:'graduation',
     name:'Graduation Poster',
     description:'Personalized graduation poster with hero photo, name, school, class year, and memory collage.',
     options:['Printed poster','Digital download','Graduation collage'],
@@ -711,6 +715,8 @@ const MARKETING_PRODUCT_PICKER=[
   {
     id:'championship-poster',
     mapsTo:'vinyl',
+    canvasBase:{w:789,h:1200},
+    defaultTheme:'champion',
     name:'Championship Poster',
     description:'Trophy-style poster for champions, finalists, tournaments, and winning seasons.',
     options:['Printed poster','Digital download','Trophy layout'],
@@ -719,6 +725,8 @@ const MARKETING_PRODUCT_PICKER=[
   {
     id:'social-graphics',
     mapsTo:'vinyl',
+    canvasBase:{w:1080,h:1080},
+    defaultTheme:'graduation',
     name:'Social Graphics',
     description:'Ready-to-post graphics for Instagram, Facebook, TikTok, stories, and announcements.',
     options:['Instagram square','Story vertical','Facebook layout'],
@@ -727,6 +735,8 @@ const MARKETING_PRODUCT_PICKER=[
   {
     id:'senior-night-package',
     mapsTo:'vinyl',
+    canvasBase:{w:789,h:1200},
+    defaultTheme:'champion',
     name:'Senior Night Package',
     description:'Bundle for seniors, teams, coaches, and parents: banner, poster, and social graphics.',
     options:['Banner','Poster','Social graphics'],
@@ -736,7 +746,14 @@ const MARKETING_PRODUCT_PICKER=[
 // Marketing → technical product selector. Wraps the underlying selectProduct(id) so all the
 // existing builder logic (photo caps, theme reset, navigation) keeps working unchanged. The
 // marketing choice is persisted on state.marketingProduct for downstream code that wants it.
-function selectMarketingProduct(mid){const mp=MARKETING_PRODUCT_PICKER.find(p=>p.id===mid);if(!mp)return;state.marketingProduct=mid;selectProduct(mp.mapsTo);}
+// Returns the active marketing product config (or null if none picked yet).
+function activeMarketingProduct(){if(!state.marketingProduct)return null;return MARKETING_PRODUCT_PICKER.find(p=>p.id===state.marketingProduct);}
+// Returns the canvas dimensions the renderer should use. Marketing product wins (so e.g. social
+// gets 1080×1080 square) and falls back to the underlying technical PRODUCTS canvasBase.
+function effectiveCanvasBase(){const mp=activeMarketingProduct();if(mp&&mp.canvasBase)return mp.canvasBase;return activeProduct().canvasBase;}
+// Marketing → technical product selector. Wraps selectProduct() and additionally pre-selects a
+// sensible theme for the chosen marketing category (user can still override on the theme step).
+function selectMarketingProduct(mid){const mp=MARKETING_PRODUCT_PICKER.find(p=>p.id===mid);if(!mp)return;state.marketingProduct=mid;if(mp.defaultTheme){const t=THEMES.find(t=>t.id===mp.defaultTheme);if(t){state.theme=t;const next={};t.fields.forEach(k=>{next[k]=state.bannerText[k]||'';});state.bannerText=next;}}state.previewGenerated=false;_tabletopV2InvalidatePlacement();selectProduct(mp.mapsTo);if(typeof renderThemes==='function')renderThemes();if(typeof refreshUploadLimits==='function')refreshUploadLimits();}
 function renderProducts(){const grid=document.getElementById('product-grid');if(!grid)return;grid.innerHTML=MARKETING_PRODUCT_PICKER.map(mp=>{const sel=state.marketingProduct===mp.id;const opts=mp.options.map(o=>`<li>${o}</li>`).join('');return`<div class="product-card-v2${sel?' sel':''}" data-marketing-product="${mp.id}" data-maps-to="${mp.mapsTo}" onclick="selectMarketingProduct('${mp.id}')"><div class="product-card-v2-mockup">${mp.mockupSvg||''}</div><div class="product-card-v2-body"><h3 class="product-card-v2-title">${mp.name}</h3><p class="product-card-v2-desc">${mp.description}</p><ul class="product-card-v2-features">${opts}</ul><span class="product-card-v2-cta">${sel?'Selected ✓':'Select →'}</span></div></div>`;}).join('');}
 function selectProduct(id){if(!PRODUCTS[id])return;const switching=state.product&&state.product!==id;state.product=id;if(id==='tabletop'&&state.arrangement!=='classic'){state.arrangement='classic';state.isPremium=false;}if(switching){state.previewGenerated=false;_tabletopV2InvalidatePlacement();const cap=getMaxPhotos();if(state.images.length>cap){state.images=state.images.slice(0,cap);if(state.heroImage&&!state.images.find(p=>p.id===state.heroImage))state.heroImage=state.images[0]?.id||null;const name=(PRODUCT_PICKER.find(p=>p.id===id)||{}).name||id;toast(`Trimmed to ${cap} photos for ${name}`);}}document.getElementById('hstep').style.display='';document.getElementById('progress-track').style.display='';renderProducts();applyProductLabels();goto(0);}
 function showProductPicker(){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('pg-product').classList.add('active');document.getElementById('hstep').style.display='none';document.getElementById('progress-track').style.display='none';renderProducts();window.scrollTo({top:0,behavior:'smooth'});}
@@ -791,7 +808,7 @@ function _seededRand(seed){let s=seed|0;return function(){s=(s*1664525+101390422
 function _tileToCount(base,count){const out=[];if(!base||!base.length)return out;for(let i=0;i<count;i++)out.push(Object.assign({},base[i%base.length]));return out;}
 function _photoRot(rng,maxDeg){return(rng()*2-1)*maxDeg*Math.PI/180;}
 
-function renderToCanvas(tc,ids,premium,scale){scale=scale||1;const W=activeProduct().canvasBase.w,H=activeProduct().canvasBase.h;tc.width=W*scale;tc.height=H*scale;tc.style.width='100%';tc.style.height='100%';const ctx=tc.getContext('2d');ctx.scale(scale,scale);const theme=state.theme||THEMES[0];const palette=theme.palette;const grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,_lightenHex(palette.bg,12));grad.addColorStop(1,palette.bg);ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);drawThemeDecorations(ctx,W,H,theme);ctx.strokeStyle=palette.accent;ctx.lineWidth=8;ctx.strokeRect(20,20,W-40,H-40);const photos=ids.map(id=>state.images.find(p=>p.id===id)).filter(Boolean);const sideKind=classicSideTextKind(photos);let textBottomY=56;if(!sideKind){ctx.save();ctx.globalCompositeOperation='source-over';textBottomY=renderBannerText(ctx,W,56,theme);ctx.restore();}if(!photos.length)return;const contentTop=textBottomY+24;switch(state.arrangement){case'magazine':renderMagazine(ctx,photos,W,H,contentTop);break;case'scattered':renderScattered(ctx,photos,W,H,contentTop);break;case'mosaic':renderMosaic(ctx,photos,W,H,contentTop);break;default:renderClassic(ctx,photos,W,H,contentTop);}if(!sideKind){ctx.save();ctx.globalCompositeOperation='source-over';renderBannerText(ctx,W,56,theme);ctx.restore();}}
+function renderToCanvas(tc,ids,premium,scale){scale=scale||1;const _base=effectiveCanvasBase();const W=_base.w,H=_base.h;tc.width=W*scale;tc.height=H*scale;tc.style.width='100%';tc.style.height='100%';const ctx=tc.getContext('2d');ctx.scale(scale,scale);const theme=state.theme||THEMES[0];const palette=theme.palette;const grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,_lightenHex(palette.bg,12));grad.addColorStop(1,palette.bg);ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);drawThemeDecorations(ctx,W,H,theme);ctx.strokeStyle=palette.accent;ctx.lineWidth=8;ctx.strokeRect(20,20,W-40,H-40);const photos=ids.map(id=>state.images.find(p=>p.id===id)).filter(Boolean);const sideKind=classicSideTextKind(photos);let textBottomY=56;if(!sideKind){ctx.save();ctx.globalCompositeOperation='source-over';textBottomY=renderBannerText(ctx,W,56,theme);ctx.restore();}if(!photos.length)return;const contentTop=textBottomY+24;switch(state.arrangement){case'magazine':renderMagazine(ctx,photos,W,H,contentTop);break;case'scattered':renderScattered(ctx,photos,W,H,contentTop);break;case'mosaic':renderMosaic(ctx,photos,W,H,contentTop);break;default:renderClassic(ctx,photos,W,H,contentTop);}if(!sideKind){ctx.save();ctx.globalCompositeOperation='source-over';renderBannerText(ctx,W,56,theme);ctx.restore();}}
 
 function drawThemeDecorations(ctx,W,H,theme){if(!theme)return;switch(theme.id){case'champion':drawStadiumArcs(ctx,W,H,theme);break;case'wedding':drawFloralCorners(ctx,W,H,theme);break;case'anniversary':drawHeartMotifs(ctx,W,H,theme);break;case'pets':drawPawWatermarks(ctx,W,H,theme);break;case'america250':drawAmerica250Background(ctx,W,H);break;case'worldcup2026':drawWorldCupBackground(ctx,W,H);break;}}
 
