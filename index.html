@@ -326,7 +326,7 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
 <div class="progress-track" id="progress-track" style="display:none;"><div class="progress-bar" id="progress-bar"></div></div>
 <main class="main">
   <section class="page active" id="pg-product">
-    <div class="sec-eyebrow">Step 1 · Product</div>
+    <div class="sec-eyebrow">Step 1 of 6</div>
     <h1 class="sec-title">Choose your celebration product</h1>
     <p class="sec-sub">Pick the product you want to create first. You can choose print or digital options later.</p>
     <div class="product-grid" id="product-grid"></div>
@@ -337,19 +337,19 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
       <div class="trust-bar-item"><span class="trust-bar-icon">✓</span><span class="trust-bar-text">Print Ready 300 DPI</span></div>
       <div class="trust-bar-item"><span class="trust-bar-icon">✓</span><span class="trust-bar-text">Made for Celebrations</span></div>
     </div>
-    <p class="trust-bar-cta">Preview your banner before you buy.</p>
+    <p class="trust-bar-cta">Preview your design before you buy.</p>
     <div class="why-section">
       <h2 class="why-section-title">Why Families Choose CelebrateBanner</h2>
       <div class="why-grid">
         <div class="why-card">
           <div class="why-card-icon">⚡</div>
           <h3 class="why-card-title">Fast Preview</h3>
-          <p class="why-card-desc">Generate your banner preview in under 30 seconds.</p>
+          <p class="why-card-desc">Generate your design preview in under 30 seconds.</p>
         </div>
         <div class="why-card">
           <div class="why-card-icon">🖨️</div>
           <h3 class="why-card-title">Print or Download</h3>
-          <p class="why-card-desc">Order a printed banner or download instantly.</p>
+          <p class="why-card-desc">Order printed or download instantly.</p>
         </div>
         <div class="why-card">
           <div class="why-card-icon">🎉</div>
@@ -360,7 +360,7 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
     </div>
     <div class="upsell-callout">
       <h2 class="upsell-callout-title">Need It Today?</h2>
-      <p class="upsell-callout-subtitle">Get your finished banner immediately.</p>
+      <p class="upsell-callout-subtitle">Get your finished design immediately.</p>
       <div class="upsell-callout-card">
         <div class="upsell-callout-card-top">
           <div class="upsell-callout-card-product">Digital Download</div>
@@ -376,8 +376,8 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
       </div>
     </div>
     <div class="team-proof-section">
-      <h2 class="team-proof-title">Free Team Banner Proof</h2>
-      <p class="team-proof-subtitle">Upload your team photo and preview a custom banner before you order.</p>
+      <h2 class="team-proof-title">Free Design Proof for Teams</h2>
+      <p class="team-proof-subtitle">Upload your team photo and preview your custom design before you order.</p>
       <div class="team-proof-grid">
         <div class="team-proof-card">
           <div class="team-proof-step-num">1</div>
@@ -386,7 +386,7 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
         </div>
         <div class="team-proof-card">
           <div class="team-proof-step-num">2</div>
-          <h3 class="team-proof-step-title">Get a Free Banner Proof</h3>
+          <h3 class="team-proof-step-title">Get a Free Design Proof</h3>
           <p class="team-proof-step-desc">We create a custom preview for your school, league, or club.</p>
         </div>
         <div class="team-proof-card">
@@ -400,8 +400,8 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
   </section>
   <section class="page" id="pg-0">
     <button class="change-theme-link" type="button" onclick="showProductPicker()">← Change product</button>
-    <div class="sec-eyebrow">Step 1 of 5</div>
-    <h1 class="sec-title">Pick a theme</h1>
+    <div class="sec-eyebrow">Step 2 of 6</div>
+    <h1 class="sec-title">Pick a style</h1>
     <p class="sec-sub">Each theme tunes the palette, fields, and default layout for the moment you're celebrating.</p>
     <div class="theme-grid" id="theme-grid"></div>
     <div class="btn-group">
@@ -410,7 +410,7 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
   </section>
   <section class="page" id="pg-1">
     <button class="change-theme-link" type="button" onclick="goto(0)">← Change Theme</button>
-    <div class="sec-eyebrow">Step 2 of 5</div>
+    <div class="sec-eyebrow">Step 3 of 6</div>
     <h1 class="sec-title">Upload your photos</h1>
     <p class="sec-sub" id="upload-sub">Add 1–50 images.</p>
     <label class="upload-zone" id="upload-zone">
@@ -431,16 +431,16 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
     </div>
   </section>
   <section class="page" id="pg-2">
-    <div class="sec-eyebrow">Step 3 of 5</div>
-    <h1 class="sec-title">Design your banner</h1>
+    <div class="sec-eyebrow">Step 4 of 6</div>
+    <h1 class="sec-title" id="design-title">Personalize your banner</h1>
     <p class="sec-sub">Pick the hero photo, add your text, and choose a frame for each photo.</p>
     <div class="design-section">
       <div class="design-section-head"><div class="design-section-title">Choose hero photo</div><div class="design-section-meta">Tap any photo to make it the hero</div></div>
-      <div class="hero-tip">⭐ The hero is the focal point — large and centered in the final banner.</div>
+      <div class="hero-tip" id="design-hero-tip">⭐ The hero is the focal point — large and centered in the final banner.</div>
       <div class="photo-grid" id="design-hero-grid"></div>
     </div>
     <div class="design-section">
-      <div class="design-section-head"><div class="design-section-title">Banner text</div><div class="design-section-meta">Shown at the top of the banner</div></div>
+      <div class="design-section-head"><div class="design-section-title" id="design-text-section-title">Banner text</div><div class="design-section-meta" id="design-text-section-meta">Shown at the top of the banner</div></div>
       <div class="text-fields" id="text-fields-container"></div>
     </div>
     <div class="design-section">
@@ -471,7 +471,7 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
       </div>
     </div>
     <div class="design-section">
-      <div class="design-section-head"><div class="design-section-title">Layout</div><div class="design-section-meta">All uploaded photos render in the final banner</div></div>
+      <div class="design-section-head"><div class="design-section-title">Layout</div><div class="design-section-meta" id="design-layout-section-meta">All uploaded photos render in the final banner</div></div>
       <button class="btn btn-outline" onclick="shuffleLayout()">🔀 Shuffle Layout</button>
       <span style="font-size:12px;color:var(--muted);margin-left:12px;" id="shuffle-status">No shuffle yet.</span>
     </div>
@@ -481,19 +481,19 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
     </div>
   </section>
   <section class="page" id="pg-3">
-    <div class="sec-eyebrow">Step 4 of 5</div>
-    <h1 class="sec-title">Preview your banner</h1>
+    <div class="sec-eyebrow">Step 5 of 6</div>
+    <h1 class="sec-title">Review your proof</h1>
     <p class="sec-sub">Generate your preview, then pick an arrangement. Each layout arranges your photos differently — choose the one that fits your moment.</p>
     <div class="preview-frame">
       <div class="preview-label">
-        <span>Banner Preview · <span class="js-trim-label">24×36</span> in</span>
+        <span><span id="preview-noun-label">Banner</span> Preview · <span class="js-trim-label">24×36</span> in</span>
         <span class="preview-spec" id="preview-spec-text">Click "Generate" to render</span>
       </div>
       <div id="banner-preview">
         <div class="preview-empty" id="preview-empty">
           <div style="font-size:42px;margin-bottom:12px;">🖼️</div>
           <div>No preview yet.</div>
-          <div style="font-size:12px;margin-top:6px;opacity:0.7;">Click "Generate My Banner" below.</div>
+          <div style="font-size:12px;margin-top:6px;opacity:0.7;" id="gen-empty-hint">Click "Generate My Banner" below.</div>
         </div>
         <canvas id="preview-canvas" width="800" height="1200" style="display:none;"></canvas>
       </div>
@@ -523,7 +523,7 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
     </div>
   </section>
   <section class="page" id="pg-4">
-    <div class="sec-eyebrow">Step 5 of 5</div>
+    <div class="sec-eyebrow">Step 6 of 6</div>
     <h1 class="sec-title">Choose your package</h1>
     <p class="sec-sub">Pick the package that fits your celebration. Add extras to expand the bundle.</p>
     <div class="package-cards" id="package-cards"></div>
@@ -534,7 +534,7 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
     </div>
     <div class="summary-card">
       <div class="summary-title">Order Summary</div>
-      <div class="sum-row"><span class="sum-key">Banner layout</span><span id="sum-mode">Standard</span></div>
+      <div class="sum-row"><span class="sum-key" id="sum-product-layout-label">Banner layout</span><span id="sum-mode">Standard</span></div>
       <div class="sum-row"><span class="sum-key">Photos in render</span><span id="sum-count">—</span></div>
       <div class="sum-row" id="sum-package-row"><span class="sum-key" id="sum-package-name">Digital Download</span><span id="sum-package-price">$9.99</span></div>
       <div id="sum-addons-rows"></div>
@@ -847,6 +847,12 @@ const MARKETING_PRODUCT_PICKER=[
 // marketing choice is persisted on state.marketingProduct for downstream code that wants it.
 // Returns the active marketing product config (or null if none picked yet).
 function activeMarketingProduct(){if(!state.marketingProduct)return null;return MARKETING_PRODUCT_PICKER.find(p=>p.id===state.marketingProduct);}
+// Human noun for the selected marketing product, used in all on-screen builder copy so the wizard
+// never says "banner" when the customer picked a poster/social graphic/package. Falls back to
+// "banner" before a product is chosen (e.g. at init).
+const PRODUCT_NOUNS={'team-banner':'banner','graduation-poster':'graduation poster','championship-poster':'championship poster','social-graphics':'social graphic','senior-night-package':'senior night package'};
+function productNoun(){return PRODUCT_NOUNS[state.marketingProduct]||'banner';}
+function productNounTitle(){return productNoun().replace(/\b\w/g,c=>c.toUpperCase());}
 // Returns the canvas dimensions the renderer should use. Marketing product wins (so e.g. social
 // gets 1080×1080 square) and falls back to the underlying technical PRODUCTS canvasBase.
 function effectiveCanvasBase(){const mp=activeMarketingProduct();if(mp&&mp.canvasBase)return mp.canvasBase;return activeProduct().canvasBase;}
@@ -897,7 +903,7 @@ function renderArrangementGrid(){const grid=document.getElementById('arr-grid');
 
 function refreshPreviewUI(){const post=document.getElementById('post-preview');const pre=document.getElementById('pre-preview-actions');const empty=document.getElementById('preview-empty');const canvas=document.getElementById('preview-canvas');const genBtn=document.getElementById('generate-btn');const stand=document.getElementById('stand-mockup');const dlMain=document.getElementById('download-jpg-main');if(state.previewGenerated){post.style.display='block';pre.style.display='none';empty.style.display='none';canvas.style.display='block';genBtn.style.display='none';renderArrangementGrid();if(stand)stand.style.display='block';if(dlMain)dlMain.style.display='inline-flex';drawSafeZoneOverlay();const hd=document.getElementById('download-hd-btn');if(hd){if(activeProduct().exportDPI){hd.style.display='none';}else{if(hd.style.display==='none')hd.style.display='';hd.style.opacity=state.isPremium?'1':'0.45';hd.title=state.isPremium?'Download HD (2400×3600)':'Pick a premium arrangement to unlock HD';}}if(!SEC.paid){if(dlMain){dlMain.classList.add('locked');dlMain.onclick=function(){toast('🔒 Please complete payment');showLockOverlay();};}setTimeout(()=>{drawWatermarkOverlay();showLockOverlay();},200);}}else{post.style.display='none';pre.style.display='block';empty.style.display='block';canvas.style.display='none';genBtn.style.display='inline-flex';if(stand)stand.style.display='none';if(dlMain)dlMain.style.display='none';const szc=document.getElementById('preview-safezone-canvas');if(szc)szc.remove();}}
 
-function generatePreview(force){const ids=selectImages();if(ids.length===0){toast('Pick a hero first');return;}state.selectedImages=ids;const newKey=computeCacheKey();if(!force&&state.previewCacheKey===newKey&&state.previewGenerated){toast('Preview already up to date');return;}const empty=document.getElementById('preview-empty');empty.innerHTML=`<div class="preview-loading"><div class="spinner"></div><div>Rendering preview…</div></div>`;empty.style.display='flex';document.getElementById('preview-canvas').style.display='none';setTimeout(()=>{const pc=document.getElementById('preview-canvas');renderToCanvas(pc,ids,state.isPremium,1);state.previewGenerated=true;state.previewCacheKey=newKey;document.getElementById('preview-spec-text').textContent=`${ids.length} photos · ${state.arrangement}${state.isPremium?' (Premium)':''}`;refreshPreviewUI();try{renderStandMockup(pc);}catch(e){console.warn('Stand mockup error:',e);}toast('Banner ready');},60);}
+function generatePreview(force){const ids=selectImages();if(ids.length===0){toast('Pick a hero first');return;}state.selectedImages=ids;const newKey=computeCacheKey();if(!force&&state.previewCacheKey===newKey&&state.previewGenerated){toast('Preview already up to date');return;}const empty=document.getElementById('preview-empty');empty.innerHTML=`<div class="preview-loading"><div class="spinner"></div><div>Rendering preview…</div></div>`;empty.style.display='flex';document.getElementById('preview-canvas').style.display='none';setTimeout(()=>{const pc=document.getElementById('preview-canvas');renderToCanvas(pc,ids,state.isPremium,1);state.previewGenerated=true;state.previewCacheKey=newKey;document.getElementById('preview-spec-text').textContent=`${ids.length} photos · ${state.arrangement}${state.isPremium?' (Premium)':''}`;refreshPreviewUI();try{renderStandMockup(pc);}catch(e){console.warn('Stand mockup error:',e);}toast(productNounTitle()+' ready');},60);}
 
 function setArrangement(id){if(state.arrangement===id)return;const a=ARRANGEMENTS.find(x=>x.id===id);if(!a)return;state.arrangement=id;state.isPremium=(a.tier==='premium');document.querySelectorAll('.arr-opt').forEach(el=>{el.classList.toggle('active',el.dataset.arr===id);});refreshSummary();generatePreview(true);}
 
@@ -1308,11 +1314,11 @@ function drawSafeZoneOverlay(){
 // ── SECURITY SYSTEM ──────────────────────────────────────────
 function drawWatermarkOverlay(){const container=document.getElementById('banner-preview');if(!container)return;const existing=document.getElementById('preview-watermark-canvas');if(existing)existing.remove();if(SEC.paid)return;const pc=document.getElementById('preview-canvas');if(!pc||pc.style.display==='none')return;const wc=document.createElement('canvas');wc.id='preview-watermark-canvas';wc.width=pc.offsetWidth||400;wc.height=pc.offsetHeight||600;wc.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;border-radius:var(--r2);';container.appendChild(wc);const ctx=wc.getContext('2d');const W=wc.width,H=wc.height;ctx.save();ctx.translate(W/2,H/2);ctx.rotate(-35*Math.PI/180);[{text:'CELEBRATEBANNER.COM',fontSize:Math.round(W*0.055),opacity:0.22,dy:0},{text:'PREVIEW ONLY · NOT FOR PRINT',fontSize:Math.round(W*0.032),opacity:0.16,dy:Math.round(H*0.06)}].forEach(pass=>{ctx.font=`700 ${pass.fontSize}px 'Outfit',sans-serif`;ctx.fillStyle=`rgba(255,255,255,${pass.opacity})`;ctx.textAlign='center';ctx.textBaseline='middle';const spacing=pass.fontSize*3.5;const cols=Math.ceil(Math.max(W,H)*1.6/spacing)+2;const rows=Math.ceil(Math.max(W,H)*1.6/(pass.fontSize*2.5))+2;for(let r=-rows;r<=rows;r++)for(let c=-cols;c<=cols;c++)ctx.fillText(pass.text,c*spacing,r*pass.fontSize*2.5+pass.dy);});ctx.restore();}
 
-function showLockOverlay(){const container=document.getElementById('banner-preview');if(!container||SEC.paid)return;const existing=document.getElementById('preview-lock-overlay');if(existing)existing.remove();const overlay=document.createElement('div');overlay.id='preview-lock-overlay';overlay.innerHTML=`<div class="lock-icon-wrap">🔒</div><div class="lock-title">Your banner is ready — unlock it below</div><div class="lock-sub">This preview is protected. Pay to receive your full-resolution file with no watermark.</div><button class="lock-unlock-btn" onclick="initiatePayment()">✦ Unlock My Banner</button><div class="lock-security-note">SSL SECURED · STRIPE CHECKOUT · NO CARD DATA STORED</div>`;container.appendChild(overlay);}
+function showLockOverlay(){const container=document.getElementById('banner-preview');if(!container||SEC.paid)return;const existing=document.getElementById('preview-lock-overlay');if(existing)existing.remove();const overlay=document.createElement('div');overlay.id='preview-lock-overlay';overlay.innerHTML=`<div class="lock-icon-wrap">🔒</div><div class="lock-title">Your ${productNoun()} is ready — unlock it below</div><div class="lock-sub">This preview is protected. Pay to receive your full-resolution file with no watermark.</div><button class="lock-unlock-btn" onclick="initiatePayment()">✦ Unlock My ${productNounTitle()}</button><div class="lock-security-note">SSL SECURED · STRIPE CHECKOUT · NO CARD DATA STORED</div>`;container.appendChild(overlay);}
 
-function unlockPreview(){SEC.paid=true;SEC.sessionKey='paid_'+Date.now();const overlay=document.getElementById('preview-lock-overlay');if(overlay){overlay.classList.add('unlocked');setTimeout(()=>overlay.remove(),450);}const wc=document.getElementById('preview-watermark-canvas');if(wc){wc.classList.add('unlocked');setTimeout(()=>wc.remove(),450);}const dlBtn=document.getElementById('download-jpg-main');if(dlBtn){dlBtn.classList.remove('locked');dlBtn.onclick=downloadJpg;}if(state.previewGenerated&&state.selectedImages.length>0){const pc=document.getElementById('preview-canvas');renderToCanvas(pc,state.selectedImages,state.isPremium,1);try{renderStandMockup(pc);}catch(e){}drawSafeZoneOverlay();}toast('✓ Payment confirmed — banner unlocked!');}
+function unlockPreview(){SEC.paid=true;SEC.sessionKey='paid_'+Date.now();const overlay=document.getElementById('preview-lock-overlay');if(overlay){overlay.classList.add('unlocked');setTimeout(()=>overlay.remove(),450);}const wc=document.getElementById('preview-watermark-canvas');if(wc){wc.classList.add('unlocked');setTimeout(()=>wc.remove(),450);}const dlBtn=document.getElementById('download-jpg-main');if(dlBtn){dlBtn.classList.remove('locked');dlBtn.onclick=downloadJpg;}if(state.previewGenerated&&state.selectedImages.length>0){const pc=document.getElementById('preview-canvas');renderToCanvas(pc,state.selectedImages,state.isPremium,1);try{renderStandMockup(pc);}catch(e){}drawSafeZoneOverlay();}toast('✓ Payment confirmed — '+productNoun()+' unlocked!');}
 
-function blockCanvasRightClick(){const canvas=document.getElementById('preview-canvas');if(canvas)canvas.addEventListener('contextmenu',function(e){if(!SEC.paid){e.preventDefault();toast('🔒 Pay to download your banner');return false;}});document.addEventListener('contextmenu',function(e){if(e.target&&e.target.id==='preview-watermark-canvas'){e.preventDefault();toast('🔒 Pay to download your banner');}});}
+function blockCanvasRightClick(){const canvas=document.getElementById('preview-canvas');if(canvas)canvas.addEventListener('contextmenu',function(e){if(!SEC.paid){e.preventDefault();toast('🔒 Pay to download your '+productNoun());return false;}});document.addEventListener('contextmenu',function(e){if(e.target&&e.target.id==='preview-watermark-canvas'){e.preventDefault();toast('🔒 Pay to download your '+productNoun());}});}
 
 function initiatePayment(){goto(4);toast('Choose your delivery option below');}
 
@@ -1399,7 +1405,19 @@ function placeholderCheckout() {
 setTimeout(blockCanvasRightClick,100);
 
 // ── INIT ─────────────────────────────────────────────────────
-function applyProductLabels(){const p=activeProduct();const printBase=(p.stripe&&p.stripe.variants)?p.stripe.variants.classic.price:p.price;document.querySelectorAll('.js-trim-label').forEach(el=>{el.textContent=p.trimLabel;});document.querySelectorAll('.js-product-noun').forEach(el=>{el.textContent=p.displayName;});const pp=document.getElementById('price-print');if(pp)pp.textContent='$'+printBase.toFixed(2);}
+function applyProductLabels(){const p=activeProduct();const printBase=(p.stripe&&p.stripe.variants)?p.stripe.variants.classic.price:p.price;document.querySelectorAll('.js-trim-label').forEach(el=>{el.textContent=p.trimLabel;});document.querySelectorAll('.js-product-noun').forEach(el=>{el.textContent=p.displayName;});const pp=document.getElementById('price-print');if(pp)pp.textContent='$'+printBase.toFixed(2);
+  // Marketing-product-aware builder copy (keeps wording consistent with the chosen product).
+  const noun=productNoun(),Noun=productNounTitle();
+  const dt=document.getElementById('design-title');if(dt)dt.textContent='Personalize your '+noun;
+  const pnl=document.getElementById('preview-noun-label');if(pnl)pnl.textContent=Noun;
+  const geh=document.getElementById('gen-empty-hint');if(geh)geh.textContent='Click "Generate My '+Noun+'" below.';
+  const gb=document.getElementById('generate-btn');if(gb)gb.textContent='✨ Generate My '+Noun;
+  const payb=document.getElementById('pay-button');if(payb)payb.textContent='🔒 Pay & Get My '+Noun;
+  const dtst=document.getElementById('design-text-section-title');if(dtst)dtst.textContent=Noun+' text';
+  const dtsm=document.getElementById('design-text-section-meta');if(dtsm)dtsm.textContent='Shown at the top of the '+noun;
+  const dlsm=document.getElementById('design-layout-section-meta');if(dlsm)dlsm.textContent='All uploaded photos render in the final '+noun;
+  const spll=document.getElementById('sum-product-layout-label');if(spll)spll.textContent=Noun+' layout';
+  const dht=document.getElementById('design-hero-tip');if(dht)dht.textContent='⭐ The hero is the focal point — large and centered in the final '+noun+'.';}
 applyProductLabels();
 renderProducts();
 renderThemes();
