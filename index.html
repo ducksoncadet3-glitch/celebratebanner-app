@@ -295,6 +295,18 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
 .v2-debug-arrange { color: var(--gold2); font-weight: 700; font-size: 17px; letter-spacing: 0.04em; }
 .v2-debug-family { color: var(--gold3); font-weight: 700; font-size: 17px; letter-spacing: 0.04em; }
 .v2-debug-count { color: var(--gold2); font-weight: 700; font-size: 18px; }
+/* ── Administrator Preview Mode (dev/QA) ───────────────────── */
+.admin-toggle { display: inline-flex; align-items: center; gap: 8px; }
+.admin-toggle-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.35); }
+.admin-seg { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; background: rgba(255,255,255,0.03); }
+.admin-seg-btn { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.03em; padding: 5px 12px; background: transparent; color: rgba(255,255,255,0.5); border: none; cursor: pointer; transition: all 0.18s; }
+.admin-seg-btn:hover { color: var(--gold2); }
+.admin-seg-btn.active { background: linear-gradient(135deg, var(--gold), var(--gold2)); color: var(--obsidian); }
+.admin-badge { display: none; align-items: center; gap: 6px; margin: 0 auto 1rem; max-width: 500px; padding: 7px 14px; border-radius: 8px; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.4); color: var(--gold2); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; justify-content: center; }
+body.admin-mode .admin-badge { display: flex; }
+.btn.btn-admin { background: rgba(201,168,76,0.14); border: 1px solid rgba(201,168,76,0.45); color: var(--gold2); }
+.btn.btn-admin:hover { background: rgba(201,168,76,0.24); }
+@media (max-width: 640px) { .admin-toggle-label { display: none; } }
 </style>
 </head>
 <body>
@@ -321,7 +333,13 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
     <span class="h-step-sep">·</span>
     <div class="h-step" data-step="4"><span class="h-step-dot"></span>Delivery</div>
   </div>
-  <div></div>
+  <div class="admin-toggle" id="admin-toggle" style="display:none;">
+    <span class="admin-toggle-label">Preview as</span>
+    <div class="admin-seg" role="group" aria-label="Preview mode">
+      <button type="button" class="admin-seg-btn" id="admin-seg-customer" onclick="setAdminMode(false)">Customer</button>
+      <button type="button" class="admin-seg-btn" id="admin-seg-admin" onclick="setAdminMode(true)">Administrator</button>
+    </div>
+  </div>
 </header>
 <div class="progress-track" id="progress-track" style="display:none;"><div class="progress-bar" id="progress-bar"></div></div>
 <main class="main">
@@ -484,6 +502,7 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
     <div class="sec-eyebrow">Step 5 of 6</div>
     <h1 class="sec-title">Review your proof</h1>
     <p class="sec-sub">Generate your preview, then pick an arrangement. Each layout arranges your photos differently — choose the one that fits your moment.</p>
+    <div class="admin-badge" id="admin-badge">🛡️ Administrator preview — watermark &amp; lock bypassed (internal use)</div>
     <div class="preview-frame">
       <div class="preview-label">
         <span id="preview-label-text">Banner Preview · 24×36 in</span>
@@ -502,6 +521,7 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
     <div class="gen-btn-wrap">
       <button class="btn btn-primary btn-lg" id="generate-btn" onclick="generatePreview()">✨ Generate My Banner</button>
       <button class="btn btn-dark btn-lg" id="download-jpg-main" style="display:none;" onclick="downloadJpg()">⬇ Download JPG</button>
+      <button class="btn btn-admin btn-lg" id="download-pdf-admin" style="display:none;" onclick="downloadPdf()">⬇ Download PDF</button>
     </div>
     <div id="post-preview" style="display:none;">
       <div class="upsell-card" id="arr-upsell">
@@ -745,6 +765,60 @@ const PRICING={
   },
 };
 const SEC={paid:false,sessionKey:null};
+// ── ADMINISTRATOR PREVIEW MODE ───────────────────────────────
+// Internal QA mode that bypasses the watermark / lock / Stripe gate so staff can review and
+// download the full-resolution proof without paying. Activation is gated SOLELY on a real
+// authenticated admin session (_hasAdminSession) — there is NO URL or localStorage bypass, so
+// customers can never self-unlock. Wire _hasAdminSession() to the production admin auth check.
+const ADMIN={active:false};
+function _hasAdminSession(){
+  // Hook point for the real admin auth/session (e.g. window.CB_ADMIN, a cookie, or the
+  // celebratebanner-admin session). Returns true only when an authenticated admin is present.
+  try{if(window.CB_ADMIN===true||(window.CB_SESSION&&window.CB_SESSION.role==='admin'))return true;}catch(e){}
+  return false;
+}
+function detectAdminMode(){
+  // SECURITY: admin mode activates ONLY from a real authenticated admin session.
+  // No URL (?admin / #admin) or localStorage bypass — customers can never self-unlock.
+  return _hasAdminSession();
+}
+// Single source of truth for "is the full proof unlocked?" — paid customer OR active admin.
+// When ADMIN is inactive this is exactly SEC.paid, so the customer flow is byte-for-byte unchanged.
+function previewUnlocked(){return SEC.paid||ADMIN.active;}
+function isAdmin(){return ADMIN.active;}
+function updateAdminToggleUI(){
+  // The toggle (and admin-mode UI) only exist for a real admin session — never for customers.
+  const canAdmin=_hasAdminSession();
+  const toggle=document.getElementById('admin-toggle');
+  if(toggle)toggle.style.display=canAdmin?'inline-flex':'none';
+  document.body.classList.toggle('admin-mode',ADMIN.active);
+  const cust=document.getElementById('admin-seg-customer'),adm=document.getElementById('admin-seg-admin');
+  if(cust)cust.classList.toggle('active',!ADMIN.active);
+  if(adm)adm.classList.toggle('active',ADMIN.active);
+  const pdf=document.getElementById('download-pdf-admin');
+  if(pdf)pdf.style.display=(ADMIN.active&&state.previewGenerated)?'inline-flex':'none';
+}
+function setAdminMode(on){
+  // SECURITY: activation requires a real admin session; deactivation (→ Customer) is always allowed.
+  if(on&&!_hasAdminSession())return;
+  ADMIN.active=!!on;
+  updateAdminToggleUI();
+  // Re-apply the protection state of the current preview to match the new mode.
+  if(state.previewGenerated){
+    const dlMain=document.getElementById('download-jpg-main');
+    if(previewUnlocked()){
+      const overlay=document.getElementById('preview-lock-overlay');if(overlay)overlay.remove();
+      const wc=document.getElementById('preview-watermark-canvas');if(wc)wc.remove();
+      if(dlMain){dlMain.classList.remove('locked');dlMain.onclick=downloadJpg;}
+    }else{
+      // Restore the exact customer protection (locked download + watermark + lock overlay).
+      if(dlMain){dlMain.classList.add('locked');dlMain.onclick=function(){toast('🔒 Please complete payment');showLockOverlay();};}
+      drawWatermarkOverlay();showLockOverlay();
+    }
+    updateAdminToggleUI();
+  }
+  toast(ADMIN.active?'🛡️ Administrator preview — full proof unlocked':'Customer mode restored');
+}
 // ── PRODUCTS ─────────────────────────────────────────────────
 // Source of truth for the printed vinyl banner: print specs, export sizing,
 // and Stripe SKUs. Behavior here matches what the code already does today —
@@ -989,7 +1063,7 @@ function updateText(key,value){if(!key)return;state.bannerText[key]=value;state.
 // ── STEP 3: PREVIEW ──────────────────────────────────────────
 function renderArrangementGrid(){const grid=document.getElementById('arr-grid');if(!grid)return;const upsell=document.getElementById('arr-upsell');if(state.product==='tabletop'){grid.innerHTML='';grid.style.display='none';if(upsell)upsell.style.display='none';return;}grid.style.display='';if(upsell)upsell.style.display='';grid.innerHTML=ARRANGEMENTS.map(a=>`<div class="arr-opt${state.arrangement===a.id?' active':''}" data-arr="${a.id}" onclick="setArrangement('${a.id}')"><div class="arr-opt-title">${a.label}${a.tier==='premium'?'<span class="price-tag">+$9.99 on print</span>':''}</div><div class="arr-opt-sub">${a.sub}</div></div>`).join('');}
 
-function refreshPreviewUI(){const post=document.getElementById('post-preview');const pre=document.getElementById('pre-preview-actions');const empty=document.getElementById('preview-empty');const canvas=document.getElementById('preview-canvas');const genBtn=document.getElementById('generate-btn');const stand=document.getElementById('stand-mockup');const dlMain=document.getElementById('download-jpg-main');if(state.previewGenerated){post.style.display='block';pre.style.display='none';empty.style.display='none';canvas.style.display='block';genBtn.style.display='none';renderArrangementGrid();if(stand)stand.style.display='block';if(dlMain)dlMain.style.display='inline-flex';drawSafeZoneOverlay();const hd=document.getElementById('download-hd-btn');if(hd){if(activeProduct().exportDPI){hd.style.display='none';}else{if(hd.style.display==='none')hd.style.display='';hd.style.opacity=state.isPremium?'1':'0.45';hd.title=state.isPremium?'Download HD (2400×3600)':'Pick a premium arrangement to unlock HD';}}if(!SEC.paid){if(dlMain){dlMain.classList.add('locked');dlMain.onclick=function(){toast('🔒 Please complete payment');showLockOverlay();};}setTimeout(()=>{drawWatermarkOverlay();showLockOverlay();},200);}}else{post.style.display='none';pre.style.display='block';empty.style.display='block';canvas.style.display='none';genBtn.style.display='inline-flex';if(stand)stand.style.display='none';if(dlMain)dlMain.style.display='none';const szc=document.getElementById('preview-safezone-canvas');if(szc)szc.remove();}}
+function refreshPreviewUI(){const post=document.getElementById('post-preview');const pre=document.getElementById('pre-preview-actions');const empty=document.getElementById('preview-empty');const canvas=document.getElementById('preview-canvas');const genBtn=document.getElementById('generate-btn');const stand=document.getElementById('stand-mockup');const dlMain=document.getElementById('download-jpg-main');if(state.previewGenerated){post.style.display='block';pre.style.display='none';empty.style.display='none';canvas.style.display='block';genBtn.style.display='none';renderArrangementGrid();if(stand)stand.style.display='block';if(dlMain)dlMain.style.display='inline-flex';drawSafeZoneOverlay();const hd=document.getElementById('download-hd-btn');if(hd){if(activeProduct().exportDPI){hd.style.display='none';}else{if(hd.style.display==='none')hd.style.display='';hd.style.opacity=state.isPremium?'1':'0.45';hd.title=state.isPremium?'Download HD (2400×3600)':'Pick a premium arrangement to unlock HD';}}if(!previewUnlocked()){if(dlMain){dlMain.classList.add('locked');dlMain.onclick=function(){toast('🔒 Please complete payment');showLockOverlay();};}setTimeout(()=>{drawWatermarkOverlay();showLockOverlay();},200);}else if(dlMain){dlMain.classList.remove('locked');dlMain.onclick=downloadJpg;}if(typeof updateAdminToggleUI==='function')updateAdminToggleUI();}else{post.style.display='none';pre.style.display='block';empty.style.display='block';canvas.style.display='none';genBtn.style.display='inline-flex';if(stand)stand.style.display='none';if(dlMain)dlMain.style.display='none';const szc=document.getElementById('preview-safezone-canvas');if(szc)szc.remove();}}
 
 function generatePreview(force){const ids=selectImages();if(ids.length===0){toast('Pick a hero first');return;}state.selectedImages=ids;const newKey=computeCacheKey();if(!force&&state.previewCacheKey===newKey&&state.previewGenerated){toast('Preview already up to date');return;}const empty=document.getElementById('preview-empty');empty.innerHTML=`<div class="preview-loading"><div class="spinner"></div><div>Rendering preview…</div></div>`;empty.style.display='flex';document.getElementById('preview-canvas').style.display='none';setTimeout(()=>{const pc=document.getElementById('preview-canvas');renderToCanvas(pc,ids,state.isPremium,1);state.previewGenerated=true;state.previewCacheKey=newKey;document.getElementById('preview-spec-text').textContent=`${ids.length} photos · ${state.arrangement}${state.isPremium?' (Premium)':''}`;refreshPreviewUI();try{renderStandMockup(pc);}catch(e){console.warn('Stand mockup error:',e);}toast(productNounTitle()+' ready');},60);}
 
@@ -1449,20 +1523,54 @@ function drawSafeZoneOverlay(){
 }
 
 // ── SECURITY SYSTEM ──────────────────────────────────────────
-function drawWatermarkOverlay(){const container=document.getElementById('banner-preview');if(!container)return;const existing=document.getElementById('preview-watermark-canvas');if(existing)existing.remove();if(SEC.paid)return;const pc=document.getElementById('preview-canvas');if(!pc||pc.style.display==='none')return;const wc=document.createElement('canvas');wc.id='preview-watermark-canvas';wc.width=pc.offsetWidth||400;wc.height=pc.offsetHeight||600;wc.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;border-radius:var(--r2);';container.appendChild(wc);const ctx=wc.getContext('2d');const W=wc.width,H=wc.height;ctx.save();ctx.translate(W/2,H/2);ctx.rotate(-35*Math.PI/180);[{text:'CELEBRATEBANNER.COM',fontSize:Math.round(W*0.055),opacity:0.22,dy:0},{text:'PREVIEW ONLY · NOT FOR PRINT',fontSize:Math.round(W*0.032),opacity:0.16,dy:Math.round(H*0.06)}].forEach(pass=>{ctx.font=`700 ${pass.fontSize}px 'Outfit',sans-serif`;ctx.fillStyle=`rgba(255,255,255,${pass.opacity})`;ctx.textAlign='center';ctx.textBaseline='middle';const spacing=pass.fontSize*3.5;const cols=Math.ceil(Math.max(W,H)*1.6/spacing)+2;const rows=Math.ceil(Math.max(W,H)*1.6/(pass.fontSize*2.5))+2;for(let r=-rows;r<=rows;r++)for(let c=-cols;c<=cols;c++)ctx.fillText(pass.text,c*spacing,r*pass.fontSize*2.5+pass.dy);});ctx.restore();}
+function drawWatermarkOverlay(){const container=document.getElementById('banner-preview');if(!container)return;const existing=document.getElementById('preview-watermark-canvas');if(existing)existing.remove();if(previewUnlocked())return;const pc=document.getElementById('preview-canvas');if(!pc||pc.style.display==='none')return;const wc=document.createElement('canvas');wc.id='preview-watermark-canvas';wc.width=pc.offsetWidth||400;wc.height=pc.offsetHeight||600;wc.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;border-radius:var(--r2);';container.appendChild(wc);const ctx=wc.getContext('2d');const W=wc.width,H=wc.height;ctx.save();ctx.translate(W/2,H/2);ctx.rotate(-35*Math.PI/180);[{text:'CELEBRATEBANNER.COM',fontSize:Math.round(W*0.055),opacity:0.22,dy:0},{text:'PREVIEW ONLY · NOT FOR PRINT',fontSize:Math.round(W*0.032),opacity:0.16,dy:Math.round(H*0.06)}].forEach(pass=>{ctx.font=`700 ${pass.fontSize}px 'Outfit',sans-serif`;ctx.fillStyle=`rgba(255,255,255,${pass.opacity})`;ctx.textAlign='center';ctx.textBaseline='middle';const spacing=pass.fontSize*3.5;const cols=Math.ceil(Math.max(W,H)*1.6/spacing)+2;const rows=Math.ceil(Math.max(W,H)*1.6/(pass.fontSize*2.5))+2;for(let r=-rows;r<=rows;r++)for(let c=-cols;c<=cols;c++)ctx.fillText(pass.text,c*spacing,r*pass.fontSize*2.5+pass.dy);});ctx.restore();}
 
-function showLockOverlay(){const container=document.getElementById('banner-preview');if(!container||SEC.paid)return;const existing=document.getElementById('preview-lock-overlay');if(existing)existing.remove();const overlay=document.createElement('div');overlay.id='preview-lock-overlay';overlay.innerHTML=`<div class="lock-icon-wrap">🔒</div><div class="lock-title">Your ${productNoun()} is ready — unlock it below</div><div class="lock-sub">This preview is protected. Pay to receive your full-resolution file with no watermark.</div><button class="lock-unlock-btn" onclick="initiatePayment()">✦ Unlock My ${productNounTitle()}</button><div class="lock-security-note">SSL SECURED · STRIPE CHECKOUT · NO CARD DATA STORED</div>`;container.appendChild(overlay);}
+function showLockOverlay(){const container=document.getElementById('banner-preview');if(!container||previewUnlocked())return;const existing=document.getElementById('preview-lock-overlay');if(existing)existing.remove();const overlay=document.createElement('div');overlay.id='preview-lock-overlay';overlay.innerHTML=`<div class="lock-icon-wrap">🔒</div><div class="lock-title">Your ${productNoun()} is ready — unlock it below</div><div class="lock-sub">This preview is protected. Pay to receive your full-resolution file with no watermark.</div><button class="lock-unlock-btn" onclick="initiatePayment()">✦ Unlock My ${productNounTitle()}</button><div class="lock-security-note">SSL SECURED · STRIPE CHECKOUT · NO CARD DATA STORED</div>`;container.appendChild(overlay);}
 
 function unlockPreview(){SEC.paid=true;SEC.sessionKey='paid_'+Date.now();const overlay=document.getElementById('preview-lock-overlay');if(overlay){overlay.classList.add('unlocked');setTimeout(()=>overlay.remove(),450);}const wc=document.getElementById('preview-watermark-canvas');if(wc){wc.classList.add('unlocked');setTimeout(()=>wc.remove(),450);}const dlBtn=document.getElementById('download-jpg-main');if(dlBtn){dlBtn.classList.remove('locked');dlBtn.onclick=downloadJpg;}if(state.previewGenerated&&state.selectedImages.length>0){const pc=document.getElementById('preview-canvas');renderToCanvas(pc,state.selectedImages,state.isPremium,1);try{renderStandMockup(pc);}catch(e){}drawSafeZoneOverlay();}toast('✓ Payment confirmed — '+productNoun()+' unlocked!');}
 
-function blockCanvasRightClick(){const canvas=document.getElementById('preview-canvas');if(canvas)canvas.addEventListener('contextmenu',function(e){if(!SEC.paid){e.preventDefault();toast('🔒 Pay to download your '+productNoun());return false;}});document.addEventListener('contextmenu',function(e){if(e.target&&e.target.id==='preview-watermark-canvas'){e.preventDefault();toast('🔒 Pay to download your '+productNoun());}});}
+function blockCanvasRightClick(){const canvas=document.getElementById('preview-canvas');if(canvas)canvas.addEventListener('contextmenu',function(e){if(!previewUnlocked()){e.preventDefault();toast('🔒 Pay to download your '+productNoun());return false;}});document.addEventListener('contextmenu',function(e){if(e.target&&e.target.id==='preview-watermark-canvas'){e.preventDefault();toast('🔒 Pay to download your '+productNoun());}});}
 
 function initiatePayment(){goto(4);toast('Choose your delivery option below');}
 
-function exportAtDpi(p,hd){const W=Math.round(p.trimInches.w*p.exportDPI);const H=Math.round(p.trimInches.h*p.exportDPI);const scale=Math.max(W/p.canvasBase.w,H/p.canvasBase.h);const off1=document.createElement('canvas');renderToCanvas(off1,state.selectedImages,state.isPremium,scale);const off2=document.createElement('canvas');off2.width=W;off2.height=H;off2.getContext('2d').drawImage(off1,0,0,W,H);off2.toBlob(blob=>{triggerDownload(blob,`celebratebanner-${hd?'hd-':''}${Date.now()}.jpg`);toast(hd?`HD downloaded · ${W}×${H}`:'✓ Downloaded — thank you!');},'image/jpeg',0.95);}
-function downloadJpg(){if(!SEC.paid){toast('🔒 Please complete payment to download');showLockOverlay();return;}if(!state.previewGenerated){toast('Generate a preview first');return;}const p=activeProduct();if(p.exportDPI){exportAtDpi(p,false);return;}const canvas=document.getElementById('preview-canvas');triggerDownload(canvas.toDataURL('image/jpeg',0.95),`celebratebanner-${Date.now()}.jpg`);toast('✓ Downloaded — thank you!');}
+// Build a minimal single-page PDF that embeds the canvas JPEG (DCTDecode) — no external library,
+// keeping this a single-file vanilla app. Page size = image pixel size (points).
+function _canvasToPdfBlob(canvas){
+  const b64=canvas.toDataURL('image/jpeg',0.95).split(',')[1];
+  const bin=atob(b64);
+  const imgW=canvas.width,imgH=canvas.height;
+  const parts=[];let pos=0;const off=[];
+  const push=s=>{parts.push(s);pos+=s.length;};
+  push('%PDF-1.3\n');
+  off[1]=pos;push('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+  off[2]=pos;push('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n');
+  off[3]=pos;push('3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+imgW+' '+imgH+'] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\nendobj\n');
+  off[4]=pos;push('4 0 obj\n<< /Type /XObject /Subtype /Image /Width '+imgW+' /Height '+imgH+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+bin.length+' >>\nstream\n');
+  push(bin);push('\nendstream\nendobj\n');
+  const content='q\n'+imgW+' 0 0 '+imgH+' 0 0 cm\n/Im0 Do\nQ\n';
+  off[5]=pos;push('5 0 obj\n<< /Length '+content.length+' >>\nstream\n'+content+'endstream\nendobj\n');
+  const xrefPos=pos;let xref='xref\n0 6\n0000000000 65535 f \n';
+  for(let i=1;i<=5;i++)xref+=String(off[i]).padStart(10,'0')+' 00000 n \n';
+  push(xref);push('trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n'+xrefPos+'\n%%EOF');
+  const bytes=new Uint8Array(pos);let k=0;
+  for(const s of parts)for(let i=0;i<s.length;i++)bytes[k++]=s.charCodeAt(i)&0xff;
+  return new Blob([bytes],{type:'application/pdf'});
+}
+// Full-resolution PDF export. Gated by previewUnlocked() — admin (or a paid customer) only.
+function downloadPdf(){
+  if(!previewUnlocked()){toast('🔒 Please complete payment to download');showLockOverlay();return;}
+  if(!state.previewGenerated){toast('Generate a preview first');return;}
+  const p=activeProduct();let src;
+  if(p.exportDPI){const W=Math.round(p.trimInches.w*p.exportDPI),H=Math.round(p.trimInches.h*p.exportDPI);const scale=Math.max(W/p.canvasBase.w,H/p.canvasBase.h);const o1=document.createElement('canvas');renderToCanvas(o1,state.selectedImages,state.isPremium,scale);src=document.createElement('canvas');src.width=W;src.height=H;src.getContext('2d').drawImage(o1,0,0,W,H);}
+  else{src=document.createElement('canvas');renderToCanvas(src,state.selectedImages,state.isPremium,activeProduct().exportScale);}
+  triggerDownload(_canvasToPdfBlob(src),`celebratebanner-${Date.now()}.pdf`);
+  toast('✓ PDF downloaded');
+}
 
-function downloadHdJpg(){if(!SEC.paid){toast('🔒 Please complete payment to download HD');showLockOverlay();return;}if(!state.previewGenerated){toast('Generate a preview first');return;}const p=activeProduct();if(p.exportDPI){exportAtDpi(p,true);return;}if(!state.isPremium){toast('HD download requires a Premium arrangement');return;}const btn=document.getElementById('download-hd-btn');const original=btn.innerHTML;btn.disabled=true;btn.textContent='Rendering HD…';setTimeout(()=>{const off=document.createElement('canvas');renderToCanvas(off,state.selectedImages,state.isPremium,activeProduct().exportScale);off.toBlob(blob=>{triggerDownload(blob,`celebratebanner-hd-${Date.now()}.jpg`);btn.disabled=false;btn.innerHTML=original;toast(`HD downloaded · ${off.width}×${off.height}`);},'image/jpeg',0.95);},50);}
+function exportAtDpi(p,hd){const W=Math.round(p.trimInches.w*p.exportDPI);const H=Math.round(p.trimInches.h*p.exportDPI);const scale=Math.max(W/p.canvasBase.w,H/p.canvasBase.h);const off1=document.createElement('canvas');renderToCanvas(off1,state.selectedImages,state.isPremium,scale);const off2=document.createElement('canvas');off2.width=W;off2.height=H;off2.getContext('2d').drawImage(off1,0,0,W,H);off2.toBlob(blob=>{triggerDownload(blob,`celebratebanner-${hd?'hd-':''}${Date.now()}.jpg`);toast(hd?`HD downloaded · ${W}×${H}`:'✓ Downloaded — thank you!');},'image/jpeg',0.95);}
+function downloadJpg(){if(!previewUnlocked()){toast('🔒 Please complete payment to download');showLockOverlay();return;}if(!state.previewGenerated){toast('Generate a preview first');return;}const p=activeProduct();if(p.exportDPI){exportAtDpi(p,false);return;}const canvas=document.getElementById('preview-canvas');triggerDownload(canvas.toDataURL('image/jpeg',0.95),`celebratebanner-${Date.now()}.jpg`);toast('✓ Downloaded — thank you!');}
+
+function downloadHdJpg(){if(!previewUnlocked()){toast('🔒 Please complete payment to download HD');showLockOverlay();return;}if(!state.previewGenerated){toast('Generate a preview first');return;}const p=activeProduct();if(p.exportDPI){exportAtDpi(p,true);return;}if(!state.isPremium){toast('HD download requires a Premium arrangement');return;}const btn=document.getElementById('download-hd-btn');const original=btn.innerHTML;btn.disabled=true;btn.textContent='Rendering HD…';setTimeout(()=>{const off=document.createElement('canvas');renderToCanvas(off,state.selectedImages,state.isPremium,activeProduct().exportScale);off.toBlob(blob=>{triggerDownload(blob,`celebratebanner-hd-${Date.now()}.jpg`);btn.disabled=false;btn.innerHTML=original;toast(`HD downloaded · ${off.width}×${off.height}`);},'image/jpeg',0.95);},50);}
 
 // US shipping destinations the dropdown offers, alphabetical by display name.
 // LOWER48_BLOCKED is what the gate rejects: Alaska, Hawaii, the five US territories,
@@ -1497,6 +1605,12 @@ function populateShipStateOptions(){
 function placeholderCheckout() {
   if (!state.previewGenerated) {
     toast('Generate your preview first');
+    goto(3);
+    return;
+  }
+  // Administrator preview mode never goes to Stripe — the full proof is downloadable directly.
+  if (isAdmin()) {
+    toast('🛡️ Admin mode — download your proof directly (no checkout).');
     goto(3);
     return;
   }
@@ -1571,6 +1685,8 @@ refreshSummary();
 refreshUploadLimits();
 refreshUploadStats();
 populateShipStateOptions();
+// Initialize admin preview mode from session / dev flag (defaults to Customer).
+ADMIN.active=detectAdminMode();updateAdminToggleUI();
 </script>
 <footer style="background: var(--obsidian, #0C0E14); border-top: 1px solid rgba(201,168,76,0.1); padding: 2.5rem 1.5rem; margin-top: 4rem; color: rgba(255,255,255,0.6); font-size: 13px;">
   <div style="max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.25rem;">
