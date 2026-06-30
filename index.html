@@ -1002,7 +1002,7 @@ function _seededRand(seed){let s=seed|0;return function(){s=(s*1664525+101390422
 function _tileToCount(base,count){const out=[];if(!base||!base.length)return out;for(let i=0;i<count;i++)out.push(Object.assign({},base[i%base.length]));return out;}
 function _photoRot(rng,maxDeg){return(rng()*2-1)*maxDeg*Math.PI/180;}
 
-function renderToCanvas(tc,ids,premium,scale){scale=scale||1;const _base=effectiveCanvasBase();const W=_base.w,H=_base.h;tc.width=W*scale;tc.height=H*scale;tc.style.width='100%';tc.style.height='100%';const ctx=tc.getContext('2d');ctx.scale(scale,scale);const theme=state.theme||THEMES[0];const palette=theme.palette;const grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,_lightenHex(palette.bg,12));grad.addColorStop(1,palette.bg);ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);drawThemeDecorations(ctx,W,H,theme);ctx.strokeStyle=palette.accent;ctx.lineWidth=8;ctx.strokeRect(20,20,W-40,H-40);const photos=ids.map(id=>state.images.find(p=>p.id===id)).filter(Boolean);const sideKind=classicSideTextKind(photos);let textBottomY=56;if(!sideKind){ctx.save();ctx.globalCompositeOperation='source-over';textBottomY=renderBannerText(ctx,W,56,theme);ctx.restore();}if(!photos.length)return;const contentTop=textBottomY+24;switch(state.arrangement){case'magazine':renderMagazine(ctx,photos,W,H,contentTop);break;case'scattered':renderScattered(ctx,photos,W,H,contentTop);break;case'mosaic':renderMosaic(ctx,photos,W,H,contentTop);break;default:renderClassic(ctx,photos,W,H,contentTop);}if(!sideKind){ctx.save();ctx.globalCompositeOperation='source-over';renderBannerText(ctx,W,56,theme);ctx.restore();}}
+function renderToCanvas(tc,ids,premium,scale){scale=scale||1;const _base=effectiveCanvasBase();const W=_base.w,H=_base.h;tc.width=W*scale;tc.height=H*scale;tc.style.width='100%';tc.style.height='100%';const ctx=tc.getContext('2d');ctx.scale(scale,scale);const theme=state.theme||THEMES[0];const palette=theme.palette;const grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,_lightenHex(palette.bg,12));grad.addColorStop(1,palette.bg);ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);drawThemeDecorations(ctx,W,H,theme);ctx.strokeStyle=palette.accent;ctx.lineWidth=8;ctx.strokeRect(20,20,W-40,H-40);const photos=ids.map(id=>state.images.find(p=>p.id===id)).filter(Boolean);const _comp=productComposition();if(_comp!=='banner'){if(photos.length){if(_comp==='social')renderSocialComposition(ctx,photos,W,H,theme);else renderPosterComposition(ctx,photos,W,H,theme,posterVariant());}return;}const sideKind=classicSideTextKind(photos);let textBottomY=56;if(!sideKind){ctx.save();ctx.globalCompositeOperation='source-over';textBottomY=renderBannerText(ctx,W,56,theme);ctx.restore();}if(!photos.length)return;const contentTop=textBottomY+24;switch(state.arrangement){case'magazine':renderMagazine(ctx,photos,W,H,contentTop);break;case'scattered':renderScattered(ctx,photos,W,H,contentTop);break;case'mosaic':renderMosaic(ctx,photos,W,H,contentTop);break;default:renderClassic(ctx,photos,W,H,contentTop);}if(!sideKind){ctx.save();ctx.globalCompositeOperation='source-over';renderBannerText(ctx,W,56,theme);ctx.restore();}}
 
 function drawThemeDecorations(ctx,W,H,theme){if(!theme)return;switch(theme.id){case'champion':drawStadiumArcs(ctx,W,H,theme);break;case'wedding':drawFloralCorners(ctx,W,H,theme);break;case'anniversary':drawHeartMotifs(ctx,W,H,theme);break;case'pets':drawPawWatermarks(ctx,W,H,theme);break;case'america250':drawAmerica250Background(ctx,W,H);break;case'worldcup2026':drawWorldCupBackground(ctx,W,H);break;}}
 
@@ -1124,6 +1124,51 @@ function renderScattered(ctx,photos,W,H,contentTop){const seed=state.shuffledSee
 
 function renderMosaic(ctx,photos,W,H,contentTop){ctx.save();ctx.strokeStyle='rgba(0,0,0,0)';ctx.lineWidth=0;ctx.setLineDash([]);const seed=state.shuffledSeed??12345;const rng=mulberry32(seed^0xA10C);const supporting=photos.slice(1),margin=40,gap=8,contentBottom=H-margin;const heroW=320,heroH=380,heroX=(W-heroW)/2,heroY=contentTop+Math.floor((contentBottom-contentTop)*0.22);const topH=heroY-gap-contentTop,topW=(720-4*gap)/5;const topXs=[40,184,328,472,616];const sideRows=3,sideW=192,sideH=(heroH-gap*(sideRows-1))/sideRows;const botTop=heroY+heroH+gap,botBandH=contentBottom-botTop,botRows=3,botRowH=(botBandH-gap*(botRows-1))/botRows;const slots=[];topXs.forEach(tx=>slots.push({x:tx,y:contentTop,w:topW,h:topH}));for(let i=0;i<sideRows;i++){slots.push({x:40,y:heroY+i*(sideH+gap),w:sideW,h:sideH});slots.push({x:W-margin-sideW,y:heroY+i*(sideH+gap),w:sideW,h:sideH});}for(let r=0;r<botRows;r++){topXs.forEach(tx=>slots.push({x:tx,y:botTop+r*(botRowH+gap),w:topW,h:botRowH}));}const drawList=_tileToCount(supporting,slots.length);drawList.forEach((p,i)=>{const s=slots[i];drawPhotoFramed(ctx,p,s.x,s.y,s.w,s.h,{rotation:_photoRot(rng,0.5),shadow:false});});draw3DHero(ctx,photos[0],heroX,heroY,heroW,heroH);ctx.restore();}
 
+// ── PRODUCT COMPOSITIONS ─────────────────────────────────────
+// Step 5 picks the visual composition from state.marketingProduct (NOT just canvas size):
+//   team-banner            → dense banner grid (existing arrangement path), landscape
+//   graduation-poster      → portrait poster: 🎓 cap header, title under cap, hero, collage
+//   championship-poster    → portrait poster: 🏆 trophy header, "CHAMPIONS", hero, collage
+//   senior-night-package   → portrait package poster: "SENIOR NIGHT" header, hero, collage
+//   social-graphics        → square single-focal social card with title band (Instagram 1:1)
+// Each composition still uses the product's theme decorations + palette, so a graduation
+// poster reads as a poster (not a banner). Canvas dimensions stay driven by effectiveCanvasBase().
+function productComposition(){switch(state.marketingProduct){case'social-graphics':return'social';case'graduation-poster':case'championship-poster':case'senior-night-package':return'poster';default:return'banner';}}
+function posterVariant(){return state.marketingProduct==='championship-poster'?'championship':state.marketingProduct==='senior-night-package'?'senior':'graduation';}
+function _drawPosterEyebrow(ctx,W,text,y,palette){ctx.save();ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.fillStyle=palette.accent;ctx.font='700 20px Outfit,sans-serif';ctx.fillText(text.split('').join(' '),W/2,y);ctx.restore();}
+function _drawPosterGlyph(ctx,W,glyph,y){ctx.save();ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.font='52px "Outfit",sans-serif';ctx.fillText(glyph,W/2,y);ctx.restore();}
+function renderPosterComposition(ctx,photos,W,H,theme,variant){theme=theme||state.theme||THEMES[0];const palette=theme.palette;const margin=46,innerW=W-margin*2;const seed=state.shuffledSeed??12345,rng=mulberry32(seed^0x9051E2);
+  // Premium mat-style inner frame line (poster framing cue).
+  ctx.save();ctx.strokeStyle=_hexToRgba(palette.accent,0.35);ctx.lineWidth=1.5;ctx.strokeRect(margin*0.62,margin*0.62,W-margin*1.24,H-margin*1.24);ctx.restore();
+  // Variant header above the title: graduation cap, championship trophy, or senior-night eyebrow.
+  let titleTop=64;
+  if(variant==='championship'){_drawPosterGlyph(ctx,W,'🏆',96);_drawPosterEyebrow(ctx,W,'CHAMPIONS',132,palette);titleTop=160;}
+  else if(variant==='senior'){_drawPosterEyebrow(ctx,W,'SENIOR NIGHT',64,palette);titleTop=96;}
+  else {_drawPosterGlyph(ctx,W,'🎓',98);titleTop=124;}
+  const titleBottom=renderBannerText(ctx,W,titleTop,theme);
+  // Bottom supporting-photo strip (up to 5), reserved first.
+  const supporting=photos.slice(1);
+  const hasStrip=supporting.length>0;
+  const stripBot=H-margin;
+  const stripH=hasStrip?Math.max(120,Math.min(190,Math.round((H-titleBottom)*0.20))):0;
+  const stripTop=hasStrip?stripBot-stripH:stripBot;
+  // Hero: large, centered, portrait box between title and strip — the poster focal point.
+  const heroTop=titleBottom+28;
+  const heroBot=hasStrip?stripTop-26:stripBot;
+  const heroBoxH=Math.max(220,heroBot-heroTop);
+  const heroBoxW=Math.min(innerW,Math.round(heroBoxH*0.82));
+  const heroX=Math.round((W-heroBoxW)/2);
+  draw3DHero(ctx,photos[0],heroX,heroTop,heroBoxW,heroBoxH);
+  if(hasStrip){const maxCells=Math.min(supporting.length,5);const gap=12;const cellW=(innerW-gap*(maxCells-1))/maxCells;for(let i=0;i<maxCells;i++){drawPhotoFramed(ctx,supporting[i],margin+i*(cellW+gap),stripTop,cellW,stripH,{rotation:_photoRot(rng,1),shadow:true});}}
+}
+function renderSocialComposition(ctx,photos,W,H,theme){theme=theme||state.theme||THEMES[0];const margin=44;const hero=photos[0];
+  const bandH=Math.round(H*0.22);const bandTop=H-margin-bandH;
+  const heroTop=margin+6,heroX=margin,heroW=W-margin*2,heroH=bandTop-heroTop-18;
+  draw3DHero(ctx,hero,heroX,heroTop,heroW,heroH);
+  // Centered title band on the lower fifth — single-focal social-card style.
+  renderBannerText(ctx,W,bandTop+6,theme);
+}
+
 // ── FRAMES ───────────────────────────────────────────────────
 function drawPhotoFramed(ctx,p,x,y,w,h,opts){opts=opts||{};const frame=opts.forceFrame||frameOf(p.id);const rotation=opts.rotation||0;const shadow=opts.shadow!==false;if(p&&p.imgEl)p.imgEl._rotDeg=(state.rotations&&state.rotations[p.id])||0;ctx.save();if(rotation){const cx=opts.cx??(x+w/2);const cy=opts.cy??(y+h/2);ctx.translate(cx,cy);ctx.rotate(rotation);x=-w/2;y=-h/2;}else if(opts.cx!=null){ctx.translate(opts.cx,opts.cy);x=-w/2;y=-h/2;}
 if(frame==='polaroid')drawPolaroidFrame(ctx,p.imgEl,x,y,w,h,shadow);
@@ -1175,7 +1220,11 @@ function drawStarFrame(ctx,img,x,y,w,h,shadow){const cx=x+w/2,cy=y+h/2,outer=Mat
 // never writes back to bannerCanvas, so neither the SD export (downloadJpg → preview-canvas
 // .toDataURL) nor the HD export (downloadHdJpg → fresh offscreen renderToCanvas) is affected.
 // tabletop → roll-up stand; vinyl (and the default fallback) → hanging wall banner.
-function renderStandMockup(bannerCanvas){return state.product==='tabletop'?renderTabletopStand(bannerCanvas):renderHangingBanner(bannerCanvas);}
+function renderStandMockup(bannerCanvas){
+  // Only the banner composition gets the vinyl hanging-banner mockup. Posters and social
+  // graphics show the clean composition itself (a banner frame would misrepresent them).
+  if(productComposition()!=='banner'){const c=document.getElementById('stand-mockup');if(c){c.innerHTML='';c.style.display='none';}return null;}
+  return state.product==='tabletop'?renderTabletopStand(bannerCanvas):renderHangingBanner(bannerCanvas);}
 // VINYL hanging wall banner mockup: the design shown at the 24×36 aspect (w/h≈0.667) with
 // metallic grommet eyelets in the corners and edge midpoints, the way a vinyl banner mounts
 // to a wall. Grommets are MOCKUP-ONLY — drawn here, never in preview-canvas, so they can't
