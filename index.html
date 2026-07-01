@@ -134,7 +134,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--ivory); color: var(-
 .sec-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gold-dark); margin-bottom: 8px; }
 .sec-title { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 700; color: var(--obsidian); line-height: 1.15; margin-bottom: 8px; }
 .sec-sub { font-size: 15px; color: var(--muted); margin-bottom: 2.5rem; max-width: 540px; line-height: 1.6; }
-.upload-zone { border: 2px dashed rgba(201,168,76,0.3); border-radius: var(--r3); background: var(--white); padding: 3.5rem 2rem; text-align: center; cursor: pointer; transition: all 0.25s; position: relative; margin-bottom: 1.5rem; }
+.upload-zone { display: block; border: 2px dashed rgba(201,168,76,0.3); border-radius: var(--r3); background: var(--white); padding: 3.5rem 2rem; text-align: center; cursor: pointer; transition: all 0.25s; position: relative; margin-bottom: 1.5rem; }
 .upload-zone:hover, .upload-zone.over { border-color: var(--gold); background: rgba(201,168,76,0.03); }
 .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .upload-icon-wrap { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--gold3), var(--ivory2)); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 28px; }
@@ -295,6 +295,17 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
 .v2-debug-arrange { color: var(--gold2); font-weight: 700; font-size: 17px; letter-spacing: 0.04em; }
 .v2-debug-family { color: var(--gold3); font-weight: 700; font-size: 17px; letter-spacing: 0.04em; }
 .v2-debug-count { color: var(--gold2); font-weight: 700; font-size: 18px; }
+/* ── Design-mode selector (upload step) ────────────────────── */
+.design-mode-card { background: var(--white); border: 1px solid var(--border2); border-radius: var(--r2); padding: 20px; margin-bottom: 1.5rem; text-align: left; }
+.design-mode-title { font-size: 15px; font-weight: 700; color: var(--ink,#0C0E14); margin-bottom: 14px; }
+.dm-opt { display: flex; flex-direction: column; gap: 3px; position: relative; border: 2px solid var(--border2); border-radius: 10px; padding: 14px 16px 14px 48px; margin-bottom: 10px; cursor: pointer; transition: all 0.18s; }
+.dm-opt:last-child { margin-bottom: 0; }
+.dm-opt:hover { border-color: var(--gold); }
+.dm-opt.sel { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.15); background: rgba(201,168,76,0.04); }
+.dm-opt input { position: absolute; left: 17px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; accent-color: var(--gold); cursor: pointer; }
+.dm-opt-main { font-size: 14.5px; font-weight: 700; color: var(--ink,#0C0E14); display: flex; align-items: center; gap: 8px; }
+.dm-opt-sub { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+.dm-badge { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink,#0C0E14); background: linear-gradient(135deg, var(--gold), var(--gold2)); padding: 3px 9px; border-radius: 999px; }
 /* ── Administrator Preview Mode (dev/QA) ───────────────────── */
 .admin-toggle { display: inline-flex; align-items: center; gap: 8px; }
 .admin-toggle-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.35); }
@@ -429,17 +440,30 @@ body.admin-mode .admin-badge { display: flex; }
   <section class="page" id="pg-1">
     <button class="change-theme-link" type="button" onclick="goto(0)">← Change Theme</button>
     <div class="sec-eyebrow">Step 3 of 6</div>
-    <h1 class="sec-title">Upload your photos</h1>
-    <p class="sec-sub" id="upload-sub">Add 1–50 images.</p>
+    <h1 class="sec-title">Upload your favorite photos</h1>
+    <p class="sec-sub" id="upload-sub">Our AI automatically creates the best design from your memories.</p>
     <label class="upload-zone" id="upload-zone">
       <input type="file" id="file-input" accept="image/*" multiple>
       <div class="upload-icon-wrap">📷</div>
       <div class="upload-title">Drop photos here or click to upload</div>
-      <div class="upload-hint" id="upload-hint">JPG, PNG, HEIC — up to 50 photos</div>
+      <div class="upload-hint" id="upload-hint">JPG, PNG, HEIC</div>
       <div class="upload-limit">Tip: high-resolution photos print sharper at <span class="js-trim-label">24×36</span>"</div>
     </label>
+    <div class="design-mode-card">
+      <div class="design-mode-title">How would you like your design created?</div>
+      <label class="dm-opt sel" id="dm-smart" onclick="setDesignMode('smart')">
+        <input type="radio" name="design-mode" id="dm-smart-radio" checked>
+        <span class="dm-opt-main">AI Smart Design <span class="dm-badge">Recommended</span></span>
+        <span class="dm-opt-sub">We automatically build the best design from your favorites.</span>
+      </label>
+      <label class="dm-opt" id="dm-all" onclick="setDesignMode('all')">
+        <input type="radio" name="design-mode" id="dm-all-radio">
+        <span class="dm-opt-main">Use Every Photo</span>
+        <span class="dm-opt-sub">Include all of your uploaded photos in the layout.</span>
+      </label>
+    </div>
     <div class="upload-stats" id="upload-stats" style="display:none;">
-      <span class="ustat"><strong id="photo-count">0</strong> / <span id="photo-cap">50</span> photos</span>
+      <span class="ustat"><strong id="photo-count">0</strong> photos</span>
       <span class="ustat">·</span>
       <span class="ustat" id="hero-status">No hero selected</span>
     </div>
@@ -606,7 +630,7 @@ const ARRANGEMENTS=[
   {id:'mosaic',label:'Mosaic',sub:'Centered hero framed by a perfectly aligned photo grid',tier:'premium',minPhotos:8,maxPhotos:27},
   {id:'pyramid',label:'Pyramid',sub:'Hero apex with photos stepping down in a pyramid',tier:'premium',minPhotos:5,maxPhotos:17},
 ];
-const state={theme:null,images:[],heroImage:null,shuffledSeed:null,selectedImages:[],frames:{},rotations:{},activeFrame:'rounded',bannerText:{},isPremium:false,arrangement:'classic',previewGenerated:false,previewCacheKey:'',delivery:'digital',step:0,product:null,marketingProduct:null,termsAcceptedAt:null,tabletopFrozenPlacement:null,selectedPackage:'digital',selectedAddOns:[]};
+const state={theme:null,images:[],heroImage:null,shuffledSeed:null,selectedImages:[],frames:{},rotations:{},activeFrame:'rounded',bannerText:{},isPremium:false,arrangement:'classic',previewGenerated:false,previewCacheKey:'',delivery:'digital',step:0,product:null,marketingProduct:null,termsAcceptedAt:null,tabletopFrozenPlacement:null,selectedPackage:'digital',selectedAddOns:[],designMode:'smart'};
 // ── PRICING CONFIG (Revenue Engine · Phase 2 — per-product pricing) ────────────
 // basePackages = the package types' meta (name, tagline, includes, stripe link, kind).
 // byProduct    = which packages are available per marketing product, and at what price.
@@ -1027,9 +1051,19 @@ function selectProduct(id){if(!PRODUCTS[id])return;const switching=state.product
 function showProductPicker(){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('pg-product').classList.add('active');document.getElementById('hstep').style.display='none';document.getElementById('progress-track').style.display='none';renderProducts();window.scrollTo({top:0,behavior:'smooth'});}
 
 // ── STEP 0: THEME ────────────────────────────────────────────
-function renderThemes(){const grid=document.getElementById('theme-grid');if(!grid)return;grid.innerHTML=THEMES.map(t=>{const sel=state.theme&&state.theme.id===t.id;const badge=t.badge?`<div class="theme-badge" style="background:${t.badge.color};">${t.badge.label}</div>`:'';const iconBlock=t.id==='america250'?`<div class="theme-thumb theme-thumb-america"><div class="theme-icon theme-icon-america">${t.icon}</div></div>`:`<div class="theme-icon">${t.icon}</div>`;return`<div class="theme-card${sel?' sel':''}" data-theme="${t.id}" onclick="selectTheme('${t.id}')">${badge}<div class="theme-photo-cap">Up to ${t.maxPhotos} photos</div>${iconBlock}<div class="theme-name">${t.name}</div><div class="theme-tagline">${t.tagline}</div><div class="theme-tags">${t.tags.map(tag=>`<span class="theme-tag">${tag}</span>`).join('')}</div></div>`;}).join('');document.getElementById('theme-next-btn').disabled=!state.theme;}
+function renderThemes(){const grid=document.getElementById('theme-grid');if(!grid)return;grid.innerHTML=THEMES.map(t=>{const sel=state.theme&&state.theme.id===t.id;const badge=t.badge?`<div class="theme-badge" style="background:${t.badge.color};">${t.badge.label}</div>`:'';const iconBlock=t.id==='america250'?`<div class="theme-thumb theme-thumb-america"><div class="theme-icon theme-icon-america">${t.icon}</div></div>`:`<div class="theme-icon">${t.icon}</div>`;return`<div class="theme-card${sel?' sel':''}" data-theme="${t.id}" onclick="selectTheme('${t.id}')">${badge}<div class="theme-photo-cap">Upload your favorite photos</div>${iconBlock}<div class="theme-name">${t.name}</div><div class="theme-tagline">${t.tagline}</div><div class="theme-tags">${t.tags.map(tag=>`<span class="theme-tag">${tag}</span>`).join('')}</div></div>`;}).join('');document.getElementById('theme-next-btn').disabled=!state.theme;}
 function selectTheme(id){const theme=THEMES.find(t=>t.id===id);if(!theme)return;const switching=state.theme&&state.theme.id!==theme.id;state.theme=theme;const next={};theme.fields.forEach(k=>{next[k]=state.bannerText[k]||'';});state.bannerText=next;const arr=state.product==='tabletop'?ARRANGEMENTS[0]:(ARRANGEMENTS.find(a=>a.id===theme.defaultArrangement)||ARRANGEMENTS[0]);state.arrangement=arr.id;state.isPremium=arr.tier==='premium';if(switching){const cap=theme.maxPhotos;if(state.images.length>cap){state.images=state.images.slice(0,cap);if(state.heroImage&&!state.images.find(p=>p.id===state.heroImage))state.heroImage=state.images[0]?.id||null;}state.previewGenerated=false;_tabletopV2InvalidatePlacement();}renderThemes();refreshUploadLimits();}
-function refreshUploadLimits(){const cap=getMaxPhotos();const isWC=state.theme&&state.theme.id==='worldcup2026';const sub=document.getElementById('upload-sub');const hint=document.getElementById('upload-hint');const capEl=document.getElementById('photo-cap');if(sub)sub.textContent=isWC?`World Cup theme: up to ${cap} photos.`:`Add 1–${cap} images.`;if(hint)hint.textContent=`JPG, PNG, HEIC — up to ${cap} photos`;if(capEl)capEl.textContent=String(cap);}
+function refreshUploadLimits(){const cap=getMaxPhotos();const sub=document.getElementById('upload-sub');const hint=document.getElementById('upload-hint');const capEl=document.getElementById('photo-cap');
+  // Philosophy: we no longer promise to use every photo — customers upload favorites and (by
+  // default) our AI Smart Design picks the best. Copy stays cap-free; getMaxPhotos() still governs
+  // the technical upload limit under the hood.
+  if(sub)sub.textContent='Our AI automatically creates the best design from your memories.';
+  if(hint)hint.textContent='JPG, PNG, HEIC';
+  if(capEl)capEl.textContent=String(cap);}
+// Design-mode preference: 'smart' (AI picks the best photos — default) or 'all' (use every photo).
+// This task ONLY records the preference in state.designMode; the renderer is unchanged for now.
+function setDesignMode(mode){if(mode!=='smart'&&mode!=='all')return;state.designMode=mode;updateDesignModeUI();}
+function updateDesignModeUI(){const smart=document.getElementById('dm-smart'),all=document.getElementById('dm-all');if(smart)smart.classList.toggle('sel',state.designMode==='smart');if(all)all.classList.toggle('sel',state.designMode==='all');const sr=document.getElementById('dm-smart-radio'),ar=document.getElementById('dm-all-radio');if(sr)sr.checked=state.designMode==='smart';if(ar)ar.checked=state.designMode==='all';}
 
 // ── STEP 1: UPLOAD ───────────────────────────────────────────
 const fileInput=document.getElementById('file-input');
@@ -1776,6 +1810,7 @@ renderAddOns();
 refreshSummary();
 refreshUploadLimits();
 refreshUploadStats();
+updateDesignModeUI();
 populateShipStateOptions();
 // Initialize admin preview mode from session / dev flag (defaults to Customer).
 ADMIN.active=detectAdminMode();updateAdminToggleUI();
