@@ -295,6 +295,7 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
 .v2-debug-arrange { color: var(--gold2); font-weight: 700; font-size: 17px; letter-spacing: 0.04em; }
 .v2-debug-family { color: var(--gold3); font-weight: 700; font-size: 17px; letter-spacing: 0.04em; }
 .v2-debug-count { color: var(--gold2); font-weight: 700; font-size: 18px; }
+.design-mode-note { text-align: center; font-size: 12.5px; font-weight: 600; color: var(--gold2); background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.28); border-radius: 999px; padding: 8px 16px; margin: 0 auto 1.25rem; max-width: 500px; }
 /* ── Design-mode selector (upload step) ────────────────────── */
 .design-mode-card { background: var(--white); border: 1px solid var(--border2); border-radius: var(--r2); padding: 20px; margin-bottom: 1.5rem; text-align: left; }
 .design-mode-title { font-size: 15px; font-weight: 700; color: var(--ink,#0C0E14); margin-bottom: 14px; }
@@ -542,6 +543,7 @@ body.admin-mode .admin-badge { display: flex; }
       </div>
       <div class="stand-mockup" id="stand-mockup" style="display:none;"></div>
     </div>
+    <div class="design-mode-note" id="design-mode-note" style="display:none;">Smart Design selected the best photos for this layout.</div>
     <div class="gen-btn-wrap">
       <button class="btn btn-primary btn-lg" id="generate-btn" onclick="generatePreview()">✨ Generate My Banner</button>
       <button class="btn btn-dark btn-lg" id="download-jpg-main" style="display:none;" onclick="downloadJpg()">⬇ Download JPG</button>
@@ -917,11 +919,42 @@ function generateRandomSeed(){return Math.floor(Math.random()*2**31);}
 function mulberry32(seed){let a=seed>>>0;return function(){a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
 function shuffleArray(arr,rng){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function djb2(str){let h=5381;for(let i=0;i<str.length;i++)h=((h<<5)+h+str.charCodeAt(i))|0;return(h>>>0).toString(36);}
-function computeCacheKey(){const t=state.bannerText||{};const ts=Object.keys(t).sort().map(k=>k+':'+t[k]).join(',');const fs=Object.keys(state.frames).sort().map(k=>k+':'+state.frames[k]).join(',');const rs=Object.keys(state.rotations).sort().map(k=>k+':'+state.rotations[k]).join(',');return djb2([state.theme?state.theme.id:'none',state.heroImage||'',state.shuffledSeed??'none',state.arrangement,fs,rs,ts].join('|'));}
+function computeCacheKey(){const t=state.bannerText||{};const ts=Object.keys(t).sort().map(k=>k+':'+t[k]).join(',');const fs=Object.keys(state.frames).sort().map(k=>k+':'+state.frames[k]).join(',');const rs=Object.keys(state.rotations).sort().map(k=>k+':'+state.rotations[k]).join(',');return djb2([state.theme?state.theme.id:'none',state.heroImage||'',state.shuffledSeed??'none',state.arrangement,state.designMode||'smart',state.images.length,fs,rs,ts].join('|'));}
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),1800);}
 
 // ── NAVIGATION ───────────────────────────────────────────────
-function selectImages(){if(!state.heroImage)return[];const heroId=state.heroImage;const pool=state.images.map(i=>i.id).filter(id=>id!==heroId);const ordered=state.shuffledSeed!=null?shuffleArray(pool,mulberry32(state.shuffledSeed)):pool;let ids=[heroId,...ordered.slice(0,getMaxPhotos()-1)];if(state.product==='tabletop'){const cap=PRODUCTS.tabletop.maxPhotos||9;if(ids.length>cap)ids=ids.slice(0,cap);}return ids;}
+// ── SMART DESIGN — deterministic best-subset selection ───────────────────────
+// No external AI / no face detection: photos are scored on resolution + how well their aspect
+// fits the product, then chosen greedily with an orientation-diversity penalty so the design
+// isn't overcrowded and isn't all one orientation. Near-duplicates are dropped. The hero is
+// always kept. Selection is pure (no Math.random / no shuffledSeed) → same photos + same hero +
+// same product ⇒ same subset (stable). Only used when state.designMode==='smart'.
+function _photoOrientation(p){const a=(p.w||1)/(p.h||1);return a<=0.85?'portrait':(a<1.18?'square':'landscape');}
+// Duplicate signature: dims + data length + a strided content hash sampled across the WHOLE data
+// URL (not just the header — JPEG headers are identical across same-size photos, which would
+// false-collide distinct images). Identical images ⇒ identical signature; distinct images differ.
+function _photoSignature(p){const d=p.dataUrl||(p.name||p.id);let h=5381;const step=Math.max(1,Math.floor(d.length/1024));for(let i=0;i<d.length;i+=step)h=((h<<5)+h+d.charCodeAt(i))|0;return (p.w||0)+'x'+(p.h||0)+':'+d.length+':'+((h>>>0).toString(36));}
+function _photoScore(p,targetAspect){const w=p.w||1,h=p.h||1;const resScore=Math.min(1,(w*h)/3e6);const a=w/h;const fit=1-Math.min(1,Math.abs(Math.log(a/targetAspect))/Math.log(3));return resScore*0.5+fit*0.5;}
+// Guidance (rule 4): ≤8 → all; 9–15 → 8–12; 16–30 → 10–16; 31+ → 12–20. Returns TOTAL photo count.
+function smartTargetCount(n){if(n<=8)return n;let t,lo,hi;if(n<=15){t=Math.round(n*0.7);lo=8;hi=12;}else if(n<=30){t=Math.round(n*0.55);lo=10;hi=16;}else{t=Math.round(n*0.45);lo=12;hi=20;}return Math.max(lo,Math.min(hi,t));}
+function smartSelectIds(){
+  const heroId=state.heroImage;if(!heroId)return[];
+  const all=state.images;const cb=(typeof effectiveCanvasBase==='function')?effectiveCanvasBase():{w:1,h:1};const targetAspect=(cb.w||1)/(cb.h||1);
+  const hero=all.find(p=>p.id===heroId);
+  const seen=new Set();if(hero)seen.add(_photoSignature(hero));
+  const scored=[];
+  all.forEach((p,idx)=>{if(p.id===heroId)return;const sig=_photoSignature(p);if(seen.has(sig))return;seen.add(sig);scored.push({p,idx,score:_photoScore(p,targetAspect),ori:_photoOrientation(p)});});
+  let T=Math.min(smartTargetCount(all.length),getMaxPhotos());
+  const need=Math.max(0,T-1);
+  const pool=scored.slice(),picked=[],oriCount={portrait:0,square:0,landscape:0};
+  while(picked.length<need&&pool.length){let best=0,bestVal=-Infinity;for(let i=0;i<pool.length;i++){const c=pool[i];const eff=c.score-0.08*(oriCount[c.ori]||0);if(eff>bestVal){bestVal=eff;best=i;}}const chosen=pool.splice(best,1)[0];picked.push(chosen);oriCount[chosen.ori]++;}
+  picked.sort((a,b)=>b.score-a.score||a.idx-b.idx);
+  return [heroId,...picked.map(c=>c.p.id)];
+}
+function selectImages(){if(!state.heroImage)return[];
+  if(state.designMode==='smart')return smartSelectIds();
+  // 'all' mode — preserve existing behavior exactly (every uploaded photo up to the technical cap).
+  const heroId=state.heroImage;const pool=state.images.map(i=>i.id).filter(id=>id!==heroId);const ordered=state.shuffledSeed!=null?shuffleArray(pool,mulberry32(state.shuffledSeed)):pool;let ids=[heroId,...ordered.slice(0,getMaxPhotos()-1)];if(state.product==='tabletop'){const cap=PRODUCTS.tabletop.maxPhotos||9;if(ids.length>cap)ids=ids.slice(0,cap);}return ids;}
 function shuffleLayout(){state.shuffledSeed=generateRandomSeed();state.previewGenerated=false;_tabletopV2InvalidatePlacement();document.getElementById('shuffle-status').textContent='Shuffled · seed '+state.shuffledSeed.toString(36);toast('Layout shuffled');}
 function goto(step){if(!canEnter(step))return;state.step=step;document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('pg-'+step).classList.add('active');document.querySelectorAll('.h-step').forEach(el=>{const s=parseInt(el.dataset.step,10);el.classList.toggle('active',s===step);el.classList.toggle('done',s<step);});document.getElementById('progress-bar').style.width=((step+1)*20)+'%';if(step===1){refreshUploadLimits();renderUploadGrid();}if(step===2)renderDesignGrids();if(step===3)refreshPreviewUI();if(step===4){renderPackages();renderAddOns();refreshSummary();const _row=document.getElementById('ship-state-row');if(_row)_row.style.display=_packageNeedsShipping(_activePackage())?'block':'none';}window.scrollTo({top:0,behavior:'smooth'});}
 function canEnter(step){if(step===0)return true;if(step===1)return!!state.theme;if(step===2)return!!state.theme&&state.images.length>=1;if(step===3)return!!state.theme&&state.images.length>=1&&!!state.heroImage;if(step===4)return state.previewGenerated;return false;}
@@ -1062,7 +1095,9 @@ function refreshUploadLimits(){const cap=getMaxPhotos();const sub=document.getEl
   if(capEl)capEl.textContent=String(cap);}
 // Design-mode preference: 'smart' (AI picks the best photos — default) or 'all' (use every photo).
 // This task ONLY records the preference in state.designMode; the renderer is unchanged for now.
-function setDesignMode(mode){if(mode!=='smart'&&mode!=='all')return;state.designMode=mode;updateDesignModeUI();}
+function setDesignMode(mode){if(mode!=='smart'&&mode!=='all')return;if(state.designMode!==mode){state.designMode=mode;state.previewGenerated=false;if(typeof _tabletopV2InvalidatePlacement==='function')_tabletopV2InvalidatePlacement();}updateDesignModeUI();updateDesignModeNote();}
+// Preview-step note reflecting the active design mode.
+function updateDesignModeNote(){const el=document.getElementById('design-mode-note');if(!el)return;el.textContent=state.designMode==='smart'?'Smart Design selected the best photos for this layout.':'Using every uploaded photo.';}
 function updateDesignModeUI(){const smart=document.getElementById('dm-smart'),all=document.getElementById('dm-all');if(smart)smart.classList.toggle('sel',state.designMode==='smart');if(all)all.classList.toggle('sel',state.designMode==='all');const sr=document.getElementById('dm-smart-radio'),ar=document.getElementById('dm-all-radio');if(sr)sr.checked=state.designMode==='smart';if(ar)ar.checked=state.designMode==='all';}
 
 // ── STEP 1: UPLOAD ───────────────────────────────────────────
@@ -1097,9 +1132,9 @@ function updateText(key,value){if(!key)return;state.bannerText[key]=value;state.
 // ── STEP 3: PREVIEW ──────────────────────────────────────────
 function renderArrangementGrid(){const grid=document.getElementById('arr-grid');if(!grid)return;const upsell=document.getElementById('arr-upsell');if(state.product==='tabletop'){grid.innerHTML='';grid.style.display='none';if(upsell)upsell.style.display='none';return;}grid.style.display='';if(upsell)upsell.style.display='';grid.innerHTML=ARRANGEMENTS.map(a=>`<div class="arr-opt${state.arrangement===a.id?' active':''}" data-arr="${a.id}" onclick="setArrangement('${a.id}')"><div class="arr-opt-title">${a.label}${a.tier==='premium'?'<span class="price-tag">+$9.99 on print</span>':''}</div><div class="arr-opt-sub">${a.sub}</div></div>`).join('');}
 
-function refreshPreviewUI(){const post=document.getElementById('post-preview');const pre=document.getElementById('pre-preview-actions');const empty=document.getElementById('preview-empty');const canvas=document.getElementById('preview-canvas');const genBtn=document.getElementById('generate-btn');const stand=document.getElementById('stand-mockup');const dlMain=document.getElementById('download-jpg-main');if(state.previewGenerated){post.style.display='block';pre.style.display='none';empty.style.display='none';canvas.style.display='block';genBtn.style.display='none';renderArrangementGrid();if(stand)stand.style.display='block';if(dlMain)dlMain.style.display='inline-flex';drawSafeZoneOverlay();const hd=document.getElementById('download-hd-btn');if(hd){if(activeProduct().exportDPI){hd.style.display='none';}else{if(hd.style.display==='none')hd.style.display='';hd.style.opacity=state.isPremium?'1':'0.45';hd.title=state.isPremium?'Download HD (2400×3600)':'Pick a premium arrangement to unlock HD';}}if(!previewUnlocked()){if(dlMain){dlMain.classList.add('locked');dlMain.onclick=function(){toast('🔒 Please complete payment');showLockOverlay();};}setTimeout(()=>{drawWatermarkOverlay();showLockOverlay();},200);}else if(dlMain){dlMain.classList.remove('locked');dlMain.onclick=downloadJpg;}if(typeof updateAdminToggleUI==='function')updateAdminToggleUI();}else{post.style.display='none';pre.style.display='block';empty.style.display='block';canvas.style.display='none';genBtn.style.display='inline-flex';if(stand)stand.style.display='none';if(dlMain)dlMain.style.display='none';const szc=document.getElementById('preview-safezone-canvas');if(szc)szc.remove();}}
+function refreshPreviewUI(){const post=document.getElementById('post-preview');const pre=document.getElementById('pre-preview-actions');const empty=document.getElementById('preview-empty');const canvas=document.getElementById('preview-canvas');const genBtn=document.getElementById('generate-btn');const stand=document.getElementById('stand-mockup');const dlMain=document.getElementById('download-jpg-main');if(state.previewGenerated){post.style.display='block';pre.style.display='none';empty.style.display='none';canvas.style.display='block';genBtn.style.display='none';renderArrangementGrid();if(stand)stand.style.display='block';if(dlMain)dlMain.style.display='inline-flex';const _dmn=document.getElementById('design-mode-note');if(_dmn){_dmn.style.display='block';updateDesignModeNote();}drawSafeZoneOverlay();const hd=document.getElementById('download-hd-btn');if(hd){if(activeProduct().exportDPI){hd.style.display='none';}else{if(hd.style.display==='none')hd.style.display='';hd.style.opacity=state.isPremium?'1':'0.45';hd.title=state.isPremium?'Download HD (2400×3600)':'Pick a premium arrangement to unlock HD';}}if(!previewUnlocked()){if(dlMain){dlMain.classList.add('locked');dlMain.onclick=function(){toast('🔒 Please complete payment');showLockOverlay();};}setTimeout(()=>{drawWatermarkOverlay();showLockOverlay();},200);}else if(dlMain){dlMain.classList.remove('locked');dlMain.onclick=downloadJpg;}if(typeof updateAdminToggleUI==='function')updateAdminToggleUI();}else{post.style.display='none';pre.style.display='block';empty.style.display='block';canvas.style.display='none';genBtn.style.display='inline-flex';if(stand)stand.style.display='none';if(dlMain)dlMain.style.display='none';const _dmn=document.getElementById('design-mode-note');if(_dmn)_dmn.style.display='none';const szc=document.getElementById('preview-safezone-canvas');if(szc)szc.remove();}}
 
-function generatePreview(force){const ids=selectImages();if(ids.length===0){toast('Pick a hero first');return;}state.selectedImages=ids;const newKey=computeCacheKey();if(!force&&state.previewCacheKey===newKey&&state.previewGenerated){toast('Preview already up to date');return;}const empty=document.getElementById('preview-empty');empty.innerHTML=`<div class="preview-loading"><div class="spinner"></div><div>Rendering preview…</div></div>`;empty.style.display='flex';document.getElementById('preview-canvas').style.display='none';setTimeout(()=>{const pc=document.getElementById('preview-canvas');renderToCanvas(pc,ids,state.isPremium,1);state.previewGenerated=true;state.previewCacheKey=newKey;document.getElementById('preview-spec-text').textContent=`${ids.length} photos · ${state.arrangement}${state.isPremium?' (Premium)':''}`;refreshPreviewUI();try{renderStandMockup(pc);}catch(e){console.warn('Stand mockup error:',e);}toast(productNounTitle()+' ready');},60);}
+function generatePreview(force){const ids=selectImages();if(ids.length===0){toast('Pick a hero first');return;}state.selectedImages=ids;const newKey=computeCacheKey();if(!force&&state.previewCacheKey===newKey&&state.previewGenerated){toast('Preview already up to date');return;}const empty=document.getElementById('preview-empty');empty.innerHTML=`<div class="preview-loading"><div class="spinner"></div><div>Rendering preview…</div></div>`;empty.style.display='flex';document.getElementById('preview-canvas').style.display='none';setTimeout(()=>{const pc=document.getElementById('preview-canvas');renderToCanvas(pc,ids,state.isPremium,1);state.previewGenerated=true;state.previewCacheKey=newKey;document.getElementById('preview-spec-text').textContent=`${ids.length} photos · ${state.arrangement}${state.isPremium?' (Premium)':''}`;updateDesignModeNote();refreshPreviewUI();try{renderStandMockup(pc);}catch(e){console.warn('Stand mockup error:',e);}toast(productNounTitle()+' ready');},60);}
 
 function setArrangement(id){if(state.arrangement===id)return;const a=ARRANGEMENTS.find(x=>x.id===id);if(!a)return;state.arrangement=id;state.isPremium=(a.tier==='premium');document.querySelectorAll('.arr-opt').forEach(el=>{el.classList.toggle('active',el.dataset.arr===id);});refreshSummary();generatePreview(true);}
 
