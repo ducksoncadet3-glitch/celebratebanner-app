@@ -1,0 +1,185 @@
+{
+  "schema_version": "1.0.0",
+  "occasion": "memorial",
+  "style": "heartfelt",
+  "story": "A memorial celebration anchored by one standout portrait photo, supported by 3 favorite moments.",
+  "mood": "reverent",
+  "primary_subject": {
+    "type": "individual",
+    "faceCount": 1,
+    "sourcePhotoId": "m1"
+  },
+  "hero_photo": {
+    "photoId": "m1",
+    "filename": "portrait_smiling.jpg",
+    "orientation": "portrait",
+    "score": 85,
+    "faceCount": 1,
+    "width": 3000,
+    "height": 3750
+  },
+  "supporting_photos": [
+    {
+      "photoId": "m3",
+      "filename": "with_family.jpg",
+      "orientation": "landscape",
+      "score": 73,
+      "faceCount": 5,
+      "width": 3200,
+      "height": 2400
+    },
+    {
+      "photoId": "m4",
+      "filename": "garden.jpg",
+      "orientation": "landscape",
+      "score": 69,
+      "faceCount": 1,
+      "width": 2400,
+      "height": 1800
+    },
+    {
+      "photoId": "m2",
+      "filename": "young_years_bw.jpg",
+      "orientation": "portrait",
+      "score": 54,
+      "faceCount": 1,
+      "width": 1000,
+      "height": 1400
+    }
+  ],
+  "photo_rankings": [
+    {
+      "photoId": "m1",
+      "rank": 1,
+      "compositeScore": 85,
+      "role": "hero"
+    },
+    {
+      "photoId": "m3",
+      "rank": 2,
+      "compositeScore": 73,
+      "role": "supporting"
+    },
+    {
+      "photoId": "m4",
+      "rank": 3,
+      "compositeScore": 69,
+      "role": "supporting"
+    },
+    {
+      "photoId": "m2",
+      "rank": 4,
+      "compositeScore": 54,
+      "role": "supporting"
+    }
+  ],
+  "family_members": [],
+  "groups": [
+    {
+      "label": "1968-01-01",
+      "photoIds": [
+        "m2"
+      ],
+      "size": 1
+    },
+    {
+      "label": "1995-08-15",
+      "photoIds": [
+        "m3"
+      ],
+      "size": 1
+    },
+    {
+      "label": "2001-04-10",
+      "photoIds": [
+        "m1"
+      ],
+      "size": 1
+    },
+    {
+      "label": "2010-05-01",
+      "photoIds": [
+        "m4"
+      ],
+      "size": 1
+    }
+  ],
+  "dominant_colors": [
+    {
+      "hex": "#0C0E14",
+      "weight": 0.5
+    },
+    {
+      "hex": "#C9A84C",
+      "weight": 0.33
+    },
+    {
+      "hex": "#FAF8F3",
+      "weight": 0.17
+    }
+  ],
+  "photo_quality_scores": [
+    {
+      "photoId": "m1",
+      "quality": 79,
+      "resolutionScore": 1,
+      "exposureScore": 0.91,
+      "sharpness": 0.7
+    },
+    {
+      "photoId": "m2",
+      "quality": 40,
+      "resolutionScore": 0.23,
+      "exposureScore": 0.76,
+      "sharpness": 0.3
+    },
+    {
+      "photoId": "m3",
+      "quality": 75,
+      "resolutionScore": 1,
+      "exposureScore": 0.87,
+      "sharpness": 0.6
+    },
+    {
+      "photoId": "m4",
+      "quality": 62,
+      "resolutionScore": 0.72,
+      "exposureScore": 0.69,
+      "sharpness": 0.55
+    }
+  ],
+  "face_count": 8,
+  "portrait_count": 2,
+  "landscape_count": 2,
+  "square_count": 0,
+  "duplicate_candidates": [],
+  "restoration_candidates": [
+    {
+      "photoId": "m2",
+      "reasons": [
+        "low_sharpness",
+        "monochrome_old"
+      ]
+    }
+  ],
+  "recommended_concept": "Family Legacy",
+  "confidence_score": 90,
+  "warnings": [
+    {
+      "code": "no_color_data",
+      "message": "No per-photo color data supplied; used the occasion default palette.",
+      "severity": "info"
+    },
+    {
+      "code": "restoration_recommended",
+      "message": "1 photo(s) may benefit from enhancement/restoration.",
+      "severity": "info"
+    }
+  ],
+  "future_extension_fields": {
+    "faceRecognition": null,
+    "aiVision": null,
+    "expressionAnalysis": null,
+    "textDetection": null
+  }
+}
