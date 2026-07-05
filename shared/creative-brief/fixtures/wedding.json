@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "1.0.0",
+  "briefId": "brief_0d4abf97",
+  "createdAt": null,
+  "occasion": "wedding",
+  "recommendedConcept": "Signature Edition",
+  "emotionalDirection": {
+    "primary": "romance",
+    "keywords": [
+      "romance",
+      "elegance",
+      "timelessness"
+    ],
+    "statement": "Tell a love story with elegance and timeless grace."
+  },
+  "storyAngle": "A love story told with elegance and timelessness.",
+  "primaryMessage": {
+    "suggestion": "{Couple Names}",
+    "guidance": "Set as the dominant statement, second only to the hero photo."
+  },
+  "secondaryMessage": {
+    "suggestion": "{Wedding Date}",
+    "guidance": "Refined supporting label (often gold); never competes with the primary message."
+  },
+  "heroStrategy": {
+    "heroPhotoId": "w1",
+    "rationale": "Photo w1 (first_kiss.jpg) is strongest: portrait, score 88, 2 subjects.",
+    "dominance": "commanding",
+    "dominanceRatio": 0.62,
+    "supportingRole": "All supporting photos frame and lead the eye back to the hero; none competes with it."
+  },
+  "supportingPhotoStrategy": {
+    "hierarchy": [
+      {
+        "tier": "emotional_anchor",
+        "photoIds": [
+          "w3",
+          "w4"
+        ],
+        "role": "Carry the strongest supporting emotion, just beneath the hero."
+      },
+      {
+        "tier": "story_builder",
+        "photoIds": [
+          "w2"
+        ],
+        "role": "Advance the narrative and connect moments."
+      }
+    ],
+    "maxRecommended": 3,
+    "guidance": "Beauty over quantity — cut any supporting photo that weakens the composition or crowds the hero."
+  },
+  "colorDirection": {
+    "palette": [
+      {
+        "hex": "#FAF8F3",
+        "role": "primary"
+      },
+      {
+        "hex": "#C9A84C",
+        "role": "support"
+      },
+      {
+        "hex": "#0C0E14",
+        "role": "ground"
+      }
+    ],
+    "primary": "#FAF8F3",
+    "accent": "#FAF8F3",
+    "neutral": "#FAF8F3",
+    "source": "photos",
+    "guidance": "Build on the photos' own palette, kept in harmony with the Obsidian/Gold/Ivory brand core."
+  },
+  "typographyDirection": {
+    "style": "elegant",
+    "displayFont": "Cormorant Garamond",
+    "supportingFont": "Outfit",
+    "guidance": "Elegant, high-contrast hierarchy; the name is the strongest text after the hero."
+  },
+  "compositionDirection": {
+    "layout": "Central hero with a disciplined supporting grid.",
+    "balance": "symmetrical",
+    "whitespace": "generous",
+    "guidance": "Whitespace is intentional; the eye must always find the hero first."
+  },
+  "decorativeDirection": {
+    "allowed": [
+      "soft florals (restrained)",
+      "thin gold lines",
+      "elegant framing"
+    ],
+    "forbidden": [
+      "heavy ornament",
+      "busy patterns",
+      "clip art",
+      "emoji as decoration",
+      "stock stickers",
+      "random photo placement"
+    ],
+    "guidance": "Decoration must serve emotion or hierarchy — otherwise remove it."
+  },
+  "productIntent": {
+    "recommendedProducts": [
+      "Framed",
+      "Premium print",
+      "Standard print",
+      "Digital download"
+    ],
+    "primaryProduct": "Framed",
+    "guidance": "Lead toward the framed as a display-worthy keepsake. (Descriptive only — no pricing.)"
+  },
+  "audienceIntent": {
+    "primaryAudience": "the couple and their families",
+    "sharingContext": "shared with guests and loved ones",
+    "guidance": "Let audience and sharing context shape tone and shareability."
+  },
+  "personalizationSuggestions": [
+    "Couple's names",
+    "Wedding date",
+    "Optional vow or quote line"
+  ],
+  "upsellOpportunities": [
+    "Matching social graphic",
+    "Phone wallpaper",
+    "Desktop wallpaper",
+    "Thank-you card",
+    "Extra prints",
+    "Gallery edition",
+    "Framed upgrade"
+  ],
+  "wowTargets": {
+    "overallTarget": 90,
+    "emphasis": [
+      "Layout Balance",
+      "Typography",
+      "Luxury Finish"
+    ],
+    "guidance": "Never present a concept below 90; push hardest on the emphasized categories."
+  },
+  "riskWarnings": [
+    {
+      "code": "mixed_orientation_conflict",
+      "message": "Portrait and landscape photos are mixed evenly; layout must reconcile orientations carefully.",
+      "severity": "info"
+    }
+  ],
+  "confidenceScore": 100
+}

@@ -1,0 +1,143 @@
+{
+  "schemaVersion": "1.0.0",
+  "briefId": "brief_40905e00",
+  "createdAt": null,
+  "occasion": "championship",
+  "recommendedConcept": "Luxury Gold",
+  "emotionalDirection": {
+    "primary": "victory",
+    "keywords": [
+      "victory",
+      "energy",
+      "unity"
+    ],
+    "statement": "Capture the roar of victory and the unity that earned it."
+  },
+  "storyAngle": "A season of teamwork that became a championship.",
+  "primaryMessage": {
+    "suggestion": "{Team} — Champions",
+    "guidance": "Set as the dominant statement, second only to the hero photo."
+  },
+  "secondaryMessage": {
+    "suggestion": "{Year} {Title}",
+    "guidance": "Refined supporting label (often gold); never competes with the primary message."
+  },
+  "heroStrategy": {
+    "heroPhotoId": "c1",
+    "rationale": "Photo c1 (trophy_lift.jpg) is strongest: portrait, score 93, 1 clear subject.",
+    "dominance": "commanding",
+    "dominanceRatio": 0.62,
+    "supportingRole": "All supporting photos frame and lead the eye back to the hero; none competes with it."
+  },
+  "supportingPhotoStrategy": {
+    "hierarchy": [
+      {
+        "tier": "emotional_anchor",
+        "photoIds": [
+          "c2",
+          "c3"
+        ],
+        "role": "Carry the strongest supporting emotion, just beneath the hero."
+      },
+      {
+        "tier": "story_builder",
+        "photoIds": [
+          "c4"
+        ],
+        "role": "Advance the narrative and connect moments."
+      }
+    ],
+    "maxRecommended": 3,
+    "guidance": "Beauty over quantity — cut any supporting photo that weakens the composition or crowds the hero."
+  },
+  "colorDirection": {
+    "palette": [
+      {
+        "hex": "#0C0E14",
+        "role": "primary"
+      },
+      {
+        "hex": "#C9A84C",
+        "role": "accent"
+      },
+      {
+        "hex": "#FAF8F3",
+        "role": "neutral"
+      }
+    ],
+    "primary": "#0C0E14",
+    "accent": "#C9A84C",
+    "neutral": "#FAF8F3",
+    "source": "photos",
+    "guidance": "Build on the photos' own palette, kept in harmony with the Obsidian/Gold/Ivory brand core."
+  },
+  "typographyDirection": {
+    "style": "bold",
+    "displayFont": "Cormorant Garamond",
+    "supportingFont": "Outfit",
+    "guidance": "Large, opulent display type in gold gradients; letter-spaced small-caps labels."
+  },
+  "compositionDirection": {
+    "layout": "Dramatic spotlighted hero with luxurious negative space and gold framing.",
+    "balance": "symmetrical",
+    "whitespace": "expansive",
+    "guidance": "Whitespace is intentional; the eye must always find the hero first."
+  },
+  "decorativeDirection": {
+    "allowed": [
+      "gold glow",
+      "spotlight",
+      "trophy emphasis",
+      "corner flourish"
+    ],
+    "forbidden": [
+      "flat gold wash",
+      "busy background",
+      "licensed logos or likenesses",
+      "clip art",
+      "emoji as decoration",
+      "stock stickers",
+      "random photo placement"
+    ],
+    "guidance": "Decoration must serve emotion or hierarchy — otherwise remove it."
+  },
+  "productIntent": {
+    "recommendedProducts": [
+      "Framed",
+      "Premium print",
+      "Standard print",
+      "Digital download"
+    ],
+    "primaryProduct": "Standard print",
+    "guidance": "Lead toward the standard print as a display-worthy keepsake. (Descriptive only — no pricing.)"
+  },
+  "audienceIntent": {
+    "primaryAudience": "the team, players, and their families",
+    "sharingContext": "shared across the team and fans",
+    "guidance": "Let audience and sharing context shape tone and shareability."
+  },
+  "personalizationSuggestions": [
+    "Team or player name",
+    "Year & title",
+    "Optional final score/record"
+  ],
+  "upsellOpportunities": [
+    "Matching social graphic",
+    "Phone wallpaper",
+    "Desktop wallpaper",
+    "Thank-you card",
+    "Extra prints",
+    "Team print package"
+  ],
+  "wowTargets": {
+    "overallTarget": 90,
+    "emphasis": [
+      "Luxury Finish",
+      "Emotional Impact",
+      "Hero Strength"
+    ],
+    "guidance": "Never present a concept below 90; push hardest on the emphasized categories."
+  },
+  "riskWarnings": [],
+  "confidenceScore": 100
+}

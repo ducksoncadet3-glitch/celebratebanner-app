@@ -1,0 +1,160 @@
+{
+  "schemaVersion": "1.0.0",
+  "briefId": "brief_4fb168e8",
+  "createdAt": null,
+  "occasion": "family_reunion",
+  "recommendedConcept": "Family Legacy",
+  "emotionalDirection": {
+    "primary": "warmth",
+    "keywords": [
+      "warmth",
+      "legacy",
+      "belonging"
+    ],
+    "statement": "Gather generations in warmth and belonging."
+  },
+  "storyAngle": "A family legacy told through generations.",
+  "primaryMessage": {
+    "suggestion": "The {Family} Family",
+    "guidance": "Set as the dominant statement, second only to the hero photo."
+  },
+  "secondaryMessage": {
+    "suggestion": "{Year} Reunion",
+    "guidance": "Refined supporting label (often gold); never competes with the primary message."
+  },
+  "heroStrategy": {
+    "heroPhotoId": "f1",
+    "rationale": "Photo f1 (grandparents.jpg) is strongest: portrait, score 85, 2 subjects.",
+    "dominance": "strong",
+    "dominanceRatio": 0.55,
+    "supportingRole": "All supporting photos frame and lead the eye back to the hero; none competes with it."
+  },
+  "supportingPhotoStrategy": {
+    "hierarchy": [
+      {
+        "tier": "emotional_anchor",
+        "photoIds": [
+          "f2",
+          "f3"
+        ],
+        "role": "Carry the strongest supporting emotion, just beneath the hero."
+      },
+      {
+        "tier": "story_builder",
+        "photoIds": [
+          "f4"
+        ],
+        "role": "Advance the narrative and connect moments."
+      },
+      {
+        "tier": "accent",
+        "photoIds": [
+          "f5"
+        ],
+        "role": "Provide gentle texture; use sparingly or omit if crowded."
+      }
+    ],
+    "maxRecommended": 4,
+    "guidance": "Beauty over quantity — cut any supporting photo that weakens the composition or crowds the hero."
+  },
+  "colorDirection": {
+    "palette": [
+      {
+        "hex": "#0C0E14",
+        "role": "primary"
+      },
+      {
+        "hex": "#C9A84C",
+        "role": "accent"
+      },
+      {
+        "hex": "#FAF8F3",
+        "role": "support"
+      }
+    ],
+    "primary": "#0C0E14",
+    "accent": "#C9A84C",
+    "neutral": "#FAF8F3",
+    "source": "occasion-default",
+    "guidance": "No photo color data — use the occasion default layered on the Obsidian/Gold/Ivory brand core."
+  },
+  "typographyDirection": {
+    "style": "legacy",
+    "displayFont": "Cormorant Garamond",
+    "supportingFont": "Outfit",
+    "guidance": "Warm classic serif with humanist support; approachable and heartfelt."
+  },
+  "compositionDirection": {
+    "layout": "Narrative flow — hero plus a meaningful gathered cluster.",
+    "balance": "organic",
+    "whitespace": "warm-generous",
+    "guidance": "Whitespace is intentional; the eye must always find the hero first."
+  },
+  "decorativeDirection": {
+    "allowed": [
+      "soft texture",
+      "warm vignette",
+      "understated gold",
+      "tasteful dates"
+    ],
+    "forbidden": [
+      "cold grids",
+      "heavy captions",
+      "clip art",
+      "emoji as decoration",
+      "stock stickers",
+      "random photo placement"
+    ],
+    "guidance": "Decoration must serve emotion or hierarchy — otherwise remove it."
+  },
+  "productIntent": {
+    "recommendedProducts": [
+      "Framed",
+      "Premium print",
+      "Standard print",
+      "Digital download"
+    ],
+    "primaryProduct": "Framed",
+    "guidance": "Lead toward the framed as a display-worthy keepsake. (Descriptive only — no pricing.)"
+  },
+  "audienceIntent": {
+    "primaryAudience": "the extended family",
+    "sharingContext": "shared across generations",
+    "guidance": "Let audience and sharing context shape tone and shareability."
+  },
+  "personalizationSuggestions": [
+    "Family name",
+    "Year or date",
+    "Optional caption per era"
+  ],
+  "upsellOpportunities": [
+    "Matching social graphic",
+    "Phone wallpaper",
+    "Desktop wallpaper",
+    "Thank-you card",
+    "Extra prints",
+    "Gallery edition",
+    "Framed upgrade"
+  ],
+  "wowTargets": {
+    "overallTarget": 90,
+    "emphasis": [
+      "Storytelling",
+      "Emotional Impact"
+    ],
+    "guidance": "Never present a concept below 90; push hardest on the emphasized categories."
+  },
+  "riskWarnings": [
+    {
+      "code": "restoration_needed",
+      "message": "1 photo(s) would benefit from enhancement/restoration.",
+      "severity": "info"
+    },
+    {
+      "code": "mixed_orientation_conflict",
+      "message": "Portrait and landscape photos are mixed evenly; layout must reconcile orientations carefully.",
+      "severity": "info"
+    }
+  ],
+  "confidenceScore": 90
+}
