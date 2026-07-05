@@ -1,0 +1,156 @@
+{
+  "schemaVersion": "1.0.0",
+  "briefId": "brief_44589644",
+  "createdAt": null,
+  "occasion": "graduation",
+  "recommendedConcept": "Signature Edition",
+  "emotionalDirection": {
+    "primary": "pride",
+    "keywords": [
+      "pride",
+      "achievement",
+      "future"
+    ],
+    "statement": "Celebrate the pride of a milestone earned and the promise of what's next."
+  },
+  "storyAngle": "A journey of perseverance leading to graduation.",
+  "primaryMessage": {
+    "suggestion": "{Graduate Name}",
+    "guidance": "Set as the dominant statement, second only to the hero photo."
+  },
+  "secondaryMessage": {
+    "suggestion": "Class of {Year}",
+    "guidance": "Refined supporting label (often gold); never competes with the primary message."
+  },
+  "heroStrategy": {
+    "heroPhotoId": "g1",
+    "rationale": "Photo g1 (grad_portrait.jpg) is strongest: portrait, score 93, 1 clear subject.",
+    "dominance": "commanding",
+    "dominanceRatio": 0.62,
+    "supportingRole": "All supporting photos frame and lead the eye back to the hero; none competes with it."
+  },
+  "supportingPhotoStrategy": {
+    "hierarchy": [
+      {
+        "tier": "emotional_anchor",
+        "photoIds": [
+          "g2",
+          "g3"
+        ],
+        "role": "Carry the strongest supporting emotion, just beneath the hero."
+      },
+      {
+        "tier": "story_builder",
+        "photoIds": [
+          "g4"
+        ],
+        "role": "Advance the narrative and connect moments."
+      }
+    ],
+    "maxRecommended": 3,
+    "guidance": "Beauty over quantity — cut any supporting photo that weakens the composition or crowds the hero."
+  },
+  "colorDirection": {
+    "palette": [
+      {
+        "hex": "#C9A84C",
+        "role": "primary"
+      },
+      {
+        "hex": "#0C0E14",
+        "role": "support"
+      },
+      {
+        "hex": "#FAF8F3",
+        "role": "support"
+      }
+    ],
+    "primary": "#C9A84C",
+    "accent": "#C9A84C",
+    "neutral": "#FAF8F3",
+    "source": "photos",
+    "guidance": "Build on the photos' own palette, kept in harmony with the Obsidian/Gold/Ivory brand core."
+  },
+  "typographyDirection": {
+    "style": "elegant",
+    "displayFont": "Cormorant Garamond",
+    "supportingFont": "Outfit",
+    "guidance": "Elegant, high-contrast hierarchy; the name is the strongest text after the hero."
+  },
+  "compositionDirection": {
+    "layout": "Central hero with a disciplined supporting grid.",
+    "balance": "symmetrical",
+    "whitespace": "generous",
+    "guidance": "Whitespace is intentional; the eye must always find the hero first."
+  },
+  "decorativeDirection": {
+    "allowed": [
+      "thin gold accent lines",
+      "subtle spotlight",
+      "refined year label"
+    ],
+    "forbidden": [
+      "cap-and-gown clip art",
+      "confetti overload",
+      "clip art",
+      "emoji as decoration",
+      "stock stickers",
+      "random photo placement"
+    ],
+    "guidance": "Decoration must serve emotion or hierarchy — otherwise remove it."
+  },
+  "productIntent": {
+    "recommendedProducts": [
+      "Framed",
+      "Premium print",
+      "Standard print",
+      "Digital download"
+    ],
+    "primaryProduct": "Standard print",
+    "guidance": "Lead toward the standard print as a display-worthy keepsake. (Descriptive only — no pricing.)"
+  },
+  "audienceIntent": {
+    "primaryAudience": "the graduate and immediate family",
+    "sharingContext": "shared with extended family before purchase",
+    "guidance": "Let audience and sharing context shape tone and shareability."
+  },
+  "personalizationSuggestions": [
+    "Graduate's name",
+    "School & class year",
+    "Optional short quote"
+  ],
+  "upsellOpportunities": [
+    "Matching social graphic",
+    "Phone wallpaper",
+    "Desktop wallpaper",
+    "Thank-you card",
+    "Extra prints"
+  ],
+  "wowTargets": {
+    "overallTarget": 90,
+    "emphasis": [
+      "Layout Balance",
+      "Typography",
+      "Luxury Finish"
+    ],
+    "guidance": "Never present a concept below 90; push hardest on the emphasized categories."
+  },
+  "riskWarnings": [
+    {
+      "code": "duplicate_heavy",
+      "message": "A large share of the upload is duplicates; curation applied.",
+      "severity": "info"
+    },
+    {
+      "code": "restoration_needed",
+      "message": "1 photo(s) would benefit from enhancement/restoration.",
+      "severity": "info"
+    },
+    {
+      "code": "mixed_orientation_conflict",
+      "message": "Portrait and landscape photos are mixed evenly; layout must reconcile orientations carefully.",
+      "severity": "info"
+    }
+  ],
+  "confidenceScore": 100
+}

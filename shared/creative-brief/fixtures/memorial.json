@@ -1,0 +1,152 @@
+{
+  "schemaVersion": "1.0.0",
+  "briefId": "brief_7dfb092e",
+  "createdAt": null,
+  "occasion": "memorial",
+  "recommendedConcept": "Family Legacy",
+  "emotionalDirection": {
+    "primary": "respect",
+    "keywords": [
+      "respect",
+      "peace",
+      "remembrance"
+    ],
+    "statement": "Remember a life with respect, peace, and love."
+  },
+  "storyAngle": "A life remembered with peace and gratitude.",
+  "primaryMessage": {
+    "suggestion": "{Full Name}",
+    "guidance": "Set as the dominant statement, second only to the hero photo."
+  },
+  "secondaryMessage": {
+    "suggestion": "{Birth Year} – {Year}",
+    "guidance": "Refined supporting label (often gold); never competes with the primary message."
+  },
+  "heroStrategy": {
+    "heroPhotoId": "m1",
+    "rationale": "Photo m1 (portrait_smiling.jpg) is strongest: portrait, score 85, 1 clear subject.",
+    "dominance": "strong",
+    "dominanceRatio": 0.55,
+    "supportingRole": "All supporting photos frame and lead the eye back to the hero; none competes with it."
+  },
+  "supportingPhotoStrategy": {
+    "hierarchy": [
+      {
+        "tier": "story_builder",
+        "photoIds": [
+          "m3",
+          "m4"
+        ],
+        "role": "Advance the narrative and connect moments."
+      },
+      {
+        "tier": "accent",
+        "photoIds": [
+          "m2"
+        ],
+        "role": "Provide gentle texture; use sparingly or omit if crowded."
+      }
+    ],
+    "maxRecommended": 3,
+    "guidance": "Beauty over quantity — cut any supporting photo that weakens the composition or crowds the hero."
+  },
+  "colorDirection": {
+    "palette": [
+      {
+        "hex": "#0C0E14",
+        "role": "primary"
+      },
+      {
+        "hex": "#C9A84C",
+        "role": "accent"
+      },
+      {
+        "hex": "#FAF8F3",
+        "role": "support"
+      }
+    ],
+    "primary": "#0C0E14",
+    "accent": "#C9A84C",
+    "neutral": "#FAF8F3",
+    "source": "occasion-default",
+    "guidance": "No photo color data — use the occasion default layered on the Obsidian/Gold/Ivory brand core."
+  },
+  "typographyDirection": {
+    "style": "respectful",
+    "displayFont": "Cormorant Garamond",
+    "supportingFont": "Outfit",
+    "guidance": "Restrained, dignified type; gentle sizing and low-key gold, never flashy."
+  },
+  "compositionDirection": {
+    "layout": "Narrative flow — hero plus a meaningful gathered cluster.",
+    "balance": "organic",
+    "whitespace": "warm-generous",
+    "guidance": "Whitespace is intentional; the eye must always find the hero first."
+  },
+  "decorativeDirection": {
+    "allowed": [
+      "memorial glow",
+      "soft vignette",
+      "muted gold"
+    ],
+    "forbidden": [
+      "bright confetti",
+      "celebratory glitz",
+      "clip art",
+      "emoji as decoration",
+      "stock stickers",
+      "random photo placement"
+    ],
+    "guidance": "Decoration must serve emotion or hierarchy — otherwise remove it."
+  },
+  "productIntent": {
+    "recommendedProducts": [
+      "Framed",
+      "Premium print",
+      "Standard print",
+      "Digital download"
+    ],
+    "primaryProduct": "Framed",
+    "guidance": "Lead toward the framed as a display-worthy keepsake. (Descriptive only — no pricing.)"
+  },
+  "audienceIntent": {
+    "primaryAudience": "the family and loved ones",
+    "sharingContext": "shared with mourners and family",
+    "guidance": "Let audience and sharing context shape tone and shareability."
+  },
+  "personalizationSuggestions": [
+    "Full name",
+    "Years (birth–passing)",
+    "Optional short tribute"
+  ],
+  "upsellOpportunities": [
+    "Matching social graphic",
+    "Phone wallpaper",
+    "Desktop wallpaper",
+    "Thank-you card",
+    "Extra prints",
+    "Gallery edition",
+    "Framed upgrade"
+  ],
+  "wowTargets": {
+    "overallTarget": 90,
+    "emphasis": [
+      "Storytelling",
+      "Emotional Impact"
+    ],
+    "guidance": "Never present a concept below 90; push hardest on the emphasized categories."
+  },
+  "riskWarnings": [
+    {
+      "code": "restoration_needed",
+      "message": "1 photo(s) would benefit from enhancement/restoration.",
+      "severity": "info"
+    },
+    {
+      "code": "mixed_orientation_conflict",
+      "message": "Portrait and landscape photos are mixed evenly; layout must reconcile orientations carefully.",
+      "severity": "info"
+    }
+  ],
+  "confidenceScore": 90
+}
