@@ -295,6 +295,19 @@ canvas#preview-canvas { width: 100% !important; height: 100% !important; display
 .v2-debug-arrange { color: var(--gold2); font-weight: 700; font-size: 17px; letter-spacing: 0.04em; }
 .v2-debug-family { color: var(--gold3); font-weight: 700; font-size: 17px; letter-spacing: 0.04em; }
 .v2-debug-count { color: var(--gold2); font-weight: 700; font-size: 18px; }
+/* ── Save your free proof — email capture (Sprint 1 · Milestone 2) ── */
+.proof-email-card { background: var(--white); border: 1px solid var(--border2); border-left: 4px solid var(--gold); border-radius: var(--r2); padding: 20px 22px; margin-bottom: 1.25rem; text-align: left; }
+.proof-email-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; color: var(--ink, #0C0E14); margin: 0 0 4px; }
+.proof-email-sub { font-size: 13.5px; color: var(--muted); margin: 0 0 14px; line-height: 1.45; }
+.proof-email-form { display: flex; flex-direction: column; gap: 11px; }
+.proof-email-input { width: 100%; box-sizing: border-box; padding: 11px 14px; border: 1px solid var(--border2); border-radius: var(--r1, 8px); font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--ink, #0C0E14); background: #fff; }
+.proof-email-input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.15); }
+.proof-email-input.err { border-color: var(--rose, #C4617A); box-shadow: 0 0 0 3px rgba(196,97,122,0.15); }
+.proof-email-consent { display: flex; align-items: flex-start; gap: 9px; font-size: 12.5px; color: rgba(12,14,20,0.78); line-height: 1.4; cursor: pointer; }
+.proof-email-consent input { margin-top: 2px; accent-color: var(--gold); width: 16px; height: 16px; flex: none; }
+.proof-email-msg { font-size: 13px; font-weight: 600; padding: 9px 12px; border-radius: var(--r1, 8px); }
+.proof-email-msg.ok { color: var(--sage, #5A8F6A); background: rgba(90,143,106,0.1); border: 1px solid rgba(90,143,106,0.3); }
+.proof-email-msg.warn { color: var(--rose, #C4617A); background: rgba(196,97,122,0.1); border: 1px solid rgba(196,97,122,0.3); }
 /* ── Resume-saved-design bar (Sprint 1 · Milestone 1) ──────── */
 #cb-resume-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 400; background: linear-gradient(90deg, #0C0E14, #1a1f2e); color: var(--ivory, #FAF8F3); border-bottom: 1px solid rgba(201,168,76,0.45); display: flex; align-items: center; justify-content: center; gap: 16px; padding: 10px 16px; font-size: 14px; flex-wrap: wrap; box-shadow: 0 4px 16px rgba(0,0,0,0.35); }
 .cb-resume-msg { font-weight: 600; }
@@ -558,6 +571,18 @@ body.admin-mode .admin-badge { display: flex; }
       <button class="btn btn-admin btn-lg" id="download-pdf-admin" style="display:none;" onclick="downloadPdf()">⬇ Download PDF</button>
     </div>
     <div id="post-preview" style="display:none;">
+      <div class="proof-email-card" id="proof-email-card">
+        <div class="proof-email-head">
+          <h3 class="proof-email-title">Save your free proof</h3>
+          <p class="proof-email-sub">Enter your email and we'll save your design so you can continue anytime.</p>
+        </div>
+        <div class="proof-email-form" id="proof-email-form">
+          <input type="email" id="proof-email-input" class="proof-email-input" placeholder="you@example.com" autocomplete="email" inputmode="email">
+          <label class="proof-email-consent"><input type="checkbox" id="proof-email-consent"><span>Email me a link to my saved design and updates about this order.</span></label>
+          <button type="button" class="btn btn-primary" id="proof-email-btn" onclick="submitProofEmail()">Save My Free Proof</button>
+          <div class="proof-email-msg" id="proof-email-msg" style="display:none;"></div>
+        </div>
+      </div>
       <div class="upsell-card" id="arr-upsell">
         <div class="upsell-info">
           <div class="upsell-title">Pick your arrangement</div>
@@ -1892,6 +1917,29 @@ function cbRestore(d){_cbRestoring=true;try{
   if(typeof toast==='function')toast('Welcome back — your design settings were restored');
 }catch(e){console.warn('resume restore failed',e);}finally{_cbRestoring=false;cbScheduleSave();}}
 function cbShowReuploadNotice(n){const sub=document.getElementById('upload-sub');if(sub)sub.textContent='For your privacy, please re-upload your photos to continue.';const zone=document.getElementById('upload-zone');if(zone)zone.classList.add('cb-reupload');}
+
+// ── EMAIL CAPTURE — "Save My Free Proof" (Milestone 2) ───────────────────────
+// Non-blocking: captures email + consent onto the saved design (creating one first if needed).
+// Never gates checkout; API failure shows a soft message and the customer continues.
+function _cbEmailMsg(kind,text){const m=document.getElementById('proof-email-msg');if(!m)return;m.textContent=text;m.className='proof-email-msg '+kind;m.style.display='block';}
+async function submitProofEmail(){
+  const input=document.getElementById('proof-email-input');const consent=document.getElementById('proof-email-consent');const btn=document.getElementById('proof-email-btn');
+  if(!input)return;const email=(input.value||'').trim();input.classList.remove('err');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){input.classList.add('err');_cbEmailMsg('warn','Please enter a valid email address.');return;}
+  const orig=btn?btn.textContent:'';if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  try{
+    let id=cbGetSavedId();
+    if(!id){await cbSaveNow();id=cbGetSavedId();}         // create the saved design first if needed
+    if(!id)throw new Error('no_saved_design');            // API offline / create failed
+    const r=await fetch(CB_API_BASE+'/api/saved-designs/'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,consentToEmail:!!(consent&&consent.checked)})});
+    if(!r.ok)throw new Error('patch_failed');
+    const d=await r.json();
+    state.emailCapture={email:d.email,consentToEmail:d.consentToEmail,emailCapturedAt:d.emailCapturedAt};
+    _cbEmailMsg('ok',"Your proof is saved. We'll email you a link when recovery emails are enabled.");
+  }catch(e){
+    _cbEmailMsg('warn',"We couldn't save your email right now, but you can continue.");
+  }finally{if(btn){btn.disabled=false;btn.textContent=orig;}}
+}
 cbStartHeartbeat();cbCheckResume();
 </script>
 <footer style="background: var(--obsidian, #0C0E14); border-top: 1px solid rgba(201,168,76,0.1); padding: 2.5rem 1.5rem; margin-top: 4rem; color: rgba(255,255,255,0.6); font-size: 13px;">

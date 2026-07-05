@@ -1,0 +1,195 @@
+{
+  "schema_version": "1.0.0",
+  "occasion": "family_reunion",
+  "style": "heartfelt",
+  "story": "A family reunion celebration anchored by one standout portrait photo, supported by 4 favorite moments.",
+  "mood": "warm",
+  "primary_subject": {
+    "type": "small_group",
+    "faceCount": 2,
+    "sourcePhotoId": "f1"
+  },
+  "hero_photo": {
+    "photoId": "f1",
+    "filename": "grandparents.jpg",
+    "orientation": "portrait",
+    "score": 85,
+    "faceCount": 2,
+    "width": 4000,
+    "height": 5000
+  },
+  "supporting_photos": [
+    {
+      "photoId": "f2",
+      "filename": "whole_family.jpg",
+      "orientation": "landscape",
+      "score": 81,
+      "faceCount": 14,
+      "width": 6000,
+      "height": 4000
+    },
+    {
+      "photoId": "f3",
+      "filename": "kids_playing.jpg",
+      "orientation": "landscape",
+      "score": 78,
+      "faceCount": 4,
+      "width": 4032,
+      "height": 3024
+    },
+    {
+      "photoId": "f4",
+      "filename": "cousins.jpg",
+      "orientation": "landscape",
+      "score": 78,
+      "faceCount": 6,
+      "width": 4000,
+      "height": 3000
+    },
+    {
+      "photoId": "f5",
+      "filename": "old_photo_1980.jpg",
+      "orientation": "portrait",
+      "score": 57,
+      "faceCount": 3,
+      "width": 1200,
+      "height": 1600
+    }
+  ],
+  "photo_rankings": [
+    {
+      "photoId": "f1",
+      "rank": 1,
+      "compositeScore": 85,
+      "role": "hero"
+    },
+    {
+      "photoId": "f2",
+      "rank": 2,
+      "compositeScore": 81,
+      "role": "supporting"
+    },
+    {
+      "photoId": "f4",
+      "rank": 3,
+      "compositeScore": 78,
+      "role": "supporting"
+    },
+    {
+      "photoId": "f3",
+      "rank": 4,
+      "compositeScore": 78,
+      "role": "supporting"
+    },
+    {
+      "photoId": "f5",
+      "rank": 5,
+      "compositeScore": 57,
+      "role": "supporting"
+    }
+  ],
+  "family_members": [],
+  "groups": [
+    {
+      "label": "1980-06-01",
+      "photoIds": [
+        "f5"
+      ],
+      "size": 1
+    },
+    {
+      "label": "2026-07-04",
+      "photoIds": [
+        "f1",
+        "f2",
+        "f3",
+        "f4"
+      ],
+      "size": 4
+    }
+  ],
+  "dominant_colors": [
+    {
+      "hex": "#0C0E14",
+      "weight": 0.5
+    },
+    {
+      "hex": "#C9A84C",
+      "weight": 0.33
+    },
+    {
+      "hex": "#FAF8F3",
+      "weight": 0.17
+    }
+  ],
+  "photo_quality_scores": [
+    {
+      "photoId": "f1",
+      "quality": 83,
+      "resolutionScore": 1,
+      "exposureScore": 0.91,
+      "sharpness": 0.78
+    },
+    {
+      "photoId": "f2",
+      "quality": 84,
+      "resolutionScore": 1,
+      "exposureScore": 0.87,
+      "sharpness": 0.82
+    },
+    {
+      "photoId": "f3",
+      "quality": 77,
+      "resolutionScore": 1,
+      "exposureScore": 0.8,
+      "sharpness": 0.7
+    },
+    {
+      "photoId": "f4",
+      "quality": 80,
+      "resolutionScore": 1,
+      "exposureScore": 0.95,
+      "sharpness": 0.68
+    },
+    {
+      "photoId": "f5",
+      "quality": 48,
+      "resolutionScore": 0.32,
+      "exposureScore": 0.82,
+      "sharpness": 0.4
+    }
+  ],
+  "face_count": 29,
+  "portrait_count": 2,
+  "landscape_count": 3,
+  "square_count": 0,
+  "duplicate_candidates": [],
+  "restoration_candidates": [
+    {
+      "photoId": "f5",
+      "reasons": [
+        "monochrome_old"
+      ]
+    }
+  ],
+  "recommended_concept": "Family Legacy",
+  "confidence_score": 90,
+  "warnings": [
+    {
+      "code": "no_color_data",
+      "message": "No per-photo color data supplied; used the occasion default palette.",
+      "severity": "info"
+    },
+    {
+      "code": "restoration_recommended",
+      "message": "1 photo(s) may benefit from enhancement/restoration.",
+      "severity": "info"
+    }
+  ],
+  "future_extension_fields": {
+    "faceRecognition": null,
+    "aiVision": null,
+    "expressionAnalysis": null,
+    "textDetection": null
+  }
+}

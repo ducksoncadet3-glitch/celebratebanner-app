@@ -1,0 +1,133 @@
+{
+  "schema_version": "1.0.0",
+  "occasion": "wedding",
+  "style": "editorial-classic",
+  "story": "A wedding celebration anchored by one standout portrait photo, supported by 3 favorite moments.",
+  "mood": "romantic",
+  "primary_subject": {
+    "type": "small_group",
+    "faceCount": 2,
+    "sourcePhotoId": "w1"
+  },
+  "hero_photo": {
+    "photoId": "w1",
+    "filename": "first_kiss.jpg",
+    "orientation": "portrait",
+    "score": 88,
+    "faceCount": 2,
+    "width": 4480,
+    "height": 6720
+  },
+  "supporting_photos": [
+    {
+      "photoId": "w3",
+      "filename": "first_dance.jpg",
+      "orientation": "landscape",
+      "score": 82,
+      "faceCount": 2,
+      "width": 6000,
+      "height": 4000
+    },
+    {
+      "photoId": "w4",
+      "filename": "bridal_party.jpg",
+      "orientation": "landscape",
+      "score": 80,
+      "faceCount": 8,
+      "width": 6000,
+      "height": 4000
+    },
+    {
+      "photoId": "w2",
+      "filename": "rings.jpg",
+      "orientation": "square",
+      "score": 74,
+      "faceCount": 0,
+      "width": 4000,
+      "height": 4000
+    }
+  ],
+  "photo_rankings": [
+    {
+      "photoId": "w1",
+      "rank": 1,
+      "compositeScore": 88,
+      "role": "hero"
+    },
+    {
+      "photoId": "w3",
+      "rank": 2,
+      "compositeScore": 82,
+      "role": "supporting"
+    },
+    {
+      "photoId": "w4",
+      "rank": 3,
+      "compositeScore": 80,
+      "role": "supporting"
+    },
+    {
+      "photoId": "w2",
+      "rank": 4,
+      "compositeScore": 74,
+      "role": "supporting"
+    }
+  ],
+  "family_members": [],
+  "groups": [],
+  "dominant_colors": [
+    {
+      "hex": "#FAF8F3",
+      "weight": 0.63
+    },
+    {
+      "hex": "#C9A84C",
+      "weight": 0.38
+    }
+  ],
+  "photo_quality_scores": [
+    {
+      "photoId": "w1",
+      "quality": 87,
+      "resolutionScore": 1,
+      "exposureScore": 0.8,
+      "sharpness": 0.94
+    },
+    {
+      "photoId": "w2",
+      "quality": 86,
+      "resolutionScore": 1,
+      "exposureScore": 0.91,
+      "sharpness": 0.88
+    },
+    {
+      "photoId": "w3",
+      "quality": 82,
+      "resolutionScore": 1,
+      "exposureScore": 0.73,
+      "sharpness": 0.8
+    },
+    {
+      "photoId": "w4",
+      "quality": 82,
+      "resolutionScore": 1,
+      "exposureScore": 0.85,
+      "sharpness": 0.79
+    }
+  ],
+  "face_count": 12,
+  "portrait_count": 1,
+  "landscape_count": 2,
+  "square_count": 1,
+  "duplicate_candidates": [],
+  "restoration_candidates": [],
+  "recommended_concept": "Signature Edition",
+  "confidence_score": 100,
+  "warnings": [],
+  "future_extension_fields": {
+    "faceRecognition": null,
+    "aiVision": null,
+    "expressionAnalysis": null,
+    "textDetection": null
+  }
+}
