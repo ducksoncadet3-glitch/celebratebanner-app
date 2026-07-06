@@ -1,0 +1,427 @@
+{
+  "schemaVersion": "1.0.0",
+  "version": "0.1.0",
+  "createdAt": null,
+  "occasion": "wedding",
+  "recommendedConcept": "Signature Edition",
+  "masterpiecePassed": true,
+  "overallWOWScore": 93,
+  "concepts": [
+    {
+      "conceptName": "Signature Edition",
+      "title": "{Couple Names}",
+      "subtitle": "{Wedding Date}",
+      "creativeExplanation": "We made “first_kiss.jpg” (portrait, quality 88/100) the star. Photo w1 (first_kiss.jpg) is strongest: portrait, score 88, 2 subjects. Signature Edition centers it with symmetrical balance and generous whitespace, framed with restraint in #FAF8F3 on #FAF8F3 — timeless, so this wedding day still feels right in ten years. 3 supporting photos were chosen only because they strengthen the hero and lead the eye back to it — beauty over quantity, nothing added for its own sake. Everything serves one feeling: romance. Tell a love story with elegance and timeless grace.",
+      "purchasePsychology": "The version most families choose — timeless and universally loved. A natural centerpiece for a wedding reception. Recommended as a Framed. Made for the couple and their families. (wedding day)",
+      "heroPhoto": {
+        "photoId": "w1",
+        "filename": "first_kiss.jpg",
+        "orientation": "portrait",
+        "score": 88,
+        "faceCount": 2,
+        "width": 4480,
+        "height": 6720
+      },
+      "supportingPhotos": [
+        {
+          "photoId": "w3",
+          "filename": "first_dance.jpg",
+          "orientation": "landscape",
+          "score": 82,
+          "faceCount": 2,
+          "width": 6000,
+          "height": 4000
+        },
+        {
+          "photoId": "w4",
+          "filename": "bridal_party.jpg",
+          "orientation": "landscape",
+          "score": 80,
+          "faceCount": 8,
+          "width": 6000,
+          "height": 4000
+        },
+        {
+          "photoId": "w2",
+          "filename": "rings.jpg",
+          "orientation": "square",
+          "score": 74,
+          "faceCount": 0,
+          "width": 4000,
+          "height": 4000
+        }
+      ],
+      "layoutRecipe": {
+        "arrangement": "Central hero with a disciplined supporting grid",
+        "heroPlacement": "centered",
+        "heroDominanceRatio": 0.62,
+        "supportingLayout": "symmetrical grid beneath the hero",
+        "balance": "symmetrical",
+        "whitespace": "generous margins",
+        "focalPath": "single clear centered path",
+        "maxSupporting": 4
+      },
+      "colorRecipe": {
+        "ground": "#FAF8F3",
+        "accent": "#FAF8F3",
+        "neutral": "#FAF8F3",
+        "palette": [
+          {
+            "hex": "#FAF8F3",
+            "role": "primary"
+          },
+          {
+            "hex": "#C9A84C",
+            "role": "support"
+          },
+          {
+            "hex": "#0C0E14",
+            "role": "ground"
+          }
+        ],
+        "source": "photos",
+        "guidance": "Restrained gold on obsidian; refined, high-contrast, timeless. Gold as a hairline accent only."
+      },
+      "typographyRecipe": {
+        "style": "elegant",
+        "displayFont": "Cormorant Garamond",
+        "supportingFont": "Outfit",
+        "headlineTreatment": "elegant Cormorant Garamond display, high contrast, one headline",
+        "labelTreatment": "refined gold small-caps label",
+        "guidance": "Classic, confident hierarchy; distance- and print-readable."
+      },
+      "recommendedProduct": "Framed",
+      "sharePreview": {
+        "headline": "Tell a love story with elegance and timeless grace.",
+        "caption": "I can’t believe this came from our photos. 😮",
+        "altText": "A Signature Edition CelebrateBanner wedding day design, centered on the chosen hero photo with 3 supporting photos."
+      },
+      "wowScore": 93,
+      "masterpiecePassed": true,
+      "scoreBreakdown": {
+        "heroStrength": 13.1,
+        "emotionalImpact": 20,
+        "storytelling": 11.7,
+        "layoutBalance": 15,
+        "typography": 9.9,
+        "colorHarmony": 9.9,
+        "luxuryFinish": 8.6,
+        "shareability": 4.5,
+        "total": 93
+      },
+      "failureReasons": []
+    },
+    {
+      "conceptName": "Luxury Gold",
+      "title": "{Couple Names}",
+      "subtitle": "{Wedding Date}",
+      "creativeExplanation": "We made “first_kiss.jpg” (portrait, quality 88/100) the star. Photo w1 (first_kiss.jpg) is strongest: portrait, score 88, 2 subjects. Luxury Gold lifts it into a cinematic spotlight with luxurious negative space and gold framing in #FAF8F3, so the wedding day feels as big as it was. 3 supporting photos were chosen only because they strengthen the hero and lead the eye back to it — beauty over quantity, nothing added for its own sake. Everything serves one feeling: romance. Tell a love story with elegance and timeless grace.",
+      "purchasePsychology": "Best displayed as a framed keepsake; the gold reads richest at a large size, so it looks strongest at 24×36. Recommended as a Framed. Made for the couple and their families. (wedding day)",
+      "heroPhoto": {
+        "photoId": "w1",
+        "filename": "first_kiss.jpg",
+        "orientation": "portrait",
+        "score": 88,
+        "faceCount": 2,
+        "width": 4480,
+        "height": 6720
+      },
+      "supportingPhotos": [
+        {
+          "photoId": "w3",
+          "filename": "first_dance.jpg",
+          "orientation": "landscape",
+          "score": 82,
+          "faceCount": 2,
+          "width": 6000,
+          "height": 4000
+        },
+        {
+          "photoId": "w4",
+          "filename": "bridal_party.jpg",
+          "orientation": "landscape",
+          "score": 80,
+          "faceCount": 8,
+          "width": 6000,
+          "height": 4000
+        },
+        {
+          "photoId": "w2",
+          "filename": "rings.jpg",
+          "orientation": "square",
+          "score": 74,
+          "faceCount": 0,
+          "width": 4000,
+          "height": 4000
+        }
+      ],
+      "layoutRecipe": {
+        "arrangement": "Dramatic spotlighted hero with luxurious negative space",
+        "heroPlacement": "centered, spotlit",
+        "heroDominanceRatio": 0.68,
+        "supportingLayout": "minimal framed supporting row",
+        "balance": "symmetrical grandeur",
+        "whitespace": "luxurious",
+        "focalPath": "spotlight leads straight to the hero",
+        "maxSupporting": 3
+      },
+      "colorRecipe": {
+        "ground": "#FAF8F3",
+        "accent": "#FAF8F3",
+        "neutral": "#FAF8F3",
+        "palette": [
+          {
+            "hex": "#FAF8F3",
+            "role": "primary"
+          },
+          {
+            "hex": "#C9A84C",
+            "role": "support"
+          },
+          {
+            "hex": "#0C0E14",
+            "role": "ground"
+          }
+        ],
+        "source": "photos",
+        "guidance": "Gold-forward on deep obsidian with glow accents on the hero — radiant metallic, never flooded."
+      },
+      "typographyRecipe": {
+        "style": "elegant",
+        "displayFont": "Cormorant Garamond",
+        "supportingFont": "Outfit",
+        "headlineTreatment": "large Cormorant Garamond in gold gradient",
+        "labelTreatment": "letter-spaced small-caps gold label",
+        "guidance": "Formal and radiant; the most decorative type voice, still restrained."
+      },
+      "recommendedProduct": "Framed",
+      "sharePreview": {
+        "headline": "Tell a love story with elegance and timeless grace.",
+        "caption": "I can’t believe this came from our photos. 😮",
+        "altText": "A Luxury Gold CelebrateBanner wedding day design, centered on the chosen hero photo with 3 supporting photos."
+      },
+      "wowScore": 93,
+      "masterpiecePassed": true,
+      "scoreBreakdown": {
+        "heroStrength": 13,
+        "emotionalImpact": 20,
+        "storytelling": 11.5,
+        "layoutBalance": 14.5,
+        "typography": 9.7,
+        "colorHarmony": 10,
+        "luxuryFinish": 9.9,
+        "shareability": 4.6,
+        "total": 93
+      },
+      "failureReasons": []
+    },
+    {
+      "conceptName": "Family Legacy",
+      "title": "{Couple Names}",
+      "subtitle": "{Wedding Date}",
+      "creativeExplanation": "We made “first_kiss.jpg” (portrait, quality 88/100) the star. Photo w1 (first_kiss.jpg) is strongest: portrait, score 88, 2 subjects. Family Legacy arranges the memories as a warm story — anchor moments, then story builders — with room around every face, honoring the wedding day across time. 3 supporting photos were chosen only because they strengthen the hero and lead the eye back to it — beauty over quantity, nothing added for its own sake. Everything serves one feeling: romance. Tell a love story with elegance and timeless grace.",
+      "purchasePsychology": "Grandparents and extended family tend to love this one. It’s made to be handed down. Recommended as a Framed. Made for the couple and their families. (wedding day)",
+      "heroPhoto": {
+        "photoId": "w1",
+        "filename": "first_kiss.jpg",
+        "orientation": "portrait",
+        "score": 88,
+        "faceCount": 2,
+        "width": 4480,
+        "height": 6720
+      },
+      "supportingPhotos": [
+        {
+          "photoId": "w3",
+          "filename": "first_dance.jpg",
+          "orientation": "landscape",
+          "score": 82,
+          "faceCount": 2,
+          "width": 6000,
+          "height": 4000
+        },
+        {
+          "photoId": "w4",
+          "filename": "bridal_party.jpg",
+          "orientation": "landscape",
+          "score": 80,
+          "faceCount": 8,
+          "width": 6000,
+          "height": 4000
+        },
+        {
+          "photoId": "w2",
+          "filename": "rings.jpg",
+          "orientation": "square",
+          "score": 74,
+          "faceCount": 0,
+          "width": 4000,
+          "height": 4000
+        }
+      ],
+      "layoutRecipe": {
+        "arrangement": "Narrative gathered-memories flow",
+        "heroPlacement": "anchored",
+        "heroDominanceRatio": 0.56,
+        "supportingLayout": "tiered story clusters (anchors → builders → accents)",
+        "balance": "balanced",
+        "whitespace": "warm, room around every face",
+        "focalPath": "hero first, then the journey",
+        "maxSupporting": 6
+      },
+      "colorRecipe": {
+        "ground": "#FAF8F3",
+        "accent": "#FAF8F3",
+        "neutral": "#FAF8F3",
+        "palette": [
+          {
+            "hex": "#FAF8F3",
+            "role": "primary"
+          },
+          {
+            "hex": "#C9A84C",
+            "role": "support"
+          },
+          {
+            "hex": "#0C0E14",
+            "role": "ground"
+          }
+        ],
+        "source": "photos",
+        "guidance": "Warm layer within the brand core; soft, unifying, nostalgic. Gold used as gentle detail."
+      },
+      "typographyRecipe": {
+        "style": "elegant",
+        "displayFont": "Cormorant Garamond",
+        "supportingFont": "Outfit",
+        "headlineTreatment": "warm classic serif display, approachable",
+        "labelTreatment": "humanist supporting labels, tasteful dates",
+        "guidance": "Heartfelt, legible; room to breathe around names."
+      },
+      "recommendedProduct": "Framed",
+      "sharePreview": {
+        "headline": "Tell a love story with elegance and timeless grace.",
+        "caption": "I can’t believe this came from our photos. 😮",
+        "altText": "A Family Legacy CelebrateBanner wedding day design, centered on the chosen hero photo with 3 supporting photos."
+      },
+      "wowScore": 92,
+      "masterpiecePassed": true,
+      "scoreBreakdown": {
+        "heroStrength": 12.6,
+        "emotionalImpact": 20,
+        "storytelling": 13.6,
+        "layoutBalance": 14.2,
+        "typography": 9.3,
+        "colorHarmony": 9.7,
+        "luxuryFinish": 8.4,
+        "shareability": 4.6,
+        "total": 92
+      },
+      "failureReasons": []
+    },
+    {
+      "conceptName": "Modern Editorial",
+      "title": "{Couple Names}",
+      "subtitle": "{Wedding Date}",
+      "creativeExplanation": "We made “first_kiss.jpg” (portrait, quality 88/100) the star. Photo w1 (first_kiss.jpg) is strongest: portrait, score 88, 2 subjects. Modern Editorial gives it magazine-cover scale and deliberate asymmetry, with bold negative space and strong type — the wedding day, styled like a cover. 3 supporting photos were chosen only because they strengthen the hero and lead the eye back to it — beauty over quantity, nothing added for its own sake. Everything serves one feeling: romance. Tell a love story with elegance and timeless grace.",
+      "purchasePsychology": "Made to share — it looks strongest on a phone screen and social feed before it ever reaches a wall. Recommended as a Digital download. Made for the couple and their families. (wedding day)",
+      "heroPhoto": {
+        "photoId": "w1",
+        "filename": "first_kiss.jpg",
+        "orientation": "portrait",
+        "score": 88,
+        "faceCount": 2,
+        "width": 4480,
+        "height": 6720
+      },
+      "supportingPhotos": [
+        {
+          "photoId": "w3",
+          "filename": "first_dance.jpg",
+          "orientation": "landscape",
+          "score": 82,
+          "faceCount": 2,
+          "width": 6000,
+          "height": 4000
+        },
+        {
+          "photoId": "w4",
+          "filename": "bridal_party.jpg",
+          "orientation": "landscape",
+          "score": 80,
+          "faceCount": 8,
+          "width": 6000,
+          "height": 4000
+        },
+        {
+          "photoId": "w2",
+          "filename": "rings.jpg",
+          "orientation": "square",
+          "score": 74,
+          "faceCount": 0,
+          "width": 4000,
+          "height": 4000
+        }
+      ],
+      "layoutRecipe": {
+        "arrangement": "Editorial asymmetry with an oversized hero",
+        "heroPlacement": "off-center",
+        "heroDominanceRatio": 0.66,
+        "supportingLayout": "off-grid supporting blocks",
+        "balance": "deliberate asymmetry",
+        "whitespace": "bold negative space",
+        "focalPath": "scale-led diagonal path",
+        "maxSupporting": 4
+      },
+      "colorRecipe": {
+        "ground": "#FAF8F3",
+        "accent": "#FAF8F3",
+        "neutral": "#FAF8F3",
+        "palette": [
+          {
+            "hex": "#FAF8F3",
+            "role": "primary"
+          },
+          {
+            "hex": "#C9A84C",
+            "role": "support"
+          },
+          {
+            "hex": "#0C0E14",
+            "role": "ground"
+          }
+        ],
+        "source": "photos",
+        "guidance": "Sharpest contrast, a single disciplined accent; gold as highlight only."
+      },
+      "typographyRecipe": {
+        "style": "elegant",
+        "displayFont": "Cormorant Garamond",
+        "supportingFont": "Outfit",
+        "headlineTreatment": "oversized confident display, tight tracking",
+        "labelTreatment": "bold sans labels; refined serif accent",
+        "guidance": "Type as composition; strong scale contrast, magazine-grade."
+      },
+      "recommendedProduct": "Digital download",
+      "sharePreview": {
+        "headline": "Tell a love story with elegance and timeless grace.",
+        "caption": "I can’t believe this came from our photos. 😮",
+        "altText": "A Modern Editorial CelebrateBanner wedding day design, centered on the chosen hero photo with 3 supporting photos."
+      },
+      "wowScore": 92,
+      "masterpiecePassed": true,
+      "scoreBreakdown": {
+        "heroStrength": 12.9,
+        "emotionalImpact": 20,
+        "storytelling": 11.5,
+        "layoutBalance": 14.8,
+        "typography": 10,
+        "colorHarmony": 9.5,
+        "luxuryFinish": 8.2,
+        "shareability": 5,
+        "total": 92
+      },
+      "failureReasons": []
+    }
+  ]
+}

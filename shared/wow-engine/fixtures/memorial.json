@@ -1,0 +1,427 @@
+{
+  "schemaVersion": "1.0.0",
+  "version": "0.1.0",
+  "createdAt": null,
+  "occasion": "memorial",
+  "recommendedConcept": "Family Legacy",
+  "masterpiecePassed": true,
+  "overallWOWScore": 93,
+  "concepts": [
+    {
+      "conceptName": "Signature Edition",
+      "title": "{Full Name}",
+      "subtitle": "{Birth Year} – {Year}",
+      "creativeExplanation": "We made “portrait_smiling.jpg” (portrait, quality 85/100) the star. Photo m1 (portrait_smiling.jpg) is strongest: portrait, score 85, 1 clear subject. Signature Edition centers it with organic balance and warm-generous whitespace, framed with restraint in #C9A84C on #0C0E14 — timeless, so this life and legacy still feels right in ten years. 3 supporting photos were chosen only because they strengthen the hero and lead the eye back to it — beauty over quantity, nothing added for its own sake. Everything serves one feeling: respect. Remember a life with respect, peace, and love.",
+      "purchasePsychology": "The version most families choose — timeless and universally loved. A natural centerpiece for a celebration of life. Recommended as a Framed. Made for the family and loved ones. (life and legacy)",
+      "heroPhoto": {
+        "photoId": "m1",
+        "filename": "portrait_smiling.jpg",
+        "orientation": "portrait",
+        "score": 85,
+        "faceCount": 1,
+        "width": 3000,
+        "height": 3750
+      },
+      "supportingPhotos": [
+        {
+          "photoId": "m3",
+          "filename": "with_family.jpg",
+          "orientation": "landscape",
+          "score": 73,
+          "faceCount": 5,
+          "width": 3200,
+          "height": 2400
+        },
+        {
+          "photoId": "m4",
+          "filename": "garden.jpg",
+          "orientation": "landscape",
+          "score": 69,
+          "faceCount": 1,
+          "width": 2400,
+          "height": 1800
+        },
+        {
+          "photoId": "m2",
+          "filename": "young_years_bw.jpg",
+          "orientation": "portrait",
+          "score": 54,
+          "faceCount": 1,
+          "width": 1000,
+          "height": 1400
+        }
+      ],
+      "layoutRecipe": {
+        "arrangement": "Central hero with a disciplined supporting grid",
+        "heroPlacement": "centered",
+        "heroDominanceRatio": 0.55,
+        "supportingLayout": "symmetrical grid beneath the hero",
+        "balance": "symmetrical",
+        "whitespace": "generous margins",
+        "focalPath": "single clear centered path",
+        "maxSupporting": 4
+      },
+      "colorRecipe": {
+        "ground": "#0C0E14",
+        "accent": "#C9A84C",
+        "neutral": "#FAF8F3",
+        "palette": [
+          {
+            "hex": "#0C0E14",
+            "role": "primary"
+          },
+          {
+            "hex": "#C9A84C",
+            "role": "accent"
+          },
+          {
+            "hex": "#FAF8F3",
+            "role": "support"
+          }
+        ],
+        "source": "occasion-default",
+        "guidance": "Restrained gold on obsidian; refined, high-contrast, timeless. Gold as a hairline accent only."
+      },
+      "typographyRecipe": {
+        "style": "respectful",
+        "displayFont": "Cormorant Garamond",
+        "supportingFont": "Outfit",
+        "headlineTreatment": "elegant Cormorant Garamond display, high contrast, one headline",
+        "labelTreatment": "refined gold small-caps label",
+        "guidance": "Classic, confident hierarchy; distance- and print-readable."
+      },
+      "recommendedProduct": "Framed",
+      "sharePreview": {
+        "headline": "Honoring a life — our life and legacy.",
+        "caption": "We turned our favorite photos into something worth keeping forever. 🤍",
+        "altText": "A Signature Edition CelebrateBanner life and legacy design, centered on the chosen hero photo with 3 supporting photos."
+      },
+      "wowScore": 93,
+      "masterpiecePassed": true,
+      "scoreBreakdown": {
+        "heroStrength": 12.6,
+        "emotionalImpact": 19.7,
+        "storytelling": 13.8,
+        "layoutBalance": 15,
+        "typography": 9.9,
+        "colorHarmony": 9,
+        "luxuryFinish": 8.4,
+        "shareability": 4.5,
+        "total": 93
+      },
+      "failureReasons": []
+    },
+    {
+      "conceptName": "Luxury Gold",
+      "title": "{Full Name}",
+      "subtitle": "{Birth Year} – {Year}",
+      "creativeExplanation": "We made “portrait_smiling.jpg” (portrait, quality 85/100) the star. Photo m1 (portrait_smiling.jpg) is strongest: portrait, score 85, 1 clear subject. Luxury Gold lifts it into a cinematic spotlight with luxurious negative space and gold framing in #C9A84C, so the life and legacy feels as big as it was. 3 supporting photos were chosen only because they strengthen the hero and lead the eye back to it — beauty over quantity, nothing added for its own sake. Everything serves one feeling: respect. Remember a life with respect, peace, and love.",
+      "purchasePsychology": "Best displayed as a framed keepsake; the gold reads richest at a large size, so it looks strongest at 24×36. Recommended as a Framed. Made for the family and loved ones. (life and legacy)",
+      "heroPhoto": {
+        "photoId": "m1",
+        "filename": "portrait_smiling.jpg",
+        "orientation": "portrait",
+        "score": 85,
+        "faceCount": 1,
+        "width": 3000,
+        "height": 3750
+      },
+      "supportingPhotos": [
+        {
+          "photoId": "m3",
+          "filename": "with_family.jpg",
+          "orientation": "landscape",
+          "score": 73,
+          "faceCount": 5,
+          "width": 3200,
+          "height": 2400
+        },
+        {
+          "photoId": "m4",
+          "filename": "garden.jpg",
+          "orientation": "landscape",
+          "score": 69,
+          "faceCount": 1,
+          "width": 2400,
+          "height": 1800
+        },
+        {
+          "photoId": "m2",
+          "filename": "young_years_bw.jpg",
+          "orientation": "portrait",
+          "score": 54,
+          "faceCount": 1,
+          "width": 1000,
+          "height": 1400
+        }
+      ],
+      "layoutRecipe": {
+        "arrangement": "Dramatic spotlighted hero with luxurious negative space",
+        "heroPlacement": "centered, spotlit",
+        "heroDominanceRatio": 0.61,
+        "supportingLayout": "minimal framed supporting row",
+        "balance": "symmetrical grandeur",
+        "whitespace": "luxurious",
+        "focalPath": "spotlight leads straight to the hero",
+        "maxSupporting": 3
+      },
+      "colorRecipe": {
+        "ground": "#0C0E14",
+        "accent": "#C9A84C",
+        "neutral": "#FAF8F3",
+        "palette": [
+          {
+            "hex": "#0C0E14",
+            "role": "primary"
+          },
+          {
+            "hex": "#C9A84C",
+            "role": "accent"
+          },
+          {
+            "hex": "#FAF8F3",
+            "role": "support"
+          }
+        ],
+        "source": "occasion-default",
+        "guidance": "Gold-forward on deep obsidian with glow accents on the hero — radiant metallic, never flooded."
+      },
+      "typographyRecipe": {
+        "style": "respectful",
+        "displayFont": "Cormorant Garamond",
+        "supportingFont": "Outfit",
+        "headlineTreatment": "large Cormorant Garamond in gold gradient",
+        "labelTreatment": "letter-spaced small-caps gold label",
+        "guidance": "Formal and radiant; the most decorative type voice, still restrained."
+      },
+      "recommendedProduct": "Framed",
+      "sharePreview": {
+        "headline": "Honoring a life — our life and legacy.",
+        "caption": "We turned our favorite photos into something worth keeping forever. 🤍",
+        "altText": "A Luxury Gold CelebrateBanner life and legacy design, centered on the chosen hero photo with 3 supporting photos."
+      },
+      "wowScore": 93,
+      "masterpiecePassed": true,
+      "scoreBreakdown": {
+        "heroStrength": 12.4,
+        "emotionalImpact": 20,
+        "storytelling": 13.5,
+        "layoutBalance": 14.2,
+        "typography": 9.7,
+        "colorHarmony": 9.2,
+        "luxuryFinish": 9.8,
+        "shareability": 4.5,
+        "total": 93
+      },
+      "failureReasons": []
+    },
+    {
+      "conceptName": "Family Legacy",
+      "title": "{Full Name}",
+      "subtitle": "{Birth Year} – {Year}",
+      "creativeExplanation": "We made “portrait_smiling.jpg” (portrait, quality 85/100) the star. Photo m1 (portrait_smiling.jpg) is strongest: portrait, score 85, 1 clear subject. Family Legacy arranges the memories as a warm story — anchor moments, then story builders — with room around every face, honoring the life and legacy across time. 3 supporting photos were chosen only because they strengthen the hero and lead the eye back to it — beauty over quantity, nothing added for its own sake. Everything serves one feeling: respect. Remember a life with respect, peace, and love.",
+      "purchasePsychology": "Grandparents and extended family tend to love this one. It’s made to be handed down. Recommended as a Framed. Made for the family and loved ones. (life and legacy)",
+      "heroPhoto": {
+        "photoId": "m1",
+        "filename": "portrait_smiling.jpg",
+        "orientation": "portrait",
+        "score": 85,
+        "faceCount": 1,
+        "width": 3000,
+        "height": 3750
+      },
+      "supportingPhotos": [
+        {
+          "photoId": "m3",
+          "filename": "with_family.jpg",
+          "orientation": "landscape",
+          "score": 73,
+          "faceCount": 5,
+          "width": 3200,
+          "height": 2400
+        },
+        {
+          "photoId": "m4",
+          "filename": "garden.jpg",
+          "orientation": "landscape",
+          "score": 69,
+          "faceCount": 1,
+          "width": 2400,
+          "height": 1800
+        },
+        {
+          "photoId": "m2",
+          "filename": "young_years_bw.jpg",
+          "orientation": "portrait",
+          "score": 54,
+          "faceCount": 1,
+          "width": 1000,
+          "height": 1400
+        }
+      ],
+      "layoutRecipe": {
+        "arrangement": "Narrative gathered-memories flow",
+        "heroPlacement": "anchored",
+        "heroDominanceRatio": 0.49,
+        "supportingLayout": "tiered story clusters (anchors → builders → accents)",
+        "balance": "balanced",
+        "whitespace": "warm, room around every face",
+        "focalPath": "hero first, then the journey",
+        "maxSupporting": 6
+      },
+      "colorRecipe": {
+        "ground": "#0C0E14",
+        "accent": "#C9A84C",
+        "neutral": "#FAF8F3",
+        "palette": [
+          {
+            "hex": "#0C0E14",
+            "role": "primary"
+          },
+          {
+            "hex": "#C9A84C",
+            "role": "accent"
+          },
+          {
+            "hex": "#FAF8F3",
+            "role": "support"
+          }
+        ],
+        "source": "occasion-default",
+        "guidance": "Warm layer within the brand core; soft, unifying, nostalgic. Gold used as gentle detail."
+      },
+      "typographyRecipe": {
+        "style": "respectful",
+        "displayFont": "Cormorant Garamond",
+        "supportingFont": "Outfit",
+        "headlineTreatment": "warm classic serif display, approachable",
+        "labelTreatment": "humanist supporting labels, tasteful dates",
+        "guidance": "Heartfelt, legible; room to breathe around names."
+      },
+      "recommendedProduct": "Framed",
+      "sharePreview": {
+        "headline": "Honoring a life — our life and legacy.",
+        "caption": "We turned our favorite photos into something worth keeping forever. 🤍",
+        "altText": "A Family Legacy CelebrateBanner life and legacy design, centered on the chosen hero photo with 3 supporting photos."
+      },
+      "wowScore": 92,
+      "masterpiecePassed": true,
+      "scoreBreakdown": {
+        "heroStrength": 12.1,
+        "emotionalImpact": 20,
+        "storytelling": 15,
+        "layoutBalance": 13.9,
+        "typography": 9.3,
+        "colorHarmony": 8.9,
+        "luxuryFinish": 8.3,
+        "shareability": 4.5,
+        "total": 92
+      },
+      "failureReasons": []
+    },
+    {
+      "conceptName": "Modern Editorial",
+      "title": "{Full Name}",
+      "subtitle": "{Birth Year} – {Year}",
+      "creativeExplanation": "We made “portrait_smiling.jpg” (portrait, quality 85/100) the star. Photo m1 (portrait_smiling.jpg) is strongest: portrait, score 85, 1 clear subject. Modern Editorial gives it magazine-cover scale and deliberate asymmetry, with bold negative space and strong type — the life and legacy, styled like a cover. 3 supporting photos were chosen only because they strengthen the hero and lead the eye back to it — beauty over quantity, nothing added for its own sake. Everything serves one feeling: respect. Remember a life with respect, peace, and love.",
+      "purchasePsychology": "Made to share — it looks strongest on a phone screen and social feed before it ever reaches a wall. Recommended as a Digital download. Made for the family and loved ones. (life and legacy)",
+      "heroPhoto": {
+        "photoId": "m1",
+        "filename": "portrait_smiling.jpg",
+        "orientation": "portrait",
+        "score": 85,
+        "faceCount": 1,
+        "width": 3000,
+        "height": 3750
+      },
+      "supportingPhotos": [
+        {
+          "photoId": "m3",
+          "filename": "with_family.jpg",
+          "orientation": "landscape",
+          "score": 73,
+          "faceCount": 5,
+          "width": 3200,
+          "height": 2400
+        },
+        {
+          "photoId": "m4",
+          "filename": "garden.jpg",
+          "orientation": "landscape",
+          "score": 69,
+          "faceCount": 1,
+          "width": 2400,
+          "height": 1800
+        },
+        {
+          "photoId": "m2",
+          "filename": "young_years_bw.jpg",
+          "orientation": "portrait",
+          "score": 54,
+          "faceCount": 1,
+          "width": 1000,
+          "height": 1400
+        }
+      ],
+      "layoutRecipe": {
+        "arrangement": "Editorial asymmetry with an oversized hero",
+        "heroPlacement": "off-center",
+        "heroDominanceRatio": 0.59,
+        "supportingLayout": "off-grid supporting blocks",
+        "balance": "deliberate asymmetry",
+        "whitespace": "bold negative space",
+        "focalPath": "scale-led diagonal path",
+        "maxSupporting": 4
+      },
+      "colorRecipe": {
+        "ground": "#0C0E14",
+        "accent": "#C9A84C",
+        "neutral": "#FAF8F3",
+        "palette": [
+          {
+            "hex": "#0C0E14",
+            "role": "primary"
+          },
+          {
+            "hex": "#C9A84C",
+            "role": "accent"
+          },
+          {
+            "hex": "#FAF8F3",
+            "role": "support"
+          }
+        ],
+        "source": "occasion-default",
+        "guidance": "Sharpest contrast, a single disciplined accent; gold as highlight only."
+      },
+      "typographyRecipe": {
+        "style": "respectful",
+        "displayFont": "Cormorant Garamond",
+        "supportingFont": "Outfit",
+        "headlineTreatment": "oversized confident display, tight tracking",
+        "labelTreatment": "bold sans labels; refined serif accent",
+        "guidance": "Type as composition; strong scale contrast, magazine-grade."
+      },
+      "recommendedProduct": "Digital download",
+      "sharePreview": {
+        "headline": "Honoring a life — our life and legacy.",
+        "caption": "We turned our favorite photos into something worth keeping forever. 🤍",
+        "altText": "A Modern Editorial CelebrateBanner life and legacy design, centered on the chosen hero photo with 3 supporting photos."
+      },
+      "wowScore": 92,
+      "masterpiecePassed": true,
+      "scoreBreakdown": {
+        "heroStrength": 12.3,
+        "emotionalImpact": 19.7,
+        "storytelling": 13.5,
+        "layoutBalance": 14.5,
+        "typography": 10,
+        "colorHarmony": 8.7,
+        "luxuryFinish": 8.1,
+        "shareability": 5,
+        "total": 92
+      },
+      "failureReasons": []
+    }
+  ]
+}
