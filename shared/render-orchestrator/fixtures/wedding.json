@@ -1,0 +1,253 @@
+{
+  "schemaVersion": "1.0.0",
+  "version": "0.1.0",
+  "createdAt": null,
+  "occasion": "wedding",
+  "conceptName": "Signature Edition",
+  "accepted": true,
+  "heroPhoto": {
+    "photoId": "w1",
+    "filename": "first_kiss.jpg",
+    "orientation": "portrait",
+    "score": 88,
+    "faceCount": 2,
+    "width": 4480,
+    "height": 6720
+  },
+  "supportingPhotos": [
+    {
+      "photoId": "w3",
+      "filename": "first_dance.jpg",
+      "orientation": "landscape",
+      "score": 82,
+      "faceCount": 2,
+      "width": 6000,
+      "height": 4000
+    },
+    {
+      "photoId": "w4",
+      "filename": "bridal_party.jpg",
+      "orientation": "landscape",
+      "score": 80,
+      "faceCount": 8,
+      "width": 6000,
+      "height": 4000
+    },
+    {
+      "photoId": "w2",
+      "filename": "rings.jpg",
+      "orientation": "square",
+      "score": 74,
+      "faceCount": 0,
+      "width": 4000,
+      "height": 4000
+    }
+  ],
+  "layoutRecipe": {
+    "arrangement": "Central hero with a disciplined supporting grid",
+    "heroPlacement": "centered",
+    "heroDominanceRatio": 0.62,
+    "supportingLayout": "symmetrical grid beneath the hero",
+    "balance": "symmetrical",
+    "whitespace": "generous margins",
+    "focalPath": "single clear centered path",
+    "maxSupporting": 4
+  },
+  "colorRecipe": {
+    "ground": "#FAF8F3",
+    "accent": "#FAF8F3",
+    "neutral": "#FAF8F3",
+    "palette": [
+      {
+        "hex": "#FAF8F3",
+        "role": "primary"
+      },
+      {
+        "hex": "#C9A84C",
+        "role": "support"
+      },
+      {
+        "hex": "#0C0E14",
+        "role": "ground"
+      }
+    ],
+    "source": "photos",
+    "guidance": "Restrained gold on obsidian; refined, high-contrast, timeless. Gold as a hairline accent only."
+  },
+  "typographyRecipe": {
+    "style": "elegant",
+    "displayFont": "Cormorant Garamond",
+    "supportingFont": "Outfit",
+    "headlineTreatment": "elegant Cormorant Garamond display, high contrast, one headline",
+    "labelTreatment": "refined gold small-caps label",
+    "guidance": "Classic, confident hierarchy; distance- and print-readable."
+  },
+  "renderInstructions": {
+    "arrangement": "classic",
+    "heroPlacement": {
+      "zone": "center",
+      "dominanceRatio": 0.62,
+      "frame": "thin-gold",
+      "spotlight": false,
+      "protectFace": true
+    },
+    "supportingPlacement": {
+      "arrangement": "classic",
+      "maxCells": 4,
+      "count": 3,
+      "gapRatio": 0.02,
+      "treatment": "Unified grade; smaller and quieter; lead the eye back to the hero."
+    },
+    "typographyPlacement": {
+      "titleZone": "top-center",
+      "subtitleZone": "top-center-under-title",
+      "alignment": "center",
+      "displayFont": "Cormorant Garamond",
+      "supportingFont": "Outfit",
+      "headlineTreatment": "elegant Cormorant Garamond display, high contrast, one headline",
+      "labelTreatment": "refined gold small-caps label"
+    },
+    "backgroundSelection": {
+      "style": "obsidian-gradient",
+      "decorationTheme": "floral",
+      "vignette": true
+    },
+    "colorPalette": {
+      "ground": "#FAF8F3",
+      "accent": "#FAF8F3",
+      "neutral": "#FAF8F3",
+      "palette": [
+        {
+          "hex": "#FAF8F3",
+          "role": "primary"
+        },
+        {
+          "hex": "#C9A84C",
+          "role": "support"
+        },
+        {
+          "hex": "#0C0E14",
+          "role": "ground"
+        }
+      ],
+      "source": "photos"
+    },
+    "decorativeElements": [
+      "soft florals (restrained)",
+      "thin gold lines",
+      "elegant framing"
+    ],
+    "spacing": {
+      "marginRatio": 0.055,
+      "gapRatio": 0.02,
+      "whitespace": "generous"
+    },
+    "layering": {
+      "order": [
+        "background",
+        "decorations",
+        "supporting-photos",
+        "hero-photo",
+        "title-text",
+        "preview-overlay"
+      ]
+    }
+  },
+  "exportTargets": [
+    {
+      "id": "digital",
+      "label": "Digital Download",
+      "product": "Digital download",
+      "widthIn": 24,
+      "heightIn": 36,
+      "dpi": 300,
+      "widthPx": 7200,
+      "heightPx": 10800,
+      "bleedIn": 0.125,
+      "safeMarginIn": 0.25,
+      "colorMode": "RGB",
+      "formats": [
+        "jpg",
+        "pdf"
+      ],
+      "orientation": "portrait",
+      "framed": false,
+      "matte": false,
+      "note": "Print-ready master file for instant download; render once at full resolution."
+    },
+    {
+      "id": "poster_18x24",
+      "label": "18×24 Poster",
+      "product": "Standard print",
+      "widthIn": 18,
+      "heightIn": 24,
+      "dpi": 300,
+      "widthPx": 5400,
+      "heightPx": 7200,
+      "bleedIn": 0.125,
+      "safeMarginIn": 0.25,
+      "colorMode": "CMYK",
+      "formats": [
+        "pdf",
+        "jpg"
+      ],
+      "orientation": "portrait",
+      "framed": false,
+      "matte": false,
+      "note": "Small poster print; CMYK at 300 DPI with bleed + safe margin."
+    },
+    {
+      "id": "poster_24x36",
+      "label": "24×36 Poster",
+      "product": "Premium print",
+      "widthIn": 24,
+      "heightIn": 36,
+      "dpi": 300,
+      "widthPx": 7200,
+      "heightPx": 10800,
+      "bleedIn": 0.125,
+      "safeMarginIn": 0.25,
+      "colorMode": "CMYK",
+      "formats": [
+        "pdf",
+        "jpg"
+      ],
+      "orientation": "portrait",
+      "framed": false,
+      "matte": false,
+      "note": "Flagship poster print; CMYK at 300 DPI with bleed + safe margin."
+    },
+    {
+      "id": "framed_24x36",
+      "label": "Framed Edition",
+      "product": "Framed",
+      "widthIn": 24,
+      "heightIn": 36,
+      "dpi": 300,
+      "widthPx": 7200,
+      "heightPx": 10800,
+      "bleedIn": 0.125,
+      "safeMarginIn": 0.25,
+      "colorMode": "CMYK",
+      "formats": [
+        "pdf",
+        "jpg"
+      ],
+      "orientation": "portrait",
+      "framed": true,
+      "matte": true,
+      "note": "Framed keepsake; same 24×36 print inside a mat + frame (frame color chosen after checkout)."
+    }
+  ],
+  "qualityChecks": {
+    "passed": true,
+    "heroPhoto": true,
+    "supportingPhotos": true,
+    "wowScore": true,
+    "masterpiecePassed": true,
+    "layoutRecipeComplete": true,
+    "typographyRecipeComplete": true,
+    "exportTargetsDefined": true,
+    "reasons": []
+  }
+}
