@@ -1,0 +1,253 @@
+{
+  "schemaVersion": "1.0.0",
+  "version": "0.1.0",
+  "createdAt": null,
+  "occasion": "graduation",
+  "conceptName": "Signature Edition",
+  "accepted": true,
+  "heroPhoto": {
+    "photoId": "g1",
+    "filename": "grad_portrait.jpg",
+    "orientation": "portrait",
+    "score": 93,
+    "faceCount": 1,
+    "width": 4032,
+    "height": 5040
+  },
+  "supportingPhotos": [
+    {
+      "photoId": "g2",
+      "filename": "cap_toss.jpg",
+      "orientation": "landscape",
+      "score": 84,
+      "faceCount": 3,
+      "width": 6000,
+      "height": 4000
+    },
+    {
+      "photoId": "g3",
+      "filename": "family_hug.jpg",
+      "orientation": "landscape",
+      "score": 83,
+      "faceCount": 4,
+      "width": 4000,
+      "height": 3000
+    },
+    {
+      "photoId": "g4",
+      "filename": "blurry_walk.jpg",
+      "orientation": "portrait",
+      "score": 64,
+      "faceCount": 1,
+      "width": 3024,
+      "height": 4032
+    }
+  ],
+  "layoutRecipe": {
+    "arrangement": "Central hero with a disciplined supporting grid",
+    "heroPlacement": "centered",
+    "heroDominanceRatio": 0.62,
+    "supportingLayout": "symmetrical grid beneath the hero",
+    "balance": "symmetrical",
+    "whitespace": "generous margins",
+    "focalPath": "single clear centered path",
+    "maxSupporting": 4
+  },
+  "colorRecipe": {
+    "ground": "#C9A84C",
+    "accent": "#C9A84C",
+    "neutral": "#FAF8F3",
+    "palette": [
+      {
+        "hex": "#C9A84C",
+        "role": "primary"
+      },
+      {
+        "hex": "#0C0E14",
+        "role": "support"
+      },
+      {
+        "hex": "#FAF8F3",
+        "role": "support"
+      }
+    ],
+    "source": "photos",
+    "guidance": "Restrained gold on obsidian; refined, high-contrast, timeless. Gold as a hairline accent only."
+  },
+  "typographyRecipe": {
+    "style": "elegant",
+    "displayFont": "Cormorant Garamond",
+    "supportingFont": "Outfit",
+    "headlineTreatment": "elegant Cormorant Garamond display, high contrast, one headline",
+    "labelTreatment": "refined gold small-caps label",
+    "guidance": "Classic, confident hierarchy; distance- and print-readable."
+  },
+  "renderInstructions": {
+    "arrangement": "classic",
+    "heroPlacement": {
+      "zone": "center",
+      "dominanceRatio": 0.62,
+      "frame": "thin-gold",
+      "spotlight": false,
+      "protectFace": true
+    },
+    "supportingPlacement": {
+      "arrangement": "classic",
+      "maxCells": 4,
+      "count": 3,
+      "gapRatio": 0.02,
+      "treatment": "Unified grade; smaller and quieter; lead the eye back to the hero."
+    },
+    "typographyPlacement": {
+      "titleZone": "top-center",
+      "subtitleZone": "top-center-under-title",
+      "alignment": "center",
+      "displayFont": "Cormorant Garamond",
+      "supportingFont": "Outfit",
+      "headlineTreatment": "elegant Cormorant Garamond display, high contrast, one headline",
+      "labelTreatment": "refined gold small-caps label"
+    },
+    "backgroundSelection": {
+      "style": "obsidian-gradient",
+      "decorationTheme": "graduation",
+      "vignette": true
+    },
+    "colorPalette": {
+      "ground": "#C9A84C",
+      "accent": "#C9A84C",
+      "neutral": "#FAF8F3",
+      "palette": [
+        {
+          "hex": "#C9A84C",
+          "role": "primary"
+        },
+        {
+          "hex": "#0C0E14",
+          "role": "support"
+        },
+        {
+          "hex": "#FAF8F3",
+          "role": "support"
+        }
+      ],
+      "source": "photos"
+    },
+    "decorativeElements": [
+      "thin gold accent lines",
+      "subtle spotlight",
+      "refined year label"
+    ],
+    "spacing": {
+      "marginRatio": 0.055,
+      "gapRatio": 0.02,
+      "whitespace": "generous"
+    },
+    "layering": {
+      "order": [
+        "background",
+        "decorations",
+        "supporting-photos",
+        "hero-photo",
+        "title-text",
+        "preview-overlay"
+      ]
+    }
+  },
+  "exportTargets": [
+    {
+      "id": "digital",
+      "label": "Digital Download",
+      "product": "Digital download",
+      "widthIn": 24,
+      "heightIn": 36,
+      "dpi": 300,
+      "widthPx": 7200,
+      "heightPx": 10800,
+      "bleedIn": 0.125,
+      "safeMarginIn": 0.25,
+      "colorMode": "RGB",
+      "formats": [
+        "jpg",
+        "pdf"
+      ],
+      "orientation": "portrait",
+      "framed": false,
+      "matte": false,
+      "note": "Print-ready master file for instant download; render once at full resolution."
+    },
+    {
+      "id": "poster_18x24",
+      "label": "18×24 Poster",
+      "product": "Standard print",
+      "widthIn": 18,
+      "heightIn": 24,
+      "dpi": 300,
+      "widthPx": 5400,
+      "heightPx": 7200,
+      "bleedIn": 0.125,
+      "safeMarginIn": 0.25,
+      "colorMode": "CMYK",
+      "formats": [
+        "pdf",
+        "jpg"
+      ],
+      "orientation": "portrait",
+      "framed": false,
+      "matte": false,
+      "note": "Small poster print; CMYK at 300 DPI with bleed + safe margin."
+    },
+    {
+      "id": "poster_24x36",
+      "label": "24×36 Poster",
+      "product": "Premium print",
+      "widthIn": 24,
+      "heightIn": 36,
+      "dpi": 300,
+      "widthPx": 7200,
+      "heightPx": 10800,
+      "bleedIn": 0.125,
+      "safeMarginIn": 0.25,
+      "colorMode": "CMYK",
+      "formats": [
+        "pdf",
+        "jpg"
+      ],
+      "orientation": "portrait",
+      "framed": false,
+      "matte": false,
+      "note": "Flagship poster print; CMYK at 300 DPI with bleed + safe margin."
+    },
+    {
+      "id": "framed_24x36",
+      "label": "Framed Edition",
+      "product": "Framed",
+      "widthIn": 24,
+      "heightIn": 36,
+      "dpi": 300,
+      "widthPx": 7200,
+      "heightPx": 10800,
+      "bleedIn": 0.125,
+      "safeMarginIn": 0.25,
+      "colorMode": "CMYK",
+      "formats": [
+        "pdf",
+        "jpg"
+      ],
+      "orientation": "portrait",
+      "framed": true,
+      "matte": true,
+      "note": "Framed keepsake; same 24×36 print inside a mat + frame (frame color chosen after checkout)."
+    }
+  ],
+  "qualityChecks": {
+    "passed": true,
+    "heroPhoto": true,
+    "supportingPhotos": true,
+    "wowScore": true,
+    "masterpiecePassed": true,
+    "layoutRecipeComplete": true,
+    "typographyRecipeComplete": true,
+    "exportTargetsDefined": true,
+    "reasons": []
+  }
+}

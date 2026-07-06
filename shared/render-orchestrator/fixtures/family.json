@@ -1,0 +1,263 @@
+{
+  "schemaVersion": "1.0.0",
+  "version": "0.1.0",
+  "createdAt": null,
+  "occasion": "family_reunion",
+  "conceptName": "Family Legacy",
+  "accepted": true,
+  "heroPhoto": {
+    "photoId": "f1",
+    "filename": "grandparents.jpg",
+    "orientation": "portrait",
+    "score": 85,
+    "faceCount": 2,
+    "width": 4000,
+    "height": 5000
+  },
+  "supportingPhotos": [
+    {
+      "photoId": "f2",
+      "filename": "whole_family.jpg",
+      "orientation": "landscape",
+      "score": 81,
+      "faceCount": 14,
+      "width": 6000,
+      "height": 4000
+    },
+    {
+      "photoId": "f3",
+      "filename": "kids_playing.jpg",
+      "orientation": "landscape",
+      "score": 78,
+      "faceCount": 4,
+      "width": 4032,
+      "height": 3024
+    },
+    {
+      "photoId": "f4",
+      "filename": "cousins.jpg",
+      "orientation": "landscape",
+      "score": 78,
+      "faceCount": 6,
+      "width": 4000,
+      "height": 3000
+    },
+    {
+      "photoId": "f5",
+      "filename": "old_photo_1980.jpg",
+      "orientation": "portrait",
+      "score": 57,
+      "faceCount": 3,
+      "width": 1200,
+      "height": 1600
+    }
+  ],
+  "layoutRecipe": {
+    "arrangement": "Narrative gathered-memories flow",
+    "heroPlacement": "anchored",
+    "heroDominanceRatio": 0.49,
+    "supportingLayout": "tiered story clusters (anchors → builders → accents)",
+    "balance": "balanced",
+    "whitespace": "warm, room around every face",
+    "focalPath": "hero first, then the journey",
+    "maxSupporting": 6
+  },
+  "colorRecipe": {
+    "ground": "#0C0E14",
+    "accent": "#C9A84C",
+    "neutral": "#FAF8F3",
+    "palette": [
+      {
+        "hex": "#0C0E14",
+        "role": "primary"
+      },
+      {
+        "hex": "#C9A84C",
+        "role": "accent"
+      },
+      {
+        "hex": "#FAF8F3",
+        "role": "support"
+      }
+    ],
+    "source": "occasion-default",
+    "guidance": "Warm layer within the brand core; soft, unifying, nostalgic. Gold used as gentle detail."
+  },
+  "typographyRecipe": {
+    "style": "legacy",
+    "displayFont": "Cormorant Garamond",
+    "supportingFont": "Outfit",
+    "headlineTreatment": "warm classic serif display, approachable",
+    "labelTreatment": "humanist supporting labels, tasteful dates",
+    "guidance": "Heartfelt, legible; room to breathe around names."
+  },
+  "renderInstructions": {
+    "arrangement": "mosaic",
+    "heroPlacement": {
+      "zone": "center",
+      "dominanceRatio": 0.49,
+      "frame": "soft",
+      "spotlight": false,
+      "protectFace": true
+    },
+    "supportingPlacement": {
+      "arrangement": "mosaic",
+      "maxCells": 6,
+      "count": 4,
+      "gapRatio": 0.02,
+      "treatment": "Unified grade; smaller and quieter; lead the eye back to the hero."
+    },
+    "typographyPlacement": {
+      "titleZone": "top-center",
+      "subtitleZone": "top-center-under-title",
+      "alignment": "center",
+      "displayFont": "Cormorant Garamond",
+      "supportingFont": "Outfit",
+      "headlineTreatment": "warm classic serif display, approachable",
+      "labelTreatment": "humanist supporting labels, tasteful dates"
+    },
+    "backgroundSelection": {
+      "style": "obsidian-gradient",
+      "decorationTheme": "obsidian",
+      "vignette": true
+    },
+    "colorPalette": {
+      "ground": "#0C0E14",
+      "accent": "#C9A84C",
+      "neutral": "#FAF8F3",
+      "palette": [
+        {
+          "hex": "#0C0E14",
+          "role": "primary"
+        },
+        {
+          "hex": "#C9A84C",
+          "role": "accent"
+        },
+        {
+          "hex": "#FAF8F3",
+          "role": "support"
+        }
+      ],
+      "source": "occasion-default"
+    },
+    "decorativeElements": [
+      "soft texture",
+      "warm vignette",
+      "understated gold",
+      "tasteful dates"
+    ],
+    "spacing": {
+      "marginRatio": 0.055,
+      "gapRatio": 0.02,
+      "whitespace": "warm-generous"
+    },
+    "layering": {
+      "order": [
+        "background",
+        "decorations",
+        "supporting-photos",
+        "hero-photo",
+        "title-text",
+        "preview-overlay"
+      ]
+    }
+  },
+  "exportTargets": [
+    {
+      "id": "digital",
+      "label": "Digital Download",
+      "product": "Digital download",
+      "widthIn": 24,
+      "heightIn": 36,
+      "dpi": 300,
+      "widthPx": 7200,
+      "heightPx": 10800,
+      "bleedIn": 0.125,
+      "safeMarginIn": 0.25,
+      "colorMode": "RGB",
+      "formats": [
+        "jpg",
+        "pdf"
+      ],
+      "orientation": "portrait",
+      "framed": false,
+      "matte": false,
+      "note": "Print-ready master file for instant download; render once at full resolution."
+    },
+    {
+      "id": "poster_18x24",
+      "label": "18×24 Poster",
+      "product": "Standard print",
+      "widthIn": 18,
+      "heightIn": 24,
+      "dpi": 300,
+      "widthPx": 5400,
+      "heightPx": 7200,
+      "bleedIn": 0.125,
+      "safeMarginIn": 0.25,
+      "colorMode": "CMYK",
+      "formats": [
+        "pdf",
+        "jpg"
+      ],
+      "orientation": "portrait",
+      "framed": false,
+      "matte": false,
+      "note": "Small poster print; CMYK at 300 DPI with bleed + safe margin."
+    },
+    {
+      "id": "poster_24x36",
+      "label": "24×36 Poster",
+      "product": "Premium print",
+      "widthIn": 24,
+      "heightIn": 36,
+      "dpi": 300,
+      "widthPx": 7200,
+      "heightPx": 10800,
+      "bleedIn": 0.125,
+      "safeMarginIn": 0.25,
+      "colorMode": "CMYK",
+      "formats": [
+        "pdf",
+        "jpg"
+      ],
+      "orientation": "portrait",
+      "framed": false,
+      "matte": false,
+      "note": "Flagship poster print; CMYK at 300 DPI with bleed + safe margin."
+    },
+    {
+      "id": "framed_24x36",
+      "label": "Framed Edition",
+      "product": "Framed",
+      "widthIn": 24,
+      "heightIn": 36,
+      "dpi": 300,
+      "widthPx": 7200,
+      "heightPx": 10800,
+      "bleedIn": 0.125,
+      "safeMarginIn": 0.25,
+      "colorMode": "CMYK",
+      "formats": [
+        "pdf",
+        "jpg"
+      ],
+      "orientation": "portrait",
+      "framed": true,
+      "matte": true,
+      "note": "Framed keepsake; same 24×36 print inside a mat + frame (frame color chosen after checkout)."
+    }
+  ],
+  "qualityChecks": {
+    "passed": true,
+    "heroPhoto": true,
+    "supportingPhotos": true,
+    "wowScore": true,
+    "masterpiecePassed": true,
+    "layoutRecipeComplete": true,
+    "typographyRecipeComplete": true,
+    "exportTargetsDefined": true,
+    "reasons": []
+  }
+}
