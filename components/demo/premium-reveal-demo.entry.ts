@@ -1,12 +1,14 @@
 /**
- * CelebrateBanner 2.0 — Integration Demo (Sprint 6) · bundle entry (source).
+ * CelebrateBanner 2.0 — Integration Demo · bundle entry (source).
  *
  * Proves the FULL pipeline composes, live in the browser:
- *   Memory Profile → Creative Brief → WOW Engine → Render Orchestrator → Premium Reveal
+ *   Memory Profile → Creative Brief → WOW Engine → Render Orchestrator →
+ *   Render Adapter → Existing Renderer → Premium Reveal
  *
  * The five Memory Profile fixtures are inlined; everything downstream (brief, WOW
- * presentation, render plan) is generated live by the real shared modules. No
- * backend, no production files, no real pixel rendering (preview placeholders only).
+ * presentation, render plan) is generated live by the real shared modules. Sprint 8
+ * adds REAL preview rendering: each concept card is drawn by the existing render
+ * engine (via the Render Adapter), with the placeholder kept as a graceful fallback.
  *
  * Regenerate the bundle:
  *   npx esbuild demo/premium-reveal-demo.entry.ts \
@@ -15,6 +17,10 @@
 import { mountPremiumReveal } from '../src/index.ts';
 import { runPipeline, renderPlanForConcept } from './pipeline.ts';
 import type { PipelineResult, RenderPlan, WowConcept, WowConceptName, MemoryProfile } from './pipeline.ts';
+import { createCanvasRenderer } from './renderer-binding.ts';
+import { renderAllConceptPreviews } from './concept-previews.ts';
+import type { ConceptPreview } from './concept-previews.ts';
+import type { Renderer } from '../../shared/render-adapter/src/index.ts';
 
 // Memory Profiles are inlined into the bundle (no fetch / no server needed).
 import graduation from '../../shared/memory-profile/fixtures/graduation.json';
@@ -120,6 +126,72 @@ function renderPlanDetails(plan: RenderPlan): void {
 
 let CURRENT: PipelineResult | null = null;
 
+// The renderer binding is created lazily and reused; if the browser can't provide a
+// canvas the whole reveal simply falls back to placeholders.
+let RENDERER: Renderer | null = null;
+let RENDERER_TRIED = false;
+function getRenderer(): Renderer | null {
+  if (!RENDERER_TRIED) {
+    RENDERER_TRIED = true;
+    try { RENDERER = createCanvasRenderer({ previewMaxEdge: 900 }); } catch { RENDERER = null; }
+  }
+  return RENDERER;
+}
+
+const STATUS_LABEL: Record<ConceptPreview['status'], string> = {
+  rendered: 'RENDERED', fallback: 'FALLBACK', failed: 'FAILED',
+};
+
+/** Inject rendered artwork into each concept card; keep the placeholder on failure. */
+function paintPreviews(result: PipelineResult): void {
+  const renderer = getRenderer();
+  // No canvas at all → every concept falls back to its placeholder.
+  const previews: ConceptPreview[] = renderer
+    ? renderAllConceptPreviews(result, renderer, { renderExports: false })
+    : result.wowPresentation.concepts.map((c) => ({
+        conceptName: c.conceptName, status: 'fallback' as const, previewUri: null,
+        thumbnailUri: null, renderStatus: 'error' as const, renderTime: 0,
+        reasons: ['No canvas available in this environment.'],
+      }));
+
+  let rendered = 0;
+  for (const p of previews) {
+    const card = document.querySelector<HTMLElement>(`.pr-card[data-concept="${p.conceptName}"]`);
+    if (!card) continue;
+    const media = card.querySelector<HTMLElement>('.pr-card-media');
+    const previewEl = card.querySelector<HTMLElement>('.pr-card-preview');
+
+    // Per-concept status badge (rendered / fallback / failed).
+    if (media) {
+      let badge = media.querySelector<HTMLElement>('.pr-render-status');
+      if (!badge) { badge = document.createElement('span'); badge.className = 'pr-render-status'; media.appendChild(badge); }
+      badge.textContent = STATUS_LABEL[p.status];
+      badge.className = `pr-render-status pr-render-status--${p.status}`;
+      badge.title = p.reasons.join(' ') || `${p.status} (${p.renderTime}ms)`;
+    }
+
+    if (p.status === 'rendered' && p.previewUri && previewEl) {
+      const img = document.createElement('img');
+      img.className = 'pr-card-preview-img';
+      img.alt = `${p.conceptName} preview`;
+      img.src = p.previewUri;
+      previewEl.replaceChildren(img);   // replace the "Preview" mark with real artwork
+      previewEl.classList.add('is-rendered');
+      rendered += 1;
+    }
+    // fallback / failed: leave the existing placeholder mark untouched.
+  }
+
+  const summary = $('render-summary');
+  if (summary) {
+    const total = previews.length;
+    summary.textContent = rendered === total
+      ? `Real artwork rendered for all ${total} concepts`
+      : `Rendered ${rendered}/${total} concepts · ${total - rendered} on placeholder fallback`;
+    summary.dataset.state = rendered === total ? 'ok' : (rendered === 0 ? 'fallback' : 'partial');
+  }
+}
+
 function render(key: string, skipLoading: boolean, focusConcept?: WowConceptName): void {
   const mp = PROFILES[key]!;
   const result = runPipeline(mp);           // ← the full pipeline runs here, live
@@ -140,7 +212,7 @@ function render(key: string, skipLoading: boolean, focusConcept?: WowConceptName
       presentation: result.wowPresentation,
       skipLoading,
       loadingIntervalMs: 650,
-      onRevealed: () => toast(`Revealed: ${key}`),
+      onRevealed: () => { toast(`Revealed: ${key}`); paintPreviews(result); },
       handlers: {
         onLove: (c: WowConcept) => { focus(c); toast(`❤ Loved: ${c.conceptName}`); },
         onDetails: (c: WowConcept) => { focus(c); toast(`🔍 Render plan: ${c.conceptName}`); },

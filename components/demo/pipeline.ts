@@ -15,10 +15,10 @@ import { generateRenderPlan } from '../../shared/render-orchestrator/src/index.t
 
 import type { MemoryProfile } from '../../shared/memory-profile/src/types.ts';
 import type { CreativeBrief } from '../../shared/creative-brief/src/types.ts';
-import type { WowPresentation, WowConceptName } from '../../shared/wow-engine/src/types.ts';
+import type { WowPresentation, WowConcept, WowConceptName } from '../../shared/wow-engine/src/types.ts';
 import type { RenderPlan } from '../../shared/render-orchestrator/src/types.ts';
 
-export type { MemoryProfile, CreativeBrief, WowPresentation, WowConceptName, RenderPlan };
+export type { MemoryProfile, CreativeBrief, WowPresentation, WowConcept, WowConceptName, RenderPlan };
 
 export interface PipelineResult {
   memoryProfile: MemoryProfile;
