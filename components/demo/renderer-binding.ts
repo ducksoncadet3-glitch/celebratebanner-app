@@ -17,7 +17,7 @@ import type {
   RenderInput, Photo, CanvasImage, FrameId, Theme, RenderTarget,
   ArrangementId as EngineArrangementId,
 } from '../../shared/render-engine/src/types.ts';
-import type { Renderer, RenderRequest, RenderedImage, RenderThemeSpec } from '../../shared/render-adapter/src/index.ts';
+import type { Renderer, RenderRequest, RenderedImage, RenderThemeSpec, RenderPhotoRef } from '../../shared/render-adapter/src/index.ts';
 
 export interface CanvasRendererOptions {
   /** DOM document (defaults to the global). */
@@ -26,6 +26,12 @@ export interface CanvasRendererOptions {
   previewMaxEdge?: number;
   /** Cap the export long edge (export targets are print-sized). Default 1400. */
   exportMaxEdge?: number;
+  /**
+   * Resolve a photo reference to a REAL drawable image. Used by the production
+   * builder to render the customer's actual uploads. Return null/undefined to fall
+   * back to a labeled placeholder tile (the demo, which has no uploads, does this).
+   */
+  resolveImage?: (ref: RenderPhotoRef) => CanvasImage | null | undefined;
 }
 
 // Plan hero-frame vocabulary → the render engine's real FrameId vocabulary.
@@ -75,15 +81,23 @@ function makePlaceholderPhoto(doc: Document, filename: string, orientation: stri
   return c as unknown as CanvasImage;
 }
 
-function toRenderInput(doc: Document, req: RenderRequest, w: number, h: number): RenderInput {
+function toRenderInput(
+  doc: Document,
+  req: RenderRequest,
+  w: number,
+  h: number,
+  resolveImage?: (ref: RenderPhotoRef) => CanvasImage | null | undefined,
+): RenderInput {
   const photos: Photo[] = [];
   const frames: Record<string, FrameId> = {};
+  const imageFor = (ref: RenderPhotoRef): CanvasImage =>
+    (resolveImage && resolveImage(ref)) || makePlaceholderPhoto(doc, ref.filename ?? ref.photoId, ref.orientation, req.theme);
   if (req.hero) {
-    photos.push({ id: req.hero.photoId, image: makePlaceholderPhoto(doc, req.hero.filename ?? req.hero.photoId, req.hero.orientation, req.theme) });
+    photos.push({ id: req.hero.photoId, image: imageFor(req.hero) });
     frames[req.hero.photoId] = toFrame(req.hero.frame);
   }
   for (const s of req.supporting) {
-    photos.push({ id: s.photoId, image: makePlaceholderPhoto(doc, s.filename ?? s.photoId, s.orientation, req.theme) });
+    photos.push({ id: s.photoId, image: imageFor(s) });
     frames[s.photoId] = toFrame(s.frame);
   }
   const theme: Theme = {
@@ -122,7 +136,7 @@ export function createCanvasRenderer(options: CanvasRendererOptions = {}): Rende
       const maxEdge = req.kind === 'export' ? exportMaxEdge : previewMaxEdge;
       const { w, h } = capDims(req.widthPx, req.heightPx, maxEdge);
       const canvas = doc.createElement('canvas');
-      const input = toRenderInput(doc, req, w, h);
+      const input = toRenderInput(doc, req, w, h, options.resolveImage);
       const t0 = nowMs();
       renderPreview(canvas as unknown as RenderTarget, input, { previewWidth: w, previewHeight: h, dpr: 1 });
       const format = req.kind === 'export' ? 'jpg' : 'png';

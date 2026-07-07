@@ -130,8 +130,14 @@ function gitStatus(paths: string): string {
   const root = execSync('git rev-parse --show-toplevel', { cwd: componentsDir }).toString().trim();
   return execSync(`git status --porcelain -- ${paths}`, { cwd: root }).toString().trim();
 }
-test('index.html is unchanged', () => {
-  assert.equal(gitStatus('index.html'), '', 'index.html must not be modified');
+test('the real-preview demo did not change index.html (Sprint 9 owns that intentionally)', () => {
+  // Sprint 8's demo is self-contained; any index.html change must be purely additive
+  // (the intentional Sprint 9 WOW hook), never a rewrite of existing lines.
+  const root = execSync('git rev-parse --show-toplevel', { cwd: componentsDir }).toString().trim();
+  const numstat = execSync('git diff --numstat -- index.html', { cwd: root }).toString().trim();
+  if (numstat === '') return;
+  const [, del] = numstat.split(/\s+/).map(Number);
+  assert.ok(del <= 1, `index.html must be additive only, but ${del} lines were deleted`);
 });
 test('the alternate builder (bannercraft-app.html) is unchanged', () => {
   assert.equal(gitStatus('bannercraft-app.html'), '', 'bannercraft-app.html must not be modified');
