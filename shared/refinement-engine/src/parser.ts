@@ -14,7 +14,7 @@ const INTENT_TERMS: Record<RefinementIntent, string[]> = {
   classic: ['classic', 'timeless', 'traditional', 'formal', 'heritage', 'vintage'],
   minimal: ['minimal', 'clean', 'simple', 'less', 'declutter', 'uncluttered', 'sparse', 'understated', 'pared'],
   celebration: ['celebrat', 'festive', 'joyful', 'party', 'fun', 'cheer', 'jubilant', 'lively'],
-  'hero-emphasis': ['bigger hero', 'larger hero', 'emphasize the hero', 'emphasise the hero', 'hero bigger', 'focus on the main', 'make the hero', 'bigger main photo', 'feature the hero', 'hero pop', 'emphasize the main', 'star photo'],
+  'hero-emphasis': ['bigger hero', 'larger hero', 'emphasize the hero', 'emphasise the hero', 'hero bigger', 'focus on the main', 'make the hero', 'bigger main photo', 'feature the hero', 'hero pop', 'emphasize the main', 'star photo', 'stand out', 'stands out', 'standout', 'make her pop', 'make him pop'],
   typography: ['typograph', 'font', 'headline', 'lettering', 'type', 'title', 'wording'],
   color: ['color', 'colour', 'palette', 'hue', 'warmer', 'cooler', 'tone', 'tint', 'saturat'],
   decoration: ['decorat', 'ornament', 'embellish', 'flourish', 'accent', 'motif', 'detail', 'adorn'],
@@ -42,9 +42,17 @@ const FORBIDDEN: { code: ForbiddenRequest['code']; reason: string; test: RegExp 
     test: /\b(add|include|insert|put|photoshop|paste|place|composite|generate|invent|make up)\b[^.]*\b(person|people|someone|somebody|a face|another (?:face|person|photo)|grandma|grandpa|my (?:late|dad|mom|mother|father|son|daughter))\b/i,
   },
   {
+    // Identity swaps are an authenticity refusal — the real people are preserved.
+    code: 'change-identity',
+    reason: 'Cannot change, replace, or swap the people in your photos — your real memory is preserved exactly.',
+    test: /\b(change|replace|swap|switch|substitute)\b[^.]*\b(person|people|face|faces|subject|someone|somebody|man|woman|boy|girl|guy|graduate)\b|\bmake it (?:another|a different) person\b|\b(?:another|a different) person\b/i,
+  },
+  {
     code: 'reorder-memories',
     reason: 'Cannot reorder memories without justification — order reflects the story and the ranking.',
-    test: /\b(reorder|re-?arrange|rearrange|shuffle|swap|reshuffle|resequence|change the order|put photo|move photo|different order)\b/i,
+    // "swap/switch/move/put" only count as reordering when they act on photos/order —
+    // "swap the person" is an identity change (above), not a reorder.
+    test: /\b(reorder|re-?arrange|rearrange|shuffle|reshuffle|resequence|change the order|different order)\b|\b(swap|switch|move|put|resequence)\b[^.]*\b(photos?|images?|pictures?|order|memor)\w*/i,
   },
 ];
 
@@ -60,12 +68,19 @@ function termHits(term: string, text: string, tokens: string[]): boolean {
   return tokens.some((tok) => tok === term || tok.startsWith(term));
 }
 
+/** Reduction / negation cues — "reduce", "less", "remove", "fewer", "tone down"… */
+const REDUCTION = /\b(reduce|reducing|less|fewer|fewest|remove|removing|removed|cut|drop|dropping|strip|stripped|minimi[sz]e|without|no more|get rid|take out|take away|lose the)\b/;
+/** Decoration nouns (used with a reduction cue to detect "remove decoration"). */
+const DECOR_NOUN = /(decorat|ornament|embellish|flourish|adorn|motif)/;
+
 /** Parse a customer instruction into intents + forbidden requests. Deterministic. */
 export function parseInstruction(instruction: string): ParsedInstruction {
-  const text = normalize(instruction);
+  const raw = normalize(instruction);
+  // Normalize the reduction idiom "tone down" so it does not read as a color ("tone").
+  const text = raw.replace(/\btoned? down\b/g, 'reduce');
   const tokens = text.split(/[^a-z0-9]+/).filter(Boolean);
   const matchedTerms: Partial<Record<RefinementIntent, string[]>> = {};
-  const intents: RefinementIntent[] = [];
+  let intents: RefinementIntent[] = [];
 
   // Iterate in the canonical intent order for stable, snapshot-friendly output.
   for (const intent of REFINEMENT_INTENTS) {
@@ -74,6 +89,16 @@ export function parseInstruction(instruction: string): ParsedInstruction {
       intents.push(intent);
       matchedTerms[intent] = hits;
     }
+  }
+
+  // Negation: "reduce/less/remove … decoration" is a REMOVAL, not an addition.
+  // Re-route it to a minimal (decoration-removal) direction instead of adding ornament.
+  if (intents.includes('decoration') && REDUCTION.test(text) && DECOR_NOUN.test(text)) {
+    const set = new Set<RefinementIntent>(intents.filter((i) => i !== 'decoration'));
+    set.add('minimal');
+    intents = REFINEMENT_INTENTS.filter((i) => set.has(i));
+    delete matchedTerms.decoration;
+    matchedTerms.minimal = matchedTerms.minimal ?? ['decoration-removal'];
   }
 
   const forbidden: ForbiddenRequest[] = [];

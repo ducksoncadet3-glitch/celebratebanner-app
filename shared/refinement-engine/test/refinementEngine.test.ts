@@ -336,6 +336,58 @@ test('index.html and checkout/pricing are unchanged by this engine', () => {
   assert.equal(gitStatus('index.html'), '', 'index.html must be untouched');
 });
 
+// ── Review follow-up: parser gap fixes ───────────────────────────────
+
+// (1) Negation — "reduce/less/fewer/remove/tone down decoration" must NOT add ornament.
+for (const phrase of ['reduce decorations', 'less decoration', 'fewer decorations', 'remove decorations', 'tone down decoration', 'strip the ornament', 'take away the flourishes']) {
+  test(`negation: "${phrase}" routes to minimal, never adds decoration`, () => {
+    const parsed = parseInstruction(phrase);
+    assert.ok(!parsed.intents.includes('decoration'), `should not add decoration for "${phrase}"`);
+    assert.ok(parsed.intents.includes('minimal'), `should route to minimal for "${phrase}"`);
+    const r = refine(phrase);
+    assert.equal(r.accepted, true, r.rejectionReasons.join('; '));
+    assert.ok(r.intents.includes('minimal'));
+    assert.ok(!r.intents.includes('decoration'));
+  });
+}
+test('"tone down decoration" is a reduction, not a color change', () => {
+  assert.deepEqual(parseInstruction('tone down decoration').intents, ['minimal']);
+});
+test('a positive decoration request still adds decoration (not negated)', () => {
+  assert.deepEqual(parseInstruction('add a little decoration').intents, ['decoration']);
+});
+
+// (2) Hero-emphasis coverage — "make X stand out" maps to hero-emphasis.
+for (const phrase of ['make my daughter stand out', 'make my son stand out', 'make the graduate stand out', 'make the main person stand out']) {
+  test(`hero coverage: "${phrase}" maps to hero-emphasis and is accepted`, () => {
+    const parsed = parseInstruction(phrase);
+    assert.ok(parsed.intents.includes('hero-emphasis'), `expected hero-emphasis in [${parsed.intents}]`);
+    assert.deepEqual(parsed.forbidden, [], 'a stand-out request is not forbidden');
+    const r = refine(phrase);
+    assert.equal(r.accepted, true, r.rejectionReasons.join('; '));
+    assert.ok(r.concept.layoutRecipe.heroDominanceRatio > CONCEPT.layoutRecipe.heroDominanceRatio);
+  });
+}
+
+// (3) Identity change — refused with an authenticity message, not "unrecognized".
+for (const phrase of ['change the person in the photo', 'replace the person', 'swap the person', 'make it another person', 'substitute a different person']) {
+  test(`identity refusal: "${phrase}" is a Constitution refusal`, () => {
+    const parsed = parseInstruction(phrase);
+    assert.ok(parsed.forbidden.some((f) => f.code === 'change-identity'), `expected change-identity for "${phrase}"`);
+    const r = refine(phrase);
+    assert.equal(r.accepted, false);
+    assert.equal(r.constitution.noFabrication, false);
+    assert.ok(r.rejectionReasons.some((x) => /replace|swap|people in your photos|preserved/i.test(x)));
+    assert.ok(!r.rejectionReasons.some((x) => /no supported refinement/i.test(x)), 'should not be the generic message');
+    assert.deepEqual(r.concept, CONCEPT); // original preserved
+  });
+}
+test('identity change is distinct from a photo reorder', () => {
+  assert.ok(parseInstruction('swap the person').forbidden.some((f) => f.code === 'change-identity'));
+  assert.ok(parseInstruction('swap the photos').forbidden.some((f) => f.code === 'reorder-memories'));
+  assert.ok(!parseInstruction('swap the person').forbidden.some((f) => f.code === 'reorder-memories'));
+});
+
 // ── Output shape ─────────────────────────────────────────────────────
 test('RefinedConcept carries every documented field', () => {
   const r = refine('make it more luxurious');

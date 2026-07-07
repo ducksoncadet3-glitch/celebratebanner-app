@@ -44,7 +44,7 @@ export type RefinementIntent = (typeof REFINEMENT_INTENTS)[number];
 
 /** A forbidden request the Constitution refuses to honor. */
 export interface ForbiddenRequest {
-  code: 'reduce-hero' | 'change-name' | 'fabricate' | 'reorder-memories';
+  code: 'reduce-hero' | 'change-name' | 'fabricate' | 'change-identity' | 'reorder-memories';
   reason: string;
 }
 

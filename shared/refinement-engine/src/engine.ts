@@ -87,7 +87,8 @@ export function refineConcept(
     const flags = {
       heroDominancePreserved: !forbidden.some((f) => f.code === 'reduce-hero'),
       namesUnchanged: !forbidden.some((f) => f.code === 'change-name'),
-      noFabrication: !forbidden.some((f) => f.code === 'fabricate'),
+      // An identity swap is an authenticity/fabrication violation.
+      noFabrication: !forbidden.some((f) => f.code === 'fabricate' || f.code === 'change-identity'),
       memoriesOrderPreserved: !forbidden.some((f) => f.code === 'reorder-memories'),
     };
     return reject(forbidden.map((f) => f.reason), flags);
