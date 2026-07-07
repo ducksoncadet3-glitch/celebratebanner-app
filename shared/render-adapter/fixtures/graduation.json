@@ -1,0 +1,145 @@
+{
+  "schemaVersion": "1.0.0",
+  "conceptName": "Signature Edition",
+  "occasion": "graduation",
+  "arrangement": "classic",
+  "renderStatus": "completed",
+  "renderTime": 174,
+  "previewImage": {
+    "targetId": "preview",
+    "kind": "preview",
+    "format": "png",
+    "widthPx": 800,
+    "heightPx": 1200,
+    "colorMode": "RGB",
+    "uri": "cbr://preview/preview/c04c687c",
+    "byteSize": 964096,
+    "renderMs": 42
+  },
+  "thumbnailImage": {
+    "targetId": "thumbnail",
+    "kind": "thumbnail",
+    "format": "png",
+    "widthPx": 267,
+    "heightPx": 400,
+    "colorMode": "RGB",
+    "uri": "cbr://thumbnail/thumbnail/35fcd64e",
+    "byteSize": 110896,
+    "renderMs": 28
+  },
+  "exportTargets": [
+    {
+      "id": "digital",
+      "label": "Digital Download",
+      "product": "Digital download",
+      "widthPx": 7200,
+      "heightPx": 10800,
+      "dpi": 300,
+      "colorMode": "RGB",
+      "formats": [
+        "jpg",
+        "pdf"
+      ],
+      "framed": false,
+      "matte": false,
+      "image": {
+        "targetId": "digital",
+        "kind": "export",
+        "format": "jpg",
+        "widthPx": 7200,
+        "heightPx": 10800,
+        "colorMode": "RGB",
+        "uri": "cbr://export/digital/345fde1",
+        "byteSize": 2763931,
+        "renderMs": 31
+      }
+    },
+    {
+      "id": "poster_18x24",
+      "label": "18×24 Poster",
+      "product": "Standard print",
+      "widthPx": 5400,
+      "heightPx": 7200,
+      "dpi": 300,
+      "colorMode": "CMYK",
+      "formats": [
+        "pdf",
+        "jpg"
+      ],
+      "framed": false,
+      "matte": false,
+      "image": {
+        "targetId": "poster_18x24",
+        "kind": "export",
+        "format": "pdf",
+        "widthPx": 5400,
+        "heightPx": 7200,
+        "colorMode": "CMYK",
+        "uri": "cbr://export/poster_18x24/7c751b23",
+        "byteSize": 3884019,
+        "renderMs": 9
+      }
+    },
+    {
+      "id": "poster_24x36",
+      "label": "24×36 Poster",
+      "product": "Premium print",
+      "widthPx": 7200,
+      "heightPx": 10800,
+      "dpi": 300,
+      "colorMode": "CMYK",
+      "formats": [
+        "pdf",
+        "jpg"
+      ],
+      "framed": false,
+      "matte": false,
+      "image": {
+        "targetId": "poster_24x36",
+        "kind": "export",
+        "format": "pdf",
+        "widthPx": 7200,
+        "heightPx": 10800,
+        "colorMode": "CMYK",
+        "uri": "cbr://export/poster_24x36/d6f77c63",
+        "byteSize": 2763931,
+        "renderMs": 25
+      }
+    },
+    {
+      "id": "framed_24x36",
+      "label": "Framed Edition",
+      "product": "Framed",
+      "widthPx": 7200,
+      "heightPx": 10800,
+      "dpi": 300,
+      "colorMode": "CMYK",
+      "formats": [
+        "pdf",
+        "jpg"
+      ],
+      "framed": true,
+      "matte": true,
+      "image": {
+        "targetId": "framed_24x36",
+        "kind": "export",
+        "format": "pdf",
+        "widthPx": 7200,
+        "heightPx": 10800,
+        "colorMode": "CMYK",
+        "uri": "cbr://export/framed_24x36/ec91b2d1",
+        "byteSize": 2763931,
+        "renderMs": 39
+      }
+    }
+  ],
+  "qualityChecks": {
+    "passed": true,
+    "renderCompleted": true,
+    "previewExists": true,
+    "thumbnailExists": true,
+    "exportTargetsAvailable": true,
+    "qualityChecksPassed": true,
+    "reasons": []
+  }
+}
