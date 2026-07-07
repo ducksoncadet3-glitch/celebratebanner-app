@@ -1,0 +1,161 @@
+{
+  "schemaVersion": "1.0.0",
+  "conceptName": "Signature Edition",
+  "instruction": "add a little decoration",
+  "accepted": true,
+  "intents": [
+    "decoration"
+  ],
+  "appliedRefinements": [
+    {
+      "intent": "decoration",
+      "label": "Add tasteful decoration",
+      "summary": "Introduce restrained, occasion-appropriate ornament from the brief allowlist.",
+      "scoreDelta": {
+        "colorHarmony": 0.6,
+        "emotionalImpact": 0.6,
+        "luxuryFinish": -0.4
+      },
+      "changes": [
+        {
+          "field": "colorRecipe.guidance",
+          "from": "Restrained gold on obsidian; refined, high-contrast, timeless. Gold as a hairline accent only.",
+          "to": "Restrained gold on obsidian; refined, high-contrast, timeless. Gold as a hairline accent only. Added restrained ornament from the brief allowlist (thin gold accent lines, subtle spotlight, refined year label)."
+        }
+      ]
+    }
+  ],
+  "concept": {
+    "conceptName": "Signature Edition",
+    "title": "{Graduate Name}",
+    "subtitle": "Class of {Year}",
+    "creativeExplanation": "We made “grad_portrait.jpg” (portrait, quality 93/100) the star. Photo g1 (grad_portrait.jpg) is strongest: portrait, score 93, 1 clear subject. Signature Edition centers it with symmetrical balance and generous whitespace, framed with restraint in #C9A84C on #C9A84C — timeless, so this graduation still feels right in ten years. 3 supporting photos were chosen only because they strengthen the hero and lead the eye back to it — beauty over quantity, nothing added for its own sake. Everything serves one feeling: pride. Celebrate the pride of a milestone earned and the promise of what's next.",
+    "purchasePsychology": "The version most families choose — timeless and universally loved. A natural centerpiece for a graduation party. Recommended as a Standard print. Made for the graduate and immediate family. (graduation)",
+    "heroPhoto": {
+      "photoId": "g1",
+      "filename": "grad_portrait.jpg",
+      "orientation": "portrait",
+      "score": 93,
+      "faceCount": 1,
+      "width": 4032,
+      "height": 5040
+    },
+    "supportingPhotos": [
+      {
+        "photoId": "g2",
+        "filename": "cap_toss.jpg",
+        "orientation": "landscape",
+        "score": 84,
+        "faceCount": 3,
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "photoId": "g3",
+        "filename": "family_hug.jpg",
+        "orientation": "landscape",
+        "score": 83,
+        "faceCount": 4,
+        "width": 4000,
+        "height": 3000
+      },
+      {
+        "photoId": "g4",
+        "filename": "blurry_walk.jpg",
+        "orientation": "portrait",
+        "score": 64,
+        "faceCount": 1,
+        "width": 3024,
+        "height": 4032
+      }
+    ],
+    "layoutRecipe": {
+      "arrangement": "Central hero with a disciplined supporting grid",
+      "heroPlacement": "centered",
+      "heroDominanceRatio": 0.62,
+      "supportingLayout": "symmetrical grid beneath the hero",
+      "balance": "symmetrical",
+      "whitespace": "generous margins",
+      "focalPath": "single clear centered path",
+      "maxSupporting": 4
+    },
+    "colorRecipe": {
+      "ground": "#C9A84C",
+      "accent": "#C9A84C",
+      "neutral": "#FAF8F3",
+      "palette": [
+        {
+          "hex": "#C9A84C",
+          "role": "primary"
+        },
+        {
+          "hex": "#0C0E14",
+          "role": "support"
+        },
+        {
+          "hex": "#FAF8F3",
+          "role": "support"
+        }
+      ],
+      "source": "photos",
+      "guidance": "Restrained gold on obsidian; refined, high-contrast, timeless. Gold as a hairline accent only. Added restrained ornament from the brief allowlist (thin gold accent lines, subtle spotlight, refined year label)."
+    },
+    "typographyRecipe": {
+      "style": "elegant",
+      "displayFont": "Cormorant Garamond",
+      "supportingFont": "Outfit",
+      "headlineTreatment": "elegant Cormorant Garamond display, high contrast, one headline",
+      "labelTreatment": "refined gold small-caps label",
+      "guidance": "Classic, confident hierarchy; distance- and print-readable."
+    },
+    "recommendedProduct": "Standard print",
+    "sharePreview": {
+      "headline": "Celebrate the pride of a milestone earned and the promise of what's next.",
+      "caption": "I can’t believe this came from our photos. 😮",
+      "altText": "A Signature Edition CelebrateBanner graduation design, centered on the chosen hero photo with 3 supporting photos."
+    },
+    "wowScore": 94,
+    "masterpiecePassed": true,
+    "scoreBreakdown": {
+      "heroStrength": 13.8,
+      "emotionalImpact": 20,
+      "storytelling": 12.4,
+      "layoutBalance": 15,
+      "typography": 9.9,
+      "colorHarmony": 10,
+      "luxuryFinish": 8.2,
+      "shareability": 4.5,
+      "total": 94
+    },
+    "failureReasons": []
+  },
+  "previousWowScore": 94,
+  "wowScore": 94,
+  "attemptedScore": 94,
+  "scoreBreakdown": {
+    "heroStrength": 13.8,
+    "emotionalImpact": 20,
+    "storytelling": 12.4,
+    "layoutBalance": 15,
+    "typography": 9.9,
+    "colorHarmony": 10,
+    "luxuryFinish": 8.2,
+    "shareability": 4.5,
+    "total": 94
+  },
+  "masterpiecePassed": true,
+  "rejectionReasons": [],
+  "changeLog": [
+    "Add tasteful decoration — Introduce restrained, occasion-appropriate ornament from the brief allowlist.",
+    "WOW Score 94 → 94 (masterpiece preserved)."
+  ],
+  "constitution": {
+    "wowScorePassed": true,
+    "heroDominancePreserved": true,
+    "namesUnchanged": true,
+    "noFabrication": true,
+    "memoriesOrderPreserved": true,
+    "clutterAvoided": true,
+    "reasons": []
+  }
+}
