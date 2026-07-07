@@ -1,0 +1,22 @@
+{
+  "name": "@celebratebanner/render-adapter",
+  "version": "0.1.0",
+  "description": "The render adapter. Translates the orchestrator's RenderPlan into a renderer-ready request and drives an injected renderer to produce preview, thumbnail, and export images (RenderedConcept). Makes NO creative decisions and embeds NO pixels. Deterministic, dependency-free.",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --test 'test/*.test.ts'",
+    "typecheck": "tsc --noEmit",
+    "fixtures": "node test/generate-fixtures.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2"
+  },
+  "files": ["src", "README.md"]
+}
