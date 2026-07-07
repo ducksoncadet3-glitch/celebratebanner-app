@@ -1,0 +1,22 @@
+{
+  "name": "@celebratebanner/refinement-engine",
+  "version": "0.1.0",
+  "description": "Natural-language refinement of an approved WOW concept. Parses a customer instruction into intents, applies bounded recipe edits, recomputes the WOW Score, and re-gates at 90 under the Creative Constitution. Makes NO creative decisions it cannot justify and produces NO pixels. Deterministic, dependency-free.",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --test 'test/*.test.ts'",
+    "typecheck": "tsc --noEmit",
+    "fixtures": "node test/generate-fixtures.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2"
+  },
+  "files": ["src", "README.md"]
+}
