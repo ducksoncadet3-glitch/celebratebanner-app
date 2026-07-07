@@ -1,69 +1,165 @@
 /**
- * Premium Reveal demo — bundle entry (source).
+ * CelebrateBanner 2.0 — Integration Demo (Sprint 6) · bundle entry (source).
  *
- * Imports the real Premium Reveal components + the five WOW Engine fixtures and
- * wires a simple fixture selector. Bundled to `premium-reveal-demo.js` (self-
- * contained IIFE) so the page runs from a plain <script> with no backend.
+ * Proves the FULL pipeline composes, live in the browser:
+ *   Memory Profile → Creative Brief → WOW Engine → Render Orchestrator → Premium Reveal
  *
- * Regenerate:  npx esbuild demo/premium-reveal-demo.entry.ts \
- *                --bundle --format=iife --platform=browser \
- *                --outfile=demo/premium-reveal-demo.js
+ * The five Memory Profile fixtures are inlined; everything downstream (brief, WOW
+ * presentation, render plan) is generated live by the real shared modules. No
+ * backend, no production files, no real pixel rendering (preview placeholders only).
+ *
+ * Regenerate the bundle:
+ *   npx esbuild demo/premium-reveal-demo.entry.ts \
+ *     --bundle --format=iife --platform=browser --outfile=demo/premium-reveal-demo.js
  */
 import { mountPremiumReveal } from '../src/index.ts';
-import type { WowPresentation, WowConcept } from '../src/index.ts';
+import { runPipeline, renderPlanForConcept } from './pipeline.ts';
+import type { PipelineResult, RenderPlan, WowConcept, WowConceptName, MemoryProfile } from './pipeline.ts';
 
-// Fixtures are inlined into the bundle (no fetch / no server needed).
-import graduation from '../../shared/wow-engine/fixtures/graduation.json';
-import championship from '../../shared/wow-engine/fixtures/championship.json';
-import family from '../../shared/wow-engine/fixtures/family.json';
-import wedding from '../../shared/wow-engine/fixtures/wedding.json';
-import memorial from '../../shared/wow-engine/fixtures/memorial.json';
+// Memory Profiles are inlined into the bundle (no fetch / no server needed).
+import graduation from '../../shared/memory-profile/fixtures/graduation.json';
+import championship from '../../shared/memory-profile/fixtures/championship.json';
+import family from '../../shared/memory-profile/fixtures/family.json';
+import wedding from '../../shared/memory-profile/fixtures/wedding.json';
+import memorial from '../../shared/memory-profile/fixtures/memorial.json';
 
-const FIXTURES: Record<string, WowPresentation> = {
-  graduation: graduation as unknown as WowPresentation,
-  championship: championship as unknown as WowPresentation,
-  family: family as unknown as WowPresentation,
-  wedding: wedding as unknown as WowPresentation,
-  memorial: memorial as unknown as WowPresentation,
+const PROFILES: Record<string, MemoryProfile> = {
+  graduation: graduation as unknown as MemoryProfile,
+  championship: championship as unknown as MemoryProfile,
+  family: family as unknown as MemoryProfile,
+  wedding: wedding as unknown as MemoryProfile,
+  memorial: memorial as unknown as MemoryProfile,
 };
 
+const $ = (id: string): HTMLElement | null => document.getElementById(id);
+
 function toast(msg: string): void {
-  let el = document.getElementById('demo-toast');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'demo-toast';
-    document.body.appendChild(el);
-  }
+  let el = $('demo-toast');
+  if (!el) { el = document.createElement('div'); el.id = 'demo-toast'; document.body.appendChild(el); }
   el.textContent = msg;
   el.classList.add('show');
   window.clearTimeout((toast as unknown as { _t?: number })._t);
   (toast as unknown as { _t?: number })._t = window.setTimeout(() => el!.classList.remove('show'), 2200);
 }
 
-function render(key: string, skipLoading: boolean): void {
-  const host = document.getElementById('reveal');
+function jsonInto(id: string, obj: unknown): void {
+  const el = $(id);
+  if (el) el.textContent = JSON.stringify(obj, null, 2);
+}
+
+function row(label: string, value: string): HTMLElement {
+  const r = document.createElement('div');
+  r.className = 'pd-row';
+  const k = document.createElement('span'); k.className = 'pd-key'; k.textContent = label;
+  const v = document.createElement('span'); v.className = 'pd-val'; v.textContent = value;
+  r.append(k, v);
+  return r;
+}
+
+function renderPlanDetails(plan: RenderPlan): void {
+  const host = $('plan-details');
   if (!host) return;
-  mountPremiumReveal(host, {
-    presentation: FIXTURES[key]!,
-    skipLoading,
-    loadingIntervalMs: 650,
-    onRevealed: () => toast(`Revealed: ${key}`),
-    handlers: {
-      onLove: (c: WowConcept) => toast(`❤ Loved: ${c.conceptName}`),
-      onDetails: (c: WowConcept) => toast(`🔍 Details: ${c.conceptName}`),
-      onTryAnother: (c: WowConcept) => toast(`↻ Try another than: ${c.conceptName}`),
-    },
-  });
+  host.innerHTML = '';
+  const q = plan.qualityChecks;
+
+  const head = document.createElement('div');
+  head.className = 'pd-head';
+  const h = document.createElement('h3'); h.textContent = 'Render Plan Details';
+  const status = document.createElement('span');
+  status.id = 'plan-status';
+  status.className = `pd-status ${plan.accepted ? 'pd-status--ok' : 'pd-status--err'}`;
+  status.textContent = plan.accepted ? 'ACCEPTED' : 'REJECTED';
+  head.append(h, status);
+
+  const hero = plan.heroPhoto ? `${plan.heroPhoto.photoId}${plan.heroPhoto.filename ? ` · ${plan.heroPhoto.filename}` : ''}` : '—';
+  const facts = document.createElement('div');
+  facts.className = 'pd-facts';
+  facts.append(
+    row('Concept', plan.conceptName),
+    row('Arrangement', plan.renderInstructions.arrangement),
+    row('Hero photo', hero),
+    row('Supporting photos', String(plan.supportingPhotos.length)),
+  );
+
+  const targets = document.createElement('div');
+  targets.className = 'pd-block';
+  targets.innerHTML = `<div class="pd-sub">Export targets (${plan.exportTargets.length})</div>`;
+  for (const t of plan.exportTargets) {
+    const el = document.createElement('div');
+    el.className = 'pd-target';
+    el.textContent = `${t.label} — ${t.widthPx}×${t.heightPx}px @${t.dpi} · ${t.colorMode}${t.framed ? ' · framed' : ''}`;
+    targets.appendChild(el);
+  }
+
+  const checks = document.createElement('div');
+  checks.className = 'pd-block';
+  checks.innerHTML = `<div class="pd-sub">Quality checks</div>`;
+  const CHECKS: [string, boolean][] = [
+    ['Hero photo', q.heroPhoto], ['Supporting photos', q.supportingPhotos],
+    ['WOW score ≥ 90', q.wowScore], ['Masterpiece passed', q.masterpiecePassed],
+    ['Layout recipe', q.layoutRecipeComplete], ['Typography recipe', q.typographyRecipeComplete],
+    ['Export targets', q.exportTargetsDefined],
+  ];
+  const grid = document.createElement('div'); grid.className = 'pd-checks';
+  for (const [label, ok] of CHECKS) {
+    const c = document.createElement('span');
+    c.className = `pd-check ${ok ? 'pd-check--ok' : 'pd-check--err'}`;
+    c.textContent = `${ok ? '✓' : '✗'} ${label}`;
+    grid.appendChild(c);
+  }
+  checks.appendChild(grid);
+
+  host.append(head, facts, targets, checks);
+  if (plan.qualityChecks.reasons.length) {
+    const reasons = document.createElement('div');
+    reasons.className = 'pd-block pd-reasons';
+    reasons.innerHTML = `<div class="pd-sub">Rejection reasons</div>` + plan.qualityChecks.reasons.map((r) => `<div class="pd-reason">• ${r}</div>`).join('');
+    host.appendChild(reasons);
+  }
+}
+
+let CURRENT: PipelineResult | null = null;
+
+function render(key: string, skipLoading: boolean, focusConcept?: WowConceptName): void {
+  const mp = PROFILES[key]!;
+  const result = runPipeline(mp);           // ← the full pipeline runs here, live
+  CURRENT = result;
+
+  // Pipeline stage panels (raw outputs of each engine).
+  jsonInto('stage-mp', result.memoryProfile);
+  jsonInto('stage-cb', result.creativeBrief);
+  jsonInto('stage-wp', result.wowPresentation);
+  jsonInto('stage-plan', result.renderPlan);
+
+  // Render Plan Details for the focused concept (default: the recommended one).
+  renderPlanDetails(focusConcept ? renderPlanForConcept(result, focusConcept) : result.renderPlan);
+
+  const host = $('reveal');
+  if (host) {
+    mountPremiumReveal(host, {
+      presentation: result.wowPresentation,
+      skipLoading,
+      loadingIntervalMs: 650,
+      onRevealed: () => toast(`Revealed: ${key}`),
+      handlers: {
+        onLove: (c: WowConcept) => { focus(c); toast(`❤ Loved: ${c.conceptName}`); },
+        onDetails: (c: WowConcept) => { focus(c); toast(`🔍 Render plan: ${c.conceptName}`); },
+        onTryAnother: (c: WowConcept) => toast(`↻ Try another than: ${c.conceptName}`),
+      },
+    });
+  }
+}
+
+function focus(concept: WowConcept): void {
+  if (CURRENT) renderPlanDetails(renderPlanForConcept(CURRENT, concept.conceptName));
 }
 
 function init(): void {
-  const sel = document.getElementById('fixture') as HTMLSelectElement | null;
-  const replay = document.getElementById('replay');
-  const skip = document.getElementById('skip');
+  const sel = $('fixture') as HTMLSelectElement | null;
   const current = (): string => (sel ? sel.value : 'graduation');
   sel?.addEventListener('change', () => render(current(), false));
-  replay?.addEventListener('click', () => render(current(), false));
-  skip?.addEventListener('click', () => render(current(), true));
+  $('replay')?.addEventListener('click', () => render(current(), false));
+  $('skip')?.addEventListener('click', () => render(current(), true));
   render(current(), false);
 }
 
