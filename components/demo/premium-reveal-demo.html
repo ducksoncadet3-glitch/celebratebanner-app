@@ -67,6 +67,22 @@
       opacity: 0; pointer-events: none; transition: all .25s ease; z-index: 600;
     }
     #demo-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Sprint 8 — real rendered artwork injected into the concept cards */
+    .pr-card-preview.is-rendered { padding: 0; background: #0C0E14; }
+    .pr-card-preview-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pr-render-status { position: absolute; bottom: 12px; right: 12px; z-index: 3;
+      font-size: 10px; font-weight: 800; letter-spacing: .08em; padding: 4px 9px; border-radius: 999px;
+      color: #0C0E14; background: rgba(250,248,243,0.8); }
+    .pr-render-status--rendered { background: linear-gradient(135deg,#5A8F6A,#7bbd8c); color: #05140b; }
+    .pr-render-status--fallback { background: linear-gradient(135deg,#C9A84C,#E8C97A); color: #241c02; }
+    .pr-render-status--failed { background: #C4617A; color: #fff; }
+    #render-summary { max-width: 1200px; margin: 6px auto 0; padding: 0 18px; text-align: center;
+      font-size: 12px; font-weight: 600; letter-spacing: .03em; color: rgba(250,248,243,0.55); }
+    #render-summary[data-state="ok"] { color: #9ed6ad; }
+    #render-summary[data-state="partial"] { color: #E8C97A; }
+    #render-summary[data-state="fallback"] { color: #e79ab0; }
+
     @media (max-width: 860px) { .demo-inspector { grid-template-columns: 1fr; } .pd-card { position: static; } }
   </style>
 </head>
@@ -86,8 +102,9 @@
   </div>
 
   <p class="pipeline-flow">
-    Live pipeline: <b>Memory Profile</b> → <b>Creative Brief</b> → <b>WOW Engine</b> → <b>Render Orchestrator</b> → <b>Premium Reveal</b>
+    Live pipeline: <b>Memory Profile</b> → <b>Creative Brief</b> → <b>WOW Engine</b> → <b>Render Orchestrator</b> → <b>Render Adapter</b> → <b>Renderer</b> → <b>Premium Reveal</b>
   </p>
+  <p id="render-summary" aria-live="polite"></p>
 
   <!-- Premium Reveal UI (loading sequence → four concept cards) -->
   <div id="reveal"></div>

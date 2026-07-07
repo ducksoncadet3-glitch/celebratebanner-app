@@ -1393,6 +1393,1693 @@
     return generateRenderPlan(result.memoryProfile, result.creativeBrief, result.wowPresentation, { conceptName });
   }
 
+  // ../shared/render-engine/src/canvas/helpers.ts
+  function roundRect(ctx, x, y, w, h2, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h2, r);
+    ctx.arcTo(x + w, y + h2, x, y + h2, r);
+    ctx.arcTo(x, y + h2, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function drawCover(ctx, img, x, y, w, h2) {
+    if (!img) return;
+    const iw = img.naturalWidth ?? img.width ?? 1;
+    const ih = img.naturalHeight ?? img.height ?? 1;
+    const rotDeg = ((img._rotDeg ?? 0) % 360 + 360) % 360;
+    const swap = rotDeg === 90 || rotDeg === 270;
+    const effW = swap ? ih : iw;
+    const effH = swap ? iw : ih;
+    const coverScale = Math.max(w / effW, h2 / effH);
+    const containScale = Math.min(w / effW, h2 / effH);
+    const cropRatio = coverScale / containScale;
+    const useContain = img._useContain === true || cropRatio > 1.55;
+    const scale = useContain ? containScale : coverScale;
+    const dw = iw * scale;
+    const dh = ih * scale;
+    const cx = x + w / 2;
+    const cy = y + h2 / 2;
+    ctx.save();
+    ctx.translate(cx, cy);
+    if (rotDeg) ctx.rotate(rotDeg * Math.PI / 180);
+    ctx.drawImage(img, 0, 0, iw, ih, -dw / 2, -dh / 2, dw, dh);
+    ctx.restore();
+  }
+  function lightenHex(hex, amt) {
+    const m = /^#([0-9a-f]{6})$/i.exec(hex || "");
+    if (!m) return hex;
+    const n = parseInt(m[1], 16);
+    let r = n >> 16 & 255;
+    let g = n >> 8 & 255;
+    let b = n & 255;
+    r = Math.min(255, r + amt);
+    g = Math.min(255, g + amt);
+    b = Math.min(255, b + amt);
+    return "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
+  }
+  function hexToRgba(hex, alpha) {
+    const m = /^#([0-9a-f]{6})$/i.exec(hex || "");
+    if (!m) return hex;
+    const n = parseInt(m[1], 16);
+    return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${alpha})`;
+  }
+  function tileToCount(base, count) {
+    const out = [];
+    if (!base || base.length === 0) return out;
+    for (let i = 0; i < count; i++) out.push({ ...base[i % base.length] });
+    return out;
+  }
+
+  // ../shared/render-engine/src/frames/registry.ts
+  var REGISTRY = /* @__PURE__ */ new Map();
+  function registerFrame(renderer) {
+    REGISTRY.set(renderer.id, renderer);
+  }
+  function getFrame(id) {
+    const r = REGISTRY.get(id ?? "rounded");
+    return r ?? REGISTRY.get("rounded");
+  }
+
+  // ../shared/render-engine/src/frames/rounded.ts
+  var RoundedFrame = {
+    id: "rounded",
+    label: "Rounded",
+    draw(ctx, img, x, y, w, h2, withShadow) {
+      if (withShadow) {
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.45)";
+        ctx.shadowBlur = 18;
+        ctx.shadowOffsetY = 8;
+        ctx.fillStyle = "#000";
+        roundRect(ctx, x, y, w, h2, 12);
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.save();
+      roundRect(ctx, x, y, w, h2, 12);
+      ctx.clip();
+      drawCover(ctx, img, x, y, w, h2);
+      ctx.restore();
+    }
+  };
+  registerFrame(RoundedFrame);
+
+  // ../shared/render-engine/src/canvas/paths.ts
+  function hexPath(ctx, x, y, w, h2) {
+    const size = Math.min(w, h2);
+    const cx = x + w / 2;
+    const cy = y + h2 / 2;
+    const rx = size / 2;
+    const ry = size / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - ry);
+    ctx.lineTo(cx + rx, cy - ry / 2);
+    ctx.lineTo(cx + rx, cy + ry / 2);
+    ctx.lineTo(cx, cy + ry);
+    ctx.lineTo(cx - rx, cy + ry / 2);
+    ctx.lineTo(cx - rx, cy - ry / 2);
+    ctx.closePath();
+  }
+  function diamondPath(ctx, x, y, w, h2) {
+    const cx = x + w / 2;
+    const cy = y + h2 / 2;
+    const s = Math.min(w, h2) / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - s);
+    ctx.lineTo(cx + s, cy);
+    ctx.lineTo(cx, cy + s);
+    ctx.lineTo(cx - s, cy);
+    ctx.closePath();
+  }
+  function scallopPath(ctx, cx, cy, r) {
+    const lobes = 14;
+    const bump = r * 0.07;
+    ctx.beginPath();
+    for (let deg = 0; deg <= 360; deg += 1) {
+      const a = deg * Math.PI / 180;
+      const rr = r - bump + bump * Math.cos(lobes * a);
+      const px2 = cx + Math.cos(a) * rr;
+      const py = cy + Math.sin(a) * rr;
+      if (deg === 0) ctx.moveTo(px2, py);
+      else ctx.lineTo(px2, py);
+    }
+    ctx.closePath();
+  }
+  function heartPath(ctx, x, y, w, h2) {
+    const cx = x + w / 2;
+    const cy = y + h2 / 2;
+    const s = Math.min(w, h2) * 0.5;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + s * 0.65);
+    ctx.bezierCurveTo(cx - s * 1, cy + s * 0.1, cx - s * 0.7, cy - s * 0.85, cx, cy - s * 0.25);
+    ctx.bezierCurveTo(cx + s * 0.7, cy - s * 0.85, cx + s * 1, cy + s * 0.1, cx, cy + s * 0.65);
+    ctx.closePath();
+  }
+  function starPath(ctx, x, y, w, h2) {
+    const cx = x + w / 2;
+    const cy = y + h2 / 2;
+    const outer = Math.min(w, h2) / 2;
+    const inner = outer * 0.45;
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const a = i / 10 * Math.PI * 2 - Math.PI / 2;
+      const r = i % 2 === 0 ? outer : inner;
+      const px2 = cx + Math.cos(a) * r;
+      const py = cy + Math.sin(a) * r;
+      if (i === 0) ctx.moveTo(px2, py);
+      else ctx.lineTo(px2, py);
+    }
+    ctx.closePath();
+  }
+
+  // ../shared/render-engine/src/frames/shapes.ts
+  function withDrop(ctx, blur, off, pathFn) {
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.45)";
+    ctx.shadowBlur = blur;
+    ctx.shadowOffsetY = off;
+    ctx.fillStyle = "#000";
+    pathFn();
+    ctx.fill();
+    ctx.restore();
+  }
+  function withGoldOutline(ctx, lineWidth, pathFn) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(201,168,76,0.9)";
+    ctx.lineWidth = lineWidth;
+    pathFn();
+    ctx.stroke();
+    ctx.restore();
+  }
+  var CircleFrame = {
+    id: "circle",
+    label: "Circle",
+    draw(ctx, img, x, y, w, h2, withShadow) {
+      const cx = x + w / 2;
+      const cy = y + h2 / 2;
+      const r = Math.min(w, h2) / 2;
+      const p = () => {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      };
+      if (withShadow) withDrop(ctx, 18, 8, p);
+      ctx.save();
+      p();
+      ctx.clip();
+      drawCover(ctx, img, cx - r, cy - r, r * 2, r * 2);
+      ctx.restore();
+    }
+  };
+  var HexagonFrame = {
+    id: "hexagon",
+    label: "Hexagon",
+    draw(ctx, img, x, y, w, h2, withShadow) {
+      const size = Math.min(w, h2);
+      const p = () => hexPath(ctx, x, y, w, h2);
+      if (withShadow) withDrop(ctx, 18, 8, p);
+      ctx.save();
+      p();
+      ctx.clip();
+      drawCover(ctx, img, x + (w - size) / 2, y + (h2 - size) / 2, size, size);
+      ctx.restore();
+      withGoldOutline(ctx, 2, p);
+    }
+  };
+  var DiamondFrame = {
+    id: "diamond",
+    label: "Diamond",
+    draw(ctx, img, x, y, w, h2, withShadow) {
+      const cx = x + w / 2;
+      const cy = y + h2 / 2;
+      const s = Math.min(w, h2) / 2;
+      const p = () => diamondPath(ctx, x, y, w, h2);
+      if (withShadow) withDrop(ctx, 18, 8, p);
+      ctx.save();
+      p();
+      ctx.clip();
+      drawCover(ctx, img, cx - s, cy - s, s * 2, s * 2);
+      ctx.restore();
+      withGoldOutline(ctx, 2, p);
+    }
+  };
+  var ScallopFrame = {
+    id: "scallop",
+    label: "Scallop",
+    draw(ctx, img, x, y, w, h2, withShadow) {
+      const cx = x + w / 2;
+      const cy = y + h2 / 2;
+      const r = Math.min(w, h2) / 2;
+      const p = () => scallopPath(ctx, cx, cy, r);
+      if (withShadow) withDrop(ctx, 16, 7, p);
+      ctx.save();
+      p();
+      ctx.clip();
+      drawCover(ctx, img, cx - r, cy - r, r * 2, r * 2);
+      ctx.restore();
+      ctx.save();
+      ctx.strokeStyle = "rgba(201,168,76,0.85)";
+      ctx.lineWidth = 1.5;
+      p();
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+  var HeartFrame = {
+    id: "heart",
+    label: "Heart",
+    draw(ctx, img, x, y, w, h2, withShadow) {
+      const cx = x + w / 2;
+      const cy = y + h2 / 2;
+      const size = Math.min(w, h2);
+      const p = () => heartPath(ctx, x, y, w, h2);
+      if (withShadow) withDrop(ctx, 18, 8, p);
+      ctx.save();
+      p();
+      ctx.clip();
+      drawCover(ctx, img, cx - size / 2, cy - size / 2, size, size);
+      ctx.restore();
+      ctx.save();
+      ctx.strokeStyle = "rgba(201,168,76,0.85)";
+      ctx.lineWidth = 1.5;
+      p();
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+  var StarFrame = {
+    id: "star",
+    label: "Star",
+    draw(ctx, img, x, y, w, h2, withShadow) {
+      const cx = x + w / 2;
+      const cy = y + h2 / 2;
+      const size = Math.min(w, h2);
+      const p = () => starPath(ctx, x, y, w, h2);
+      if (withShadow) withDrop(ctx, 16, 7, p);
+      ctx.save();
+      p();
+      ctx.clip();
+      drawCover(ctx, img, cx - size / 2, cy - size / 2, size, size);
+      ctx.restore();
+      ctx.save();
+      ctx.strokeStyle = "rgba(201,168,76,0.85)";
+      ctx.lineWidth = 1.5;
+      p();
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+  registerFrame(CircleFrame);
+  registerFrame(HexagonFrame);
+  registerFrame(DiamondFrame);
+  registerFrame(ScallopFrame);
+  registerFrame(HeartFrame);
+  registerFrame(StarFrame);
+
+  // ../shared/render-engine/src/frames/cards.ts
+  var PolaroidFrame = {
+    id: "polaroid",
+    label: "Polaroid",
+    draw(ctx, img, x, y, w, h2, withShadow) {
+      const pad = Math.min(w, h2) * 0.06;
+      const bPad = Math.min(w, h2) * 0.16;
+      ctx.save();
+      if (withShadow) {
+        ctx.shadowColor = "rgba(0,0,0,0.5)";
+        ctx.shadowBlur = 22;
+        ctx.shadowOffsetY = 10;
+      }
+      ctx.fillStyle = "#FAF8F3";
+      roundRect(ctx, x, y, w, h2, 4);
+      ctx.fill();
+      ctx.restore();
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x + pad, y + pad, w - pad * 2, h2 - pad - bPad);
+      ctx.clip();
+      drawCover(ctx, img, x + pad, y + pad, w - pad * 2, h2 - pad - bPad);
+      ctx.restore();
+    }
+  };
+  var VintageFrame = {
+    id: "vintage",
+    label: "Vintage",
+    draw(ctx, img, x, y, w, h2, withShadow) {
+      if (withShadow) {
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.40)";
+        ctx.shadowBlur = 14;
+        ctx.shadowOffsetY = 6;
+        ctx.fillStyle = "#F5EDD8";
+        ctx.fillRect(x, y, w, h2);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = "#F5EDD8";
+        ctx.fillRect(x, y, w, h2);
+      }
+      const pad = Math.min(w, h2) * 0.06;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x + pad, y + pad, w - pad * 2, h2 - pad * 2);
+      ctx.clip();
+      ctx.filter = "sepia(0.55) saturate(1.05) contrast(0.95)";
+      drawCover(ctx, img, x + pad, y + pad, w - pad * 2, h2 - pad * 2);
+      ctx.filter = "none";
+      ctx.restore();
+    }
+  };
+  var TapeFrame = {
+    id: "tape",
+    label: "Washi tape",
+    draw(ctx, img, x, y, w, h2, withShadow) {
+      if (withShadow) {
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.40)";
+        ctx.shadowBlur = 14;
+        ctx.shadowOffsetY = 6;
+        ctx.fillStyle = "#000";
+        ctx.fillRect(x, y, w, h2);
+        ctx.restore();
+      }
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h2);
+      ctx.clip();
+      drawCover(ctx, img, x, y, w, h2);
+      ctx.restore();
+      const tw = Math.min(w, h2) * 0.34;
+      const th = Math.min(w, h2) * 0.1;
+      ctx.save();
+      ctx.fillStyle = "rgba(232,201,122,0.72)";
+      ctx.translate(x, y);
+      ctx.rotate(-22 * Math.PI / 180);
+      ctx.fillRect(-tw * 0.3, -th / 2, tw, th);
+      ctx.restore();
+      ctx.save();
+      ctx.fillStyle = "rgba(232,201,122,0.72)";
+      ctx.translate(x + w, y + h2);
+      ctx.rotate(-22 * Math.PI / 180);
+      ctx.fillRect(-tw * 0.7, -th / 2, tw, th);
+      ctx.restore();
+    }
+  };
+  var WhiteFrame = {
+    id: "white",
+    label: "White edge",
+    draw(ctx, img, x, y, w, h2, withShadow) {
+      if (withShadow) {
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.40)";
+        ctx.shadowBlur = 14;
+        ctx.shadowOffsetY = 6;
+        ctx.fillStyle = "#FAF8F3";
+        ctx.fillRect(x, y, w, h2);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = "#FAF8F3";
+        ctx.fillRect(x, y, w, h2);
+      }
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x + 3, y + 3, w - 6, h2 - 6);
+      ctx.clip();
+      drawCover(ctx, img, x + 3, y + 3, w - 6, h2 - 6);
+      ctx.restore();
+    }
+  };
+  registerFrame(PolaroidFrame);
+  registerFrame(VintageFrame);
+  registerFrame(TapeFrame);
+  registerFrame(WhiteFrame);
+
+  // ../shared/render-engine/src/frames/borders.ts
+  var GoldFrame = {
+    id: "gold",
+    label: "Gold edge",
+    draw(ctx, img, x, y, w, h2, withShadow) {
+      RoundedFrame.draw(ctx, img, x, y, w, h2, withShadow);
+      ctx.save();
+      ctx.strokeStyle = "#C9A84C";
+      ctx.lineWidth = 4;
+      roundRect(ctx, x, y, w, h2, 12);
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+  var DoubleGoldFrame = {
+    id: "double-gold",
+    label: "Double gold",
+    draw(ctx, img, x, y, w, h2, withShadow) {
+      if (withShadow) {
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.40)";
+        ctx.shadowBlur = 14;
+        ctx.shadowOffsetY = 6;
+        ctx.fillStyle = "#000";
+        ctx.fillRect(x, y, w, h2);
+        ctx.restore();
+      }
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h2);
+      ctx.clip();
+      drawCover(ctx, img, x, y, w, h2);
+      ctx.restore();
+      ctx.save();
+      ctx.strokeStyle = "#C9A84C";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 1, y + 1, w - 2, h2 - 2);
+      ctx.strokeRect(x + 6, y + 6, w - 12, h2 - 12);
+      ctx.restore();
+    }
+  };
+  var BaroqueFrame = {
+    id: "baroque",
+    label: "Baroque",
+    draw(ctx, img, x, y, w, h2, withShadow) {
+      if (withShadow) {
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.45)";
+        ctx.shadowBlur = 16;
+        ctx.shadowOffsetY = 7;
+        ctx.fillStyle = "#000";
+        ctx.fillRect(x, y, w, h2);
+        ctx.restore();
+      }
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h2);
+      ctx.clip();
+      drawCover(ctx, img, x, y, w, h2);
+      ctx.restore();
+      ctx.save();
+      ctx.strokeStyle = "#C9A84C";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(x + 2, y + 2, w - 4, h2 - 4);
+      ctx.strokeStyle = "#E8C97A";
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(x + 9, y + 9, w - 18, h2 - 18);
+      ctx.restore();
+    }
+  };
+  var RibbonFrame = {
+    id: "ribbon",
+    label: "Ribbon",
+    draw(ctx, img, x, y, w, h2, withShadow) {
+      if (withShadow) {
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.40)";
+        ctx.shadowBlur = 14;
+        ctx.shadowOffsetY = 6;
+        ctx.fillStyle = "#000";
+        ctx.fillRect(x, y, w, h2);
+        ctx.restore();
+      }
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h2);
+      ctx.clip();
+      drawCover(ctx, img, x, y, w, h2);
+      ctx.restore();
+      ctx.save();
+      ctx.strokeStyle = "#C9A84C";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x, y, w, h2);
+      ctx.restore();
+    }
+  };
+  var CrownFrame = {
+    id: "crown",
+    label: "Crown",
+    draw(ctx, img, x, y, w, h2, withShadow) {
+      if (withShadow) {
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.40)";
+        ctx.shadowBlur = 14;
+        ctx.shadowOffsetY = 6;
+        ctx.fillStyle = "#000";
+        ctx.fillRect(x, y, w, h2);
+        ctx.restore();
+      }
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h2);
+      ctx.clip();
+      drawCover(ctx, img, x, y, w, h2);
+      ctx.restore();
+      ctx.save();
+      ctx.strokeStyle = "#C9A84C";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x, y, w, h2);
+      ctx.restore();
+      const cw = Math.max(22, Math.min(w, h2) * 0.14);
+      const ch = cw * 0.7;
+      const ccx = x + w / 2 - cw / 2;
+      const ccy = y - ch - 4;
+      ctx.save();
+      ctx.fillStyle = "#C9A84C";
+      ctx.beginPath();
+      ctx.moveTo(ccx, ccy + ch);
+      ctx.lineTo(ccx + cw, ccy + ch);
+      ctx.lineTo(ccx + cw - cw * 0.15, ccy + ch * 0.42);
+      ctx.lineTo(ccx + cw * 0.15, ccy + ch * 0.42);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(ccx + cw * 0.15, ccy + ch * 0.42);
+      ctx.lineTo(ccx + cw * 0.3, ccy);
+      ctx.lineTo(ccx + cw * 0.5, ccy + ch * 0.42);
+      ctx.lineTo(ccx + cw * 0.7, ccy);
+      ctx.lineTo(ccx + cw * 0.85, ccy + ch * 0.42);
+      ctx.fill();
+      ctx.restore();
+    }
+  };
+  registerFrame(GoldFrame);
+  registerFrame(DoubleGoldFrame);
+  registerFrame(BaroqueFrame);
+  registerFrame(RibbonFrame);
+  registerFrame(CrownFrame);
+
+  // ../shared/render-engine/src/frames/effects.ts
+  var NeonFrame = {
+    id: "neon",
+    label: "Neon glow",
+    draw(ctx, img, x, y, w, h2, _withShadow) {
+      ctx.save();
+      roundRect(ctx, x, y, w, h2, 8);
+      ctx.clip();
+      drawCover(ctx, img, x, y, w, h2);
+      ctx.restore();
+      ctx.save();
+      ctx.strokeStyle = "#22E8FF";
+      ctx.shadowColor = "#22E8FF";
+      ctx.shadowBlur = 18;
+      ctx.lineWidth = 3;
+      roundRect(ctx, x, y, w, h2, 8);
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+  var GlitterFrame = {
+    id: "glitter",
+    label: "Glitter",
+    draw(ctx, img, x, y, w, h2, withShadow) {
+      if (withShadow) {
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.45)";
+        ctx.shadowBlur = 16;
+        ctx.shadowOffsetY = 7;
+        ctx.fillStyle = "#000";
+        ctx.fillRect(x, y, w, h2);
+        ctx.restore();
+      }
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h2);
+      ctx.clip();
+      drawCover(ctx, img, x, y, w, h2);
+      ctx.restore();
+      ctx.save();
+      const dr = Math.max(1.6, Math.min(w, h2) * 0.012);
+      const step = dr * 4;
+      ctx.fillStyle = "#E8C97A";
+      ctx.shadowColor = "rgba(232,201,122,0.7)";
+      ctx.shadowBlur = 6;
+      for (let px2 = x; px2 <= x + w + 0.1; px2 += step) {
+        ctx.beginPath();
+        ctx.arc(px2, y, dr, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(px2, y + h2, dr, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      for (let py = y + step; py <= y + h2 - step + 0.1; py += step) {
+        ctx.beginPath();
+        ctx.arc(x, py, dr, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x + w, py, dr, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  };
+  var ShadowFrame = {
+    id: "shadow",
+    label: "Drop shadow",
+    draw(ctx, img, x, y, w, h2, _withShadow) {
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.55)";
+      ctx.shadowBlur = 22;
+      ctx.shadowOffsetY = 12;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(x, y, w, h2);
+      ctx.restore();
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h2);
+      ctx.clip();
+      drawCover(ctx, img, x, y, w, h2);
+      ctx.restore();
+    }
+  };
+  var ShadowBoxFrame = {
+    id: "shadow-box",
+    label: "Shadow box",
+    draw(ctx, img, x, y, w, h2, _withShadow) {
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.55)";
+      ctx.shadowBlur = 26;
+      ctx.shadowOffsetY = 14;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(x, y, w, h2);
+      ctx.restore();
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h2);
+      ctx.clip();
+      drawCover(ctx, img, x, y, w, h2);
+      ctx.restore();
+    }
+  };
+  registerFrame(NeonFrame);
+  registerFrame(GlitterFrame);
+  registerFrame(ShadowFrame);
+  registerFrame(ShadowBoxFrame);
+
+  // ../shared/render-engine/src/canvas/rng.ts
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function() {
+      a = a + 1831565813 >>> 0;
+      let t = a;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function photoRot(rng, maxDeg) {
+    return (rng() * 2 - 1) * maxDeg * (Math.PI / 180);
+  }
+
+  // ../shared/render-engine/src/frames/dispatch.ts
+  function drawPhotoFramed(ctx, input, photo, x, y, w, h2, opts = {}) {
+    const frameId = opts.forceFrame ?? input.frames?.[photo.id] ?? input.defaultFrame ?? "rounded";
+    const rotation = opts.rotation ?? 0;
+    const shadow = opts.shadow !== false;
+    if (photo.image) {
+      photo.image._rotDeg = input.rotations?.[photo.id] ?? 0;
+    }
+    ctx.save();
+    let px2 = x;
+    let py = y;
+    if (rotation) {
+      const tcx = opts.cx ?? x + w / 2;
+      const tcy = opts.cy ?? y + h2 / 2;
+      ctx.translate(tcx, tcy);
+      ctx.rotate(rotation);
+      px2 = -w / 2;
+      py = -h2 / 2;
+    } else if (opts.cx != null && opts.cy != null) {
+      ctx.translate(opts.cx, opts.cy);
+      px2 = -w / 2;
+      py = -h2 / 2;
+    }
+    const frame = getFrame(frameId);
+    frame.draw(ctx, photo.image, px2, py, w, h2, shadow);
+    ctx.restore();
+  }
+  function drawHero3D(ctx, input, photo, x, y, w, h2) {
+    if (!photo || !photo.image) return;
+    if (photo.image) {
+      photo.image._rotDeg = input.rotations?.[photo.id] ?? 0;
+    }
+    const radius = 14;
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.75)";
+    ctx.shadowBlur = 60;
+    ctx.shadowOffsetX = 18;
+    ctx.shadowOffsetY = 28;
+    ctx.fillStyle = "#000";
+    roundRect(ctx, x, y, w, h2, radius);
+    ctx.fill();
+    ctx.restore();
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.5)";
+    ctx.shadowBlur = 30;
+    ctx.shadowOffsetX = 10;
+    ctx.shadowOffsetY = 16;
+    ctx.fillStyle = "#111";
+    roundRect(ctx, x + 2, y + 2, w, h2, radius);
+    ctx.fill();
+    ctx.restore();
+    ctx.save();
+    roundRect(ctx, x, y, w, h2, radius);
+    ctx.clip();
+    drawCover(ctx, photo.image, x, y, w, h2);
+    ctx.restore();
+    ctx.save();
+    ctx.strokeStyle = "#C9A84C";
+    ctx.lineWidth = 3;
+    ctx.shadowColor = "rgba(201,168,76,0.6)";
+    ctx.shadowBlur = 12;
+    roundRect(ctx, x, y, w, h2, radius);
+    ctx.stroke();
+    ctx.restore();
+    ctx.save();
+    const shine = ctx.createLinearGradient(x, y, x + w * 0.6, y + h2 * 0.4);
+    shine.addColorStop(0, "rgba(255,255,255,0.18)");
+    shine.addColorStop(0.4, "rgba(255,255,255,0.06)");
+    shine.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = shine;
+    roundRect(ctx, x, y, w, h2, radius);
+    ctx.fill();
+    ctx.restore();
+  }
+  function drawPhoto3D(ctx, input, photo, cx, cy, w, h2, rotation, offY = 10, blur = 22) {
+    if (!photo || !photo.image) return;
+    photo.image._rotDeg = input.rotations?.[photo.id] ?? 0;
+    ctx.save();
+    if (rotation) {
+      ctx.translate(cx, cy);
+      ctx.rotate(rotation);
+      cx = 0;
+      cy = 0;
+    }
+    const x = cx - w / 2;
+    const y = cy - h2 / 2;
+    const radius = 8;
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.65)";
+    ctx.shadowBlur = blur;
+    ctx.shadowOffsetX = 6;
+    ctx.shadowOffsetY = offY;
+    ctx.fillStyle = "#000";
+    roundRect(ctx, x, y, w, h2, radius);
+    ctx.fill();
+    ctx.restore();
+    ctx.save();
+    roundRect(ctx, x, y, w, h2, radius);
+    ctx.clip();
+    drawCover(ctx, photo.image, x, y, w, h2);
+    ctx.restore();
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,0.55)";
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, x, y, w, h2, radius);
+    ctx.stroke();
+    ctx.restore();
+    ctx.restore();
+  }
+
+  // ../shared/render-engine/src/arrangements/registry.ts
+  var REGISTRY2 = /* @__PURE__ */ new Map();
+  function registerArrangement(r) {
+    REGISTRY2.set(r.id, r);
+  }
+  function getArrangement(id) {
+    const r = REGISTRY2.get(id ?? "classic");
+    return r ?? REGISTRY2.get("classic");
+  }
+
+  // ../shared/render-engine/src/arrangements/classic.ts
+  var ClassicArrangement = {
+    id: "classic",
+    label: "Classic",
+    minPhotos: 1,
+    maxPhotos: 50,
+    render({ ctx, W, H, contentTop, rng, input }, photos) {
+      const margin = 40;
+      const innerW = W - margin * 2;
+      const supporting = photos.slice(1);
+      const heroY = Math.max(140, contentTop);
+      const heroH = 360;
+      const heroBot = heroY + heroH;
+      const cols = 8;
+      const rows = 5;
+      const gap = 6;
+      const gridTop = heroBot + 8;
+      const gridBot = H - 20;
+      const gridH = gridBot - gridTop;
+      const cellW = (innerW - gap * (cols - 1)) / cols;
+      const cellH = (gridH - gap * (rows - 1)) / rows;
+      const drawList = tileToCount(supporting, cols * rows);
+      drawList.forEach((p, i) => {
+        const r = Math.floor(i / cols);
+        const c = i % cols;
+        const x = margin + c * (cellW + gap);
+        const y = gridTop + r * (cellH + gap);
+        drawPhotoFramed(ctx, input, p, x, y, cellW, cellH, {
+          rotation: photoRot(rng, 1.5),
+          shadow: false
+        });
+      });
+      drawHero3D(ctx, input, photos[0], margin, heroY, innerW, heroH);
+    }
+  };
+  registerArrangement(ClassicArrangement);
+
+  // ../shared/render-engine/src/arrangements/magazine.ts
+  var MagazineArrangement = {
+    id: "magazine",
+    label: "Magazine",
+    minPhotos: 3,
+    maxPhotos: 25,
+    render({ ctx, W, H, contentTop, rng, input }, photos) {
+      const supporting = photos.slice(1);
+      const gap = 8;
+      const heroX = 40;
+      const heroY = Math.max(128, contentTop);
+      const heroW = 460;
+      const heroH = 420;
+      const leftBelowY = heroY + heroH + gap;
+      const leftBelowH = 1170 - leftBelowY;
+      const leftCols = 3;
+      const leftRows = 4;
+      const leftCellW = (460 - gap * (leftCols - 1)) / leftCols;
+      const leftCellH = (leftBelowH - gap * (leftRows - 1)) / leftRows;
+      const rightX = 508;
+      const rightY = heroY;
+      const rightW = 252;
+      const rightH = 1170 - rightY;
+      const rightCols = 2;
+      const rightRows = 6;
+      const rightCellW = (rightW - gap * (rightCols - 1)) / rightCols;
+      const rightCellH = (rightH - gap * (rightRows - 1)) / rightRows;
+      const total = leftCols * leftRows + rightCols * rightRows;
+      const drawList = tileToCount(supporting, total);
+      for (let i = 0; i < rightCols * rightRows; i++) {
+        const p = drawList[i];
+        const r = Math.floor(i / rightCols);
+        const c = i % rightCols;
+        drawPhotoFramed(
+          ctx,
+          input,
+          p,
+          rightX + c * (rightCellW + gap),
+          rightY + r * (rightCellH + gap),
+          rightCellW,
+          rightCellH,
+          { rotation: photoRot(rng, 1), shadow: false }
+        );
+      }
+      for (let i = 0; i < leftCols * leftRows; i++) {
+        const p = drawList[rightCols * rightRows + i];
+        const r = Math.floor(i / leftCols);
+        const c = i % leftCols;
+        drawPhotoFramed(
+          ctx,
+          input,
+          p,
+          40 + c * (leftCellW + gap),
+          leftBelowY + r * (leftCellH + gap),
+          leftCellW,
+          leftCellH,
+          { rotation: photoRot(rng, 1), shadow: false }
+        );
+      }
+      drawHero3D(ctx, input, photos[0], heroX, heroY, heroW, heroH);
+    }
+  };
+  registerArrangement(MagazineArrangement);
+
+  // ../shared/render-engine/src/arrangements/pyramid.ts
+  var PyramidArrangement = {
+    id: "pyramid",
+    label: "Pyramid",
+    minPhotos: 3,
+    maxPhotos: 28,
+    render({ ctx, W, H, contentTop, rng, input }, photos) {
+      const margin = 40;
+      const innerW = W - margin * 2;
+      const innerH = H - contentTop - 60;
+      const supporting = photos.slice(1);
+      const heroSize = Math.min(innerW * 0.45, innerH * 0.4);
+      const heroX = (W - heroSize) / 2;
+      const heroY = contentTop + 8;
+      const heroBot = heroY + heroSize + 32;
+      const rowCounts = [];
+      let remaining = supporting.length;
+      let rowCols = 2;
+      while (remaining > 0) {
+        const take = Math.min(rowCols, remaining);
+        rowCounts.push(take);
+        remaining -= take;
+        rowCols++;
+      }
+      if (rowCounts.length === 0) rowCounts.push(0);
+      const pyTop = heroBot;
+      const pyBottom = H - 50;
+      const pyH = Math.max(60, pyBottom - pyTop);
+      const rowH = pyH / rowCounts.length;
+      const widestRow = Math.max(...rowCounts);
+      const maxCellByWidth = (innerW - 10 * (widestRow - 1)) / Math.max(1, widestRow);
+      const cellSize = Math.max(28, Math.min(rowH * 0.85, maxCellByWidth));
+      const drawList = tileToCount(supporting, supporting.length);
+      let idx = 0;
+      rowCounts.forEach((count, r) => {
+        if (count === 0) return;
+        const totalW = count * cellSize + (count - 1) * 10;
+        let xCursor = (W - totalW) / 2;
+        const yTop = pyTop + r * rowH + (rowH - cellSize) / 2;
+        for (let c = 0; c < count; c++) {
+          drawPhotoFramed(ctx, input, drawList[idx], 0, 0, cellSize, cellSize, {
+            cx: xCursor + cellSize / 2,
+            cy: yTop + cellSize / 2,
+            rotation: photoRot(rng, 2.5),
+            shadow: false
+          });
+          idx++;
+          xCursor += cellSize + 10;
+        }
+      });
+      drawHero3D(ctx, input, photos[0], heroX, heroY, heroSize, heroSize);
+    }
+  };
+  registerArrangement(PyramidArrangement);
+
+  // ../shared/render-engine/src/arrangements/scattered.ts
+  var ScatteredArrangement = {
+    id: "scattered",
+    label: "Scattered",
+    minPhotos: 5,
+    maxPhotos: 40,
+    render({ ctx, W, H, contentTop, rng, input }, photos) {
+      const supporting = photos.slice(1);
+      const tileSize = 130;
+      const safeTop = contentTop + 20;
+      const contentBottom = H - 60;
+      const contentH = contentBottom - safeTop;
+      const heroW = 340;
+      const heroH = 380;
+      const heroX = (W - heroW) / 2;
+      const heroY = safeTop + (contentH - heroH) / 2;
+      const basePositions = [
+        [60, safeTop + 20],
+        [180, safeTop + 40],
+        [60, safeTop + 155],
+        [175, safeTop + 170],
+        [470, safeTop + 20],
+        [590, safeTop + 40],
+        [475, safeTop + 155],
+        [590, safeTop + 170],
+        [55, safeTop + 720],
+        [175, safeTop + 700],
+        [60, safeTop + 840],
+        [180, safeTop + 855],
+        [470, safeTop + 720],
+        [590, safeTop + 700],
+        [475, safeTop + 840],
+        [590, safeTop + 855]
+      ];
+      const drawList = tileToCount(supporting, basePositions.length);
+      drawList.forEach((p, i) => {
+        const [bx, by] = basePositions[i];
+        const cx = bx + tileSize / 2;
+        const cy = by + tileSize / 2;
+        const rot = (rng() * 14 - 7) * (Math.PI / 180);
+        drawPhoto3D(ctx, input, p, cx, cy, tileSize, tileSize, rot, 8 + rng() * 14, 18 + rng() * 16);
+      });
+      drawHero3D(ctx, input, photos[0], heroX, heroY, heroW, heroH);
+    }
+  };
+  registerArrangement(ScatteredArrangement);
+
+  // ../shared/render-engine/src/arrangements/mosaic.ts
+  var MosaicArrangement = {
+    id: "mosaic",
+    label: "Mosaic",
+    minPhotos: 8,
+    maxPhotos: 40,
+    render({ ctx, W, H, contentTop, rng, input }, photos) {
+      const supporting = photos.slice(1);
+      const margin = 40;
+      const gap = 8;
+      const contentBottom = H - margin;
+      const heroW = 320;
+      const heroH = 380;
+      const heroX = (W - heroW) / 2;
+      const heroY = contentTop + Math.floor((contentBottom - contentTop) * 0.22);
+      const topH = heroY - gap - contentTop;
+      const topW = (720 - 4 * gap) / 5;
+      const topXs = [40, 184, 328, 472, 616];
+      const sideRows = 3;
+      const sideW = 192;
+      const sideH = (heroH - gap * (sideRows - 1)) / sideRows;
+      const botTop = heroY + heroH + gap;
+      const botBandH = contentBottom - botTop;
+      const botRows = 3;
+      const botRowH = (botBandH - gap * (botRows - 1)) / botRows;
+      const slots = [];
+      topXs.forEach((tx) => slots.push({ x: tx, y: contentTop, w: topW, h: topH }));
+      for (let i = 0; i < sideRows; i++) {
+        slots.push({ x: 40, y: heroY + i * (sideH + gap), w: sideW, h: sideH });
+        slots.push({ x: W - margin - sideW, y: heroY + i * (sideH + gap), w: sideW, h: sideH });
+      }
+      for (let r = 0; r < botRows; r++) {
+        topXs.forEach((tx) => slots.push({ x: tx, y: botTop + r * (botRowH + gap), w: topW, h: botRowH }));
+      }
+      const drawList = tileToCount(supporting, slots.length);
+      drawList.forEach((p, i) => {
+        const s = slots[i];
+        drawPhotoFramed(ctx, input, p, s.x, s.y, s.w, s.h, {
+          rotation: photoRot(rng, 0.5),
+          shadow: false
+        });
+      });
+      drawHero3D(ctx, input, photos[0], heroX, heroY, heroW, heroH);
+    }
+  };
+  registerArrangement(MosaicArrangement);
+
+  // ../shared/render-engine/src/mockups/registry.ts
+  var REGISTRY3 = /* @__PURE__ */ new Map();
+  function registerMockup(r) {
+    REGISTRY3.set(r.id, r);
+  }
+
+  // ../shared/render-engine/src/mockups/retractable-stand.ts
+  var RetractableStandMockup = {
+    id: "retractable-stand",
+    label: "Retractable banner stand",
+    render(target, banner, opts) {
+      const dpr = opts?.dpr ?? 2;
+      const W = opts?.width ?? 600;
+      const H = opts?.height ?? 900;
+      target.width = W * dpr;
+      target.height = H * dpr;
+      const ctx = target.getContext("2d");
+      ctx.scale(dpr, dpr);
+      ctx.fillStyle = "#F8F8F8";
+      ctx.fillRect(0, 0, W, H);
+      const margin = 30;
+      const topBarH = Math.round(H * 0.015);
+      const banH = Math.round(H * 0.78);
+      const baseH = Math.round(banH * 0.06);
+      const poleW = Math.max(5, Math.round(W * 0.01));
+      const bannerL = margin;
+      const bannerR = W - margin;
+      const bannerW = bannerR - bannerL;
+      const bannerT = margin + topBarH;
+      const bannerB = bannerT + banH;
+      const tb = ctx.createLinearGradient(bannerL, 0, bannerR, 0);
+      tb.addColorStop(0, "#E0E0E0");
+      tb.addColorStop(0.5, "#FFFFFF");
+      tb.addColorStop(1, "#C0C0C0");
+      ctx.fillStyle = tb;
+      ctx.fillRect(bannerL, margin, bannerW, topBarH);
+      ctx.fillStyle = "#7B7F86";
+      const capR = topBarH * 0.85;
+      ctx.beginPath();
+      ctx.arc(bannerL, margin + topBarH / 2, capR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(bannerR, margin + topBarH / 2, capR, 0, Math.PI * 2);
+      ctx.fill();
+      const taper = bannerW * 0.02;
+      const topLx = bannerL + taper;
+      const topRx = bannerR - taper;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(topLx, bannerT);
+      ctx.lineTo(topRx, bannerT);
+      ctx.lineTo(bannerR, bannerB);
+      ctx.lineTo(bannerL, bannerB);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(banner, bannerL, bannerT, bannerW, banH);
+      const spec = ctx.createLinearGradient(bannerL, bannerT, bannerL + bannerW * 0.55, bannerT + banH * 0.5);
+      spec.addColorStop(0, "rgba(255,255,255,0.18)");
+      spec.addColorStop(0.5, "rgba(255,255,255,0.06)");
+      spec.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = spec;
+      ctx.fillRect(bannerL, bannerT, bannerW, banH);
+      ctx.restore();
+      ctx.save();
+      ctx.strokeStyle = "rgba(0,0,0,0.45)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(topLx, bannerT);
+      ctx.lineTo(topRx, bannerT);
+      ctx.lineTo(bannerR, bannerB);
+      ctx.lineTo(bannerL, bannerB);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.restore();
+      const poleX = bannerR - poleW / 2;
+      const poleTop = margin + topBarH;
+      const poleBot = bannerB + baseH * 0.85;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(poleX, poleTop);
+      ctx.lineTo(poleX + poleW, poleTop);
+      ctx.lineTo(poleX + poleW * 1.25, poleBot);
+      ctx.lineTo(poleX - poleW * 0.25, poleBot);
+      ctx.closePath();
+      const pg = ctx.createLinearGradient(poleX - poleW, 0, poleX + poleW * 2, 0);
+      pg.addColorStop(0, "#3F4654");
+      pg.addColorStop(0.5, "#FFFFFF");
+      pg.addColorStop(1, "#9CA3AF");
+      ctx.fillStyle = pg;
+      ctx.fill();
+      const knobCy = poleTop + (poleBot - poleTop) * 0.5;
+      ctx.fillStyle = "#374151";
+      ctx.beginPath();
+      ctx.ellipse(poleX + poleW / 2, knobCy, poleW * 1.6, poleW * 0.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      const baseW = Math.round(bannerW * 0.7);
+      const baseCx = (bannerL + bannerR) / 2;
+      const baseCy = bannerB + baseH;
+      ctx.save();
+      ctx.fillStyle = "rgba(0,0,0,0.40)";
+      ctx.filter = "blur(14px)";
+      ctx.beginPath();
+      ctx.ellipse(baseCx + 6, baseCy + baseH * 0.6, baseW / 2 + 18, baseH * 0.85, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.filter = "none";
+      ctx.restore();
+      const baseGrad = ctx.createRadialGradient(
+        baseCx - baseW * 0.12,
+        baseCy - baseH * 0.5,
+        4,
+        baseCx,
+        baseCy + baseH * 0.2,
+        baseW / 2
+      );
+      baseGrad.addColorStop(0, "#FFFFFF");
+      baseGrad.addColorStop(0.18, "#E5E7EB");
+      baseGrad.addColorStop(0.45, "#9CA3AF");
+      baseGrad.addColorStop(0.78, "#4B5563");
+      baseGrad.addColorStop(1, "#1F2937");
+      ctx.fillStyle = baseGrad;
+      ctx.beginPath();
+      ctx.ellipse(baseCx, baseCy, baseW / 2, baseH, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(baseCx, baseCy, baseW / 2, baseH, 0, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.strokeStyle = "rgba(255,255,255,0.06)";
+      ctx.lineWidth = 0.6;
+      for (let yy = baseCy - baseH; yy <= baseCy + baseH; yy += 2) {
+        ctx.beginPath();
+        ctx.moveTo(baseCx - baseW / 2, yy);
+        ctx.lineTo(baseCx + baseW / 2, yy);
+        ctx.stroke();
+      }
+      ctx.restore();
+      ctx.save();
+      ctx.fillStyle = "rgba(255,255,255,0.40)";
+      ctx.beginPath();
+      ctx.ellipse(baseCx - baseW * 0.18, baseCy - baseH * 0.35, baseW * 0.3, baseH * 0.35, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      const floorTop = baseCy + baseH;
+      const floorH = H - floorTop;
+      if (floorH > 6) {
+        const fg = ctx.createLinearGradient(0, floorTop, 0, floorTop + floorH);
+        fg.addColorStop(0, "rgba(0,0,0,0.06)");
+        fg.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = fg;
+        ctx.fillRect(0, floorTop, W, floorH);
+      }
+    }
+  };
+  registerMockup(RetractableStandMockup);
+
+  // ../shared/render-engine/src/theme/background.ts
+  function drawBannerBackground(ctx, W, H, palette) {
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, lightenHex(palette.bg, 12));
+    grad.addColorStop(1, palette.bg);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = palette.accent;
+    ctx.lineWidth = 8;
+    ctx.strokeRect(20, 20, W - 40, H - 40);
+  }
+
+  // ../shared/render-engine/src/theme/text.ts
+  function renderBannerText(ctx, W, topY, theme, bannerText) {
+    const fields = theme.fields ?? [];
+    const palette = theme.palette;
+    let y = topY;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    fields.forEach((key, i) => {
+      const value = (bannerText[key] ?? "").trim();
+      if (i === 0) {
+        if (value) {
+          ctx.fillStyle = palette.text;
+          ctx.font = 'bold 64px "Cormorant Garamond", serif';
+          ctx.fillText(value, W / 2, y + 56);
+        } else {
+          const meta = theme.fieldMeta?.[key];
+          const placeholder = meta?.placeholder || `Your ${key}`;
+          ctx.fillStyle = hexToRgba(palette.text, 0.45);
+          ctx.font = 'italic 600 56px "Cormorant Garamond", serif';
+          ctx.fillText(placeholder, W / 2, y + 56);
+        }
+        y += 74;
+      } else if (i === 1) {
+        if (!value) return;
+        ctx.fillStyle = palette.accent;
+        ctx.font = 'italic 600 30px "Cormorant Garamond", serif';
+        ctx.fillText(value, W / 2, y + 30);
+        y += 40;
+      } else {
+        if (!value) return;
+        ctx.fillStyle = hexToRgba(palette.text, 0.78);
+        ctx.font = "500 18px Outfit, sans-serif";
+        ctx.fillText(value, W / 2, y + 20);
+        y += 28;
+      }
+    });
+    return y;
+  }
+
+  // ../shared/render-engine/src/pipeline/render.ts
+  function renderBanner(ctx, input) {
+    const { width: W, height: H, theme, bannerText, arrangement, photos, heroId } = input;
+    drawBannerBackground(ctx, W, H, theme.palette);
+    ctx.save();
+    ctx.globalCompositeOperation = "source-over";
+    const textBottomY = renderBannerText(ctx, W, 56, theme, bannerText);
+    ctx.restore();
+    if (photos.length === 0) return;
+    const heroIdx = heroId ? photos.findIndex((p) => p.id === heroId) : 0;
+    const orderedPhotos = heroIdx > 0 ? [photos[heroIdx], ...photos.slice(0, heroIdx), ...photos.slice(heroIdx + 1)] : photos;
+    const contentTop = textBottomY + 24;
+    const seed = (input.seed ?? 12345) >>> 0;
+    const rng = mulberry32(seed ^ 41244);
+    const env = { ctx, W, H, contentTop, rng, input };
+    const arr = getArrangement(arrangement);
+    arr.render(env, orderedPhotos);
+    ctx.save();
+    ctx.globalCompositeOperation = "source-over";
+    renderBannerText(ctx, W, 56, theme, bannerText);
+    ctx.restore();
+  }
+
+  // ../shared/render-engine/src/pipeline/preview.ts
+  function renderPreview(target, input, opts = {}) {
+    const W = opts.previewWidth ?? 800;
+    const H = opts.previewHeight ?? 1200;
+    const dpr = opts.dpr ?? 1;
+    target.width = W * dpr;
+    target.height = H * dpr;
+    const ctx = target.getContext("2d");
+    if (dpr !== 1) ctx.scale(dpr, dpr);
+    renderBanner(ctx, { ...input, width: W, height: H });
+  }
+
+  // demo/renderer-binding.ts
+  var FRAME_MAP = {
+    "thin-gold": "double-gold",
+    gold: "gold",
+    soft: "rounded",
+    minimal: "white"
+  };
+  function toFrame(name) {
+    return name && FRAME_MAP[name] || "rounded";
+  }
+  function nowMs() {
+    if (typeof performance !== "undefined" && typeof performance.now === "function") return performance.now();
+    return Date.now();
+  }
+  function capDims(w, h2, maxEdge) {
+    const longEdge = Math.max(w, h2);
+    if (longEdge <= maxEdge) return { w: Math.max(1, Math.round(w)), h: Math.max(1, Math.round(h2)) };
+    const s = maxEdge / longEdge;
+    return { w: Math.max(1, Math.round(w * s)), h: Math.max(1, Math.round(h2 * s)) };
+  }
+  function makePlaceholderPhoto(doc, filename, orientation, theme) {
+    const portrait = orientation !== "landscape";
+    const w = portrait ? 600 : 800;
+    const h2 = portrait ? 800 : 600;
+    const c = doc.createElement("canvas");
+    c.width = w;
+    c.height = h2;
+    const ctx = c.getContext("2d");
+    const g = ctx.createLinearGradient(0, 0, w, h2);
+    g.addColorStop(0, theme.accent || "#C9A84C");
+    g.addColorStop(1, theme.ground || "#0C0E14");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h2);
+    ctx.fillStyle = "rgba(255,255,255,0.14)";
+    ctx.fillRect(0, Math.round(h2 * 0.5) - 1, w, 2);
+    ctx.fillStyle = theme.neutral || "#FAF8F3";
+    ctx.font = `600 ${Math.round(w * 0.06)}px "Outfit", system-ui, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(filename, w / 2, h2 / 2);
+    return c;
+  }
+  function toRenderInput(doc, req, w, h2) {
+    const photos = [];
+    const frames = {};
+    if (req.hero) {
+      photos.push({ id: req.hero.photoId, image: makePlaceholderPhoto(doc, req.hero.filename ?? req.hero.photoId, req.hero.orientation, req.theme) });
+      frames[req.hero.photoId] = toFrame(req.hero.frame);
+    }
+    for (const s of req.supporting) {
+      photos.push({ id: s.photoId, image: makePlaceholderPhoto(doc, s.filename ?? s.photoId, s.orientation, req.theme) });
+      frames[s.photoId] = toFrame(s.frame);
+    }
+    const theme = {
+      id: req.occasion,
+      fields: Object.keys(req.bannerText),
+      palette: { bg: req.theme.ground, accent: req.theme.accent, text: req.theme.neutral }
+    };
+    return {
+      width: w,
+      height: h2,
+      arrangement: req.arrangement,
+      theme,
+      bannerText: req.bannerText,
+      photos,
+      heroId: req.hero?.photoId ?? null,
+      frames,
+      defaultFrame: "rounded",
+      seed: req.seed,
+      cinematicHero: req.cinematicHero
+    };
+  }
+  function createCanvasRenderer(options = {}) {
+    const doc = options.document ?? (typeof document !== "undefined" ? document : void 0);
+    if (!doc) throw new Error("createCanvasRenderer requires a DOM document (browser only).");
+    const previewMaxEdge = options.previewMaxEdge ?? 900;
+    const exportMaxEdge = options.exportMaxEdge ?? 1400;
+    return {
+      render(req) {
+        const maxEdge = req.kind === "export" ? exportMaxEdge : previewMaxEdge;
+        const { w, h: h2 } = capDims(req.widthPx, req.heightPx, maxEdge);
+        const canvas = doc.createElement("canvas");
+        const input = toRenderInput(doc, req, w, h2);
+        const t0 = nowMs();
+        renderPreview(canvas, input, { previewWidth: w, previewHeight: h2, dpr: 1 });
+        const format = req.kind === "export" ? "jpg" : "png";
+        const uri = canvas.toDataURL(format === "jpg" ? "image/jpeg" : "image/png");
+        const renderMs = Math.max(1, Math.round(nowMs() - t0));
+        return {
+          targetId: req.targetId,
+          kind: req.kind,
+          format,
+          widthPx: w,
+          heightPx: h2,
+          colorMode: req.colorMode,
+          uri,
+          byteSize: uri.length,
+          renderMs
+        };
+      }
+    };
+  }
+
+  // ../shared/render-adapter/src/types.ts
+  var SCHEMA_VERSION4 = "1.0.0";
+  var REQUIRED_EXPORT_TARGETS = [
+    "digital",
+    "poster_18x24",
+    "poster_24x36",
+    "framed_24x36"
+  ];
+
+  // ../shared/render-adapter/src/mapper.ts
+  var PREVIEW_LONG_EDGE = 1200;
+  var THUMBNAIL_LONG_EDGE = 400;
+  var PREVIEW_DPI = 72;
+  function hashString(s) {
+    let h2 = 2166136261 >>> 0;
+    for (let i = 0; i < s.length; i++) {
+      h2 ^= s.charCodeAt(i);
+      h2 = Math.imul(h2, 16777619);
+    }
+    return h2 >>> 0;
+  }
+  function deriveSeed(plan) {
+    return hashString(`${plan.occasion}::${plan.conceptName}::${plan.renderInstructions.arrangement}`);
+  }
+  function scaleToLongEdge(widthPx, heightPx, longEdge) {
+    const w = widthPx > 0 ? widthPx : 2;
+    const h2 = heightPx > 0 ? heightPx : 3;
+    const scale = longEdge / Math.max(w, h2);
+    return { width: Math.max(1, Math.round(w * scale)), height: Math.max(1, Math.round(h2 * scale)) };
+  }
+  function referenceTarget(plan) {
+    return plan.exportTargets.find((t) => t.id === "digital") ?? plan.exportTargets[0];
+  }
+  function heroRef(plan) {
+    if (!plan.heroPhoto) return null;
+    const hp = plan.renderInstructions.heroPlacement;
+    return {
+      photoId: plan.heroPhoto.photoId,
+      filename: plan.heroPhoto.filename ?? null,
+      orientation: plan.heroPhoto.orientation,
+      role: "hero",
+      frame: hp.frame,
+      dominanceRatio: hp.dominanceRatio
+    };
+  }
+  function supportingRefs(plan) {
+    const count = plan.renderInstructions.supportingPlacement.count;
+    return plan.supportingPhotos.slice(0, count).map((p) => ({
+      photoId: p.photoId,
+      filename: p.filename ?? null,
+      orientation: p.orientation,
+      role: "supporting",
+      frame: null,
+      // supporting tiles use the renderer's default frame
+      dominanceRatio: null
+    }));
+  }
+  function themeSpec(plan) {
+    const cp = plan.renderInstructions.colorPalette;
+    return {
+      ground: cp.ground,
+      accent: cp.accent,
+      neutral: cp.neutral,
+      swatches: cp.palette.map((p) => ({ hex: p.hex, role: p.role })),
+      source: cp.source
+    };
+  }
+  function typographySpec(plan) {
+    const tp = plan.renderInstructions.typographyPlacement;
+    return {
+      displayFont: tp.displayFont,
+      supportingFont: tp.supportingFont,
+      alignment: tp.alignment,
+      titleZone: tp.titleZone,
+      subtitleZone: tp.subtitleZone,
+      headlineTreatment: tp.headlineTreatment,
+      labelTreatment: tp.labelTreatment
+    };
+  }
+  function backgroundSpec(plan) {
+    const bg = plan.renderInstructions.backgroundSelection;
+    return { style: bg.style, decorationTheme: bg.decorationTheme, vignette: bg.vignette };
+  }
+  function dimsFor(kind, plan, target, opts) {
+    const ref = referenceTarget(plan);
+    const refW = ref ? ref.widthPx : 2;
+    const refH = ref ? ref.heightPx : 3;
+    if (kind === "preview") {
+      const { width, height } = scaleToLongEdge(refW, refH, opts.previewLongEdge ?? PREVIEW_LONG_EDGE);
+      return { targetId: "preview", label: "Live Preview", widthPx: width, heightPx: height, dpi: PREVIEW_DPI, colorMode: "RGB", formats: ["png"] };
+    }
+    if (kind === "thumbnail") {
+      const { width, height } = scaleToLongEdge(refW, refH, opts.thumbnailLongEdge ?? THUMBNAIL_LONG_EDGE);
+      return { targetId: "thumbnail", label: "Thumbnail", widthPx: width, heightPx: height, dpi: PREVIEW_DPI, colorMode: "RGB", formats: ["png"] };
+    }
+    if (!target) throw new Error('buildRenderRequest: an export target is required for kind "export".');
+    return {
+      targetId: target.id,
+      label: target.label,
+      widthPx: target.widthPx,
+      heightPx: target.heightPx,
+      dpi: target.dpi,
+      colorMode: target.colorMode,
+      formats: target.formats
+    };
+  }
+  function buildRenderRequest(plan, kind, target, options = {}) {
+    const ri = plan.renderInstructions;
+    const d = dimsFor(kind, plan, target, options);
+    return {
+      kind,
+      targetId: d.targetId,
+      label: d.label,
+      occasion: plan.occasion,
+      conceptName: plan.conceptName,
+      arrangement: ri.arrangement,
+      widthPx: d.widthPx,
+      heightPx: d.heightPx,
+      dpi: d.dpi,
+      colorMode: d.colorMode,
+      formats: [...d.formats],
+      hero: heroRef(plan),
+      supporting: supportingRefs(plan),
+      theme: themeSpec(plan),
+      typography: typographySpec(plan),
+      background: backgroundSpec(plan),
+      decorativeElements: [...ri.decorativeElements],
+      spacing: { marginRatio: ri.spacing.marginRatio, gapRatio: ri.spacing.gapRatio, whitespace: ri.spacing.whitespace },
+      layering: [...ri.layering.order],
+      bannerText: { ...options.bannerText ?? {} },
+      heroSpotlight: ri.heroPlacement.spotlight,
+      cinematicHero: true,
+      // matches the existing renderer's default (index.html)
+      seed: options.seed ?? deriveSeed(plan)
+    };
+  }
+
+  // ../shared/render-adapter/src/validator.ts
+  function imageValid(img) {
+    return !!img && typeof img.uri === "string" && img.uri.length > 0 && img.widthPx > 0 && img.heightPx > 0 && img.byteSize > 0;
+  }
+  function exportsAvailable(plan, rendered) {
+    if (!Array.isArray(rendered) || rendered.length !== plan.exportTargets.length) return false;
+    const ids = new Set(rendered.map((t) => t.id));
+    const allRequired = REQUIRED_EXPORT_TARGETS.every((id) => ids.has(id));
+    const allImaged = rendered.every((t) => imageValid(t.image));
+    return allRequired && allImaged;
+  }
+  function validateRendered(plan, previewImage, thumbnailImage, exportTargets, status) {
+    const reasons = [];
+    const renderCompleted = status === "completed";
+    const previewExists = imageValid(previewImage);
+    const thumbnailExists = imageValid(thumbnailImage);
+    const exportTargetsAvailable = exportsAvailable(plan, exportTargets);
+    const qualityChecksPassed = plan.accepted === true && plan.qualityChecks.passed === true;
+    if (!qualityChecksPassed) {
+      const upstream = plan.qualityChecks.reasons;
+      reasons.push(upstream.length ? `Render plan was not accepted: ${upstream.join(" ")}` : "Render plan was not accepted by the orchestrator.");
+    }
+    if (!renderCompleted) reasons.push(`Render did not complete (status: ${status}).`);
+    if (!previewExists) reasons.push("Preview image was not produced.");
+    if (!thumbnailExists) reasons.push("Thumbnail image was not produced.");
+    if (!exportTargetsAvailable) reasons.push("Export targets were not fully rendered.");
+    const passed = renderCompleted && previewExists && thumbnailExists && exportTargetsAvailable && qualityChecksPassed;
+    return {
+      passed,
+      renderCompleted,
+      previewExists,
+      thumbnailExists,
+      exportTargetsAvailable,
+      qualityChecksPassed,
+      reasons
+    };
+  }
+
+  // ../shared/render-adapter/src/engine.ts
+  function renderConcept(renderPlan, renderer, options = {}) {
+    const arrangement = renderPlan.renderInstructions.arrangement;
+    const base = {
+      schemaVersion: SCHEMA_VERSION4,
+      conceptName: renderPlan.conceptName,
+      occasion: renderPlan.occasion,
+      arrangement
+    };
+    if (!renderPlan.accepted) {
+      return {
+        ...base,
+        renderStatus: "skipped",
+        renderTime: 0,
+        previewImage: null,
+        thumbnailImage: null,
+        exportTargets: [],
+        qualityChecks: validateRendered(renderPlan, null, null, [], "skipped")
+      };
+    }
+    const renderExports = options.renderExports ?? true;
+    let previewImage = null;
+    let thumbnailImage = null;
+    let exportTargets = [];
+    let threw = false;
+    try {
+      previewImage = renderer.render(buildRenderRequest(renderPlan, "preview", void 0, options));
+      thumbnailImage = renderer.render(buildRenderRequest(renderPlan, "thumbnail", void 0, options));
+      if (renderExports) {
+        exportTargets = renderPlan.exportTargets.map((t) => ({
+          id: t.id,
+          label: t.label,
+          product: t.product,
+          widthPx: t.widthPx,
+          heightPx: t.heightPx,
+          dpi: t.dpi,
+          colorMode: t.colorMode,
+          formats: [...t.formats],
+          framed: t.framed,
+          matte: t.matte,
+          image: renderer.render(buildRenderRequest(renderPlan, "export", t, options))
+        }));
+      }
+    } catch {
+      threw = true;
+    }
+    const images = [
+      previewImage,
+      thumbnailImage,
+      ...exportTargets.map((e) => e.image)
+    ].filter((i) => i != null);
+    const renderTime = images.reduce((sum, i) => sum + (i.renderMs || 0), 0);
+    const exportsOk = !renderExports || exportTargets.length === renderPlan.exportTargets.length && exportTargets.every((e) => imageValid(e.image));
+    const completed = !threw && imageValid(previewImage) && imageValid(thumbnailImage) && exportsOk;
+    const renderStatus = completed ? "completed" : "failed";
+    return {
+      ...base,
+      renderStatus,
+      renderTime,
+      previewImage,
+      thumbnailImage,
+      exportTargets,
+      qualityChecks: validateRendered(renderPlan, previewImage, thumbnailImage, exportTargets, renderStatus)
+    };
+  }
+
+  // demo/concept-previews.ts
+  function renderConceptPreview(result, conceptName, renderer, options = {}) {
+    try {
+      const plan = renderPlanForConcept(result, conceptName);
+      const rc = renderConcept(plan, renderer, options);
+      if (rc.renderStatus === "completed" && rc.previewImage && rc.previewImage.uri) {
+        return {
+          conceptName,
+          status: "rendered",
+          previewUri: rc.previewImage.uri,
+          thumbnailUri: rc.thumbnailImage?.uri ?? null,
+          renderStatus: rc.renderStatus,
+          renderTime: rc.renderTime,
+          reasons: []
+        };
+      }
+      return {
+        conceptName,
+        status: "failed",
+        previewUri: null,
+        thumbnailUri: null,
+        renderStatus: rc.renderStatus,
+        renderTime: rc.renderTime,
+        reasons: rc.qualityChecks.reasons
+      };
+    } catch (err) {
+      return {
+        conceptName,
+        status: "fallback",
+        previewUri: null,
+        thumbnailUri: null,
+        renderStatus: "error",
+        renderTime: 0,
+        reasons: [err instanceof Error ? err.message : String(err)]
+      };
+    }
+  }
+  function renderAllConceptPreviews(result, renderer, options = {}) {
+    return result.wowPresentation.concepts.map((c) => renderConceptPreview(result, c.conceptName, renderer, options));
+  }
+
   // ../shared/memory-profile/fixtures/graduation.json
   var graduation_default = {
     schema_version: "1.0.0",
@@ -2337,6 +4024,69 @@
     }
   }
   var CURRENT = null;
+  var RENDERER = null;
+  var RENDERER_TRIED = false;
+  function getRenderer() {
+    if (!RENDERER_TRIED) {
+      RENDERER_TRIED = true;
+      try {
+        RENDERER = createCanvasRenderer({ previewMaxEdge: 900 });
+      } catch {
+        RENDERER = null;
+      }
+    }
+    return RENDERER;
+  }
+  var STATUS_LABEL = {
+    rendered: "RENDERED",
+    fallback: "FALLBACK",
+    failed: "FAILED"
+  };
+  function paintPreviews(result) {
+    const renderer = getRenderer();
+    const previews = renderer ? renderAllConceptPreviews(result, renderer, { renderExports: false }) : result.wowPresentation.concepts.map((c) => ({
+      conceptName: c.conceptName,
+      status: "fallback",
+      previewUri: null,
+      thumbnailUri: null,
+      renderStatus: "error",
+      renderTime: 0,
+      reasons: ["No canvas available in this environment."]
+    }));
+    let rendered = 0;
+    for (const p of previews) {
+      const card = document.querySelector(`.pr-card[data-concept="${p.conceptName}"]`);
+      if (!card) continue;
+      const media = card.querySelector(".pr-card-media");
+      const previewEl = card.querySelector(".pr-card-preview");
+      if (media) {
+        let badge = media.querySelector(".pr-render-status");
+        if (!badge) {
+          badge = document.createElement("span");
+          badge.className = "pr-render-status";
+          media.appendChild(badge);
+        }
+        badge.textContent = STATUS_LABEL[p.status];
+        badge.className = `pr-render-status pr-render-status--${p.status}`;
+        badge.title = p.reasons.join(" ") || `${p.status} (${p.renderTime}ms)`;
+      }
+      if (p.status === "rendered" && p.previewUri && previewEl) {
+        const img = document.createElement("img");
+        img.className = "pr-card-preview-img";
+        img.alt = `${p.conceptName} preview`;
+        img.src = p.previewUri;
+        previewEl.replaceChildren(img);
+        previewEl.classList.add("is-rendered");
+        rendered += 1;
+      }
+    }
+    const summary = $("render-summary");
+    if (summary) {
+      const total = previews.length;
+      summary.textContent = rendered === total ? `Real artwork rendered for all ${total} concepts` : `Rendered ${rendered}/${total} concepts \xB7 ${total - rendered} on placeholder fallback`;
+      summary.dataset.state = rendered === total ? "ok" : rendered === 0 ? "fallback" : "partial";
+    }
+  }
   function render(key, skipLoading, focusConcept) {
     const mp = PROFILES[key];
     const result = runPipeline(mp);
@@ -2352,7 +4102,10 @@
         presentation: result.wowPresentation,
         skipLoading,
         loadingIntervalMs: 650,
-        onRevealed: () => toast(`Revealed: ${key}`),
+        onRevealed: () => {
+          toast(`Revealed: ${key}`);
+          paintPreviews(result);
+        },
         handlers: {
           onLove: (c) => {
             focus(c);
