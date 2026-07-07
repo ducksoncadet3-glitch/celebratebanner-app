@@ -564,6 +564,8 @@ body.admin-mode .admin-badge { display: flex; }
       </div>
       <div class="stand-mockup" id="stand-mockup" style="display:none;"></div>
     </div>
+    <!-- WOW preview (private ?wow=1 flag only; hidden and inert by default) -->
+    <div id="wow-reveal-slot" aria-live="polite" style="display:none;margin-top:24px;"></div>
     <div class="design-mode-note" id="design-mode-note" style="display:none;">Smart Design selected the best photos for this layout.</div>
     <div class="gen-btn-wrap">
       <button class="btn btn-primary btn-lg" id="generate-btn" onclick="generatePreview()">✨ Generate My Banner</button>
@@ -1167,7 +1169,32 @@ function renderArrangementGrid(){const grid=document.getElementById('arr-grid');
 
 function refreshPreviewUI(){const post=document.getElementById('post-preview');const pre=document.getElementById('pre-preview-actions');const empty=document.getElementById('preview-empty');const canvas=document.getElementById('preview-canvas');const genBtn=document.getElementById('generate-btn');const stand=document.getElementById('stand-mockup');const dlMain=document.getElementById('download-jpg-main');if(state.previewGenerated){post.style.display='block';pre.style.display='none';empty.style.display='none';canvas.style.display='block';genBtn.style.display='none';renderArrangementGrid();if(stand)stand.style.display='block';if(dlMain)dlMain.style.display='inline-flex';const _dmn=document.getElementById('design-mode-note');if(_dmn){_dmn.style.display='block';updateDesignModeNote();}drawSafeZoneOverlay();const hd=document.getElementById('download-hd-btn');if(hd){if(activeProduct().exportDPI){hd.style.display='none';}else{if(hd.style.display==='none')hd.style.display='';hd.style.opacity=state.isPremium?'1':'0.45';hd.title=state.isPremium?'Download HD (2400×3600)':'Pick a premium arrangement to unlock HD';}}if(!previewUnlocked()){if(dlMain){dlMain.classList.add('locked');dlMain.onclick=function(){toast('🔒 Please complete payment');showLockOverlay();};}setTimeout(()=>{drawWatermarkOverlay();showLockOverlay();},200);}else if(dlMain){dlMain.classList.remove('locked');dlMain.onclick=downloadJpg;}if(typeof updateAdminToggleUI==='function')updateAdminToggleUI();}else{post.style.display='none';pre.style.display='block';empty.style.display='block';canvas.style.display='none';genBtn.style.display='inline-flex';if(stand)stand.style.display='none';if(dlMain)dlMain.style.display='none';const _dmn=document.getElementById('design-mode-note');if(_dmn)_dmn.style.display='none';const szc=document.getElementById('preview-safezone-canvas');if(szc)szc.remove();}}
 
-function generatePreview(force){const ids=selectImages();if(ids.length===0){toast('Pick a hero first');return;}state.selectedImages=ids;const newKey=computeCacheKey();if(!force&&state.previewCacheKey===newKey&&state.previewGenerated){toast('Preview already up to date');return;}const empty=document.getElementById('preview-empty');empty.innerHTML=`<div class="preview-loading"><div class="spinner"></div><div>Rendering preview…</div></div>`;empty.style.display='flex';document.getElementById('preview-canvas').style.display='none';setTimeout(()=>{const pc=document.getElementById('preview-canvas');renderToCanvas(pc,ids,state.isPremium,1);state.previewGenerated=true;state.previewCacheKey=newKey;document.getElementById('preview-spec-text').textContent=`${ids.length} photos · ${state.arrangement}${state.isPremium?' (Premium)':''}`;updateDesignModeNote();refreshPreviewUI();try{renderStandMockup(pc);}catch(e){console.warn('Stand mockup error:',e);}toast(productNounTitle()+' ready');},60);}
+function generatePreview(force){const ids=selectImages();if(ids.length===0){toast('Pick a hero first');return;}state.selectedImages=ids;const newKey=computeCacheKey();if(!force&&state.previewCacheKey===newKey&&state.previewGenerated){toast('Preview already up to date');return;}const empty=document.getElementById('preview-empty');empty.innerHTML=`<div class="preview-loading"><div class="spinner"></div><div>Rendering preview…</div></div>`;empty.style.display='flex';document.getElementById('preview-canvas').style.display='none';setTimeout(()=>{const pc=document.getElementById('preview-canvas');renderToCanvas(pc,ids,state.isPremium,1);state.previewGenerated=true;state.previewCacheKey=newKey;document.getElementById('preview-spec-text').textContent=`${ids.length} photos · ${state.arrangement}${state.isPremium?' (Premium)':''}`;updateDesignModeNote();refreshPreviewUI();try{renderStandMockup(pc);}catch(e){console.warn('Stand mockup error:',e);}toast(productNounTitle()+' ready');try{if(typeof wowMaybeReveal==='function')wowMaybeReveal();}catch(e){console.warn('[WOW] hook error:',e);}},60);}
+// ── WOW pipeline integration (private ?wow=1 flag) ─────────────────────────────
+// Additive and fully guarded: with the flag absent, isWOWMode() is false and NOTHING
+// below runs — the standard preview flow above is unchanged. On any failure we keep
+// the standard preview visible so the customer is never blocked.
+function isWOWMode(){try{return /(?:^|[?&])wow=1(?:&|$)/.test(location.search);}catch(e){return false;}}
+function wowFallback(slot){try{if(slot){slot.style.display='none';slot.innerHTML='';}}catch(e){}}
+function wowMaybeReveal(){
+  if(!isWOWMode())return;
+  var slot=document.getElementById('wow-reveal-slot');
+  if(!slot)return;
+  function run(){
+    try{
+      if(window.CBWOW&&typeof window.CBWOW.showReveal==='function'){
+        var res=window.CBWOW.showReveal(state,slot,{onSelect:function(name){try{state.wowSelectedConcept=name;if(typeof cbScheduleSave==='function')cbScheduleSave();}catch(e){}}});
+        if(!res||!res.ok)wowFallback(slot);
+      }else{wowFallback(slot);}
+    }catch(e){console.warn('[WOW] reveal error, standard preview kept:',e);wowFallback(slot);}
+  }
+  if(window.CBWOW){run();return;}
+  if(window.__cbwowLoading)return; window.__cbwowLoading=true;
+  var s=document.createElement('script');s.src='wow/wow-bridge.js';s.async=true;
+  s.onload=run;
+  s.onerror=function(){console.warn('[WOW] bundle failed to load, standard preview kept');wowFallback(slot);};
+  (document.head||document.body).appendChild(s);
+}
 
 function setArrangement(id){if(state.arrangement===id)return;const a=ARRANGEMENTS.find(x=>x.id===id);if(!a)return;state.arrangement=id;state.isPremium=(a.tier==='premium');document.querySelectorAll('.arr-opt').forEach(el=>{el.classList.toggle('active',el.dataset.arr===id);});refreshSummary();generatePreview(true);}
 

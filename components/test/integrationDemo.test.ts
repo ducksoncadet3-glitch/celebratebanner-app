@@ -94,8 +94,11 @@ test('the demo html wires the fixture selector and every stage panel', () => {
 });
 
 // ── no production files changed ──────────────────────────────────────
-test('no production files were changed (index.html, shared/, components/src)', () => {
+// The demo itself must not touch the shared engines or the reusable components.
+// (index.html is intentionally + additively modified by the Sprint 9 WOW integration
+//  and is bounded by its own guard in wowBridge.test.ts, so it is excluded here.)
+test('the demo did not change shared engines or reusable components', () => {
   const root = execSync('git rev-parse --show-toplevel', { cwd: componentsDir }).toString().trim();
-  const status = execSync('git status --porcelain -- index.html shared components/src', { cwd: root }).toString().trim();
-  assert.equal(status, '', `production files must be untouched, but git reports:\n${status}`);
+  const status = execSync('git status --porcelain -- shared components/src', { cwd: root }).toString().trim();
+  assert.equal(status, '', `shared/ and components/src must be untouched, but git reports:\n${status}`);
 });
