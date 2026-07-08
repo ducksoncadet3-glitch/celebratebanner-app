@@ -19,6 +19,7 @@ import type {
 } from '../../shared/render-engine/src/types.ts';
 import type { Renderer, RenderRequest, RenderedImage, RenderThemeSpec, RenderPhotoRef } from '../../shared/render-adapter/src/index.ts';
 import { planOrientationCorrection, heroBoxAspect, coverCropRect, SUPPORTING_ASPECT } from '../../shared/image-intelligence/src/index.ts';
+import type { RenderTreatment } from '../../shared/art-direction-engine/src/index.ts';
 
 export interface CanvasRendererOptions {
   /** DOM document (defaults to the global). */
@@ -31,6 +32,12 @@ export interface CanvasRendererOptions {
   rotationFor?: (ref: RenderPhotoRef) => number;
   /** Run the image-intelligence pass (orientation + hero fill + curation). Default true. */
   curate?: boolean;
+  /**
+   * The Art Director's treatment for a concept: grade, vignette, hero frame, supporting
+   * aspect and cinematic hero. This is how four concepts become four visual identities
+   * without touching the renderer.
+   */
+  treatmentFor?: (conceptName: string) => RenderTreatment | undefined;
   /**
    * Resolve a photo reference to a REAL drawable image. Used by the production
    * builder to render the customer's actual uploads. Return null/undefined to fall
@@ -78,12 +85,14 @@ const SUPPORTING_MAX_EDGE = 384; // supporting tiles render ~60-90px
  *   3. optionally apply a restrained unified grade so supporting tiles read as a set.
  * Returns an offscreen canvas; the original image is never modified.
  */
+interface GradeSpec { contrast: number; saturate: number; brightness: number; vignette: number }
+
 function prepareImage(
   doc: Document,
   src: CanvasImage,
   quarterTurns: number,
   targetAspect: number,
-  grade: boolean,
+  grade: GradeSpec | null,
   maxEdge: number,
 ): CanvasImage {
   const iw = (src.naturalWidth ?? src.width) || 1;
@@ -104,7 +113,9 @@ function prepareImage(
   if (!ctx) return src;
 
   ctx.save();
-  if (grade) { try { ctx.filter = 'contrast(1.05) saturate(0.94) brightness(0.97)'; } catch { /* filter unsupported */ } }
+  if (grade) {
+    try { ctx.filter = `contrast(${grade.contrast}) saturate(${grade.saturate}) brightness(${grade.brightness})`; } catch { /* filter unsupported */ }
+  }
   // Map the crop rect (in rotated space) onto the output canvas, then rotate the source.
   ctx.scale(outW / crop.sw, outH / crop.sh);
   ctx.translate(-crop.sx, -crop.sy);
@@ -113,11 +124,11 @@ function prepareImage(
   ctx.drawImage(src as unknown as CanvasImageSource, -iw / 2, -ih / 2, iw, ih);
   ctx.restore();
 
-  if (grade) {
-    // Gentle vignette unifies the supporting grid without touching renderer algorithms.
+  if (grade && grade.vignette > 0) {
+    // Vignette strength is an art-direction decision, not a fixed constant.
     const g = ctx.createRadialGradient(outW / 2, outH / 2, Math.min(outW, outH) * 0.32, outW / 2, outH / 2, Math.max(outW, outH) * 0.72);
     g.addColorStop(0, 'rgba(12,14,20,0)');
-    g.addColorStop(1, 'rgba(12,14,20,0.30)');
+    g.addColorStop(1, `rgba(12,14,20,${grade.vignette})`);
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, outW, outH);
   }
@@ -161,10 +172,17 @@ function toRenderInput(
   const photos: Photo[] = [];
   const frames: Record<string, FrameId> = {};
 
-  // Hero fills its arrangement's box exactly; supporting tiles share one square crop.
-  const heroAspect = heroBoxAspect(req.arrangement, w, h);
+  // The Art Director's treatment for THIS concept (falls back to a neutral house style).
+  const t = options.treatmentFor?.(req.conceptName);
+  const supportingGrade: GradeSpec | null = curate
+    ? { contrast: t?.grade.contrast ?? 1.05, saturate: t?.grade.saturate ?? 0.94, brightness: t?.grade.brightness ?? 0.97, vignette: t?.vignette ?? 0.30 }
+    : null;
 
-  const imageFor = (ref: RenderPhotoRef, targetAspect: number, grade: boolean, maxEdge: number): CanvasImage => {
+  // Hero fills its arrangement's box exactly; supporting tiles share one disciplined crop.
+  const heroAspect = heroBoxAspect(req.arrangement, w, h);
+  const supportingAspect = t?.supportingAspect ?? SUPPORTING_ASPECT;
+
+  const imageFor = (ref: RenderPhotoRef, targetAspect: number, grade: GradeSpec | null, maxEdge: number): CanvasImage => {
     const src = resolveImage && resolveImage(ref);
     if (!src) return makePlaceholderPhoto(doc, ref.filename ?? ref.photoId, targetAspect, req.theme);
     if (!curate) return src;
@@ -176,7 +194,7 @@ function toRenderInput(
     });
     // Prepared images are reused across concepts — supporting tiles share one square
     // crop, so they are prepared once, not once per arrangement.
-    const key = `${ref.photoId}|${correction.quarterTurns}|${targetAspect.toFixed(4)}|${grade ? 1 : 0}|${maxEdge}`;
+    const key = `${ref.photoId}|${correction.quarterTurns}|${targetAspect.toFixed(4)}|${grade ? `${grade.contrast}:${grade.saturate}:${grade.brightness}:${grade.vignette}` : 'raw'}|${maxEdge}`;
     const hit = cache.get(key);
     if (hit) return hit;
     try {
@@ -189,11 +207,11 @@ function toRenderInput(
   };
 
   if (req.hero) {
-    photos.push({ id: req.hero.photoId, image: imageFor(req.hero, heroAspect, false, HERO_MAX_EDGE) });
-    frames[req.hero.photoId] = toFrame(req.hero.frame);
+    photos.push({ id: req.hero.photoId, image: imageFor(req.hero, heroAspect, null, HERO_MAX_EDGE) });
+    frames[req.hero.photoId] = toFrame(t?.heroFrame ?? req.hero.frame);
   }
   for (const s of req.supporting) {
-    photos.push({ id: s.photoId, image: imageFor(s, SUPPORTING_ASPECT, curate, SUPPORTING_MAX_EDGE) });
+    photos.push({ id: s.photoId, image: imageFor(s, supportingAspect, supportingGrade, SUPPORTING_MAX_EDGE) });
     frames[s.photoId] = toFrame(s.frame);
   }
   const theme: Theme = {
@@ -212,7 +230,7 @@ function toRenderInput(
     frames,
     defaultFrame: 'rounded',
     seed: req.seed,
-    cinematicHero: req.cinematicHero,
+    cinematicHero: t ? t.cinematicHero : req.cinematicHero,
   };
 }
 

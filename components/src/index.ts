@@ -16,6 +16,7 @@ export { createDirectorChoice } from './DirectorChoice/index.ts';
 export { createMasterpieceBadge } from './MasterpieceBadge/index.ts';
 export { createWowScore } from './WOWScore/index.ts';
 export { createLoadingSequence } from './LoadingSequence/index.ts';
+export { CTA_PRIMARY, CTA_SECONDARY } from './types.ts';
 export type { LoadingController } from './LoadingSequence/index.ts';
 export { injectStyles, PREMIUM_REVEAL_CSS, STYLE_ELEMENT_ID } from './styles.ts';
 export { LOADING_STAGES, REVEAL_TITLE, REVEAL_SUBTITLE } from './types.ts';

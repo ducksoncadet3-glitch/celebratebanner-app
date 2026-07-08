@@ -11,7 +11,7 @@ import type { PremiumRevealProps } from '../types.ts';
  * of four concept cards). Additive; no pricing, checkout, or renderer coupling.
  */
 export function createPremiumReveal(props: PremiumRevealProps): HTMLElement {
-  const { presentation, handlers, skipLoading = false, loadingIntervalMs = 900, onRevealed } = props;
+  const { presentation, handlers, copyFor, skipLoading = false, loadingIntervalMs = 900, onRevealed } = props;
   injectStyles(document);
 
   const root = h('section', { class: 'pr-root', role: 'region', 'aria-label': 'Your masterpieces' });
@@ -28,7 +28,7 @@ export function createPremiumReveal(props: PremiumRevealProps): HTMLElement {
         `Director’s Choice: ${presentation.recommendedConcept}`,
       ),
     );
-    root.appendChild(createRevealGallery({ presentation, handlers }));
+    root.appendChild(createRevealGallery({ presentation, copyFor, handlers }));
     onRevealed?.();
   };
 

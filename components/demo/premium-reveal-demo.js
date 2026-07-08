@@ -79,21 +79,30 @@
 .pr-card:focus-within, .pr-card:hover { border-color:var(--pr-gold); }
 .pr-card--directors { border-color:var(--pr-gold);
   box-shadow:0 0 0 1px var(--pr-gold), 0 18px 50px rgba(201,168,76,0.14); }
-.pr-card-preview { aspect-ratio:4/3; background:
+.pr-card-preview { aspect-ratio:4/5; background:
   linear-gradient(135deg, rgba(201,168,76,0.10), rgba(12,14,20,0.6)); display:grid; place-items:center;
   color:var(--pr-muted); font-size:13px; letter-spacing:.1em; text-transform:uppercase;
   border-bottom:1px solid var(--pr-border); }
 .pr-card-preview-mark { text-align:center; }
 .pr-card-topline { display:flex; align-items:center; justify-content:space-between; gap:12px;
   position:absolute; top:12px; left:12px; right:12px; }
-.pr-card-body { padding:18px 20px 20px; display:flex; flex-direction:column; gap:12px; flex:1; }
-.pr-card-name { font-family:var(--pr-serif); font-weight:700; font-size:24px; margin:0; }
+.pr-card-body { padding:24px 24px 22px; display:flex; flex-direction:column; gap:14px; flex:1; }
+.pr-card-name { font-family:var(--pr-serif); font-weight:700; font-size:27px; line-height:1.15;
+  letter-spacing:.005em; margin:0; }
+.pr-card-lede { font-family:var(--pr-serif); font-style:italic; font-size:16px; line-height:1.5;
+  color:var(--pr-ivory); opacity:.9; margin:0; }
+.pr-card-points { list-style:none; margin:2px 0 0; padding:0; display:flex; flex-direction:column; gap:9px; }
+.pr-card-point { position:relative; padding-left:18px; font-size:13.5px; line-height:1.45; color:var(--pr-muted);
+  letter-spacing:.005em; }
+.pr-card-point::before { content:""; position:absolute; left:0; top:.55em; width:6px; height:6px; border-radius:50%;
+  background:linear-gradient(135deg,var(--pr-gold),var(--pr-gold2)); }
+.pr-badge-none { display:none; }
 .pr-card-title { color:var(--pr-gold2); font-size:14px; margin:-6px 0 0; }
 .pr-card-explanation { color:rgba(250,248,243,0.82); font-size:13.5px; line-height:1.5; margin:0; }
 .pr-card-product { font-size:12.5px; color:var(--pr-ivory); }
 .pr-card-product b { color:var(--pr-gold2); }
 .pr-card-psychology { font-size:12.5px; color:var(--pr-muted); font-style:italic; line-height:1.45; margin:0; }
-.pr-card-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:auto; padding-top:6px; }
+.pr-card-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:auto; padding-top:14px; }
 
 /* WOW score */
 .pr-score { display:inline-flex; align-items:baseline; gap:3px; background:rgba(12,14,20,0.72);
@@ -113,12 +122,12 @@
   letter-spacing:.1em; text-transform:uppercase; color:var(--pr-gold2); }
 
 /* Buttons */
-.pr-btn { font-family:var(--pr-sans); font-size:12.5px; font-weight:700; padding:9px 14px;
+.pr-btn { font-family:var(--pr-sans); font-size:13px; font-weight:700; letter-spacing:.02em; padding:11px 18px;
   border-radius:999px; cursor:pointer; border:1px solid var(--pr-border); background:transparent;
   color:var(--pr-ivory); transition:all .2s ease; }
 .pr-btn:hover { border-color:var(--pr-gold); }
 .pr-btn:focus-visible { outline:2px solid var(--pr-gold2); outline-offset:2px; }
-.pr-btn--love { background:linear-gradient(135deg,var(--pr-gold),var(--pr-gold2)); color:var(--pr-obsidian);
+.pr-btn--choose { background:linear-gradient(135deg,var(--pr-gold),var(--pr-gold2)); color:var(--pr-obsidian);
   border-color:transparent; }
 
 @keyframes pr-rise { to { opacity:1; transform:none; } }
@@ -155,18 +164,12 @@
 
   // src/MasterpieceBadge/index.ts
   function createMasterpieceBadge(passed) {
-    if (passed) {
-      return h(
-        "span",
-        { class: "pr-badge", role: "img", "aria-label": "Masterpiece \u2014 passed the WOW quality gate" },
-        h("span", { "aria-hidden": "true" }, "\u2728"),
-        "Masterpiece"
-      );
-    }
+    if (!passed) return h("span", { class: "pr-badge-none", "aria-hidden": "true" });
     return h(
       "span",
-      { class: "pr-badge pr-badge--pending", role: "img", "aria-label": "In review \u2014 not yet a masterpiece" },
-      "In review"
+      { class: "pr-badge", role: "img", "aria-label": "Masterpiece \u2014 passed the WOW quality gate" },
+      h("span", { "aria-hidden": "true" }, "\u2728"),
+      "Masterpiece"
     );
   }
 
@@ -180,10 +183,37 @@
     );
   }
 
+  // src/types.ts
+  var CTA_PRIMARY = "Choose This Design";
+  var CTA_SECONDARY = "More Details";
+  var LOADING_STAGES = [
+    "Understanding your celebration",
+    "Finding your strongest memories",
+    "Selecting your hero photograph",
+    "Building your family's story",
+    "Creating premium concepts",
+    "Final creative review"
+  ];
+  var REVEAL_TITLE = "Your Masterpieces Are Ready";
+  var REVEAL_SUBTITLE = "Our AI Creative Director created four unique concepts from your memories.";
+
   // src/ConceptCard/index.ts
+  function fallbackCopy(concept) {
+    return {
+      title: concept.conceptName,
+      emotionalSentence: concept.title || "A moment worth keeping, composed with care.",
+      bullets: [
+        "Museum-grade composition",
+        `Recommended as ${concept.recommendedProduct}`,
+        "Printed at 300 DPI on archival stock"
+      ]
+    };
+  }
   function createConceptCard(props) {
     const { concept, index, isDirectorsChoice, handlers = {} } = props;
-    const labelBits = [`${concept.conceptName} concept`, `WOW score ${Math.round(concept.wowScore)} of 100`];
+    const copy = props.copy ?? fallbackCopy(concept);
+    const bullets = copy.bullets.slice(0, 3);
+    const labelBits = [`${copy.title} concept`, `WOW score ${Math.round(concept.wowScore)} of 100`];
     if (concept.masterpiecePassed) labelBits.push("masterpiece");
     if (isDirectorsChoice) labelBits.push("Director's Choice");
     const preview = h(
@@ -198,27 +228,29 @@
       createWowScore(concept.wowScore)
     );
     const previewWrap = h("div", { class: "pr-card-media" }, preview, topline);
-    const button = (cls, text, ariaVerb, cb) => h(
+    const cta = (cls, text, ariaVerb, cb) => h(
       "button",
-      { type: "button", class: `pr-btn ${cls}`, "aria-label": `${ariaVerb}: ${concept.conceptName}`, onClick: () => cb?.(concept) },
+      { type: "button", class: `pr-btn ${cls}`, "aria-label": `${ariaVerb}: ${copy.title}`, onClick: () => cb?.(concept) },
       text
     );
     const actions = h(
       "div",
       { class: "pr-card-actions" },
-      button("pr-btn--love", "Love This", "Love this concept", handlers.onLove),
-      button("pr-btn--details", "See Details", "See details for", handlers.onDetails),
-      button("pr-btn--another", "Try Another Direction", "Try another direction than", handlers.onTryAnother)
+      cta("pr-btn--choose", CTA_PRIMARY, "Choose this design", handlers.onChoose),
+      cta("pr-btn--details", CTA_SECONDARY, "More details for", handlers.onDetails)
+    );
+    const points = h(
+      "ul",
+      { class: "pr-card-points" },
+      ...bullets.map((b) => h("li", { class: "pr-card-point" }, b))
     );
     const body = h(
       "div",
       { class: "pr-card-body" },
-      h("h3", { class: "pr-card-name" }, concept.conceptName),
-      concept.title ? h("p", { class: "pr-card-title" }, concept.title) : null,
-      createMasterpieceBadge(concept.masterpiecePassed),
-      h("p", { class: "pr-card-explanation" }, concept.creativeExplanation),
-      h("p", { class: "pr-card-product" }, "Recommended as ", h("b", {}, concept.recommendedProduct)),
-      h("p", { class: "pr-card-psychology" }, concept.purchasePsychology),
+      h("h3", { class: "pr-card-name" }, copy.title),
+      concept.masterpiecePassed ? createMasterpieceBadge(true) : null,
+      h("p", { class: "pr-card-lede" }, copy.emotionalSentence),
+      points,
       actions
     );
     const attrs = {
@@ -235,12 +267,13 @@
 
   // src/RevealGallery/index.ts
   function createRevealGallery(props) {
-    const { presentation, handlers } = props;
+    const { presentation, handlers, copyFor: copyFor2 } = props;
     const cards = presentation.concepts.map(
       (concept, i) => createConceptCard({
         concept,
         index: i,
         isDirectorsChoice: concept.conceptName === presentation.recommendedConcept,
+        copy: copyFor2?.(concept.conceptName),
         handlers
       })
     );
@@ -265,18 +298,6 @@
     });
     return gallery;
   }
-
-  // src/types.ts
-  var LOADING_STAGES = [
-    "Understanding your celebration",
-    "Finding your strongest memories",
-    "Selecting your hero photograph",
-    "Building your family's story",
-    "Creating premium concepts",
-    "Final creative review"
-  ];
-  var REVEAL_TITLE = "Your Masterpieces Are Ready";
-  var REVEAL_SUBTITLE = "Our AI Creative Director created four unique concepts from your memories.";
 
   // src/LoadingSequence/index.ts
   function createLoadingSequence(props = {}) {
@@ -367,7 +388,7 @@
 
   // src/PremiumReveal/index.ts
   function createPremiumReveal(props) {
-    const { presentation, handlers, skipLoading = false, loadingIntervalMs = 900, onRevealed } = props;
+    const { presentation, handlers, copyFor: copyFor2, skipLoading = false, loadingIntervalMs = 900, onRevealed } = props;
     injectStyles(document);
     const root = h("section", { class: "pr-root", role: "region", "aria-label": "Your masterpieces" });
     const renderReveal = () => {
@@ -382,7 +403,7 @@
           `Director\u2019s Choice: ${presentation.recommendedConcept}`
         )
       );
-      root.appendChild(createRevealGallery({ presentation, handlers }));
+      root.appendChild(createRevealGallery({ presentation, copyFor: copyFor2, handlers }));
       onRevealed?.();
     };
     if (skipLoading) {
@@ -1382,12 +1403,376 @@
     return { style: "", displayFont: "", supportingFont: "", headlineTreatment: "", labelTreatment: "", guidance: "" };
   }
 
+  // ../shared/art-direction-engine/src/types.ts
+  var SCHEMA_VERSION4 = "1.0.0";
+
+  // ../shared/art-direction-engine/src/philosophy.ts
+  var IDENTITIES = {
+    "Signature Edition": {
+      philosophy: {
+        thesis: "A luxury museum print \u2014 symmetry, restraint, and quiet confidence.",
+        balance: "symmetrical",
+        visualHierarchy: ["hero portrait", "title", "supporting grid", "gold hairline"],
+        focalPath: "A single centred axis: the eye lands on the hero and stays."
+      },
+      whitespace: { level: "generous", marginRatio: 0.075, gutterRatio: 0.022, rationale: "Gallery margins let the hero breathe; nothing crowds the frame." },
+      heroDominanceBase: 0.68,
+      framingStyle: "museum",
+      heroSpotlight: false,
+      heroCinematic: true,
+      heroFrame: "thin-gold",
+      supporting: { count: 4, cadence: "even", aspect: 1, gapRatio: 0.022, rationale: "Four evenly weighted memories \u2014 a disciplined predella beneath the hero." },
+      typography: {
+        style: "museum serif",
+        displayFont: "Cormorant Garamond",
+        supportingFont: "Outfit",
+        displayScale: 1,
+        tracking: "0.01em",
+        casing: "title",
+        alignment: "center",
+        headlineTreatment: "Centred display serif with generous leading",
+        labelTreatment: "Small caps, wide tracking, muted"
+      },
+      palette: { ground: "#0C0E14", accent: "#C9A84C", neutral: "#FAF8F3", rationale: "Obsidian ground, champagne gold used sparingly, ivory type." },
+      luxuryLevel: 88,
+      emotionalIntensity: 62,
+      treatment: { grade: { contrast: 1.02, saturate: 0.98, brightness: 1 }, vignette: 0.18, heroFrame: "thin-gold", supportingAspect: 1, cinematicHero: true }
+    },
+    "Luxury Gold": {
+      philosophy: {
+        thesis: "High-end editorial \u2014 fashion-magazine drama, gold at full voice.",
+        balance: "editorial",
+        visualHierarchy: ["spotlit hero", "oversized title", "gold accents", "few supporting"],
+        focalPath: "A spotlight pulls the eye to the hero, then the gold carries it down."
+      },
+      whitespace: { level: "dramatic", marginRatio: 0.055, gutterRatio: 0.018, rationale: "Tight margins press the drama toward the edges of the page." },
+      heroDominanceBase: 0.66,
+      framingStyle: "cinematic",
+      heroSpotlight: true,
+      heroCinematic: true,
+      heroFrame: "gold",
+      supporting: { count: 3, cadence: "sparse", aspect: 1, gapRatio: 0.018, rationale: "Only three supporting frames \u2014 scarcity is what makes the hero feel expensive." },
+      typography: {
+        style: "editorial display",
+        displayFont: "Cormorant Garamond",
+        supportingFont: "Outfit",
+        displayScale: 1.18,
+        tracking: "0.04em",
+        casing: "upper",
+        alignment: "center",
+        headlineTreatment: "Oversized display caps with wide tracking",
+        labelTreatment: "Gold small caps"
+      },
+      palette: { ground: "#0A0A0A", accent: "#E8C97A", neutral: "#FFFFFF", rationale: "Near-black ground, bright gold at full saturation, pure white type." },
+      luxuryLevel: 96,
+      emotionalIntensity: 70,
+      treatment: { grade: { contrast: 1.18, saturate: 1.05, brightness: 0.96 }, vignette: 0.38, heroFrame: "gold", supportingAspect: 1, cinematicHero: true }
+    },
+    "Family Legacy": {
+      philosophy: {
+        thesis: "Emotional storytelling \u2014 a layered photo journey, family first.",
+        balance: "layered",
+        visualHierarchy: ["hero", "story of supporting photos", "warm ground", "title"],
+        focalPath: "The hero anchors, then the eye walks the story left to right."
+      },
+      whitespace: { level: "controlled", marginRatio: 0.05, gutterRatio: 0.026, rationale: "Closer spacing gathers the memories together, like photographs on a mantel." },
+      heroDominanceBase: 0.58,
+      framingStyle: "intimate",
+      heroSpotlight: false,
+      heroCinematic: false,
+      heroFrame: "soft",
+      supporting: { count: 6, cadence: "journey", aspect: 1, gapRatio: 0.026, rationale: "Six memories in narrative order \u2014 the story matters as much as the hero." },
+      typography: {
+        style: "warm humanist",
+        displayFont: "Cormorant Garamond",
+        supportingFont: "Outfit",
+        displayScale: 0.94,
+        tracking: "0.005em",
+        casing: "title",
+        alignment: "center",
+        headlineTreatment: "Softer display serif, tighter leading",
+        labelTreatment: "Warm sentence case"
+      },
+      palette: { ground: "#1A1410", accent: "#C98B4C", neutral: "#F5EDE2", rationale: "Warm brown-black ground, amber accent, cream type \u2014 a family album." },
+      luxuryLevel: 74,
+      emotionalIntensity: 92,
+      treatment: { grade: { contrast: 1.04, saturate: 1.08, brightness: 1.02 }, vignette: 0.22, heroFrame: "soft", supportingAspect: 1, cinematicHero: false }
+    },
+    "Modern Editorial": {
+      philosophy: {
+        thesis: "A magazine cover \u2014 negative space, a large headline, nothing spare.",
+        balance: "asymmetrical",
+        visualHierarchy: ["headline", "off-centre hero", "negative space", "two supporting"],
+        focalPath: "The headline enters first, the hero answers it from the left."
+      },
+      whitespace: { level: "expansive", marginRatio: 0.09, gutterRatio: 0.03, rationale: "Negative space is the subject: the emptiness is what reads as contemporary." },
+      heroDominanceBase: 0.62,
+      framingStyle: "editorial",
+      heroSpotlight: false,
+      heroCinematic: false,
+      heroFrame: "minimal",
+      supporting: { count: 3, cadence: "crescendo", aspect: 1, gapRatio: 0.03, rationale: "Three frames, generously spaced \u2014 restraint is the whole point." },
+      typography: {
+        style: "contemporary minimal",
+        displayFont: "Cormorant Garamond",
+        supportingFont: "Outfit",
+        displayScale: 1.12,
+        tracking: "-0.01em",
+        casing: "title",
+        alignment: "left",
+        headlineTreatment: "Large left-aligned display with tight tracking",
+        labelTreatment: "Uppercase micro-labels"
+      },
+      palette: { ground: "#101216", accent: "#FAF8F3", neutral: "#9AA0A6", rationale: "Cool ink ground, ivory as the accent, grey type \u2014 light is the accent, not gold." },
+      luxuryLevel: 80,
+      emotionalIntensity: 54,
+      treatment: { grade: { contrast: 1.1, saturate: 0.8, brightness: 1.04 }, vignette: 0.1, heroFrame: "minimal", supportingAspect: 1, cinematicHero: false }
+    }
+  };
+  function clampHeroDominance(value, floor = 0.55, ceiling = 0.7) {
+    if (!Number.isFinite(value)) return floor;
+    return Math.min(ceiling, Math.max(floor, Math.round(value * 1e3) / 1e3));
+  }
+  function heroEmphasisFor(name, briefDominance) {
+    const id = IDENTITIES[name];
+    const brief = Number.isFinite(briefDominance) ? briefDominance : 0.5;
+    const dominanceRatio = clampHeroDominance(id.heroDominanceBase + (brief - 0.5) * 0.1);
+    return {
+      dominanceRatio,
+      framing: id.framingStyle,
+      spotlight: id.heroSpotlight,
+      cinematic: id.heroCinematic,
+      frame: id.heroFrame,
+      fillsFrame: true
+    };
+  }
+
+  // ../shared/art-direction-engine/src/story.ts
+  var STORY_BEATS = {
+    graduation: ["portrait", "diploma", "parents", "friends", "celebration", "cake"],
+    championship: ["portrait", "action", "team", "trophy", "celebration", "crowd"],
+    team: ["portrait", "action", "team", "trophy", "celebration", "crowd"],
+    wedding: ["portrait", "ceremony", "rings", "family", "celebration", "cake"],
+    family_reunion: ["portrait", "generations", "parents", "children", "gathering", "feast"],
+    memorial: ["portrait", "younger-years", "family", "friends", "legacy", "remembrance"]
+  };
+  var DEFAULT_BEATS = ["portrait", "moment", "family", "friends", "celebration", "detail"];
+  var BEAT_KEYWORDS = {
+    portrait: ["portrait", "headshot", "solo", "senior"],
+    // NOT 'cap'/'gown': graduation attire appears in many photos
+    diploma: ["diploma", "certificate", "scroll", "stage", "walk", "handshake"],
+    parents: ["parents", "mom", "mother", "dad", "father", "mum", "family"],
+    friends: ["friends", "classmates", "squad", "crew", "buddies"],
+    celebration: ["celebration", "party", "cheer", "toss", "confetti", "hug", "jump", "cap toss"],
+    cake: ["cake", "dessert", "toast", "champagne", "cupcake"],
+    action: ["action", "play", "game", "match", "shot", "run"],
+    team: ["team", "squad", "lineup", "huddle"],
+    trophy: ["trophy", "medal", "cup", "award", "banner"],
+    crowd: ["crowd", "stands", "fans", "stadium"],
+    ceremony: ["ceremony", "vows", "aisle", "altar"],
+    rings: ["rings", "ring", "bands"],
+    family: ["family", "relatives", "kin"],
+    generations: ["generations", "grandma", "grandpa", "grandparents"],
+    children: ["children", "kids", "cousins"],
+    gathering: ["gathering", "reunion", "group"],
+    feast: ["feast", "dinner", "meal", "table"],
+    "younger-years": ["young", "vintage", "archive", "old"],
+    legacy: ["legacy", "tribute"],
+    remembrance: ["remembrance", "memorial", "candle", "flowers"],
+    moment: [],
+    detail: ["detail", "closeup", "macro"]
+  };
+  function beatsForOccasion(occasion, override) {
+    if (override && override.length) return override;
+    return STORY_BEATS[occasion] ?? DEFAULT_BEATS;
+  }
+  function classifyPhoto(photo, beats) {
+    const name = String(photo.filename ?? "").toLowerCase();
+    for (const beat of beats) {
+      const keys = BEAT_KEYWORDS[beat] ?? [];
+      const hit = keys.find((k) => name.includes(k));
+      if (hit) return { beat, reason: `Filename mentions \u201C${hit}\u201D.` };
+    }
+    const faces = typeof photo.faceCount === "number" ? photo.faceCount : 0;
+    if (faces === 1 && beats.includes("portrait")) return { beat: "portrait", reason: "A single subject reads as a portrait." };
+    if (faces >= 4 && beats.includes("friends")) return { beat: "friends", reason: `${faces} faces read as a group of friends.` };
+    if (faces >= 2 && beats.includes("parents")) return { beat: "parents", reason: `${faces} faces read as family.` };
+    if (faces >= 2 && beats.includes("family")) return { beat: "family", reason: `${faces} faces read as family.` };
+    return { beat: "unplaced", reason: "No narrative cue \u2014 kept in the customer\u2019s original order." };
+  }
+  function orderPhotoStory(photos, occasion, override) {
+    const beats = beatsForOccasion(occasion, override);
+    const list = Array.isArray(photos) ? photos.filter(Boolean) : [];
+    const tagged = list.map((photo, index) => {
+      const { beat, reason } = classifyPhoto(photo, beats);
+      const rank = beat === "unplaced" ? beats.length : beats.indexOf(beat);
+      return { photo, index, beat, reason, rank: rank < 0 ? beats.length : rank };
+    });
+    tagged.sort((a, b) => a.rank - b.rank || a.index - b.index);
+    return {
+      ordered: tagged.map((t) => t.photo),
+      flow: tagged.map((t) => ({ photoId: t.photo.photoId, beat: t.beat, reason: t.reason }))
+    };
+  }
+
+  // ../shared/art-direction-engine/src/copy.ts
+  var SENTIMENT = {
+    graduation: {
+      "Signature Edition": "The years of work, framed with the calm of a gallery wall.",
+      "Luxury Gold": "A milestone worth every ounce of gold on the page.",
+      "Family Legacy": "The whole journey \u2014 not just the moment it ended.",
+      "Modern Editorial": "Achievement, stated plainly, with nothing in the way."
+    },
+    championship: {
+      "Signature Edition": "The season distilled into one composed, permanent image.",
+      "Luxury Gold": "The trophy light, held on the page long after the whistle.",
+      "Family Legacy": "Every practice, every ride home, gathered in one story.",
+      "Modern Editorial": "Victory, stripped to its cleanest possible line."
+    },
+    wedding: {
+      "Signature Edition": "A day of promises, given the stillness it deserves.",
+      "Luxury Gold": "The glow of the evening, kept at full brightness.",
+      "Family Legacy": "Two families, one page, in the order the day unfolded.",
+      "Modern Editorial": "Love, edited down to what actually matters."
+    },
+    memorial: {
+      "Signature Edition": "A life, held quietly and with great care.",
+      "Luxury Gold": "A brightness that refuses to dim.",
+      "Family Legacy": "The story told the way the family remembers it.",
+      "Modern Editorial": "Presence, honoured with restraint."
+    }
+  };
+  var DEFAULT_SENTIMENT = {
+    "Signature Edition": "A moment worth keeping, composed like a gallery print.",
+    "Luxury Gold": "A moment worth keeping, lit like a magazine cover.",
+    "Family Legacy": "A moment worth keeping, told as the story it really was.",
+    "Modern Editorial": "A moment worth keeping, with nothing in the way."
+  };
+  function emotionalSentence(name, occasion) {
+    return SENTIMENT[occasion] && SENTIMENT[occasion][name] || DEFAULT_SENTIMENT[name];
+  }
+  var pct = (n) => `${Math.round(n * 100)}%`;
+  function bulletsFor(d) {
+    const heroPct = pct(d.hero.dominanceRatio);
+    switch (d.conceptName) {
+      case "Signature Edition":
+        return [
+          "Symmetrical museum composition",
+          `Hero commands ${heroPct} of the frame`,
+          "Champagne gold, used sparingly"
+        ];
+      case "Luxury Gold":
+        return [
+          "High-contrast editorial drama",
+          `Spotlit hero at ${heroPct} of the frame`,
+          `Only ${d.supporting.count} supporting frames \u2014 scarcity reads as luxury`
+        ];
+      case "Family Legacy":
+        return [
+          `A ${d.supporting.count}-photo journey, in story order`,
+          `Warm hierarchy, hero at ${heroPct}`,
+          "Amber and cream \u2014 the palette of a family album"
+        ];
+      case "Modern Editorial":
+        return [
+          "Magazine-cover negative space",
+          `Off-centre hero at ${heroPct}`,
+          "Restrained, contemporary palette \u2014 light is the accent"
+        ];
+    }
+  }
+  function copyFor(d, occasion) {
+    return {
+      title: d.conceptName,
+      emotionalSentence: emotionalSentence(d.conceptName, occasion),
+      bullets: bulletsFor(d)
+    };
+  }
+
+  // ../shared/art-direction-engine/src/engine.ts
+  var clone = (v) => structuredClone(v);
+  function directionFor(concept, brief, occasion, options) {
+    const name = concept.conceptName;
+    const id = IDENTITIES[name];
+    const hero = heroEmphasisFor(name, brief.heroStrategy?.dominanceRatio ?? 0.5);
+    const story = orderPhotoStory(concept.supportingPhotos, occasion, options.beats);
+    const supporting = { ...id.supporting, count: Math.min(id.supporting.count, story.ordered.length || id.supporting.count) };
+    const partial = {
+      conceptName: name,
+      philosophy: id.philosophy,
+      whitespace: id.whitespace,
+      hero,
+      supporting,
+      typography: id.typography,
+      palette: id.palette,
+      luxuryLevel: id.luxuryLevel,
+      emotionalIntensity: id.emotionalIntensity,
+      framingStyle: id.framingStyle,
+      storytellingFlow: story.flow,
+      treatment: { ...id.treatment, heroFrame: hero.frame, supportingAspect: id.supporting.aspect, cinematicHero: hero.cinematic }
+    };
+    return { ...partial, copy: copyFor(partial, occasion) };
+  }
+  function applyDirection(concept, d, occasion, options) {
+    const out = clone(concept);
+    const story = orderPhotoStory(concept.supportingPhotos, occasion, options.beats);
+    out.supportingPhotos = story.ordered;
+    out.layoutRecipe = {
+      ...out.layoutRecipe,
+      arrangement: d.philosophy.thesis,
+      heroPlacement: `${d.hero.framing} framing, fills the frame`,
+      heroDominanceRatio: d.hero.dominanceRatio,
+      // always 0.55–0.70
+      supportingLayout: `${d.supporting.cadence} rhythm of ${d.supporting.count}`,
+      balance: d.philosophy.balance,
+      whitespace: `${d.whitespace.level} \u2014 ${d.whitespace.rationale}`,
+      focalPath: d.philosophy.focalPath,
+      maxSupporting: d.supporting.count
+      // rhythm: how many are drawn
+    };
+    out.colorRecipe = {
+      ...out.colorRecipe,
+      ground: d.palette.ground,
+      accent: d.palette.accent,
+      neutral: d.palette.neutral,
+      palette: [
+        { hex: d.palette.ground, role: "ground" },
+        { hex: d.palette.accent, role: "accent" },
+        { hex: d.palette.neutral, role: "neutral" }
+      ],
+      guidance: d.palette.rationale
+    };
+    out.typographyRecipe = {
+      ...out.typographyRecipe,
+      style: d.typography.style,
+      displayFont: d.typography.displayFont,
+      supportingFont: d.typography.supportingFont,
+      headlineTreatment: d.typography.headlineTreatment,
+      labelTreatment: d.typography.labelTreatment,
+      guidance: `${d.philosophy.thesis} Alignment ${d.typography.alignment}, tracking ${d.typography.tracking}.`
+    };
+    return out;
+  }
+  function directArt(memoryProfile, creativeBrief, wowPresentation, options = {}) {
+    const occasion = String(memoryProfile.occasion ?? "unknown");
+    const directions = wowPresentation.concepts.filter((c) => IDENTITIES[c.conceptName]).map((c) => directionFor(c, creativeBrief, occasion, options));
+    const byName = new Map(directions.map((d) => [d.conceptName, d]));
+    const presentation = clone(wowPresentation);
+    presentation.concepts = presentation.concepts.map((c) => {
+      const d = byName.get(c.conceptName);
+      return d ? applyDirection(c, d, occasion, options) : c;
+    });
+    return { schemaVersion: SCHEMA_VERSION4, occasion, directions, presentation };
+  }
+
   // demo/pipeline.ts
   function runPipeline(memoryProfile) {
     const creativeBrief = generateCreativeBrief(memoryProfile);
-    const wowPresentation = generateWOWPresentation(memoryProfile, creativeBrief);
+    const rawPresentation = generateWOWPresentation(memoryProfile, creativeBrief);
+    const artDirection = directArt(memoryProfile, creativeBrief, rawPresentation);
+    const wowPresentation = artDirection.presentation;
     const renderPlan = generateRenderPlan(memoryProfile, creativeBrief, wowPresentation);
-    return { memoryProfile, creativeBrief, wowPresentation, renderPlan };
+    return { memoryProfile, creativeBrief, wowPresentation, artDirection, renderPlan };
   }
   function renderPlanForConcept(result, conceptName) {
     return generateRenderPlan(result.memoryProfile, result.creativeBrief, result.wowPresentation, { conceptName });
@@ -2821,7 +3206,7 @@
     ctx.save();
     if (grade) {
       try {
-        ctx.filter = "contrast(1.05) saturate(0.94) brightness(0.97)";
+        ctx.filter = `contrast(${grade.contrast}) saturate(${grade.saturate}) brightness(${grade.brightness})`;
       } catch {
       }
     }
@@ -2831,10 +3216,10 @@
     ctx.rotate(turns * Math.PI / 2);
     ctx.drawImage(src, -iw / 2, -ih / 2, iw, ih);
     ctx.restore();
-    if (grade) {
+    if (grade && grade.vignette > 0) {
       const g = ctx.createRadialGradient(outW / 2, outH / 2, Math.min(outW, outH) * 0.32, outW / 2, outH / 2, Math.max(outW, outH) * 0.72);
       g.addColorStop(0, "rgba(12,14,20,0)");
-      g.addColorStop(1, "rgba(12,14,20,0.30)");
+      g.addColorStop(1, `rgba(12,14,20,${grade.vignette})`);
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, outW, outH);
     }
@@ -2867,7 +3252,10 @@
     const curate = options.curate !== false;
     const photos = [];
     const frames = {};
+    const t = options.treatmentFor?.(req.conceptName);
+    const supportingGrade = curate ? { contrast: t?.grade.contrast ?? 1.05, saturate: t?.grade.saturate ?? 0.94, brightness: t?.grade.brightness ?? 0.97, vignette: t?.vignette ?? 0.3 } : null;
     const heroAspect = heroBoxAspect(req.arrangement, w, h2);
+    const supportingAspect = t?.supportingAspect ?? SUPPORTING_ASPECT;
     const imageFor = (ref, targetAspect, grade, maxEdge) => {
       const src = resolveImage && resolveImage(ref);
       if (!src) return makePlaceholderPhoto(doc, ref.filename ?? ref.photoId, targetAspect, req.theme);
@@ -2878,7 +3266,7 @@
         declaredOrientation: ref.orientation,
         userRotationDegrees: rotationFor ? rotationFor(ref) : 0
       });
-      const key = `${ref.photoId}|${correction.quarterTurns}|${targetAspect.toFixed(4)}|${grade ? 1 : 0}|${maxEdge}`;
+      const key = `${ref.photoId}|${correction.quarterTurns}|${targetAspect.toFixed(4)}|${grade ? `${grade.contrast}:${grade.saturate}:${grade.brightness}:${grade.vignette}` : "raw"}|${maxEdge}`;
       const hit = cache.get(key);
       if (hit) return hit;
       try {
@@ -2890,11 +3278,11 @@
       }
     };
     if (req.hero) {
-      photos.push({ id: req.hero.photoId, image: imageFor(req.hero, heroAspect, false, HERO_MAX_EDGE) });
-      frames[req.hero.photoId] = toFrame(req.hero.frame);
+      photos.push({ id: req.hero.photoId, image: imageFor(req.hero, heroAspect, null, HERO_MAX_EDGE) });
+      frames[req.hero.photoId] = toFrame(t?.heroFrame ?? req.hero.frame);
     }
     for (const s of req.supporting) {
-      photos.push({ id: s.photoId, image: imageFor(s, SUPPORTING_ASPECT, curate, SUPPORTING_MAX_EDGE) });
+      photos.push({ id: s.photoId, image: imageFor(s, supportingAspect, supportingGrade, SUPPORTING_MAX_EDGE) });
       frames[s.photoId] = toFrame(s.frame);
     }
     const theme = {
@@ -2913,7 +3301,7 @@
       frames,
       defaultFrame: "rounded",
       seed: req.seed,
-      cinematicHero: req.cinematicHero
+      cinematicHero: t ? t.cinematicHero : req.cinematicHero
     };
   }
   function createCanvasRenderer(options = {}) {
@@ -2949,7 +3337,7 @@
   }
 
   // ../shared/render-adapter/src/types.ts
-  var SCHEMA_VERSION5 = "1.0.0";
+  var SCHEMA_VERSION6 = "1.0.0";
   var REQUIRED_EXPORT_TARGETS = [
     "digital",
     "poster_18x24",
@@ -3127,7 +3515,7 @@
   function renderConcept(renderPlan, renderer, options = {}) {
     const arrangement = renderPlan.renderInstructions.arrangement;
     const base = {
-      schemaVersion: SCHEMA_VERSION5,
+      schemaVersion: SCHEMA_VERSION6,
       conceptName: renderPlan.conceptName,
       occasion: renderPlan.occasion,
       arrangement
@@ -4205,37 +4593,26 @@
   var CURRENT = null;
   var RENDERER = null;
   var RENDERER_TRIED = false;
-  function getRenderer() {
+  function getRenderer(directions) {
     if (!RENDERER_TRIED) {
       RENDERER_TRIED = true;
       try {
-        RENDERER = createCanvasRenderer({ previewMaxEdge: 900 });
+        RENDERER = createCanvasRenderer({ previewMaxEdge: 900, treatmentFor: (n) => directions.get(n)?.treatment });
       } catch {
         RENDERER = null;
       }
     }
     return RENDERER;
   }
-  var STATUS_LABEL = {
-    rendered: "RENDERED",
-    fallback: "FALLBACK",
-    failed: "FAILED"
-  };
   function paintCard(p) {
     const card = document.querySelector(`.pr-card[data-concept="${p.conceptName}"]`);
     if (!card) return false;
     const media = card.querySelector(".pr-card-media");
     const previewEl = card.querySelector(".pr-card-preview");
+    card.dataset.renderStatus = p.status;
     if (media) {
-      let badge = media.querySelector(".pr-render-status");
-      if (!badge) {
-        badge = document.createElement("span");
-        badge.className = "pr-render-status";
-        media.appendChild(badge);
-      }
-      badge.textContent = STATUS_LABEL[p.status];
-      badge.className = `pr-render-status pr-render-status--${p.status}`;
-      badge.title = p.reasons.join(" ") || `${p.status} (${p.renderTime}ms)`;
+      media.dataset.renderStatus = p.status;
+      media.title = p.reasons.join(" ") || `${p.status} (${p.renderTime}ms)`;
     }
     if (p.status === "rendered" && p.previewUri && previewEl) {
       const img = document.createElement("img");
@@ -4249,7 +4626,8 @@
     return false;
   }
   async function paintPreviews(result) {
-    const renderer = getRenderer();
+    const directions = new Map(result.artDirection.directions.map((d) => [d.conceptName, d]));
+    const renderer = getRenderer(directions);
     const total = result.wowPresentation.concepts.length;
     const summary = $("render-summary");
     const setSummary = (text, state) => {
@@ -4292,8 +4670,10 @@
     renderPlanDetails(focusConcept ? renderPlanForConcept(result, focusConcept) : result.renderPlan);
     const host = $("reveal");
     if (host) {
+      const directions = new Map(result.artDirection.directions.map((d) => [d.conceptName, d]));
       mountPremiumReveal(host, {
         presentation: result.wowPresentation,
+        copyFor: (name) => directions.get(name)?.copy,
         skipLoading,
         loadingIntervalMs: 650,
         onRevealed: () => {
@@ -4301,15 +4681,14 @@
           paintPreviews(result);
         },
         handlers: {
-          onLove: (c) => {
+          onChoose: (c) => {
             focus(c);
-            toast(`\u2764 Loved: ${c.conceptName}`);
+            toast(`\u2713 Chosen: ${c.conceptName}`);
           },
           onDetails: (c) => {
             focus(c);
             toast(`\u{1F50D} Render plan: ${c.conceptName}`);
-          },
-          onTryAnother: (c) => toast(`\u21BB Try another than: ${c.conceptName}`)
+          }
         }
       });
     }

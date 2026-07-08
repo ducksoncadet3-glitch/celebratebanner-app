@@ -11,27 +11,44 @@ import type {
 
 export type { WowPresentation, WowConcept, WowConceptName };
 
+/** The two customer-facing calls to action. Internal status words never appear. */
+export const CTA_PRIMARY = 'Choose This Design';
+export const CTA_SECONDARY = 'More Details';
+
+/** Art-directed card copy: a title, ONE emotional sentence, THREE premium bullets. */
+export interface ConceptCopy {
+  title: string;
+  emotionalSentence: string;
+  bullets: readonly string[];
+}
+
 /** Callbacks fired by the reveal UI. None touch checkout or pricing. */
 export interface ConceptHandlers {
-  onLove?: (concept: WowConcept) => void;         // "Love This"
-  onDetails?: (concept: WowConcept) => void;      // "See Details"
-  onTryAnother?: (concept: WowConcept) => void;   // "Try Another Direction"
+  onChoose?: (concept: WowConcept) => void;    // primary CTA — "Choose This Design"
+  onDetails?: (concept: WowConcept) => void;   // secondary CTA — "More Details"
 }
+
+/** Resolve the Art Director's copy for a concept (undefined → house fallback copy). */
+export type CopyResolver = (conceptName: WowConceptName) => ConceptCopy | undefined;
 
 export interface ConceptCardProps {
   concept: WowConcept;
   index: number;
   isDirectorsChoice: boolean;
+  /** Art-directed copy for this concept. */
+  copy?: ConceptCopy;
   handlers?: ConceptHandlers;
 }
 
 export interface RevealGalleryProps {
   presentation: WowPresentation;
+  copyFor?: CopyResolver;
   handlers?: ConceptHandlers;
 }
 
 export interface PremiumRevealProps {
   presentation: WowPresentation;
+  copyFor?: CopyResolver;
   handlers?: ConceptHandlers;
   /** Skip the loading intro (default false → shows the six-stage sequence first). */
   skipLoading?: boolean;

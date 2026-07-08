@@ -267,7 +267,7 @@ test('empty graduation fields become dignified labels', () => {
 // (4) The WOW bundle carries the intelligence layer.
 test('the wow bundle includes the image-intelligence pass', () => {
   const bundle = readRepo('wow/wow-bridge.js');
-  for (const marker of ['planOrientationCorrection', 'heroBoxAspect', 'coverCropRect', 'sanitizeBannerText', 'prepareImage']) {
+  for (const marker of ['planOrientationCorrection', 'heroBoxAspect', 'coverCropRect', 'sanitizeBannerText', 'directArt', 'Choose This Design']) {
     assert.ok(bundle.includes(marker), `bundle should include ${marker}`);
   }
 });

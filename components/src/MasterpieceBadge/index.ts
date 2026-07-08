@@ -1,21 +1,16 @@
 import { h } from '../dom.ts';
 
 /**
- * MasterpieceBadge — signals whether a concept cleared the WOW gate (≥90).
- * Screen-reader labelled; decorative sparkle is aria-hidden.
+ * MasterpieceBadge — a quiet mark of distinction, shown ONLY when a concept cleared
+ * the WOW gate. A concept that did not clear it simply says nothing: "In review" is
+ * internal language and never reaches the customer.
  */
 export function createMasterpieceBadge(passed: boolean): HTMLElement {
-  if (passed) {
-    return h(
-      'span',
-      { class: 'pr-badge', role: 'img', 'aria-label': 'Masterpiece — passed the WOW quality gate' },
-      h('span', { 'aria-hidden': 'true' }, '✨'),
-      'Masterpiece',
-    );
-  }
+  if (!passed) return h('span', { class: 'pr-badge-none', 'aria-hidden': 'true' });
   return h(
     'span',
-    { class: 'pr-badge pr-badge--pending', role: 'img', 'aria-label': 'In review — not yet a masterpiece' },
-    'In review',
+    { class: 'pr-badge', role: 'img', 'aria-label': 'Masterpiece — passed the WOW quality gate' },
+    h('span', { 'aria-hidden': 'true' }, '\u2728'),
+    'Masterpiece',
   );
 }

@@ -7,13 +7,14 @@ import type { RevealGalleryProps } from '../types.ts';
  * Cards are focusable; arrow keys (and Home/End) move focus between them.
  */
 export function createRevealGallery(props: RevealGalleryProps): HTMLElement {
-  const { presentation, handlers } = props;
+  const { presentation, handlers, copyFor } = props;
 
   const cards = presentation.concepts.map((concept, i) =>
     createConceptCard({
       concept,
       index: i,
       isDirectorsChoice: concept.conceptName === presentation.recommendedConcept,
+      copy: copyFor?.(concept.conceptName),
       handlers,
     }),
   );

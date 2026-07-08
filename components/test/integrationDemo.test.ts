@@ -99,13 +99,15 @@ test('the demo html wires the fixture selector and every stage panel', () => {
 // name the existing engines explicitly rather than guarding all of shared/.
 // (index.html is intentionally + additively modified by the Sprint 9 WOW integration
 //  and is bounded by its own guard in wowBridge.test.ts, so it is excluded here.)
+// components/src is intentionally redesigned in Sprint 14 (the agency-grade concept
+// card), and is covered by its own layout/CTA tests — so it is not guarded here.
 const EXISTING_ENGINES = [
   'shared/render-engine', 'shared/render-orchestrator', 'shared/render-adapter',
   'shared/wow-engine', 'shared/creative-brief', 'shared/memory-profile',
-  'shared/refinement-engine', 'components/src',
+  'shared/refinement-engine',
 ].join(' ');
-test('the demo did not change the existing shared engines or reusable components', () => {
+test('the demo did not change the existing shared engines', () => {
   const root = execSync('git rev-parse --show-toplevel', { cwd: componentsDir }).toString().trim();
   const status = execSync(`git status --porcelain -- ${EXISTING_ENGINES}`, { cwd: root }).toString().trim();
-  assert.equal(status, '', `existing engines and components/src must be untouched, but git reports:\n${status}`);
+  assert.equal(status, '', `existing engines must be untouched, but git reports:\n${status}`);
 });

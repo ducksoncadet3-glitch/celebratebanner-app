@@ -1,0 +1,13 @@
+{
+  "name": "@celebratebanner/art-direction-engine",
+  "version": "0.1.0",
+  "description": "The AI Art Director. Turns four WOW concepts into four genuinely distinct visual identities: composition philosophy, visual hierarchy, whitespace strategy, hero emphasis, supporting rhythm, typography hierarchy, luxury level, emotional intensity, framing style, and storytelling flow. It DECIDES; the renderer EXECUTES. Deterministic, pixel-free.",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "test": "node --test 'test/*.test.ts'", "typecheck": "tsc --noEmit" },
+  "devDependencies": { "@types/node": "^22.10.0", "typescript": "^5.7.2" },
+  "files": ["src", "README.md"]
+}
