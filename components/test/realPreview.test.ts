@@ -160,7 +160,7 @@ test('progressive render never throws even when the renderer fails', async () =>
 // ── The demo binding is bundled ──────────────────────────────────────
 test('the demo bundle includes the renderer binding and the existing render engine', () => {
   const bundle = readFileSync(join(componentsDir, 'demo', 'premium-reveal-demo.js'), 'utf8');
-  for (const marker of ['createCanvasRenderer', 'renderConceptPreviewsProgressive', 'renderPreview', 'pr-render-status']) {
+  for (const marker of ['createCanvasRenderer', 'renderConceptPreviewsProgressive', 'renderPreview', 'directArt']) {
     assert.ok(bundle.includes(marker), `bundle should include ${marker}`);
   }
 });

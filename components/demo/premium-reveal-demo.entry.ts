@@ -139,17 +139,15 @@ let CURRENT: PipelineResult | null = null;
 // canvas the whole reveal simply falls back to placeholders.
 let RENDERER: Renderer | null = null;
 let RENDERER_TRIED = false;
-function getRenderer(): Renderer | null {
+function getRenderer(directions: Map<string, { treatment: import('../../shared/art-direction-engine/src/index.ts').RenderTreatment }>): Renderer | null {
   if (!RENDERER_TRIED) {
     RENDERER_TRIED = true;
-    try { RENDERER = createCanvasRenderer({ previewMaxEdge: 900 }); } catch { RENDERER = null; }
+    try { RENDERER = createCanvasRenderer({ previewMaxEdge: 900, treatmentFor: (n) => directions.get(n)?.treatment }); } catch { RENDERER = null; }
   }
   return RENDERER;
 }
 
-const STATUS_LABEL: Record<ConceptPreview['status'], string> = {
-  rendered: 'RENDERED', fallback: 'FALLBACK', failed: 'FAILED',
-};
+// Render status is INTERNAL: a data attribute for the inspector, never card copy.
 
 /** Paint one concept's artwork + badge into its card. */
 function paintCard(p: ConceptPreview): boolean {
@@ -157,13 +155,8 @@ function paintCard(p: ConceptPreview): boolean {
   if (!card) return false;
   const media = card.querySelector<HTMLElement>('.pr-card-media');
   const previewEl = card.querySelector<HTMLElement>('.pr-card-preview');
-  if (media) {
-    let badge = media.querySelector<HTMLElement>('.pr-render-status');
-    if (!badge) { badge = document.createElement('span'); badge.className = 'pr-render-status'; media.appendChild(badge); }
-    badge.textContent = STATUS_LABEL[p.status];
-    badge.className = `pr-render-status pr-render-status--${p.status}`;
-    badge.title = p.reasons.join(' ') || `${p.status} (${p.renderTime}ms)`;
-  }
+  card.dataset.renderStatus = p.status;
+  if (media) { media.dataset.renderStatus = p.status; media.title = p.reasons.join(' ') || `${p.status} (${p.renderTime}ms)`; }
   if (p.status === 'rendered' && p.previewUri && previewEl) {
     const img = document.createElement('img');
     img.className = 'pr-card-preview-img';
@@ -178,7 +171,8 @@ function paintCard(p: ConceptPreview): boolean {
 
 /** Render concepts ONE AT A TIME (non-blocking), painting + reporting progress. */
 async function paintPreviews(result: PipelineResult): Promise<void> {
-  const renderer = getRenderer();
+  const directions = new Map(result.artDirection.directions.map((d) => [d.conceptName, d]));
+  const renderer = getRenderer(directions);
   const total = result.wowPresentation.concepts.length;
   const summary = $('render-summary');
   const setSummary = (text: string, state: string): void => {
@@ -227,15 +221,16 @@ function render(key: string, skipLoading: boolean, focusConcept?: WowConceptName
 
   const host = $('reveal');
   if (host) {
+    const directions = new Map(result.artDirection.directions.map((d) => [d.conceptName, d]));
     mountPremiumReveal(host, {
       presentation: result.wowPresentation,
+      copyFor: (name) => directions.get(name)?.copy,
       skipLoading,
       loadingIntervalMs: 650,
       onRevealed: () => { toast(`Revealed: ${key}`); paintPreviews(result); },
       handlers: {
-        onLove: (c: WowConcept) => { focus(c); toast(`❤ Loved: ${c.conceptName}`); },
+        onChoose: (c: WowConcept) => { focus(c); toast(`✓ Chosen: ${c.conceptName}`); },
         onDetails: (c: WowConcept) => { focus(c); toast(`🔍 Render plan: ${c.conceptName}`); },
-        onTryAnother: (c: WowConcept) => toast(`↻ Try another than: ${c.conceptName}`),
       },
     });
   }

@@ -23,6 +23,7 @@ import {
   createPremiumReveal, mountPremiumReveal, createRevealGallery, createConceptCard,
   createDirectorChoice, createMasterpieceBadge, createWowScore, createLoadingSequence,
   injectStyles, STYLE_ELEMENT_ID, LOADING_STAGES, REVEAL_TITLE, REVEAL_SUBTITLE,
+  CTA_PRIMARY, CTA_SECONDARY,
 } from '../src/index.ts';
 import type { WowPresentation, WowConcept } from '../src/index.ts';
 
@@ -31,6 +32,12 @@ const PRES: WowPresentation = JSON.parse(
   readFileSync(join(here, '..', '..', 'shared', 'wow-engine', 'fixtures', 'graduation.json'), 'utf8'),
 );
 const concept0 = (): WowConcept => structuredClone(PRES.concepts[0]!);
+/** Art-directed copy fixture: title, ONE sentence, THREE bullets. */
+const COPY = {
+  title: 'Signature Edition',
+  emotionalSentence: 'The years of work, framed with the calm of a gallery wall.',
+  bullets: ['Symmetrical museum composition', 'Hero commands 69% of the frame', 'Champagne gold, used sparingly'],
+} as const;
 const failingConcept = (): WowConcept => ({ ...concept0(), masterpiecePassed: false, wowScore: 84 });
 
 const doc = dom.window.document;
@@ -55,10 +62,10 @@ test('MasterpieceBadge (passed) shows Masterpiece and is not pending', () => {
   assert.ok(!b.className.includes('pr-badge--pending'));
   assert.match(b.getAttribute('aria-label')!, /passed/i);
 });
-test('MasterpieceBadge (not passed) is pending and says In review', () => {
+test('MasterpieceBadge (not passed) says NOTHING to the customer', () => {
   const b = createMasterpieceBadge(false);
-  assert.ok(b.className.includes('pr-badge--pending'));
-  assert.match(b.textContent!, /In review/);
+  assert.equal(b.textContent, '', 'internal "In review" language never reaches the customer');
+  assert.equal(b.getAttribute('aria-hidden'), 'true');
 });
 
 // ── DirectorChoice ───────────────────────────────────────────────────
@@ -76,14 +83,30 @@ function card(overrides: Partial<Parameters<typeof createConceptCard>[0]> = {}):
 test('ConceptCard shows the concept name', () => {
   assert.equal(card().querySelector('.pr-card-name')!.textContent, PRES.concepts[0]!.conceptName);
 });
-test('ConceptCard shows the creative explanation', () => {
-  assert.equal(card().querySelector('.pr-card-explanation')!.textContent, PRES.concepts[0]!.creativeExplanation);
+test('ConceptCard shows ONE emotional sentence, not a paragraph', () => {
+  const c = card({ copy: COPY });
+  assert.equal(c.querySelector('.pr-card-lede')!.textContent, COPY.emotionalSentence);
+  assert.equal(c.querySelectorAll('.pr-card-lede').length, 1);
+  assert.equal(c.querySelectorAll('.pr-card-explanation,.pr-card-psychology,.pr-card-product').length, 0,
+    'the long paragraphs are gone');
 });
-test('ConceptCard shows the recommended product', () => {
-  assert.match(card().querySelector('.pr-card-product')!.textContent!, new RegExp(PRES.concepts[0]!.recommendedProduct));
+test('ConceptCard shows exactly three premium bullet points', () => {
+  const pts = [...card({ copy: COPY }).querySelectorAll('.pr-card-point')];
+  assert.equal(pts.length, 3);
+  assert.deepEqual(pts.map((p) => p.textContent), COPY.bullets);
 });
-test('ConceptCard shows the purchase psychology', () => {
-  assert.equal(card().querySelector('.pr-card-psychology')!.textContent, PRES.concepts[0]!.purchasePsychology);
+test('ConceptCard falls back to house copy when the art director is silent', () => {
+  const c = card();
+  assert.ok(c.querySelector('.pr-card-lede')!.textContent!.length > 0);
+  assert.equal(c.querySelectorAll('.pr-card-point').length, 3);
+});
+test('ConceptCard never shows internal status words', () => {
+  const text = card({ copy: COPY }).textContent!.toUpperCase();
+  for (const w of ['FALLBACK', 'RENDERED', 'IN REVIEW']) assert.ok(!text.includes(w), `card must not say ${w}`);
+});
+test('a Director\'s Choice card carries the badge; others do not', () => {
+  assert.ok(card({ isDirectorsChoice: true }).querySelector('.pr-choice'));
+  assert.equal(card({ isDirectorsChoice: false }).querySelector('.pr-choice'), null);
 });
 test('ConceptCard uses a preview placeholder (no image/canvas)', () => {
   const c = card();
@@ -95,9 +118,16 @@ test('ConceptCard contains a WOW score and a masterpiece badge', () => {
   assert.ok(c.querySelector('.pr-score'));
   assert.ok(c.querySelector('.pr-badge'));
 });
-test('ConceptCard has exactly the three action buttons with the right labels', () => {
+test('ConceptCard has exactly two CTAs: Choose This Design, then More Details', () => {
   const btns = [...card().querySelectorAll('.pr-card-actions button')];
-  assert.deepEqual(btns.map((b) => b.textContent), ['Love This', 'See Details', 'Try Another Direction']);
+  assert.deepEqual(btns.map((b) => b.textContent), [CTA_PRIMARY, CTA_SECONDARY]);
+  assert.equal(CTA_PRIMARY, 'Choose This Design');
+  assert.equal(CTA_SECONDARY, 'More Details');
+});
+test('the primary CTA is visually primary', () => {
+  const btns = [...card().querySelectorAll('.pr-card-actions button')];
+  assert.ok(btns[0].className.includes('pr-btn--choose'));
+  assert.ok(btns[1].className.includes('pr-btn--details'));
 });
 test('ConceptCard action buttons are type=button with concept-specific aria-labels', () => {
   for (const b of card().querySelectorAll('.pr-card-actions button')) {
@@ -105,22 +135,16 @@ test('ConceptCard action buttons are type=button with concept-specific aria-labe
     assert.match(b.getAttribute('aria-label')!, new RegExp(PRES.concepts[0]!.conceptName));
   }
 });
-test('ConceptCard "Love This" fires onLove with the concept', () => {
+test('ConceptCard "Choose This Design" fires onChoose with the concept', () => {
   let got: WowConcept | null = null;
-  const c = card({ handlers: { onLove: (x) => { got = x; } } });
-  (c.querySelector('.pr-btn--love') as HTMLElement).click();
+  const c = card({ handlers: { onChoose: (x: WowConcept) => { got = x; } } });
+  (c.querySelector('.pr-btn--choose') as HTMLElement).click();
   assert.equal(got!.conceptName, PRES.concepts[0]!.conceptName);
 });
-test('ConceptCard "See Details" fires onDetails', () => {
+test('ConceptCard "More Details" fires onDetails', () => {
   let n = 0;
   const c = card({ handlers: { onDetails: () => { n++; } } });
   (c.querySelector('.pr-btn--details') as HTMLElement).click();
-  assert.equal(n, 1);
-});
-test('ConceptCard "Try Another Direction" fires onTryAnother', () => {
-  let n = 0;
-  const c = card({ handlers: { onTryAnother: () => { n++; } } });
-  (c.querySelector('.pr-btn--another') as HTMLElement).click();
   assert.equal(n, 1);
 });
 test('ConceptCard is a focusable group with a descriptive aria-label', () => {
@@ -141,9 +165,10 @@ test('ConceptCard non-choice: no highlight, no aria-current, no ribbon', () => {
   assert.equal(c.getAttribute('aria-current'), null);
   assert.equal(c.querySelector('.pr-choice'), null);
 });
-test('ConceptCard for a sub-90 concept shows the In-review badge', () => {
+test('ConceptCard for a sub-90 concept shows NO badge and no internal wording', () => {
   const c = createConceptCard({ concept: failingConcept(), index: 1, isDirectorsChoice: false });
-  assert.ok(c.querySelector('.pr-badge--pending'));
+  assert.equal(c.querySelector('.pr-badge'), null, 'no Masterpiece badge below the gate');
+  assert.ok(!c.textContent!.toUpperCase().includes('IN REVIEW'));
 });
 test('ConceptCard carries its stagger index (style + data-index)', () => {
   const c = card({ index: 2 });
@@ -196,10 +221,14 @@ test('RevealGallery: Home/End focus first/last card', () => {
   assert.equal(doc.activeElement, cards[0]);
 });
 test('RevealGallery propagates handlers to its cards', () => {
-  let loved = '';
-  const gal = createRevealGallery({ presentation: PRES, handlers: { onLove: (c) => { loved = c.conceptName; } } });
-  (gal.querySelector('.pr-btn--love') as HTMLElement).click();
-  assert.equal(loved, PRES.concepts[0]!.conceptName);
+  let chosen = '';
+  const gal = createRevealGallery({ presentation: PRES, handlers: { onChoose: (c: WowConcept) => { chosen = c.conceptName; } } });
+  (gal.querySelector('.pr-btn--choose') as HTMLElement).click();
+  assert.equal(chosen, PRES.concepts[0]!.conceptName);
+});
+test('RevealGallery passes art-directed copy to each card', () => {
+  const gal = createRevealGallery({ presentation: PRES, copyFor: () => COPY });
+  assert.equal(gal.querySelector('.pr-card-lede')!.textContent, COPY.emotionalSentence);
 });
 
 // ── LoadingSequence ──────────────────────────────────────────────────

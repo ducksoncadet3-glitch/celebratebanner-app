@@ -126,11 +126,15 @@ test('WOW mode: reveal mounts with four concepts, selection + checkout work', sk
     await p.waitForTimeout(2500); // allow progressive render to finish
     const r = await p.evaluate(`(() => {
       const cards = [...document.querySelectorAll('#wow-reveal-slot .pr-card')];
-      const love = cards[1] && cards[1].querySelector('.pr-btn--love'); if (love) love.click();
+      const choose = cards[1] && cards[1].querySelector('.pr-btn--choose'); if (choose) choose.click();
       return {
         cards: cards.length,
-        badges: cards.map(c => c.querySelector('.pr-render-status') && c.querySelector('.pr-render-status').textContent),
+        badges: cards.map(c => c.dataset.renderStatus),
         rendered: document.querySelectorAll('#wow-reveal-slot .pr-card-preview-img').length,
+        ctas: cards[0] ? [...cards[0].querySelectorAll('.pr-card-actions button')].map(b => b.textContent) : [],
+        bullets: cards[0] ? cards[0].querySelectorAll('.pr-card-point').length : 0,
+        ledes: cards[0] ? cards[0].querySelectorAll('.pr-card-lede').length : 0,
+        internalWords: /FALLBACK|RENDERED|IN REVIEW/.test(document.querySelector('#wow-reveal-slot').innerText.toUpperCase()),
         selected: state.wowSelectedConcept,
         standardPreview: state.previewGenerated === true,
         checkout: canEnter(4),
@@ -138,7 +142,11 @@ test('WOW mode: reveal mounts with four concepts, selection + checkout work', sk
       };
     })()`) as Record<string, unknown>;
     assert.equal(r.cards, 4, 'four concept cards');
-    assert.ok((r.badges as unknown[]).every((x) => x), 'every card has a render-status badge');
+    assert.ok((r.badges as unknown[]).every((x) => x), 'every card carries an internal render status');
+    assert.deepEqual(r.ctas, ['Choose This Design', 'More Details'], 'the two customer CTAs');
+    assert.equal(r.bullets, 3, 'exactly three premium bullets');
+    assert.equal(r.ledes, 1, 'exactly one emotional sentence');
+    assert.equal(r.internalWords, false, 'no internal status words reach the customer');
     assert.ok((r.rendered as number) >= 1, 'at least one concept rendered real artwork');
     assert.equal(before, null);
     assert.ok(typeof r.selected === 'string' && (r.selected as string).length > 0, 'Love This updates state.wowSelectedConcept');
@@ -210,9 +218,9 @@ test('accessibility smoke: roles, labels, alt text, keyboard selection', skip, a
     assert.equal(a11y.imgsHaveAlt, true, 'rendered previews have alt text');
 
     // Keyboard: focus the first "Love This" button and activate it with Enter.
-    await p.evaluate(`(() => { const btn = document.querySelector('#wow-reveal-slot .pr-card .pr-btn--love'); btn.focus(); })()`);
-    const focused = await p.evaluate(`document.activeElement && document.activeElement.classList.contains('pr-btn--love')`);
-    assert.equal(focused, true, 'Love This button is keyboard-focusable');
+    await p.evaluate(`(() => { const btn = document.querySelector('#wow-reveal-slot .pr-card .pr-btn--choose'); btn.focus(); })()`);
+    const focused = await p.evaluate(`document.activeElement && document.activeElement.classList.contains('pr-btn--choose')`);
+    assert.equal(focused, true, '"Choose This Design" is keyboard-focusable');
     await p.keyboard.press('Enter');
     const selected = await p.evaluate('state.wowSelectedConcept');
     assert.ok(typeof selected === 'string' && (selected as string).length > 0, 'Enter on a focused button selects the concept');
@@ -236,8 +244,8 @@ test('mobile benchmark: render time for four concepts (warn-only)', skip, async 
       goto(3); generatePreview(true);
       const deadline = t0 + 20000;
       while (performance.now() < deadline) {
-        const badges = document.querySelectorAll('#wow-reveal-slot .pr-card .pr-render-status').length;
-        if (badges >= 4) break;
+        const done = document.querySelectorAll('#wow-reveal-slot .pr-card[data-render-status]').length;
+        if (done >= 4) break;
         await new Promise(r => requestAnimationFrame(r));
       }
       return Math.round(performance.now() - t0);

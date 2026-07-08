@@ -18,6 +18,7 @@ import { isWOWMode, safeBuildWowPipeline, selectConcept, rotationDegreesFor, san
 import type { BuilderState, BuilderPhoto } from './wow-bridge.ts';
 import { renderConceptPreviewsProgressive } from '../demo/concept-previews.ts';
 import type { ConceptPreview } from '../demo/concept-previews.ts';
+import type { ArtDirection } from '../../shared/art-direction-engine/src/index.ts';
 import type { RenderPhotoRef } from '../../shared/render-adapter/src/index.ts';
 import type { CanvasImage } from '../../shared/render-engine/src/types.ts';
 import type { PhotoInput } from '../../shared/memory-profile/src/index.ts';
@@ -91,9 +92,8 @@ interface RevealHandlers {
 }
 interface RevealOutcome { ok: boolean; rendered?: number; error?: string }
 
-const STATUS_LABEL: Record<ConceptPreview['status'], string> = {
-  rendered: 'RENDERED', fallback: 'FALLBACK', failed: 'FAILED',
-};
+// Render status is INTERNAL. It travels as a data attribute for tooling and never
+// appears as customer-facing words (no RENDERED / FALLBACK / IN REVIEW on the card).
 
 /** Resolve a photo reference to the customer's REAL uploaded <img> element. */
 function makeResolver(state: BuilderState) {
@@ -111,12 +111,8 @@ function paintOne(p: ConceptPreview, root: HTMLElement): boolean {
   if (!card) return false;
   const media = card.querySelector<HTMLElement>('.pr-card-media');
   const previewEl = card.querySelector<HTMLElement>('.pr-card-preview');
-  if (media) {
-    let badge = media.querySelector<HTMLElement>('.pr-render-status');
-    if (!badge) { badge = document.createElement('span'); badge.className = 'pr-render-status'; media.appendChild(badge); }
-    badge.textContent = STATUS_LABEL[p.status];
-    badge.className = `pr-render-status pr-render-status--${p.status}`;
-  }
+  card.dataset.renderStatus = p.status;   // internal only — never rendered as text
+  if (media) media.dataset.renderStatus = p.status;
   if (p.status === 'rendered' && p.previewUri && previewEl) {
     const img = document.createElement('img');
     img.className = 'pr-card-preview-img';
@@ -156,11 +152,16 @@ async function showReveal(state: BuilderState, slot: HTMLElement, handlers: Reve
       return { ok: false, error: outcome.error };
     }
     const { pipeline } = outcome.result;
+    // The Art Director's brief for each concept: copy for the card, treatment for the render.
+    const directions = new Map<string, ArtDirection>(pipeline.artDirection.directions.map((d) => [d.conceptName, d]));
+
     const renderer = createCanvasRenderer({
       previewMaxEdge: 900,
       resolveImage: makeResolver(state),
       // Honor the customer's own rotation; corrections are applied at draw time only.
       rotationFor: (ref) => rotationDegreesFor(state, ref.photoId),
+      // Four concepts → four visual identities, without touching the renderer.
+      treatmentFor: (name) => directions.get(name)?.treatment,
     });
 
     // Mount the reveal immediately (placeholders) so the UI is responsive right away.
@@ -168,11 +169,11 @@ async function showReveal(state: BuilderState, slot: HTMLElement, handlers: Reve
     const progress = ensureProgress(slot);
     mountPremiumReveal(slot, {
       presentation: pipeline.wowPresentation,
+      copyFor: (name) => directions.get(name)?.copy,
       skipLoading: true,
       handlers: {
-        onLove: (c) => { selectConcept(state, c.conceptName); handlers.onSelect?.(c.conceptName); },
+        onChoose: (c) => { selectConcept(state, c.conceptName); handlers.onSelect?.(c.conceptName); },
         onDetails: (c) => { handlers.onDetails?.(c.conceptName); },
-        onTryAnother: () => {},
       },
     });
     slot.insertBefore(progress, slot.firstChild); // keep progress at top after mount clears

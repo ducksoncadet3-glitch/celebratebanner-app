@@ -53,21 +53,30 @@ export const PREMIUM_REVEAL_CSS = `
 .pr-card:focus-within, .pr-card:hover { border-color:var(--pr-gold); }
 .pr-card--directors { border-color:var(--pr-gold);
   box-shadow:0 0 0 1px var(--pr-gold), 0 18px 50px rgba(201,168,76,0.14); }
-.pr-card-preview { aspect-ratio:4/3; background:
+.pr-card-preview { aspect-ratio:4/5; background:
   linear-gradient(135deg, rgba(201,168,76,0.10), rgba(12,14,20,0.6)); display:grid; place-items:center;
   color:var(--pr-muted); font-size:13px; letter-spacing:.1em; text-transform:uppercase;
   border-bottom:1px solid var(--pr-border); }
 .pr-card-preview-mark { text-align:center; }
 .pr-card-topline { display:flex; align-items:center; justify-content:space-between; gap:12px;
   position:absolute; top:12px; left:12px; right:12px; }
-.pr-card-body { padding:18px 20px 20px; display:flex; flex-direction:column; gap:12px; flex:1; }
-.pr-card-name { font-family:var(--pr-serif); font-weight:700; font-size:24px; margin:0; }
+.pr-card-body { padding:24px 24px 22px; display:flex; flex-direction:column; gap:14px; flex:1; }
+.pr-card-name { font-family:var(--pr-serif); font-weight:700; font-size:27px; line-height:1.15;
+  letter-spacing:.005em; margin:0; }
+.pr-card-lede { font-family:var(--pr-serif); font-style:italic; font-size:16px; line-height:1.5;
+  color:var(--pr-ivory); opacity:.9; margin:0; }
+.pr-card-points { list-style:none; margin:2px 0 0; padding:0; display:flex; flex-direction:column; gap:9px; }
+.pr-card-point { position:relative; padding-left:18px; font-size:13.5px; line-height:1.45; color:var(--pr-muted);
+  letter-spacing:.005em; }
+.pr-card-point::before { content:""; position:absolute; left:0; top:.55em; width:6px; height:6px; border-radius:50%;
+  background:linear-gradient(135deg,var(--pr-gold),var(--pr-gold2)); }
+.pr-badge-none { display:none; }
 .pr-card-title { color:var(--pr-gold2); font-size:14px; margin:-6px 0 0; }
 .pr-card-explanation { color:rgba(250,248,243,0.82); font-size:13.5px; line-height:1.5; margin:0; }
 .pr-card-product { font-size:12.5px; color:var(--pr-ivory); }
 .pr-card-product b { color:var(--pr-gold2); }
 .pr-card-psychology { font-size:12.5px; color:var(--pr-muted); font-style:italic; line-height:1.45; margin:0; }
-.pr-card-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:auto; padding-top:6px; }
+.pr-card-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:auto; padding-top:14px; }
 
 /* WOW score */
 .pr-score { display:inline-flex; align-items:baseline; gap:3px; background:rgba(12,14,20,0.72);
@@ -87,12 +96,12 @@ export const PREMIUM_REVEAL_CSS = `
   letter-spacing:.1em; text-transform:uppercase; color:var(--pr-gold2); }
 
 /* Buttons */
-.pr-btn { font-family:var(--pr-sans); font-size:12.5px; font-weight:700; padding:9px 14px;
+.pr-btn { font-family:var(--pr-sans); font-size:13px; font-weight:700; letter-spacing:.02em; padding:11px 18px;
   border-radius:999px; cursor:pointer; border:1px solid var(--pr-border); background:transparent;
   color:var(--pr-ivory); transition:all .2s ease; }
 .pr-btn:hover { border-color:var(--pr-gold); }
 .pr-btn:focus-visible { outline:2px solid var(--pr-gold2); outline-offset:2px; }
-.pr-btn--love { background:linear-gradient(135deg,var(--pr-gold),var(--pr-gold2)); color:var(--pr-obsidian);
+.pr-btn--choose { background:linear-gradient(135deg,var(--pr-gold),var(--pr-gold2)); color:var(--pr-obsidian);
   border-color:transparent; }
 
 @keyframes pr-rise { to { opacity:1; transform:none; } }
