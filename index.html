@@ -565,6 +565,13 @@ body.admin-mode .admin-badge { display: flex; }
       <div class="stand-mockup" id="stand-mockup" style="display:none;"></div>
     </div>
     <!-- WOW preview (private ?wow=1 flag only; hidden and inert by default) -->
+    <style>
+      /* Scoped to the WOW subtree only — honors reduced motion, styles progress. */
+      @media (prefers-reduced-motion: reduce){
+        #wow-reveal-slot, #wow-reveal-slot *{ animation:none !important; transition:none !important; scroll-behavior:auto !important; }
+      }
+      #wow-reveal-slot .wow-progress{ font:600 12px/1.4 'Outfit',system-ui,sans-serif; color:#C9A84C; letter-spacing:.04em; padding:8px 0; text-align:center; }
+    </style>
     <div id="wow-reveal-slot" aria-live="polite" style="display:none;margin-top:24px;"></div>
     <div class="design-mode-note" id="design-mode-note" style="display:none;">Smart Design selected the best photos for this layout.</div>
     <div class="gen-btn-wrap">
@@ -1184,7 +1191,7 @@ function wowMaybeReveal(){
     try{
       if(window.CBWOW&&typeof window.CBWOW.showReveal==='function'){
         var res=window.CBWOW.showReveal(state,slot,{onSelect:function(name){try{state.wowSelectedConcept=name;if(typeof cbScheduleSave==='function')cbScheduleSave();}catch(e){}}});
-        if(!res||!res.ok)wowFallback(slot);
+        Promise.resolve(res).then(function(r){if(!r||!r.ok)wowFallback(slot);}).catch(function(err){console.warn('[WOW] reveal error, standard preview kept:',err);wowFallback(slot);});
       }else{wowFallback(slot);}
     }catch(e){console.warn('[WOW] reveal error, standard preview kept:',e);wowFallback(slot);}
   }

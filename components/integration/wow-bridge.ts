@@ -96,6 +96,36 @@ export interface WowRunResult {
   previews: ConceptPreview[];
 }
 
+export interface WowPipelineResult {
+  memoryProfile: MemoryProfile;
+  pipeline: PipelineResult;
+}
+
+/**
+ * Build the pipeline (Memory Profile → … → Render Plans) WITHOUT rendering pixels.
+ * Fast and synchronous — lets the caller mount the reveal immediately and then render
+ * concept previews progressively (see renderConceptPreviewsProgressive).
+ */
+export function buildWowPipeline(state: BuilderState, options?: { enrich?: PhotoEnricher }): WowPipelineResult {
+  const memoryProfile = buildMemoryProfile(state, options?.enrich);
+  const pipeline = runPipeline(memoryProfile);
+  return { memoryProfile, pipeline };
+}
+
+export type WowBuildOutcome = { ok: true; result: WowPipelineResult } | { ok: false; error: string };
+
+/** buildWowPipeline wrapped so it NEVER throws — the customer path must never break. */
+export function safeBuildWowPipeline(state: BuilderState, options?: { enrich?: PhotoEnricher }): WowBuildOutcome {
+  try {
+    if (!Array.isArray(state.images) || state.images.length === 0) {
+      throw new Error('WOW pipeline skipped: no uploaded photos.');
+    }
+    return { ok: true, result: buildWowPipeline(state, options) };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 /**
  * Run the full pipeline for the current builder state and render concept previews
  * with the injected renderer. May throw (e.g. no photos) — callers that must never

@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { runPipeline } from '../demo/pipeline.ts';
 import type { MemoryProfile } from '../demo/pipeline.ts';
-import { renderConceptPreview, renderAllConceptPreviews } from '../demo/concept-previews.ts';
+import { renderConceptPreview, renderAllConceptPreviews, renderConceptPreviewsProgressive } from '../demo/concept-previews.ts';
 import type { Renderer, RenderRequest, RenderedImage } from '../../shared/render-adapter/src/index.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -117,10 +117,50 @@ test('failed: an unplannable result reports status "failed" and never throws', (
   assert.ok(p.reasons.length >= 1);
 });
 
+// ── Progressive (non-blocking) rendering + per-concept timeout ───────
+test('progressive render returns all four previews, in canonical order', async () => {
+  const previews = await renderConceptPreviewsProgressive(result(), successRenderer());
+  assert.equal(previews.length, 4);
+  assert.deepEqual(previews.map((p) => p.conceptName), ['Signature Edition', 'Luxury Gold', 'Family Legacy', 'Modern Editorial']);
+  assert.ok(previews.every((p) => p.status === 'rendered'));
+});
+test('progressive render yields between every concept and reports progress', async () => {
+  let yields = 0; const progress: number[] = [];
+  await renderConceptPreviewsProgressive(result(), successRenderer(), {
+    scheduleYield: () => { yields += 1; return Promise.resolve(); },
+    onProgress: (done, total) => { progress.push(done); assert.equal(total, 4); },
+  });
+  assert.equal(yields, 4);              // one yield before each of the four renders
+  assert.deepEqual(progress, [1, 2, 3, 4]);
+});
+test('per-concept timeout downgrades a slow render to a placeholder fallback', async () => {
+  // Clock jumps 5000ms across each render → every concept blows the 2000ms budget.
+  let t = 0;
+  const previews = await renderConceptPreviewsProgressive(result(), successRenderer(), {
+    perConceptTimeoutMs: 2000,
+    now: () => (t += 5000),
+  });
+  assert.ok(previews.every((p) => p.status === 'fallback' && p.previewUri === null));
+  assert.ok(previews[0].reasons.some((r) => /budget/i.test(r)));
+});
+test('a generous budget keeps renders (no false timeout)', async () => {
+  let t = 0;
+  const previews = await renderConceptPreviewsProgressive(result(), successRenderer(), {
+    perConceptTimeoutMs: 2000,
+    now: () => (t += 1), // ~1ms per render → well under budget
+  });
+  assert.ok(previews.every((p) => p.status === 'rendered'));
+});
+test('progressive render never throws even when the renderer fails', async () => {
+  const previews = await renderConceptPreviewsProgressive(result(), throwingRenderer());
+  assert.equal(previews.length, 4);
+  assert.ok(previews.every((p) => p.status === 'fallback'));
+});
+
 // ── The demo binding is bundled ──────────────────────────────────────
 test('the demo bundle includes the renderer binding and the existing render engine', () => {
   const bundle = readFileSync(join(componentsDir, 'demo', 'premium-reveal-demo.js'), 'utf8');
-  for (const marker of ['createCanvasRenderer', 'renderAllConceptPreviews', 'renderPreview', 'pr-render-status']) {
+  for (const marker of ['createCanvasRenderer', 'renderConceptPreviewsProgressive', 'renderPreview', 'pr-render-status']) {
     assert.ok(bundle.includes(marker), `bundle should include ${marker}`);
   }
 });
