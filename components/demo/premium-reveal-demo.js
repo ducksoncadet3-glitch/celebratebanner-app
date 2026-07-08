@@ -2737,15 +2737,16 @@
     ctx.fillText(filename, w / 2, h2 / 2);
     return c;
   }
-  function toRenderInput(doc, req, w, h2) {
+  function toRenderInput(doc, req, w, h2, resolveImage) {
     const photos = [];
     const frames = {};
+    const imageFor = (ref) => resolveImage && resolveImage(ref) || makePlaceholderPhoto(doc, ref.filename ?? ref.photoId, ref.orientation, req.theme);
     if (req.hero) {
-      photos.push({ id: req.hero.photoId, image: makePlaceholderPhoto(doc, req.hero.filename ?? req.hero.photoId, req.hero.orientation, req.theme) });
+      photos.push({ id: req.hero.photoId, image: imageFor(req.hero) });
       frames[req.hero.photoId] = toFrame(req.hero.frame);
     }
     for (const s of req.supporting) {
-      photos.push({ id: s.photoId, image: makePlaceholderPhoto(doc, s.filename ?? s.photoId, s.orientation, req.theme) });
+      photos.push({ id: s.photoId, image: imageFor(s) });
       frames[s.photoId] = toFrame(s.frame);
     }
     const theme = {
@@ -2777,7 +2778,7 @@
         const maxEdge = req.kind === "export" ? exportMaxEdge : previewMaxEdge;
         const { w, h: h2 } = capDims(req.widthPx, req.heightPx, maxEdge);
         const canvas = doc.createElement("canvas");
-        const input = toRenderInput(doc, req, w, h2);
+        const input = toRenderInput(doc, req, w, h2, options.resolveImage);
         const t0 = nowMs();
         renderPreview(canvas, input, { previewWidth: w, previewHeight: h2, dpr: 1 });
         const format = req.kind === "export" ? "jpg" : "png";
@@ -3040,9 +3041,15 @@
   }
 
   // demo/concept-previews.ts
+  var msg = (err) => err instanceof Error ? err.message : String(err);
   function renderConceptPreview(result, conceptName, renderer, options = {}) {
+    let plan;
     try {
-      const plan = renderPlanForConcept(result, conceptName);
+      plan = renderPlanForConcept(result, conceptName);
+    } catch (err) {
+      return { conceptName, status: "failed", previewUri: null, thumbnailUri: null, renderStatus: "error", renderTime: 0, reasons: [msg(err)] };
+    }
+    try {
       const rc = renderConcept(plan, renderer, options);
       if (rc.renderStatus === "completed" && rc.previewImage && rc.previewImage.uri) {
         return {
@@ -3057,7 +3064,7 @@
       }
       return {
         conceptName,
-        status: "failed",
+        status: "fallback",
         previewUri: null,
         thumbnailUri: null,
         renderStatus: rc.renderStatus,
@@ -3065,19 +3072,35 @@
         reasons: rc.qualityChecks.reasons
       };
     } catch (err) {
-      return {
-        conceptName,
-        status: "fallback",
-        previewUri: null,
-        thumbnailUri: null,
-        renderStatus: "error",
-        renderTime: 0,
-        reasons: [err instanceof Error ? err.message : String(err)]
-      };
+      return { conceptName, status: "fallback", previewUri: null, thumbnailUri: null, renderStatus: "error", renderTime: 0, reasons: [msg(err)] };
     }
   }
-  function renderAllConceptPreviews(result, renderer, options = {}) {
-    return result.wowPresentation.concepts.map((c) => renderConceptPreview(result, c.conceptName, renderer, options));
+  async function renderConceptPreviewsProgressive(result, renderer, options = {}) {
+    const concepts = result.wowPresentation.concepts;
+    const total = concepts.length;
+    const now = options.now ?? (() => typeof performance !== "undefined" ? performance.now() : Date.now());
+    const scheduleYield = options.scheduleYield ?? (() => Promise.resolve());
+    const budget = options.perConceptTimeoutMs ?? Infinity;
+    const { perConceptTimeoutMs: _t, onProgress: _p, scheduleYield: _y, now: _n, ...renderOptions } = options;
+    const out = [];
+    for (let i = 0; i < total; i++) {
+      await scheduleYield();
+      const t0 = now();
+      let preview = renderConceptPreview(result, concepts[i].conceptName, renderer, renderOptions);
+      const elapsed = now() - t0;
+      if (preview.status === "rendered" && elapsed > budget) {
+        preview = {
+          ...preview,
+          status: "fallback",
+          previewUri: null,
+          thumbnailUri: null,
+          reasons: [`Render exceeded the ${budget}ms budget (${Math.round(elapsed)}ms) \u2014 showing placeholder.`]
+        };
+      }
+      out.push(preview);
+      options.onProgress?.(i + 1, total, preview);
+    }
+    return out;
   }
 
   // ../shared/memory-profile/fixtures/graduation.json
@@ -3926,6 +3949,13 @@
   };
 
   // demo/premium-reveal-demo.entry.ts
+  function yieldToBrowser() {
+    return new Promise((resolve) => {
+      if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => resolve());
+      else setTimeout(resolve, 0);
+    });
+  }
+  var monotonic = () => typeof performance !== "undefined" ? performance.now() : Date.now();
   var PROFILES = {
     graduation: graduation_default,
     championship: championship_default,
@@ -3934,14 +3964,14 @@
     memorial: memorial_default
   };
   var $ = (id) => document.getElementById(id);
-  function toast(msg) {
+  function toast(msg2) {
     let el = $("demo-toast");
     if (!el) {
       el = document.createElement("div");
       el.id = "demo-toast";
       document.body.appendChild(el);
     }
-    el.textContent = msg;
+    el.textContent = msg2;
     el.classList.add("show");
     window.clearTimeout(toast._t);
     toast._t = window.setTimeout(() => el.classList.remove("show"), 2200);
@@ -4042,50 +4072,65 @@
     fallback: "FALLBACK",
     failed: "FAILED"
   };
-  function paintPreviews(result) {
+  function paintCard(p) {
+    const card = document.querySelector(`.pr-card[data-concept="${p.conceptName}"]`);
+    if (!card) return false;
+    const media = card.querySelector(".pr-card-media");
+    const previewEl = card.querySelector(".pr-card-preview");
+    if (media) {
+      let badge = media.querySelector(".pr-render-status");
+      if (!badge) {
+        badge = document.createElement("span");
+        badge.className = "pr-render-status";
+        media.appendChild(badge);
+      }
+      badge.textContent = STATUS_LABEL[p.status];
+      badge.className = `pr-render-status pr-render-status--${p.status}`;
+      badge.title = p.reasons.join(" ") || `${p.status} (${p.renderTime}ms)`;
+    }
+    if (p.status === "rendered" && p.previewUri && previewEl) {
+      const img = document.createElement("img");
+      img.className = "pr-card-preview-img";
+      img.alt = `${p.conceptName} preview`;
+      img.src = p.previewUri;
+      previewEl.replaceChildren(img);
+      previewEl.classList.add("is-rendered");
+      return true;
+    }
+    return false;
+  }
+  async function paintPreviews(result) {
     const renderer = getRenderer();
-    const previews = renderer ? renderAllConceptPreviews(result, renderer, { renderExports: false }) : result.wowPresentation.concepts.map((c) => ({
-      conceptName: c.conceptName,
-      status: "fallback",
-      previewUri: null,
-      thumbnailUri: null,
-      renderStatus: "error",
-      renderTime: 0,
-      reasons: ["No canvas available in this environment."]
-    }));
-    let rendered = 0;
-    for (const p of previews) {
-      const card = document.querySelector(`.pr-card[data-concept="${p.conceptName}"]`);
-      if (!card) continue;
-      const media = card.querySelector(".pr-card-media");
-      const previewEl = card.querySelector(".pr-card-preview");
-      if (media) {
-        let badge = media.querySelector(".pr-render-status");
-        if (!badge) {
-          badge = document.createElement("span");
-          badge.className = "pr-render-status";
-          media.appendChild(badge);
-        }
-        badge.textContent = STATUS_LABEL[p.status];
-        badge.className = `pr-render-status pr-render-status--${p.status}`;
-        badge.title = p.reasons.join(" ") || `${p.status} (${p.renderTime}ms)`;
-      }
-      if (p.status === "rendered" && p.previewUri && previewEl) {
-        const img = document.createElement("img");
-        img.className = "pr-card-preview-img";
-        img.alt = `${p.conceptName} preview`;
-        img.src = p.previewUri;
-        previewEl.replaceChildren(img);
-        previewEl.classList.add("is-rendered");
-        rendered += 1;
-      }
-    }
+    const total = result.wowPresentation.concepts.length;
     const summary = $("render-summary");
-    if (summary) {
-      const total = previews.length;
-      summary.textContent = rendered === total ? `Real artwork rendered for all ${total} concepts` : `Rendered ${rendered}/${total} concepts \xB7 ${total - rendered} on placeholder fallback`;
-      summary.dataset.state = rendered === total ? "ok" : rendered === 0 ? "fallback" : "partial";
+    const setSummary = (text, state) => {
+      if (summary) {
+        summary.textContent = text;
+        summary.dataset.state = state;
+      }
+    };
+    if (!renderer) {
+      for (const c of result.wowPresentation.concepts) {
+        paintCard({ conceptName: c.conceptName, status: "fallback", previewUri: null, thumbnailUri: null, renderStatus: "error", renderTime: 0, reasons: ["No canvas available in this environment."] });
+      }
+      setSummary(`Rendered 0/${total} concepts \xB7 placeholder fallback`, "fallback");
+      return;
     }
+    const previews = await renderConceptPreviewsProgressive(result, renderer, {
+      renderExports: false,
+      perConceptTimeoutMs: 2e3,
+      now: monotonic,
+      scheduleYield: yieldToBrowser,
+      onProgress: (done, t, preview) => {
+        paintCard(preview);
+        if (done < t) setSummary(`Rendering concept ${done} of ${t}\u2026`, "partial");
+      }
+    });
+    const rendered = previews.filter((p) => p.status === "rendered").length;
+    setSummary(
+      rendered === total ? `Real artwork rendered for all ${total} concepts` : `Rendered ${rendered}/${total} concepts \xB7 ${total - rendered} on placeholder fallback`,
+      rendered === total ? "ok" : rendered === 0 ? "fallback" : "partial"
+    );
   }
   function render(key, skipLoading, focusConcept) {
     const mp = PROFILES[key];

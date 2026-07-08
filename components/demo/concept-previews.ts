@@ -84,3 +84,56 @@ export function renderAllConceptPreviews(
 ): ConceptPreview[] {
   return result.wowPresentation.concepts.map((c) => renderConceptPreview(result, c.conceptName, renderer, options));
 }
+
+export interface ProgressiveOptions extends RenderConceptOptions {
+  /**
+   * Per-concept time budget in ms. A concept that renders slower than this is
+   * downgraded to a placeholder fallback (rendering is synchronous, so this is a
+   * post-hoc guard, not a preemption) — it never blocks the reveal.
+   */
+  perConceptTimeoutMs?: number;
+  /** Called after each concept resolves, for a progress indicator. */
+  onProgress?: (done: number, total: number, preview: ConceptPreview) => void;
+  /** Yields control to the event loop between concepts (rAF/idle in the browser). */
+  scheduleYield?: () => Promise<void>;
+  /** Monotonic clock (performance.now in the browser; injectable for tests). */
+  now?: () => number;
+}
+
+/**
+ * Render the four concepts ONE AT A TIME, yielding to the event loop between each so
+ * the UI stays responsive and a progress indicator can paint. A concept that blows
+ * its per-concept time budget is shown as a placeholder fallback. Never throws.
+ */
+export async function renderConceptPreviewsProgressive(
+  result: PipelineResult,
+  renderer: Renderer,
+  options: ProgressiveOptions = {},
+): Promise<ConceptPreview[]> {
+  const concepts = result.wowPresentation.concepts;
+  const total = concepts.length;
+  const now = options.now ?? (() => (typeof performance !== 'undefined' ? performance.now() : Date.now()));
+  const scheduleYield = options.scheduleYield ?? (() => Promise.resolve());
+  const budget = options.perConceptTimeoutMs ?? Infinity;
+  const { perConceptTimeoutMs: _t, onProgress: _p, scheduleYield: _y, now: _n, ...renderOptions } = options;
+
+  const out: ConceptPreview[] = [];
+  for (let i = 0; i < total; i++) {
+    await scheduleYield(); // let the browser paint the previous result / handle input
+    const t0 = now();
+    let preview = renderConceptPreview(result, concepts[i].conceptName, renderer, renderOptions);
+    const elapsed = now() - t0;
+    if (preview.status === 'rendered' && elapsed > budget) {
+      preview = {
+        ...preview,
+        status: 'fallback',
+        previewUri: null,
+        thumbnailUri: null,
+        reasons: [`Render exceeded the ${budget}ms budget (${Math.round(elapsed)}ms) — showing placeholder.`],
+      };
+    }
+    out.push(preview);
+    options.onProgress?.(i + 1, total, preview);
+  }
+  return out;
+}

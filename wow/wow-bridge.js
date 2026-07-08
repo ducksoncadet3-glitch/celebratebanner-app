@@ -3569,8 +3569,32 @@
       return { conceptName, status: "fallback", previewUri: null, thumbnailUri: null, renderStatus: "error", renderTime: 0, reasons: [msg(err)] };
     }
   }
-  function renderAllConceptPreviews(result, renderer, options = {}) {
-    return result.wowPresentation.concepts.map((c) => renderConceptPreview(result, c.conceptName, renderer, options));
+  async function renderConceptPreviewsProgressive(result, renderer, options = {}) {
+    const concepts = result.wowPresentation.concepts;
+    const total = concepts.length;
+    const now = options.now ?? (() => typeof performance !== "undefined" ? performance.now() : Date.now());
+    const scheduleYield = options.scheduleYield ?? (() => Promise.resolve());
+    const budget = options.perConceptTimeoutMs ?? Infinity;
+    const { perConceptTimeoutMs: _t, onProgress: _p, scheduleYield: _y, now: _n, ...renderOptions } = options;
+    const out = [];
+    for (let i = 0; i < total; i++) {
+      await scheduleYield();
+      const t0 = now();
+      let preview = renderConceptPreview(result, concepts[i].conceptName, renderer, renderOptions);
+      const elapsed = now() - t0;
+      if (preview.status === "rendered" && elapsed > budget) {
+        preview = {
+          ...preview,
+          status: "fallback",
+          previewUri: null,
+          thumbnailUri: null,
+          reasons: [`Render exceeded the ${budget}ms budget (${Math.round(elapsed)}ms) \u2014 showing placeholder.`]
+        };
+      }
+      out.push(preview);
+      options.onProgress?.(i + 1, total, preview);
+    }
+    return out;
   }
 
   // integration/wow-bridge.ts
@@ -3603,19 +3627,17 @@
   function buildMemoryProfile(state, enrich) {
     return generateMemoryProfile(photoInputsFromState(state, enrich), { occasion: occasionForTheme(state.theme?.id) });
   }
-  function runWowPipeline(state, renderer, options) {
-    const { enrich, ...renderOptions } = options ?? {};
-    const memoryProfile = buildMemoryProfile(state, enrich);
+  function buildWowPipeline(state, options) {
+    const memoryProfile = buildMemoryProfile(state, options?.enrich);
     const pipeline = runPipeline(memoryProfile);
-    const previews = renderAllConceptPreviews(pipeline, renderer, { renderExports: false, ...renderOptions });
-    return { memoryProfile, pipeline, previews };
+    return { memoryProfile, pipeline };
   }
-  function safeRunWowPipeline(state, renderer, options) {
+  function safeBuildWowPipeline(state, options) {
     try {
       if (!Array.isArray(state.images) || state.images.length === 0) {
         throw new Error("WOW pipeline skipped: no uploaded photos.");
       }
-      return { ok: true, result: runWowPipeline(state, renderer, options) };
+      return { ok: true, result: buildWowPipeline(state, options) };
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) };
     }
@@ -3625,6 +3647,16 @@
   }
 
   // integration/wow-bridge.entry.ts
+  var PER_CONCEPT_TIMEOUT_MS = 2e3;
+  function yieldToBrowser() {
+    return new Promise((resolve) => {
+      if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => resolve());
+      else if (typeof globalThis.requestIdleCallback === "function") {
+        globalThis.requestIdleCallback(() => resolve());
+      } else setTimeout(resolve, 0);
+    });
+  }
+  var monotonic = () => typeof performance !== "undefined" ? performance.now() : Date.now();
   function sampleSignals(el) {
     try {
       const S = 48;
@@ -3676,50 +3708,59 @@
       return el && typeof el.width === "number" && el.width > 0 ? el : null;
     };
   }
-  function paintPreviews(previews, root) {
-    let rendered = 0;
-    for (const p of previews) {
-      const card = root.querySelector(`.pr-card[data-concept="${p.conceptName}"]`);
-      if (!card) continue;
-      const media = card.querySelector(".pr-card-media");
-      const previewEl = card.querySelector(".pr-card-preview");
-      if (media) {
-        let badge = media.querySelector(".pr-render-status");
-        if (!badge) {
-          badge = document.createElement("span");
-          badge.className = "pr-render-status";
-          media.appendChild(badge);
-        }
-        badge.textContent = STATUS_LABEL[p.status];
-        badge.className = `pr-render-status pr-render-status--${p.status}`;
+  function paintOne(p, root) {
+    const card = root.querySelector(`.pr-card[data-concept="${p.conceptName}"]`);
+    if (!card) return false;
+    const media = card.querySelector(".pr-card-media");
+    const previewEl = card.querySelector(".pr-card-preview");
+    if (media) {
+      let badge = media.querySelector(".pr-render-status");
+      if (!badge) {
+        badge = document.createElement("span");
+        badge.className = "pr-render-status";
+        media.appendChild(badge);
       }
-      if (p.status === "rendered" && p.previewUri && previewEl) {
-        const img = document.createElement("img");
-        img.className = "pr-card-preview-img";
-        img.alt = `${p.conceptName} preview`;
-        img.src = p.previewUri;
-        previewEl.replaceChildren(img);
-        previewEl.classList.add("is-rendered");
-        rendered += 1;
-      }
+      badge.textContent = STATUS_LABEL[p.status];
+      badge.className = `pr-render-status pr-render-status--${p.status}`;
     }
-    return rendered;
+    if (p.status === "rendered" && p.previewUri && previewEl) {
+      const img = document.createElement("img");
+      img.className = "pr-card-preview-img";
+      img.alt = `${p.conceptName} preview`;
+      img.src = p.previewUri;
+      previewEl.replaceChildren(img);
+      previewEl.classList.add("is-rendered");
+      return true;
+    }
+    return false;
+  }
+  function ensureProgress(slot) {
+    let bar = slot.querySelector(".wow-progress");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.className = "wow-progress";
+      bar.setAttribute("role", "status");
+      bar.setAttribute("aria-live", "polite");
+      slot.insertBefore(bar, slot.firstChild);
+    }
+    return bar;
   }
   function hide(slot) {
     slot.style.display = "none";
     slot.replaceChildren();
   }
-  function showReveal(state, slot, handlers = {}) {
+  async function showReveal(state, slot, handlers = {}) {
     try {
-      const renderer = createCanvasRenderer({ previewMaxEdge: 900, resolveImage: makeResolver(state) });
-      const outcome = safeRunWowPipeline(state, renderer, { renderExports: false, enrich: enrichFromUpload });
+      const outcome = safeBuildWowPipeline(state, { enrich: enrichFromUpload });
       if (!outcome.ok) {
         console.warn("[WOW] pipeline unavailable, keeping standard preview:", outcome.error);
         hide(slot);
         return { ok: false, error: outcome.error };
       }
-      const { pipeline, previews } = outcome.result;
+      const { pipeline } = outcome.result;
+      const renderer = createCanvasRenderer({ previewMaxEdge: 900, resolveImage: makeResolver(state) });
       slot.style.display = "";
+      const progress = ensureProgress(slot);
       mountPremiumReveal(slot, {
         presentation: pipeline.wowPresentation,
         skipLoading: true,
@@ -3733,12 +3774,21 @@
           },
           onTryAnother: () => {
           }
-        },
-        // onRevealed fires synchronously during mount — paint from the slot (which now
-        // contains the reveal), not from mount's return value (still in its TDZ here).
-        onRevealed: () => paintPreviews(previews, slot)
+        }
       });
-      const rendered = paintPreviews(previews, slot);
+      slot.insertBefore(progress, slot.firstChild);
+      const previews = await renderConceptPreviewsProgressive(pipeline, renderer, {
+        renderExports: false,
+        perConceptTimeoutMs: PER_CONCEPT_TIMEOUT_MS,
+        now: monotonic,
+        scheduleYield: yieldToBrowser,
+        onProgress: (done, total, preview) => {
+          paintOne(preview, slot);
+          progress.textContent = done < total ? `Rendering concept ${done} of ${total}\u2026` : "";
+          if (done >= total) progress.remove();
+        }
+      });
+      const rendered = previews.filter((p) => p.status === "rendered").length;
       return { ok: true, rendered };
     } catch (err) {
       console.warn("[WOW] reveal failed, keeping standard preview:", err);

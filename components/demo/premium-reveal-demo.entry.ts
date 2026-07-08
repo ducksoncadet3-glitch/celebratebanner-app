@@ -18,9 +18,18 @@ import { mountPremiumReveal } from '../src/index.ts';
 import { runPipeline, renderPlanForConcept } from './pipeline.ts';
 import type { PipelineResult, RenderPlan, WowConcept, WowConceptName, MemoryProfile } from './pipeline.ts';
 import { createCanvasRenderer } from './renderer-binding.ts';
-import { renderAllConceptPreviews } from './concept-previews.ts';
+import { renderConceptPreviewsProgressive } from './concept-previews.ts';
 import type { ConceptPreview } from './concept-previews.ts';
 import type { Renderer } from '../../shared/render-adapter/src/index.ts';
+
+/** Yield to the browser between concept renders — rAF, then idle/timeout fallback. */
+function yieldToBrowser(): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => resolve());
+    else setTimeout(resolve, 0);
+  });
+}
+const monotonic = (): number => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
 // Memory Profiles are inlined into the bundle (no fetch / no server needed).
 import graduation from '../../shared/memory-profile/fixtures/graduation.json';
@@ -142,54 +151,64 @@ const STATUS_LABEL: Record<ConceptPreview['status'], string> = {
   rendered: 'RENDERED', fallback: 'FALLBACK', failed: 'FAILED',
 };
 
-/** Inject rendered artwork into each concept card; keep the placeholder on failure. */
-function paintPreviews(result: PipelineResult): void {
+/** Paint one concept's artwork + badge into its card. */
+function paintCard(p: ConceptPreview): boolean {
+  const card = document.querySelector<HTMLElement>(`.pr-card[data-concept="${p.conceptName}"]`);
+  if (!card) return false;
+  const media = card.querySelector<HTMLElement>('.pr-card-media');
+  const previewEl = card.querySelector<HTMLElement>('.pr-card-preview');
+  if (media) {
+    let badge = media.querySelector<HTMLElement>('.pr-render-status');
+    if (!badge) { badge = document.createElement('span'); badge.className = 'pr-render-status'; media.appendChild(badge); }
+    badge.textContent = STATUS_LABEL[p.status];
+    badge.className = `pr-render-status pr-render-status--${p.status}`;
+    badge.title = p.reasons.join(' ') || `${p.status} (${p.renderTime}ms)`;
+  }
+  if (p.status === 'rendered' && p.previewUri && previewEl) {
+    const img = document.createElement('img');
+    img.className = 'pr-card-preview-img';
+    img.alt = `${p.conceptName} preview`;
+    img.src = p.previewUri;
+    previewEl.replaceChildren(img);
+    previewEl.classList.add('is-rendered');
+    return true;
+  }
+  return false;
+}
+
+/** Render concepts ONE AT A TIME (non-blocking), painting + reporting progress. */
+async function paintPreviews(result: PipelineResult): Promise<void> {
   const renderer = getRenderer();
-  // No canvas at all → every concept falls back to its placeholder.
-  const previews: ConceptPreview[] = renderer
-    ? renderAllConceptPreviews(result, renderer, { renderExports: false })
-    : result.wowPresentation.concepts.map((c) => ({
-        conceptName: c.conceptName, status: 'fallback' as const, previewUri: null,
-        thumbnailUri: null, renderStatus: 'error' as const, renderTime: 0,
-        reasons: ['No canvas available in this environment.'],
-      }));
-
-  let rendered = 0;
-  for (const p of previews) {
-    const card = document.querySelector<HTMLElement>(`.pr-card[data-concept="${p.conceptName}"]`);
-    if (!card) continue;
-    const media = card.querySelector<HTMLElement>('.pr-card-media');
-    const previewEl = card.querySelector<HTMLElement>('.pr-card-preview');
-
-    // Per-concept status badge (rendered / fallback / failed).
-    if (media) {
-      let badge = media.querySelector<HTMLElement>('.pr-render-status');
-      if (!badge) { badge = document.createElement('span'); badge.className = 'pr-render-status'; media.appendChild(badge); }
-      badge.textContent = STATUS_LABEL[p.status];
-      badge.className = `pr-render-status pr-render-status--${p.status}`;
-      badge.title = p.reasons.join(' ') || `${p.status} (${p.renderTime}ms)`;
-    }
-
-    if (p.status === 'rendered' && p.previewUri && previewEl) {
-      const img = document.createElement('img');
-      img.className = 'pr-card-preview-img';
-      img.alt = `${p.conceptName} preview`;
-      img.src = p.previewUri;
-      previewEl.replaceChildren(img);   // replace the "Preview" mark with real artwork
-      previewEl.classList.add('is-rendered');
-      rendered += 1;
-    }
-    // fallback / failed: leave the existing placeholder mark untouched.
-  }
-
+  const total = result.wowPresentation.concepts.length;
   const summary = $('render-summary');
-  if (summary) {
-    const total = previews.length;
-    summary.textContent = rendered === total
-      ? `Real artwork rendered for all ${total} concepts`
-      : `Rendered ${rendered}/${total} concepts · ${total - rendered} on placeholder fallback`;
-    summary.dataset.state = rendered === total ? 'ok' : (rendered === 0 ? 'fallback' : 'partial');
+  const setSummary = (text: string, state: string): void => {
+    if (summary) { summary.textContent = text; summary.dataset.state = state; }
+  };
+
+  if (!renderer) {
+    for (const c of result.wowPresentation.concepts) {
+      paintCard({ conceptName: c.conceptName, status: 'fallback', previewUri: null, thumbnailUri: null, renderStatus: 'error', renderTime: 0, reasons: ['No canvas available in this environment.'] });
+    }
+    setSummary(`Rendered 0/${total} concepts · placeholder fallback`, 'fallback');
+    return;
   }
+
+  const previews = await renderConceptPreviewsProgressive(result, renderer, {
+    renderExports: false,
+    perConceptTimeoutMs: 2000,
+    now: monotonic,
+    scheduleYield: yieldToBrowser,
+    onProgress: (done, t, preview) => {
+      paintCard(preview);
+      if (done < t) setSummary(`Rendering concept ${done} of ${t}…`, 'partial');
+    },
+  });
+
+  const rendered = previews.filter((p) => p.status === 'rendered').length;
+  setSummary(
+    rendered === total ? `Real artwork rendered for all ${total} concepts` : `Rendered ${rendered}/${total} concepts · ${total - rendered} on placeholder fallback`,
+    rendered === total ? 'ok' : (rendered === 0 ? 'fallback' : 'partial'),
+  );
 }
 
 function render(key: string, skipLoading: boolean, focusConcept?: WowConceptName): void {
