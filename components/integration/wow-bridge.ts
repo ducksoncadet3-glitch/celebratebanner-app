@@ -17,6 +17,7 @@ import type { PipelineResult } from '../demo/pipeline.ts';
 import { renderAllConceptPreviews } from '../demo/concept-previews.ts';
 import type { ConceptPreview } from '../demo/concept-previews.ts';
 import type { Renderer, RenderConceptOptions } from '../../shared/render-adapter/src/index.ts';
+import { sanitizeBannerText, normalizeQuarterTurns, applyQuarterTurns } from '../../shared/image-intelligence/src/index.ts';
 
 /** The subset of the builder's `state` object the bridge reads (loosely typed). */
 export interface BuilderPhoto {
@@ -69,20 +70,48 @@ export function occasionForTheme(themeId?: string | null): OccasionType {
  */
 export type PhotoEnricher = (photo: BuilderPhoto) => Partial<PhotoInput>;
 
-/** Translate builder photo state into pixel-free PhotoInputs for the analysis stage. */
+/** The customer's rotation for a photo, in degrees (0 when absent/invalid). */
+export function rotationDegreesFor(state: BuilderState, photoId: string): number {
+  const map = state.rotations as Record<string, unknown> | undefined;
+  const n = Number(map?.[photoId]);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/**
+ * Translate builder photo state into pixel-free PhotoInputs for the analysis stage.
+ * Dimensions are ROTATION-AWARE: a photo the customer turned 90° is reported with its
+ * intended orientation, so hero selection and story hierarchy match what they see.
+ */
 export function photoInputsFromState(state: BuilderState, enrich?: PhotoEnricher): PhotoInput[] {
   const imgs = Array.isArray(state.images) ? state.images : [];
   return imgs
     .filter((p) => p && Number(p.w) > 0 && Number(p.h) > 0)
     .map((p) => {
-      const base: PhotoInput = { id: String(p.id), filename: p.name ?? undefined, width: Number(p.w), height: Number(p.h) };
+      const turns = normalizeQuarterTurns(rotationDegreesFor(state, String(p.id)));
+      const dims = applyQuarterTurns(Number(p.w), Number(p.h), turns);
+      const base: PhotoInput = { id: String(p.id), filename: p.name ?? undefined, width: dims.width, height: dims.height };
       return enrich ? { ...base, ...enrich(p) } : base;
     });
 }
 
-/** Build a Memory Profile from the current builder state. */
+/**
+ * Build a Memory Profile from the current builder state (rotation-aware).
+ *
+ * Near-duplicate suppression is NOT done here. The Memory Profile engine already
+ * detects duplicates by perceptual hash and skips them during hero + supporting
+ * selection ("kept the strongest of each") — we simply feed it the hash via `enrich`.
+ * Deleting photos before scoring would silently shrink the customer's story.
+ */
 export function buildMemoryProfile(state: BuilderState, enrich?: PhotoEnricher): MemoryProfile {
   return generateMemoryProfile(photoInputsFromState(state, enrich), { occasion: occasionForTheme(state.theme?.id) });
+}
+
+/**
+ * Banner text ready for a keepsake: real customer text preserved, raw builder
+ * placeholders ("e.g., Sarah Johnson") replaced with dignified occasion labels.
+ */
+export function sanitizedBannerText(state: BuilderState): Record<string, string> {
+  return sanitizeBannerText(state.bannerText, occasionForTheme(state.theme?.id));
 }
 
 export interface WowRunOptions extends RenderConceptOptions {

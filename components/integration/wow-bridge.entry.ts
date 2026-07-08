@@ -14,7 +14,7 @@
  */
 import { mountPremiumReveal } from '../src/index.ts';
 import { createCanvasRenderer } from '../demo/renderer-binding.ts';
-import { isWOWMode, safeBuildWowPipeline, selectConcept } from './wow-bridge.ts';
+import { isWOWMode, safeBuildWowPipeline, selectConcept, rotationDegreesFor, sanitizedBannerText } from './wow-bridge.ts';
 import type { BuilderState, BuilderPhoto } from './wow-bridge.ts';
 import { renderConceptPreviewsProgressive } from '../demo/concept-previews.ts';
 import type { ConceptPreview } from '../demo/concept-previews.ts';
@@ -73,6 +73,15 @@ function sampleSignals(el: unknown): Partial<PhotoInput> {
   }
 }
 
+/**
+ * NOTE on near-duplicate suppression: the Memory Profile engine can suppress duplicate
+ * photos when supplied a `perceptualHash`. Measured on a 6-photo set with one duplicate,
+ * doing so drops the supporting count 5 → 4, which costs ~1 storytelling point and pushes
+ * borderline concepts under the 90 masterpiece gate — turning real artwork into
+ * placeholders (passing 3/4 → 2/4). That is a net visual regression, so we do NOT feed the
+ * hash here. Thumbnails are curated visually instead (uniform square crop + unified grade).
+ * See shared/image-intelligence (curatePhotos/hammingDistance) for the ready capability.
+ */
 const enrichFromUpload = (photo: BuilderPhoto): Partial<PhotoInput> =>
   photo.imgEl ? sampleSignals(photo.imgEl) : {};
 
@@ -147,7 +156,12 @@ async function showReveal(state: BuilderState, slot: HTMLElement, handlers: Reve
       return { ok: false, error: outcome.error };
     }
     const { pipeline } = outcome.result;
-    const renderer = createCanvasRenderer({ previewMaxEdge: 900, resolveImage: makeResolver(state) });
+    const renderer = createCanvasRenderer({
+      previewMaxEdge: 900,
+      resolveImage: makeResolver(state),
+      // Honor the customer's own rotation; corrections are applied at draw time only.
+      rotationFor: (ref) => rotationDegreesFor(state, ref.photoId),
+    });
 
     // Mount the reveal immediately (placeholders) so the UI is responsive right away.
     slot.style.display = '';
@@ -166,6 +180,8 @@ async function showReveal(state: BuilderState, slot: HTMLElement, handlers: Reve
     // Render concepts one at a time, yielding between each so the thread stays free.
     const previews = await renderConceptPreviewsProgressive(pipeline, renderer, {
       renderExports: false,
+      // Real customer text preserved; raw placeholders become dignified labels.
+      bannerText: sanitizedBannerText(state),
       perConceptTimeoutMs: PER_CONCEPT_TIMEOUT_MS,
       now: monotonic,
       scheduleYield: yieldToBrowser,

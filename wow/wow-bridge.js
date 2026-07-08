@@ -420,8 +420,8 @@
     const effH = swap ? iw : ih;
     const coverScale = Math.max(w / effW, h2 / effH);
     const containScale = Math.min(w / effW, h2 / effH);
-    const cropRatio = coverScale / containScale;
-    const useContain = img._useContain === true || cropRatio > 1.55;
+    const cropRatio2 = coverScale / containScale;
+    const useContain = img._useContain === true || cropRatio2 > 1.55;
     const scale = useContain ? containScale : coverScale;
     const dw = iw * scale;
     const dh = ih * scale;
@@ -1702,6 +1702,136 @@
     renderBanner(ctx, { ...input, width: W, height: H });
   }
 
+  // ../shared/image-intelligence/src/orientation.ts
+  var SQUARE_TOLERANCE = 0.02;
+  function detectOrientation(width, height, tolerance = SQUARE_TOLERANCE) {
+    if (!(width > 0) || !(height > 0)) return "square";
+    const ratio = width / height;
+    if (Math.abs(ratio - 1) <= tolerance) return "square";
+    return ratio > 1 ? "landscape" : "portrait";
+  }
+  function normalizeQuarterTurns(value) {
+    const n = typeof value === "number" ? value : Number(value);
+    if (!Number.isFinite(n)) return 0;
+    const turns = Math.abs(n) >= 45 ? Math.round(n / 90) : Math.round(n);
+    const wrapped = (turns % 4 + 4) % 4;
+    return wrapped;
+  }
+  function applyQuarterTurns(width, height, turns) {
+    return turns % 2 === 1 ? { width: height, height: width } : { width, height };
+  }
+  var norm = (o) => o === "portrait" || o === "landscape" || o === "square" ? o : null;
+  function planOrientationCorrection(input) {
+    const { width, height } = input;
+    if (!(width > 0) || !(height > 0) || !Number.isFinite(width) || !Number.isFinite(height)) {
+      return {
+        quarterTurns: 0,
+        corrected: false,
+        reason: "Dimensions unavailable \u2014 orientation left untouched.",
+        effective: { width: width || 0, height: height || 0, orientation: "square" }
+      };
+    }
+    const reasons = [];
+    let turns = normalizeQuarterTurns(input.userRotationDegrees);
+    let eff = applyQuarterTurns(width, height, turns);
+    if (turns !== 0) {
+      reasons.push(`Honored the customer's ${turns * 90}\xB0 rotation.`);
+    } else {
+      const declared = norm(input.declaredOrientation);
+      const actual = detectOrientation(eff.width, eff.height);
+      if (declared && declared !== "square" && actual !== "square" && declared !== actual) {
+        turns = 1;
+        eff = applyQuarterTurns(width, height, turns);
+        reasons.push(`Corrected a ${actual} image the pipeline expected to be ${declared}.`);
+      }
+    }
+    return {
+      quarterTurns: turns,
+      corrected: turns !== 0,
+      reason: reasons.length ? reasons.join(" ") : "Orientation already correct \u2014 no change.",
+      effective: { width: eff.width, height: eff.height, orientation: detectOrientation(eff.width, eff.height) }
+    };
+  }
+
+  // ../shared/image-intelligence/src/hero.ts
+  var FACE_SAFE_FOCUS_Y = 0.1;
+  var aspect = (width, height) => width > 0 && height > 0 ? width / height : 1;
+  function heroBoxAspect(arrangement, canvasWidth, _canvasHeight) {
+    switch (arrangement) {
+      case "classic": {
+        const inner = canvasWidth - 80;
+        return inner > 0 ? aspect(inner, 360) : 1;
+      }
+      case "pyramid":
+        return 1;
+      case "mosaic":
+        return aspect(320, 380);
+      case "magazine":
+        return aspect(460, 420);
+      default:
+        return 1;
+    }
+  }
+  var SUPPORTING_ASPECT = 1;
+  function coverCropRect(srcWidth, srcHeight, targetAspect, focusY = FACE_SAFE_FOCUS_Y) {
+    const w = srcWidth > 0 ? srcWidth : 1;
+    const h2 = srcHeight > 0 ? srcHeight : 1;
+    const target = targetAspect > 0 ? targetAspect : 1;
+    const srcAspect = w / h2;
+    const clamp2 = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
+    if (srcAspect > target) {
+      const sw = h2 * target;
+      return { sx: (w - sw) / 2, sy: 0, sw, sh: h2 };
+    }
+    const sh = w / target;
+    const sy = clamp2((h2 - sh) * clamp2(focusY, 0, 1), 0, Math.max(0, h2 - sh));
+    return { sx: 0, sy, sw: w, sh };
+  }
+
+  // ../shared/image-intelligence/src/text.ts
+  var PLACEHOLDER_PATTERNS = [
+    /^\s*$/,
+    // empty / whitespace
+    /^\s*e\.?g\.?[,:]?\s+/i,
+    // "e.g., Sarah Johnson"
+    /^\s*your\s+\w+/i,
+    // "Your name"
+    /^\s*enter\s+/i,
+    // "Enter your name"
+    /^\s*\{.*\}\s*$/,
+    // "{name}"
+    /^\s*\[.*\]\s*$/,
+    // "[name]"
+    /^\s*(tbd|n\/?a|none|placeholder|sample|example)\s*$/i
+  ];
+  function isPlaceholderText(value) {
+    if (typeof value !== "string") return true;
+    return PLACEHOLDER_PATTERNS.some((re) => re.test(value));
+  }
+  var DIGNIFIED_LABELS = {
+    graduation: { name: "Graduate Name", year: "Class Year", class: "Class Year", school: "School Name", date: "Class Year" },
+    championship: { name: "Team Name", year: "Season", school: "School Name", date: "Season" },
+    team: { name: "Team Name", year: "Season", school: "School Name" },
+    wedding: { name: "The Couple", date: "Wedding Day", year: "Wedding Day" },
+    memorial: { name: "In Loving Memory", year: "Years", date: "Years" },
+    family_reunion: { name: "Family Name", year: "Year", date: "Year" }
+  };
+  function sanitizeBannerText(bannerText, occasion) {
+    const labels = occasion && DIGNIFIED_LABELS[occasion] || {};
+    const out = {};
+    if (!bannerText || typeof bannerText !== "object") return out;
+    for (const [key, raw] of Object.entries(bannerText)) {
+      const value = typeof raw === "string" ? raw : "";
+      if (!isPlaceholderText(value)) {
+        out[key] = value.trim();
+        continue;
+      }
+      const label2 = labels[key];
+      if (label2) out[key] = label2;
+    }
+    return out;
+  }
+
   // demo/renderer-binding.ts
   var FRAME_MAP = {
     "thin-gold": "double-gold",
@@ -1722,10 +1852,49 @@
     const s = maxEdge / longEdge;
     return { w: Math.max(1, Math.round(w * s)), h: Math.max(1, Math.round(h2 * s)) };
   }
-  function makePlaceholderPhoto(doc, filename, orientation, theme) {
-    const portrait = orientation !== "landscape";
-    const w = portrait ? 600 : 800;
-    const h2 = portrait ? 800 : 600;
+  var HERO_MAX_EDGE = 800;
+  var SUPPORTING_MAX_EDGE = 384;
+  function prepareImage(doc, src, quarterTurns, targetAspect, grade, maxEdge) {
+    const iw = (src.naturalWidth ?? src.width) || 1;
+    const ih = (src.naturalHeight ?? src.height) || 1;
+    const turns = (quarterTurns % 4 + 4) % 4;
+    const rw = turns % 2 === 1 ? ih : iw;
+    const rh = turns % 2 === 1 ? iw : ih;
+    const crop = coverCropRect(rw, rh, targetAspect);
+    const scale = Math.min(1, maxEdge / Math.max(crop.sw, crop.sh));
+    const outW = Math.max(1, Math.round(crop.sw * scale));
+    const outH = Math.max(1, Math.round(crop.sh * scale));
+    const c = doc.createElement("canvas");
+    c.width = outW;
+    c.height = outH;
+    const ctx = c.getContext("2d");
+    if (!ctx) return src;
+    ctx.save();
+    if (grade) {
+      try {
+        ctx.filter = "contrast(1.05) saturate(0.94) brightness(0.97)";
+      } catch {
+      }
+    }
+    ctx.scale(outW / crop.sw, outH / crop.sh);
+    ctx.translate(-crop.sx, -crop.sy);
+    ctx.translate(rw / 2, rh / 2);
+    ctx.rotate(turns * Math.PI / 2);
+    ctx.drawImage(src, -iw / 2, -ih / 2, iw, ih);
+    ctx.restore();
+    if (grade) {
+      const g = ctx.createRadialGradient(outW / 2, outH / 2, Math.min(outW, outH) * 0.32, outW / 2, outH / 2, Math.max(outW, outH) * 0.72);
+      g.addColorStop(0, "rgba(12,14,20,0)");
+      g.addColorStop(1, "rgba(12,14,20,0.30)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, outW, outH);
+    }
+    return c;
+  }
+  function makePlaceholderPhoto(doc, filename, targetAspect, theme) {
+    const base = 800;
+    const w = targetAspect >= 1 ? base : Math.round(base * targetAspect);
+    const h2 = targetAspect >= 1 ? Math.round(base / targetAspect) : base;
     const c = doc.createElement("canvas");
     c.width = w;
     c.height = h2;
@@ -1744,16 +1913,39 @@
     ctx.fillText(filename, w / 2, h2 / 2);
     return c;
   }
-  function toRenderInput(doc, req, w, h2, resolveImage) {
+  function toRenderInput(doc, req, w, h2, options, cache) {
+    const { resolveImage, rotationFor } = options;
+    const curate = options.curate !== false;
     const photos = [];
     const frames = {};
-    const imageFor = (ref) => resolveImage && resolveImage(ref) || makePlaceholderPhoto(doc, ref.filename ?? ref.photoId, ref.orientation, req.theme);
+    const heroAspect = heroBoxAspect(req.arrangement, w, h2);
+    const imageFor = (ref, targetAspect, grade, maxEdge) => {
+      const src = resolveImage && resolveImage(ref);
+      if (!src) return makePlaceholderPhoto(doc, ref.filename ?? ref.photoId, targetAspect, req.theme);
+      if (!curate) return src;
+      const correction = planOrientationCorrection({
+        width: (src.naturalWidth ?? src.width) || 0,
+        height: (src.naturalHeight ?? src.height) || 0,
+        declaredOrientation: ref.orientation,
+        userRotationDegrees: rotationFor ? rotationFor(ref) : 0
+      });
+      const key = `${ref.photoId}|${correction.quarterTurns}|${targetAspect.toFixed(4)}|${grade ? 1 : 0}|${maxEdge}`;
+      const hit = cache.get(key);
+      if (hit) return hit;
+      try {
+        const prepared = prepareImage(doc, src, correction.quarterTurns, targetAspect, grade, maxEdge);
+        cache.set(key, prepared);
+        return prepared;
+      } catch {
+        return src;
+      }
+    };
     if (req.hero) {
-      photos.push({ id: req.hero.photoId, image: imageFor(req.hero) });
+      photos.push({ id: req.hero.photoId, image: imageFor(req.hero, heroAspect, false, HERO_MAX_EDGE) });
       frames[req.hero.photoId] = toFrame(req.hero.frame);
     }
     for (const s of req.supporting) {
-      photos.push({ id: s.photoId, image: imageFor(s) });
+      photos.push({ id: s.photoId, image: imageFor(s, SUPPORTING_ASPECT, curate, SUPPORTING_MAX_EDGE) });
       frames[s.photoId] = toFrame(s.frame);
     }
     const theme = {
@@ -1780,12 +1972,13 @@
     if (!doc) throw new Error("createCanvasRenderer requires a DOM document (browser only).");
     const previewMaxEdge = options.previewMaxEdge ?? 900;
     const exportMaxEdge = options.exportMaxEdge ?? 1400;
+    const preparedCache = /* @__PURE__ */ new Map();
     return {
       render(req) {
         const maxEdge = req.kind === "export" ? exportMaxEdge : previewMaxEdge;
         const { w, h: h2 } = capDims(req.widthPx, req.heightPx, maxEdge);
         const canvas = doc.createElement("canvas");
-        const input = toRenderInput(doc, req, w, h2, options.resolveImage);
+        const input = toRenderInput(doc, req, w, h2, options, preparedCache);
         const t0 = nowMs();
         renderPreview(canvas, input, { previewWidth: w, previewHeight: h2, dpr: 1 });
         const format = req.kind === "export" ? "jpg" : "png";
@@ -1807,7 +2000,7 @@
   }
 
   // ../shared/memory-profile/src/types.ts
-  var SCHEMA_VERSION = "1.0.0";
+  var SCHEMA_VERSION2 = "1.0.0";
 
   // ../shared/memory-profile/src/engine.ts
   var RES_SATURATION_MP = 6;
@@ -2123,7 +2316,7 @@
       const subject = subjectFromFaces(0, null);
       const concept = recommendConcept(occasion, subject);
       return {
-        schema_version: SCHEMA_VERSION,
+        schema_version: SCHEMA_VERSION2,
         occasion,
         style: STYLE_BY_CONCEPT[concept],
         story: "No memories were provided yet.",
@@ -2269,7 +2462,7 @@
     if (scored.every((s) => s.quality < 45)) confidence -= 15;
     const confidence_score = Math.max(0, Math.min(100, confidence));
     return {
-      schema_version: SCHEMA_VERSION,
+      schema_version: SCHEMA_VERSION2,
       occasion,
       style,
       story,
@@ -2301,7 +2494,7 @@
   }
 
   // ../shared/creative-brief/src/types.ts
-  var SCHEMA_VERSION2 = "1.0.0";
+  var SCHEMA_VERSION3 = "1.0.0";
 
   // ../shared/creative-brief/src/engine.ts
   var OBSIDIAN2 = "#0C0E14";
@@ -2627,7 +2820,7 @@
     confidence -= Math.min(20, seriousRisks * 5);
     const confidenceScore = clamp(Math.round(confidence), 0, 100);
     return {
-      schemaVersion: SCHEMA_VERSION2,
+      schemaVersion: SCHEMA_VERSION3,
       briefId: briefIdFor(memoryProfile),
       createdAt: options.now ?? null,
       occasion,
@@ -2681,7 +2874,7 @@
     "Family Legacy",
     "Modern Editorial"
   ];
-  var SCHEMA_VERSION3 = "1.0.0";
+  var SCHEMA_VERSION4 = "1.0.0";
   var WOW_THRESHOLD = 90;
 
   // ../shared/wow-engine/src/scoring.ts
@@ -2988,7 +3181,7 @@
     const overallWOWScore = concepts.length ? Math.round(concepts.reduce((s, c) => s + c.wowScore, 0) / concepts.length) : 0;
     const masterpiecePassed = concepts.every((c) => c.masterpiecePassed);
     return {
-      schemaVersion: SCHEMA_VERSION3,
+      schemaVersion: SCHEMA_VERSION4,
       version: ENGINE_VERSION,
       createdAt: options?.now ?? null,
       occasion: memoryProfile.occasion,
@@ -3000,7 +3193,7 @@
   }
 
   // ../shared/render-orchestrator/src/types.ts
-  var SCHEMA_VERSION4 = "1.0.0";
+  var SCHEMA_VERSION5 = "1.0.0";
   var WOW_THRESHOLD2 = 90;
 
   // ../shared/render-orchestrator/src/mapper.ts
@@ -3256,7 +3449,7 @@
     const qualityChecks = validate(concept, exportTargets);
     const renderInstructions = concept ? buildRenderInstructions(concept, creativeBrief, memoryProfile) : emptyInstructions();
     return {
-      schemaVersion: SCHEMA_VERSION4,
+      schemaVersion: SCHEMA_VERSION5,
       version: ENGINE_VERSION2,
       createdAt: options?.now ?? null,
       occasion: memoryProfile.occasion,
@@ -3294,7 +3487,7 @@
   }
 
   // ../shared/render-adapter/src/types.ts
-  var SCHEMA_VERSION5 = "1.0.0";
+  var SCHEMA_VERSION6 = "1.0.0";
   var REQUIRED_EXPORT_TARGETS = [
     "digital",
     "poster_18x24",
@@ -3472,7 +3665,7 @@
   function renderConcept(renderPlan, renderer, options = {}) {
     const arrangement = renderPlan.renderInstructions.arrangement;
     const base = {
-      schemaVersion: SCHEMA_VERSION5,
+      schemaVersion: SCHEMA_VERSION6,
       conceptName: renderPlan.conceptName,
       occasion: renderPlan.occasion,
       arrangement
@@ -3617,15 +3810,25 @@
   function occasionForTheme(themeId) {
     return themeId && THEME_OCCASION[themeId] || "unknown";
   }
+  function rotationDegreesFor(state, photoId) {
+    const map = state.rotations;
+    const n = Number(map?.[photoId]);
+    return Number.isFinite(n) ? n : 0;
+  }
   function photoInputsFromState(state, enrich) {
     const imgs = Array.isArray(state.images) ? state.images : [];
     return imgs.filter((p) => p && Number(p.w) > 0 && Number(p.h) > 0).map((p) => {
-      const base = { id: String(p.id), filename: p.name ?? void 0, width: Number(p.w), height: Number(p.h) };
+      const turns = normalizeQuarterTurns(rotationDegreesFor(state, String(p.id)));
+      const dims = applyQuarterTurns(Number(p.w), Number(p.h), turns);
+      const base = { id: String(p.id), filename: p.name ?? void 0, width: dims.width, height: dims.height };
       return enrich ? { ...base, ...enrich(p) } : base;
     });
   }
   function buildMemoryProfile(state, enrich) {
     return generateMemoryProfile(photoInputsFromState(state, enrich), { occasion: occasionForTheme(state.theme?.id) });
+  }
+  function sanitizedBannerText(state) {
+    return sanitizeBannerText(state.bannerText, occasionForTheme(state.theme?.id));
   }
   function buildWowPipeline(state, options) {
     const memoryProfile = buildMemoryProfile(state, options?.enrich);
@@ -3758,7 +3961,12 @@
         return { ok: false, error: outcome.error };
       }
       const { pipeline } = outcome.result;
-      const renderer = createCanvasRenderer({ previewMaxEdge: 900, resolveImage: makeResolver(state) });
+      const renderer = createCanvasRenderer({
+        previewMaxEdge: 900,
+        resolveImage: makeResolver(state),
+        // Honor the customer's own rotation; corrections are applied at draw time only.
+        rotationFor: (ref) => rotationDegreesFor(state, ref.photoId)
+      });
       slot.style.display = "";
       const progress = ensureProgress(slot);
       mountPremiumReveal(slot, {
@@ -3779,6 +3987,8 @@
       slot.insertBefore(progress, slot.firstChild);
       const previews = await renderConceptPreviewsProgressive(pipeline, renderer, {
         renderExports: false,
+        // Real customer text preserved; raw placeholders become dignified labels.
+        bannerText: sanitizedBannerText(state),
         perConceptTimeoutMs: PER_CONCEPT_TIMEOUT_MS,
         now: monotonic,
         scheduleYield: yieldToBrowser,

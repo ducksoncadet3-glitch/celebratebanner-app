@@ -18,6 +18,7 @@ import type {
   ArrangementId as EngineArrangementId,
 } from '../../shared/render-engine/src/types.ts';
 import type { Renderer, RenderRequest, RenderedImage, RenderThemeSpec, RenderPhotoRef } from '../../shared/render-adapter/src/index.ts';
+import { planOrientationCorrection, heroBoxAspect, coverCropRect, SUPPORTING_ASPECT } from '../../shared/image-intelligence/src/index.ts';
 
 export interface CanvasRendererOptions {
   /** DOM document (defaults to the global). */
@@ -26,6 +27,10 @@ export interface CanvasRendererOptions {
   previewMaxEdge?: number;
   /** Cap the export long edge (export targets are print-sized). Default 1400. */
   exportMaxEdge?: number;
+  /** The customer's rotation for a photo, in degrees (from the builder). */
+  rotationFor?: (ref: RenderPhotoRef) => number;
+  /** Run the image-intelligence pass (orientation + hero fill + curation). Default true. */
+  curate?: boolean;
   /**
    * Resolve a photo reference to a REAL drawable image. Used by the production
    * builder to render the customer's actual uploads. Return null/undefined to fall
@@ -57,11 +62,73 @@ function capDims(w: number, h: number, maxEdge: number): { w: number; h: number 
   return { w: Math.max(1, Math.round(w * s)), h: Math.max(1, Math.round(h * s)) };
 }
 
-/** A synthesized placeholder photo tile — labeled gradient, sized by orientation. */
-function makePlaceholderPhoto(doc: Document, filename: string, orientation: string, theme: RenderThemeSpec): CanvasImage {
-  const portrait = orientation !== 'landscape';
-  const w = portrait ? 600 : 800;
-  const h = portrait ? 800 : 600;
+/**
+ * Longest edge of a prepared (rotated + cropped) image. Sized to what the renderer
+ * actually draws: the hero fills a large box, supporting tiles are thumbnails. Keeping
+ * these tight is what stops the intelligence pass from blowing the mobile render budget.
+ */
+const HERO_MAX_EDGE = 800;   // hero box is ~520px at preview size — 800 keeps a retina margin
+const SUPPORTING_MAX_EDGE = 384; // supporting tiles render ~60-90px
+
+/**
+ * Prepare a photo for the renderer WITHOUT touching the uploaded file:
+ *   1. bake the planned quarter turns (orientation correction),
+ *   2. crop to `targetAspect` (face-safe, upward-biased) so the renderer's drawCover
+ *      always takes the COVER path — no letterbox/pillarbox dead zones,
+ *   3. optionally apply a restrained unified grade so supporting tiles read as a set.
+ * Returns an offscreen canvas; the original image is never modified.
+ */
+function prepareImage(
+  doc: Document,
+  src: CanvasImage,
+  quarterTurns: number,
+  targetAspect: number,
+  grade: boolean,
+  maxEdge: number,
+): CanvasImage {
+  const iw = (src.naturalWidth ?? src.width) || 1;
+  const ih = (src.naturalHeight ?? src.height) || 1;
+  const turns = ((quarterTurns % 4) + 4) % 4;
+  const rw = turns % 2 === 1 ? ih : iw; // dimensions after rotation
+  const rh = turns % 2 === 1 ? iw : ih;
+
+  const crop = coverCropRect(rw, rh, targetAspect);
+  const scale = Math.min(1, maxEdge / Math.max(crop.sw, crop.sh));
+  const outW = Math.max(1, Math.round(crop.sw * scale));
+  const outH = Math.max(1, Math.round(crop.sh * scale));
+
+  const c = doc.createElement('canvas');
+  c.width = outW;
+  c.height = outH;
+  const ctx = c.getContext('2d');
+  if (!ctx) return src;
+
+  ctx.save();
+  if (grade) { try { ctx.filter = 'contrast(1.05) saturate(0.94) brightness(0.97)'; } catch { /* filter unsupported */ } }
+  // Map the crop rect (in rotated space) onto the output canvas, then rotate the source.
+  ctx.scale(outW / crop.sw, outH / crop.sh);
+  ctx.translate(-crop.sx, -crop.sy);
+  ctx.translate(rw / 2, rh / 2);
+  ctx.rotate((turns * Math.PI) / 2);
+  ctx.drawImage(src as unknown as CanvasImageSource, -iw / 2, -ih / 2, iw, ih);
+  ctx.restore();
+
+  if (grade) {
+    // Gentle vignette unifies the supporting grid without touching renderer algorithms.
+    const g = ctx.createRadialGradient(outW / 2, outH / 2, Math.min(outW, outH) * 0.32, outW / 2, outH / 2, Math.max(outW, outH) * 0.72);
+    g.addColorStop(0, 'rgba(12,14,20,0)');
+    g.addColorStop(1, 'rgba(12,14,20,0.30)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, outW, outH);
+  }
+  return c as unknown as CanvasImage;
+}
+
+/** A synthesized placeholder photo tile — labeled gradient, sized to the target aspect. */
+function makePlaceholderPhoto(doc: Document, filename: string, targetAspect: number, theme: RenderThemeSpec): CanvasImage {
+  const base = 800;
+  const w = targetAspect >= 1 ? base : Math.round(base * targetAspect);
+  const h = targetAspect >= 1 ? Math.round(base / targetAspect) : base;
   const c = doc.createElement('canvas');
   c.width = w;
   c.height = h;
@@ -86,18 +153,47 @@ function toRenderInput(
   req: RenderRequest,
   w: number,
   h: number,
-  resolveImage?: (ref: RenderPhotoRef) => CanvasImage | null | undefined,
+  options: CanvasRendererOptions,
+  cache: Map<string, CanvasImage>,
 ): RenderInput {
+  const { resolveImage, rotationFor } = options;
+  const curate = options.curate !== false;
   const photos: Photo[] = [];
   const frames: Record<string, FrameId> = {};
-  const imageFor = (ref: RenderPhotoRef): CanvasImage =>
-    (resolveImage && resolveImage(ref)) || makePlaceholderPhoto(doc, ref.filename ?? ref.photoId, ref.orientation, req.theme);
+
+  // Hero fills its arrangement's box exactly; supporting tiles share one square crop.
+  const heroAspect = heroBoxAspect(req.arrangement, w, h);
+
+  const imageFor = (ref: RenderPhotoRef, targetAspect: number, grade: boolean, maxEdge: number): CanvasImage => {
+    const src = resolveImage && resolveImage(ref);
+    if (!src) return makePlaceholderPhoto(doc, ref.filename ?? ref.photoId, targetAspect, req.theme);
+    if (!curate) return src;
+    const correction = planOrientationCorrection({
+      width: (src.naturalWidth ?? src.width) || 0,
+      height: (src.naturalHeight ?? src.height) || 0,
+      declaredOrientation: ref.orientation,
+      userRotationDegrees: rotationFor ? rotationFor(ref) : 0,
+    });
+    // Prepared images are reused across concepts — supporting tiles share one square
+    // crop, so they are prepared once, not once per arrangement.
+    const key = `${ref.photoId}|${correction.quarterTurns}|${targetAspect.toFixed(4)}|${grade ? 1 : 0}|${maxEdge}`;
+    const hit = cache.get(key);
+    if (hit) return hit;
+    try {
+      const prepared = prepareImage(doc, src, correction.quarterTurns, targetAspect, grade, maxEdge);
+      cache.set(key, prepared);
+      return prepared;
+    } catch {
+      return src; // any canvas failure → draw the original, never block the reveal
+    }
+  };
+
   if (req.hero) {
-    photos.push({ id: req.hero.photoId, image: imageFor(req.hero) });
+    photos.push({ id: req.hero.photoId, image: imageFor(req.hero, heroAspect, false, HERO_MAX_EDGE) });
     frames[req.hero.photoId] = toFrame(req.hero.frame);
   }
   for (const s of req.supporting) {
-    photos.push({ id: s.photoId, image: imageFor(s) });
+    photos.push({ id: s.photoId, image: imageFor(s, SUPPORTING_ASPECT, curate, SUPPORTING_MAX_EDGE) });
     frames[s.photoId] = toFrame(s.frame);
   }
   const theme: Theme = {
@@ -130,13 +226,15 @@ export function createCanvasRenderer(options: CanvasRendererOptions = {}): Rende
   if (!doc) throw new Error('createCanvasRenderer requires a DOM document (browser only).');
   const previewMaxEdge = options.previewMaxEdge ?? 900;
   const exportMaxEdge = options.exportMaxEdge ?? 1400;
+  // Reused across every concept this renderer draws.
+  const preparedCache = new Map<string, CanvasImage>();
 
   return {
     render(req: RenderRequest): RenderedImage {
       const maxEdge = req.kind === 'export' ? exportMaxEdge : previewMaxEdge;
       const { w, h } = capDims(req.widthPx, req.heightPx, maxEdge);
       const canvas = doc.createElement('canvas');
-      const input = toRenderInput(doc, req, w, h, options.resolveImage);
+      const input = toRenderInput(doc, req, w, h, options, preparedCache);
       const t0 = nowMs();
       renderPreview(canvas as unknown as RenderTarget, input, { previewWidth: w, previewHeight: h, dpr: 1 });
       const format = req.kind === 'export' ? 'jpg' : 'png';
