@@ -15,6 +15,7 @@ import { dirname, join } from 'node:path';
 import {
   isWOWMode, occasionForTheme, photoInputsFromState, buildMemoryProfile,
   runWowPipeline, safeRunWowPipeline, selectConcept,
+  rotationDegreesFor, sanitizedBannerText,
 } from '../integration/wow-bridge.ts';
 import type { BuilderState, PhotoEnricher } from '../integration/wow-bridge.ts';
 import type { Renderer, RenderRequest, RenderedImage } from '../../shared/render-adapter/src/index.ts';
@@ -180,4 +181,114 @@ test('no checkout / pricing / Stripe / Printful / Gelato files were changed', ()
 test('the existing render engine and adapter sources are unchanged', () => {
   assert.equal(gitStatus('shared/render-engine/src'), '', 'render-engine unchanged');
   assert.equal(gitStatus('shared/render-adapter/src'), '', 'render-adapter unchanged');
+});
+
+// ── Sprint 13: image intelligence wiring ─────────────────────────────
+
+// (1) Rotated image handling — dimensions reported to the pipeline are rotation-aware.
+test('rotated image: a 90° customer rotation makes the reported dimensions landscape', () => {
+  const state: BuilderState = { images: [{ id: 'p0', name: 'p0.jpg', w: 3000, h: 4000 }], rotations: { p0: 90 }, theme: { id: 'graduation' } };
+  const [input] = photoInputsFromState(state);
+  assert.deepEqual([input.width, input.height], [4000, 3000], 'rotation-aware dimensions');
+});
+test('rotated image: 180° does not swap dimensions', () => {
+  const state: BuilderState = { images: [{ id: 'p0', w: 3000, h: 4000 }], rotations: { p0: 180 } };
+  const [input] = photoInputsFromState(state);
+  assert.deepEqual([input.width, input.height], [3000, 4000]);
+});
+test('rotated image: an unrotated photo is reported unchanged', () => {
+  const state: BuilderState = { images: [{ id: 'p0', w: 3000, h: 4000 }] };
+  const [input] = photoInputsFromState(state);
+  assert.deepEqual([input.width, input.height], [3000, 4000]);
+});
+test('rotationDegreesFor is safe when rotations are absent or junk', () => {
+  assert.equal(rotationDegreesFor({ images: [] }, 'p0'), 0);
+  assert.equal(rotationDegreesFor({ images: [], rotations: { p0: 'abc' } } as unknown as BuilderState, 'p0'), 0);
+  assert.equal(rotationDegreesFor({ images: [], rotations: { p0: 270 } } as unknown as BuilderState, 'p0'), 270);
+});
+test('a rotated photo reaches the pipeline with the orientation the customer sees', () => {
+  const base: BuilderState = { images: [
+    { id: 'p0', w: 3000, h: 4000 }, { id: 'p1', w: 2400, h: 3200 }, { id: 'p2', w: 2400, h: 3200 },
+  ], theme: { id: 'graduation' } };
+  const rotated: BuilderState = { ...base, rotations: { p0: 90 } };
+  const orientationOf = (state: BuilderState, id: string): string | undefined => {
+    const mp = buildMemoryProfile(state, richEnrich);
+    const all = [mp.hero_photo, ...mp.supporting_photos].filter(Boolean);
+    return all.find((p) => p?.photoId === id)?.orientation;
+  };
+  assert.equal(orientationOf(base, 'p0'), 'portrait');
+  assert.equal(orientationOf(rotated, 'p0'), 'landscape', 'the 90° rotation propagated into the pipeline');
+});
+
+// (2) Thumbnail curation — the profile suppresses near-identical uploads (fed by hash).
+const HASHES: Record<string, string> = { p0: '0f0f0f0f0f0f0f0f', p1: 'ffff0000ffff0000', p2: 'ffff0000ffff0001', p3: '00ff00ff00ff00ff' };
+const enrichWithHash: PhotoEnricher = (p) => ({ ...richEnrich(p), perceptualHash: HASHES[String(p.id)] });
+
+test('thumbnail curation: a near-identical upload is suppressed from the story', () => {
+  const state: BuilderState = { images: [
+    { id: 'p0', w: 3000, h: 4000 }, { id: 'p1', w: 2400, h: 3200 },
+    { id: 'p2', w: 2400, h: 3200 }, { id: 'p3', w: 2400, h: 3200 },
+  ], theme: { id: 'graduation' } };
+  const profile = buildMemoryProfile(state, enrichWithHash);
+  const shown = [profile.hero_photo?.photoId, ...profile.supporting_photos.map((s) => s.photoId)].filter(Boolean);
+  assert.ok(!shown.includes('p2'), 'the near-duplicate p2 is not shown twice');
+  assert.ok(shown.includes('p1'), 'the strongest of the duplicate pair is kept');
+});
+test('thumbnail curation: with no hashes supplied, no photo is suppressed', () => {
+  const state: BuilderState = { images: [
+    { id: 'p0', w: 3000, h: 4000 }, { id: 'p1', w: 2400, h: 3200 }, { id: 'p2', w: 2400, h: 3200 },
+  ], theme: { id: 'graduation' } };
+  const profile = buildMemoryProfile(state, richEnrich); // no perceptualHash
+  const shown = [profile.hero_photo?.photoId, ...profile.supporting_photos.map((s) => s.photoId)].filter(Boolean);
+  assert.equal(shown.length, 3, 'nothing is discarded without proof of duplication');
+});
+test('thumbnail curation: duplicate detection is reported, never silent', () => {
+  const state: BuilderState = { images: [
+    { id: 'p0', w: 3000, h: 4000 }, { id: 'p1', w: 2400, h: 3200 }, { id: 'p2', w: 2400, h: 3200 },
+  ], theme: { id: 'graduation' } };
+  const profile = buildMemoryProfile(state, enrichWithHash);
+  assert.ok(profile.duplicate_candidates.length >= 1, 'the duplicate pair is surfaced');
+});
+
+// (3) Placeholder name cleanup.
+test('placeholder name cleanup: "e.g., Sarah Johnson" becomes "Graduate Name"', () => {
+  const state: BuilderState = { images: [], theme: { id: 'graduation' }, bannerText: { name: 'e.g., Sarah Johnson', year: '2026' } };
+  assert.deepEqual(sanitizedBannerText(state), { name: 'Graduate Name', year: '2026' });
+});
+test('real customer text survives sanitization untouched', () => {
+  const state: BuilderState = { images: [], theme: { id: 'graduation' }, bannerText: { name: 'Jordan Rivera' } };
+  assert.equal(sanitizedBannerText(state).name, 'Jordan Rivera');
+});
+test('empty graduation fields become dignified labels', () => {
+  const state: BuilderState = { images: [], theme: { id: 'graduation' }, bannerText: { name: '', year: '', school: '' } };
+  assert.deepEqual(sanitizedBannerText(state), { name: 'Graduate Name', year: 'Class Year', school: 'School Name' });
+});
+
+// (4) The WOW bundle carries the intelligence layer.
+test('the wow bundle includes the image-intelligence pass', () => {
+  const bundle = readRepo('wow/wow-bridge.js');
+  for (const marker of ['planOrientationCorrection', 'heroBoxAspect', 'coverCropRect', 'sanitizeBannerText', 'prepareImage']) {
+    assert.ok(bundle.includes(marker), `bundle should include ${marker}`);
+  }
+});
+
+// (5) Default builder + checkout/pricing unchanged.
+test('the default builder is unchanged: WOW stays behind the flag', () => {
+  const html = readRepo('index.html');
+  assert.ok(html.includes('function isWOWMode('), 'flag helper intact');
+  assert.ok(html.includes('if(!isWOWMode())return;'), 'reveal still gated by the flag');
+  assert.ok(/id="wow-reveal-slot"[^>]*display:none/.test(html), 'slot still inert by default');
+});
+test('image intelligence did not touch the existing renderer', () => {
+  assert.equal(gitStatus('shared/render-engine'), '', 'render-engine must be untouched');
+});
+test('checkout and pricing are unchanged by image intelligence', () => {
+  const html = readRepo('index.html');
+  assert.ok(html.includes('goto(4)'), 'checkout navigation intact');
+  assert.ok(/stripe/i.test(html), 'Stripe wiring intact');
+  for (const price of ['9.99', '999']) assert.ok(html.includes(price), `pricing token ${price} intact`);
+  const root = execSync('git rev-parse --show-toplevel', { cwd: componentsDir }).toString().trim();
+  const changed = execSync('git status --porcelain', { cwd: root }).toString();
+  const offenders = changed.split('\n').filter((l) => /checkout|pricing|stripe|printful|gelato/i.test(l));
+  assert.deepEqual(offenders, [], `no checkout/pricing files may change:\n${offenders.join('\n')}`);
 });
