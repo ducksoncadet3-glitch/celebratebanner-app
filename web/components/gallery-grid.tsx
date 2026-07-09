@@ -4,7 +4,7 @@ const SAMPLES = [
   { theme: 'Anniversary',name: '25 Years · Lopez Family',  tone: 'from-obsidian via-obsidian-100 to-obsidian',     accent: 'text-gold' },
   { theme: 'Champions',  name: 'Eagles 2026 · State Champs', tone: 'from-sky/40 via-white to-ivory',              accent: 'text-sky' },
   { theme: 'Pets',       name: 'Best floofs of 2026',      tone: 'from-gold/15 via-ivory to-white',                accent: 'text-gold-dark' },
-  { theme: 'America 250',name: 'July 4 · Family Reunion',  tone: 'from-obsidian via-obsidian-50 to-obsidian',     accent: 'text-rose' },
+  { theme: 'Family Reunion',name: 'The Lopez Family · 2026', tone: 'from-obsidian via-obsidian-50 to-obsidian',  accent: 'text-gold' },
 ];
 
 export function GalleryGrid() {

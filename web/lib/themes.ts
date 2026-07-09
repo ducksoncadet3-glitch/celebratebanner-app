@@ -57,26 +57,6 @@ export const THEMES: Record<string, Theme> = {
     },
     palette: { bg: '#0C0E14', accent: '#C9A84C', text: '#FAF8F3' },
   },
-  america250: {
-    id: 'america250',
-    fields: ['name', 'year', 'city'],
-    fieldMeta: {
-      name: { placeholder: 'Your name' },
-      year: { placeholder: 'July 4, 2026' },
-      city: { placeholder: 'City, State' },
-    },
-    palette: { bg: '#0A1628', accent: '#B22234', text: '#FAF8F3' },
-  },
-  worldcup2026: {
-    id: 'worldcup2026',
-    fields: ['groupName', 'date', 'venue'],
-    fieldMeta: {
-      groupName: { placeholder: 'Your team' },
-      date:      { placeholder: 'June 12, 2026' },
-      venue:     { placeholder: 'Watch party HQ' },
-    },
-    palette: { bg: '#0D2B45', accent: '#4A9ECC', text: '#F5E4B0' },
-  },
   milestone: {
     id: 'milestone',
     fields: ['name', 'year', 'caption'],
@@ -94,8 +74,6 @@ export const THEME_DISPLAY: Array<{ id: string; name: string; emoji: string }> =
   { id: 'wedding', name: 'Wedding', emoji: '💍' },
   { id: 'anniversary', name: 'Anniversary', emoji: '🥂' },
   { id: 'champion', name: 'Champions', emoji: '🏆' },
-  { id: 'america250', name: 'America 250', emoji: '🇺🇸' },
-  { id: 'worldcup2026', name: 'World Cup 2026', emoji: '⚽' },
   { id: 'pets', name: 'Pets', emoji: '🐾' },
   { id: 'milestone', name: 'Milestone', emoji: '✨' },
 ];
