@@ -85,6 +85,9 @@ export interface RenderContext {
 }
 
 // ── Engine input ────────────────────────────────────────────────────────────
+/** 'standard' = historical tiled grid. 'wow' = intentional, non-repeating geometry. */
+export type RenderMode = 'standard' | 'wow';
+
 export type ArrangementId = 'classic' | 'magazine' | 'pyramid' | 'scattered' | 'mosaic';
 
 export type FrameId =
@@ -152,6 +155,13 @@ export interface RenderInput {
    * Default true — matches the existing index.html behavior.
    */
   cinematicHero?: boolean;
+  /**
+   * Rendering mode. Omit (or 'standard') for the historical behaviour: a fixed cell
+   * grid filled by tiling the supporting photos. 'wow' derives an INTENTIONAL geometry
+   * from how many photos actually exist — fewer, larger cells and never a repeat.
+   * If the WOW geometry is degenerate the renderer falls back to 'standard'.
+   */
+  renderMode?: RenderMode;
 }
 
 // ── Renderer interfaces (used by the registries) ────────────────────────────

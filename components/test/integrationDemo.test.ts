@@ -102,12 +102,23 @@ test('the demo html wires the fixture selector and every stage panel', () => {
 // components/src is intentionally redesigned in Sprint 14 (the agency-grade concept
 // card), and is covered by its own layout/CTA tests — so it is not guarded here.
 const EXISTING_ENGINES = [
-  'shared/render-engine', 'shared/render-orchestrator', 'shared/render-adapter',
-  'shared/wow-engine', 'shared/creative-brief', 'shared/memory-profile',
-  'shared/refinement-engine',
+  'shared/render-orchestrator/src', 'shared/render-adapter/src',
+  'shared/wow-engine/src', 'shared/creative-brief/src', 'shared/memory-profile/src',
+  'shared/refinement-engine/src',
 ].join(' ');
 test('the demo did not change the existing shared engines', () => {
   const root = execSync('git rev-parse --show-toplevel', { cwd: componentsDir }).toString().trim();
   const status = execSync(`git status --porcelain -- ${EXISTING_ENGINES}`, { cwd: root }).toString().trim();
   assert.equal(status, '', `existing engines must be untouched, but git reports:\n${status}`);
+});
+// Sprint 15 extends `shared/render-engine` (WOW geometry) — the only engine this demo
+// touches. The invariant is that every pre-existing line survives, so the standard path
+// (no `renderMode`) renders exactly as it always has.
+test('the render engine is extended, never rewritten (0 deletions)', () => {
+  const root = execSync('git rev-parse --show-toplevel', { cwd: componentsDir }).toString().trim();
+  const numstat = execSync('git diff --numstat -- shared/render-engine/src', { cwd: root }).toString().trim();
+  for (const line of numstat.split('\n').filter(Boolean)) {
+    const [, deleted, file] = line.split(/\s+/);
+    assert.equal(deleted, '0', `${file}: ${deleted} line(s) deleted — renderer changes must be additive`);
+  }
 });

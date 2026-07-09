@@ -7,18 +7,38 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".":              { "types": "./dist/index.d.ts",              "default": "./dist/index.js"              },
-    "./pipeline":     { "types": "./dist/pipeline/index.d.ts",     "default": "./dist/pipeline/index.js"     },
-    "./arrangements": { "types": "./dist/arrangements/index.d.ts", "default": "./dist/arrangements/index.js" },
-    "./frames":       { "types": "./dist/frames/index.d.ts",       "default": "./dist/frames/index.js"       },
-    "./mockups":      { "types": "./dist/mockups/index.d.ts",      "default": "./dist/mockups/index.js"      }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./pipeline": {
+      "types": "./dist/pipeline/index.d.ts",
+      "default": "./dist/pipeline/index.js"
+    },
+    "./arrangements": {
+      "types": "./dist/arrangements/index.d.ts",
+      "default": "./dist/arrangements/index.js"
+    },
+    "./frames": {
+      "types": "./dist/frames/index.d.ts",
+      "default": "./dist/frames/index.js"
+    },
+    "./mockups": {
+      "types": "./dist/mockups/index.d.ts",
+      "default": "./dist/mockups/index.js"
+    }
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "tsc -p tsconfig.json && node --test 'test/*.test.ts'"
   },
   "devDependencies": {
     "typescript": "^5.7.2"
   },
-  "files": ["dist", "src", "README.md"]
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ]
 }

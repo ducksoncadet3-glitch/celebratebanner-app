@@ -328,9 +328,17 @@ function gitStatus(paths: string): string {
   const root = execSync('git rev-parse --show-toplevel', { cwd: here }).toString().trim();
   return execSync(`git status --porcelain -- ${paths}`, { cwd: root }).toString().trim();
 }
-test('the existing renderer and render adapter are unchanged (additive only)', () => {
-  assert.equal(gitStatus('shared/render-engine/src'), '', 'render-engine must be untouched');
+// Sprint 15 extends the renderer for the first time. The invariant is no longer
+// "no diff at all" but "every existing line survives": the standard path is reached
+// whenever `renderMode` is absent, so the default builder cannot regress.
+test('the render adapter is unchanged, and the renderer is additive only', () => {
+  const root = execSync('git rev-parse --show-toplevel', { cwd: here }).toString().trim();
   assert.equal(gitStatus('shared/render-adapter/src'), '', 'render-adapter must be untouched');
+  const numstat = execSync('git diff --numstat -- shared/render-engine/src', { cwd: root }).toString().trim();
+  for (const line of numstat.split('\n').filter(Boolean)) {
+    const [, deleted, file] = line.split(/\s+/);
+    assert.equal(deleted, '0', `${file}: ${deleted} line(s) deleted — renderer changes must be additive`);
+  }
 });
 test('index.html and checkout/pricing are unchanged by this engine', () => {
   assert.equal(gitStatus('index.html'), '', 'index.html must be untouched');

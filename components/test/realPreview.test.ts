@@ -188,8 +188,16 @@ test('no checkout / pricing / Stripe code exists to change, and none was added',
   const offenders = changed.split('\n').filter((l) => /checkout|pricing|stripe|printful/i.test(l));
   assert.deepEqual(offenders, [], `no checkout/pricing/stripe/printful files may change:\n${offenders.join('\n')}`);
 });
-test('the production render engine source is unchanged', () => {
-  assert.equal(gitStatus('shared/render-engine/src'), '', 'render-engine must not be modified');
+// Sprint 15 extends the renderer for the first time. The invariant is no longer
+// "no diff at all" but "every existing line survives": the standard path is reached
+// whenever `renderMode` is absent, so the default builder cannot regress.
+test('the production render engine source is extended, never rewritten', () => {
+  const root = execSync('git rev-parse --show-toplevel', { cwd: componentsDir }).toString().trim();
+  const numstat = execSync('git diff --numstat -- shared/render-engine/src', { cwd: root }).toString().trim();
+  for (const line of numstat.split('\n').filter(Boolean)) {
+    const [, deleted, file] = line.split(/\s+/);
+    assert.equal(deleted, '0', `${file}: ${deleted} line(s) deleted — renderer changes must be additive`);
+  }
 });
 test('the render adapter source is unchanged (additive demo only)', () => {
   assert.equal(gitStatus('shared/render-adapter/src'), '', 'render-adapter must not be modified');

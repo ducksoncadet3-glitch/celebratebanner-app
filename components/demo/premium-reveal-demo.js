@@ -1,6 +1,6 @@
 "use strict";
 (() => {
-  // src/dom.ts
+  // components/src/dom.ts
   function h(tag, attrs, ...children) {
     const el = document.createElement(tag);
     if (attrs) {
@@ -29,7 +29,7 @@
     while (el.firstChild) el.removeChild(el.firstChild);
   }
 
-  // src/styles.ts
+  // components/src/styles.ts
   var STYLE_ELEMENT_ID = "cb-premium-reveal-styles";
   var PREMIUM_REVEAL_CSS = `
 :root {
@@ -151,7 +151,7 @@
     (doc.head || doc.documentElement).appendChild(style);
   }
 
-  // src/WOWScore/index.ts
+  // components/src/WOWScore/index.ts
   function createWowScore(score, max = 100) {
     const n = Math.round(score);
     return h(
@@ -162,7 +162,7 @@
     );
   }
 
-  // src/MasterpieceBadge/index.ts
+  // components/src/MasterpieceBadge/index.ts
   function createMasterpieceBadge(passed) {
     if (!passed) return h("span", { class: "pr-badge-none", "aria-hidden": "true" });
     return h(
@@ -173,7 +173,7 @@
     );
   }
 
-  // src/DirectorChoice/index.ts
+  // components/src/DirectorChoice/index.ts
   function createDirectorChoice() {
     return h(
       "span",
@@ -183,7 +183,7 @@
     );
   }
 
-  // src/types.ts
+  // components/src/types.ts
   var CTA_PRIMARY = "Choose This Design";
   var CTA_SECONDARY = "More Details";
   var LOADING_STAGES = [
@@ -197,7 +197,7 @@
   var REVEAL_TITLE = "Your Masterpieces Are Ready";
   var REVEAL_SUBTITLE = "Our AI Creative Director created four unique concepts from your memories.";
 
-  // src/ConceptCard/index.ts
+  // components/src/ConceptCard/index.ts
   function fallbackCopy(concept) {
     return {
       title: concept.conceptName,
@@ -265,7 +265,7 @@
     return h("article", attrs, previewWrap, body);
   }
 
-  // src/RevealGallery/index.ts
+  // components/src/RevealGallery/index.ts
   function createRevealGallery(props) {
     const { presentation, handlers, copyFor: copyFor2 } = props;
     const cards = presentation.concepts.map(
@@ -299,7 +299,7 @@
     return gallery;
   }
 
-  // src/LoadingSequence/index.ts
+  // components/src/LoadingSequence/index.ts
   function createLoadingSequence(props = {}) {
     const stages = LOADING_STAGES;
     const list = h("ol", { class: "pr-stages" });
@@ -386,7 +386,7 @@
     };
   }
 
-  // src/PremiumReveal/index.ts
+  // components/src/PremiumReveal/index.ts
   function createPremiumReveal(props) {
     const { presentation, handlers, copyFor: copyFor2, skipLoading = false, loadingIntervalMs = 900, onRevealed } = props;
     injectStyles(document);
@@ -421,10 +421,10 @@
     return root;
   }
 
-  // ../shared/creative-brief/src/types.ts
+  // shared/creative-brief/src/types.ts
   var SCHEMA_VERSION = "1.0.0";
 
-  // ../shared/creative-brief/src/engine.ts
+  // shared/creative-brief/src/engine.ts
   var OBSIDIAN = "#0C0E14";
   var GOLD = "#C9A84C";
   var IVORY = "#FAF8F3";
@@ -795,7 +795,7 @@
     };
   }
 
-  // ../shared/wow-engine/src/types.ts
+  // shared/wow-engine/src/types.ts
   var CONCEPT_ORDER = [
     "Signature Edition",
     "Luxury Gold",
@@ -805,7 +805,7 @@
   var SCHEMA_VERSION2 = "1.0.0";
   var WOW_THRESHOLD = 90;
 
-  // ../shared/wow-engine/src/scoring.ts
+  // shared/wow-engine/src/scoring.ts
   var clamp01 = (n) => n < 0 ? 0 : n > 1 ? 1 : n;
   var round1 = (n) => Math.round(n * 10) / 10;
   var MAX = {
@@ -911,7 +911,7 @@
     }
   }
 
-  // ../shared/wow-engine/src/explanations.ts
+  // shared/wow-engine/src/explanations.ts
   function occasionNoun(occasion) {
     const map = {
       graduation: "graduation",
@@ -996,7 +996,7 @@
     return { headline, caption, altText };
   }
 
-  // ../shared/wow-engine/src/concepts.ts
+  // shared/wow-engine/src/concepts.ts
   var round2 = (n) => Math.round(n * 100) / 100;
   var clamp012 = (n) => n < 0 ? 0 : n > 1 ? 1 : n;
   var MAX_SUPPORTING = {
@@ -1100,7 +1100,7 @@
     };
   }
 
-  // ../shared/wow-engine/src/engine.ts
+  // shared/wow-engine/src/engine.ts
   var ENGINE_VERSION = "0.1.0";
   function generateWOWPresentation(memoryProfile, creativeBrief, options) {
     const concepts = CONCEPT_ORDER.map(
@@ -1120,11 +1120,11 @@
     };
   }
 
-  // ../shared/render-orchestrator/src/types.ts
+  // shared/render-orchestrator/src/types.ts
   var SCHEMA_VERSION3 = "1.0.0";
   var WOW_THRESHOLD2 = 90;
 
-  // ../shared/render-orchestrator/src/mapper.ts
+  // shared/render-orchestrator/src/mapper.ts
   var CONCEPT_ARRANGEMENT = {
     "Signature Edition": "classic",
     // central hero, disciplined grid
@@ -1291,7 +1291,7 @@
     ];
   }
 
-  // ../shared/render-orchestrator/src/validator.ts
+  // shared/render-orchestrator/src/validator.ts
   var REQUIRED_TARGETS = ["digital", "poster_18x24", "poster_24x36", "framed_24x36"];
   function layoutComplete(l) {
     if (!l) return false;
@@ -1355,7 +1355,7 @@
     };
   }
 
-  // ../shared/render-orchestrator/src/engine.ts
+  // shared/render-orchestrator/src/engine.ts
   var ENGINE_VERSION2 = "0.1.0";
   function emptyInstructions() {
     return {
@@ -1403,10 +1403,10 @@
     return { style: "", displayFont: "", supportingFont: "", headlineTreatment: "", labelTreatment: "", guidance: "" };
   }
 
-  // ../shared/art-direction-engine/src/types.ts
+  // shared/art-direction-engine/src/types.ts
   var SCHEMA_VERSION4 = "1.0.0";
 
-  // ../shared/art-direction-engine/src/philosophy.ts
+  // shared/art-direction-engine/src/philosophy.ts
   var IDENTITIES = {
     "Signature Edition": {
       philosophy: {
@@ -1547,7 +1547,7 @@
     };
   }
 
-  // ../shared/art-direction-engine/src/story.ts
+  // shared/art-direction-engine/src/story.ts
   var STORY_BEATS = {
     graduation: ["portrait", "diploma", "parents", "friends", "celebration", "cake"],
     championship: ["portrait", "action", "team", "trophy", "celebration", "crowd"],
@@ -1615,7 +1615,7 @@
     };
   }
 
-  // ../shared/art-direction-engine/src/copy.ts
+  // shared/art-direction-engine/src/copy.ts
   var SENTIMENT = {
     graduation: {
       "Signature Edition": "The years of work, framed with the calm of a gallery wall.",
@@ -1689,7 +1689,7 @@
     };
   }
 
-  // ../shared/art-direction-engine/src/engine.ts
+  // shared/art-direction-engine/src/engine.ts
   var clone = (v) => structuredClone(v);
   function directionFor(concept, brief, occasion, options) {
     const name = concept.conceptName;
@@ -1765,7 +1765,7 @@
     return { schemaVersion: SCHEMA_VERSION4, occasion, directions, presentation };
   }
 
-  // demo/pipeline.ts
+  // components/demo/pipeline.ts
   function runPipeline(memoryProfile) {
     const creativeBrief = generateCreativeBrief(memoryProfile);
     const rawPresentation = generateWOWPresentation(memoryProfile, creativeBrief);
@@ -1778,7 +1778,7 @@
     return generateRenderPlan(result.memoryProfile, result.creativeBrief, result.wowPresentation, { conceptName });
   }
 
-  // ../shared/render-engine/src/canvas/helpers.ts
+  // shared/render-engine/src/canvas/helpers.ts
   function roundRect(ctx, x, y, w, h2, r) {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
@@ -1836,7 +1836,7 @@
     return out;
   }
 
-  // ../shared/render-engine/src/frames/registry.ts
+  // shared/render-engine/src/frames/registry.ts
   var REGISTRY = /* @__PURE__ */ new Map();
   function registerFrame(renderer) {
     REGISTRY.set(renderer.id, renderer);
@@ -1846,7 +1846,7 @@
     return r ?? REGISTRY.get("rounded");
   }
 
-  // ../shared/render-engine/src/frames/rounded.ts
+  // shared/render-engine/src/frames/rounded.ts
   var RoundedFrame = {
     id: "rounded",
     label: "Rounded",
@@ -1870,7 +1870,7 @@
   };
   registerFrame(RoundedFrame);
 
-  // ../shared/render-engine/src/canvas/paths.ts
+  // shared/render-engine/src/canvas/paths.ts
   function hexPath(ctx, x, y, w, h2) {
     const size = Math.min(w, h2);
     const cx = x + w / 2;
@@ -1938,7 +1938,7 @@
     ctx.closePath();
   }
 
-  // ../shared/render-engine/src/frames/shapes.ts
+  // shared/render-engine/src/frames/shapes.ts
   function withDrop(ctx, blur, off, pathFn) {
     ctx.save();
     ctx.shadowColor = "rgba(0,0,0,0.45)";
@@ -2081,7 +2081,7 @@
   registerFrame(HeartFrame);
   registerFrame(StarFrame);
 
-  // ../shared/render-engine/src/frames/cards.ts
+  // shared/render-engine/src/frames/cards.ts
   var PolaroidFrame = {
     id: "polaroid",
     label: "Polaroid",
@@ -2197,7 +2197,7 @@
   registerFrame(TapeFrame);
   registerFrame(WhiteFrame);
 
-  // ../shared/render-engine/src/frames/borders.ts
+  // shared/render-engine/src/frames/borders.ts
   var GoldFrame = {
     id: "gold",
     label: "Gold edge",
@@ -2346,7 +2346,7 @@
   registerFrame(RibbonFrame);
   registerFrame(CrownFrame);
 
-  // ../shared/render-engine/src/frames/effects.ts
+  // shared/render-engine/src/frames/effects.ts
   var NeonFrame = {
     id: "neon",
     label: "Neon glow",
@@ -2453,7 +2453,150 @@
   registerFrame(ShadowFrame);
   registerFrame(ShadowBoxFrame);
 
-  // ../shared/render-engine/src/canvas/rng.ts
+  // shared/render-engine/src/arrangements/wow-geometry.ts
+  var WOW_SUPPORTING_CAP = {
+    classic: 6,
+    // Signature Edition — clean museum strip (3–6)
+    pyramid: 4,
+    // Luxury Gold      — sparse and dramatic (2–4)
+    mosaic: 8,
+    // Family Legacy    — layered story rhythm (5–8)
+    magazine: 5,
+    // Modern Editorial — magazine row (3–5)
+    scattered: 6
+  };
+  function wowSupportingCount(arrangement, available) {
+    const cap = WOW_SUPPORTING_CAP[arrangement] ?? 6;
+    return Math.max(0, Math.min(cap, Math.floor(available)));
+  }
+  var MARGIN = 40;
+  var GAP = 12;
+  var area = (r) => Math.max(0, r.w) * Math.max(0, r.h);
+  function heroShare(layout) {
+    const hero = area(layout.hero);
+    const cells = layout.cells.reduce((s, c) => s + area(c), 0);
+    const total = hero + cells;
+    return total > 0 ? hero / total : 1;
+  }
+  var HERO_SHARE_FLOOR = 0.55;
+  function enforceHeroDominance(layout, target = 0.58) {
+    let cells = layout.cells;
+    for (let i = 0; i < 24 && heroShare({ hero: layout.hero, cells }) < target; i++) {
+      const k = 0.94;
+      cells = cells.map((c) => ({ x: c.x + c.w * (1 - k) / 2, y: c.y + c.h * (1 - k) / 2, w: c.w * k, h: c.h * k }));
+    }
+    return { hero: layout.hero, cells };
+  }
+  function assertLayout(layout) {
+    const ok = (r) => [r.x, r.y, r.w, r.h].every(Number.isFinite) && r.w > 1 && r.h > 1;
+    if (!layout || !ok(layout.hero)) throw new Error("wow geometry: degenerate hero rect");
+    for (const c of layout.cells) if (!ok(c)) throw new Error("wow geometry: degenerate cell rect");
+    if (heroShare(layout) < HERO_SHARE_FLOOR) throw new Error("wow geometry: hero is not dominant");
+    return layout;
+  }
+  function centredRow(W, y, count, s, gap = GAP) {
+    if (count <= 0) return [];
+    const totalW = count * s + (count - 1) * gap;
+    let x = (W - totalW) / 2;
+    const out = [];
+    for (let i = 0; i < count; i++) {
+      out.push({ x, y, w: s, h: s });
+      x += s + gap;
+    }
+    return out;
+  }
+  function classicWowLayout(W, H, contentTop, n) {
+    const innerW = W - MARGIN * 2;
+    const heroY = Math.max(140, contentTop);
+    const stripBot = H - MARGIN;
+    if (n <= 0) {
+      return { hero: { x: MARGIN, y: heroY, w: innerW, h: stripBot - heroY }, cells: [] };
+    }
+    const perCell = (innerW - GAP * (n - 1)) / n;
+    const side = Math.min(perCell, Math.round(H * 0.16));
+    const stripTop = stripBot - side;
+    const cells = centredRow(W, stripTop, n, side);
+    const hero = { x: MARGIN, y: heroY, w: innerW, h: stripTop - 28 - heroY };
+    return { hero, cells };
+  }
+  function pyramidWowLayout(W, H, contentTop, n) {
+    const innerW = W - MARGIN * 2;
+    const innerH = H - contentTop - 60;
+    const heroSize = Math.min(innerW * 0.45, innerH * 0.4);
+    const hero = { x: (W - heroSize) / 2, y: contentTop + 8, w: heroSize, h: heroSize };
+    if (n <= 0) return { hero, cells: [] };
+    const rows = [];
+    let remaining = n, cols = 2;
+    while (remaining > 0) {
+      const take = Math.min(cols, remaining);
+      rows.push(take);
+      remaining -= take;
+      cols++;
+    }
+    const pyTop = hero.y + heroSize + 40;
+    const pyBottom = H - 50;
+    const rowH = Math.max(40, (pyBottom - pyTop) / rows.length);
+    const widest = Math.max(...rows);
+    const maxByWidth = (innerW - GAP * (widest - 1)) / widest;
+    const side = Math.max(28, Math.min(rowH * 0.62, maxByWidth, heroSize * 0.42));
+    const cells = [];
+    rows.forEach((count, r) => cells.push(...centredRow(W, pyTop + r * rowH + (rowH - side) / 2, count, side)));
+    return { hero, cells };
+  }
+  function mosaicWowLayout(W, H, contentTop, n) {
+    const innerW = W - MARGIN * 2;
+    const contentBottom = H - MARGIN;
+    const heroW = Math.min(320, innerW * 0.6);
+    const heroH = heroW * (380 / 320);
+    const hero = { x: (W - heroW) / 2, y: contentTop + Math.floor((contentBottom - contentTop) * 0.22), w: heroW, h: heroH };
+    if (n <= 0) return { hero, cells: [] };
+    const topCount = Math.ceil(n / 2);
+    const botCount = n - topCount;
+    const topBand = Math.max(24, hero.y - contentTop - GAP);
+    const botTopY = hero.y + heroH + GAP;
+    const botBand = Math.max(24, contentBottom - botTopY);
+    const sideFor = (count, band) => count > 0 ? Math.min(band * 0.78, (innerW - GAP * (count - 1)) / count, heroW * 0.32) * 0.94 : 0;
+    const topSide = sideFor(topCount, topBand);
+    const botSide = sideFor(botCount, botBand);
+    const cells = [
+      ...centredRow(W, contentTop + (topBand - topSide) / 2, topCount, topSide),
+      ...centredRow(W, botTopY + (botBand - botSide) / 2, botCount, botSide)
+    ];
+    return { hero, cells };
+  }
+  function magazineWowLayout(W, H, contentTop, n) {
+    const innerW = W - MARGIN * 2;
+    const heroY = Math.max(128, contentTop);
+    const heroW = innerW * 0.62;
+    const heroH = heroW * (420 / 460);
+    const hero = { x: MARGIN, y: heroY, w: heroW, h: heroH };
+    if (n <= 0) return { hero, cells: [] };
+    const rowTop = heroY + heroH + 28;
+    const band = Math.max(24, H - MARGIN - rowTop);
+    const perCell = (innerW - GAP * (n - 1)) / n;
+    const side = Math.min(perCell, band * 0.72, heroW * 0.34);
+    const cells = centredRow(W, rowTop + (band - side) / 2, n, side);
+    return { hero, cells };
+  }
+  function wowLayoutFor(arrangement, W, H, contentTop, n) {
+    const build = () => {
+      switch (arrangement) {
+        case "classic":
+          return classicWowLayout(W, H, contentTop, n);
+        case "pyramid":
+          return pyramidWowLayout(W, H, contentTop, n);
+        case "mosaic":
+          return mosaicWowLayout(W, H, contentTop, n);
+        case "magazine":
+          return magazineWowLayout(W, H, contentTop, n);
+        default:
+          throw new Error(`wow geometry: no intentional layout for "${arrangement}"`);
+      }
+    };
+    return assertLayout(enforceHeroDominance(build()));
+  }
+
+  // shared/render-engine/src/canvas/rng.ts
   function mulberry32(seed) {
     let a = seed >>> 0;
     return function() {
@@ -2468,7 +2611,7 @@
     return (rng() * 2 - 1) * maxDeg * (Math.PI / 180);
   }
 
-  // ../shared/render-engine/src/frames/dispatch.ts
+  // shared/render-engine/src/frames/dispatch.ts
   function drawPhotoFramed(ctx, input, photo, x, y, w, h2, opts = {}) {
     const frameId = opts.forceFrame ?? input.frames?.[photo.id] ?? input.defaultFrame ?? "rounded";
     const rotation = opts.rotation ?? 0;
@@ -2578,7 +2721,7 @@
     ctx.restore();
   }
 
-  // ../shared/render-engine/src/arrangements/registry.ts
+  // shared/render-engine/src/arrangements/registry.ts
   var REGISTRY2 = /* @__PURE__ */ new Map();
   function registerArrangement(r) {
     REGISTRY2.set(r.id, r);
@@ -2588,7 +2731,7 @@
     return r ?? REGISTRY2.get("classic");
   }
 
-  // ../shared/render-engine/src/arrangements/classic.ts
+  // shared/render-engine/src/arrangements/classic.ts
   var ClassicArrangement = {
     id: "classic",
     label: "Classic",
@@ -2598,6 +2741,19 @@
       const margin = 40;
       const innerW = W - margin * 2;
       const supporting = photos.slice(1);
+      if (input.renderMode === "wow" && photos.length > 0) {
+        try {
+          const n = wowSupportingCount("classic", supporting.length);
+          const L = wowLayoutFor("classic", W, H, contentTop, n);
+          for (let i = 0; i < n; i++) {
+            const c = L.cells[i];
+            drawPhotoFramed(ctx, input, supporting[i], c.x, c.y, c.w, c.h, { rotation: photoRot(rng, 1.5), shadow: false });
+          }
+          drawHero3D(ctx, input, photos[0], L.hero.x, L.hero.y, L.hero.w, L.hero.h);
+          return;
+        } catch {
+        }
+      }
       const heroY = Math.max(140, contentTop);
       const heroH = 360;
       const heroBot = heroY + heroH;
@@ -2625,7 +2781,7 @@
   };
   registerArrangement(ClassicArrangement);
 
-  // ../shared/render-engine/src/arrangements/magazine.ts
+  // shared/render-engine/src/arrangements/magazine.ts
   var MagazineArrangement = {
     id: "magazine",
     label: "Magazine",
@@ -2634,6 +2790,19 @@
     render({ ctx, W, H, contentTop, rng, input }, photos) {
       const supporting = photos.slice(1);
       const gap = 8;
+      if (input.renderMode === "wow" && photos.length > 0) {
+        try {
+          const n = wowSupportingCount("magazine", supporting.length);
+          const L = wowLayoutFor("magazine", W, H, contentTop, n);
+          for (let i = 0; i < n; i++) {
+            const c = L.cells[i];
+            drawPhotoFramed(ctx, input, supporting[i], c.x, c.y, c.w, c.h, { rotation: photoRot(rng, 1), shadow: false });
+          }
+          drawHero3D(ctx, input, photos[0], L.hero.x, L.hero.y, L.hero.w, L.hero.h);
+          return;
+        } catch {
+        }
+      }
       const heroX = 40;
       const heroY = Math.max(128, contentTop);
       const heroW = 460;
@@ -2689,7 +2858,7 @@
   };
   registerArrangement(MagazineArrangement);
 
-  // ../shared/render-engine/src/arrangements/pyramid.ts
+  // shared/render-engine/src/arrangements/pyramid.ts
   var PyramidArrangement = {
     id: "pyramid",
     label: "Pyramid",
@@ -2700,6 +2869,19 @@
       const innerW = W - margin * 2;
       const innerH = H - contentTop - 60;
       const supporting = photos.slice(1);
+      if (input.renderMode === "wow" && photos.length > 0) {
+        try {
+          const n = wowSupportingCount("pyramid", supporting.length);
+          const L = wowLayoutFor("pyramid", W, H, contentTop, n);
+          for (let i = 0; i < n; i++) {
+            const c = L.cells[i];
+            drawPhotoFramed(ctx, input, supporting[i], c.x, c.y, c.w, c.h, { rotation: photoRot(rng, 2.5), shadow: false });
+          }
+          drawHero3D(ctx, input, photos[0], L.hero.x, L.hero.y, L.hero.w, L.hero.h);
+          return;
+        } catch {
+        }
+      }
       const heroSize = Math.min(innerW * 0.45, innerH * 0.4);
       const heroX = (W - heroSize) / 2;
       const heroY = contentTop + 8;
@@ -2744,7 +2926,7 @@
   };
   registerArrangement(PyramidArrangement);
 
-  // ../shared/render-engine/src/arrangements/scattered.ts
+  // shared/render-engine/src/arrangements/scattered.ts
   var ScatteredArrangement = {
     id: "scattered",
     label: "Scattered",
@@ -2791,7 +2973,7 @@
   };
   registerArrangement(ScatteredArrangement);
 
-  // ../shared/render-engine/src/arrangements/mosaic.ts
+  // shared/render-engine/src/arrangements/mosaic.ts
   var MosaicArrangement = {
     id: "mosaic",
     label: "Mosaic",
@@ -2800,6 +2982,19 @@
     render({ ctx, W, H, contentTop, rng, input }, photos) {
       const supporting = photos.slice(1);
       const margin = 40;
+      if (input.renderMode === "wow" && photos.length > 0) {
+        try {
+          const n = wowSupportingCount("mosaic", supporting.length);
+          const L = wowLayoutFor("mosaic", W, H, contentTop, n);
+          for (let i = 0; i < n; i++) {
+            const c = L.cells[i];
+            drawPhotoFramed(ctx, input, supporting[i], c.x, c.y, c.w, c.h, { rotation: photoRot(rng, 0.5), shadow: false });
+          }
+          drawHero3D(ctx, input, photos[0], L.hero.x, L.hero.y, L.hero.w, L.hero.h);
+          return;
+        } catch {
+        }
+      }
       const gap = 8;
       const contentBottom = H - margin;
       const heroW = 320;
@@ -2838,13 +3033,13 @@
   };
   registerArrangement(MosaicArrangement);
 
-  // ../shared/render-engine/src/mockups/registry.ts
+  // shared/render-engine/src/mockups/registry.ts
   var REGISTRY3 = /* @__PURE__ */ new Map();
   function registerMockup(r) {
     REGISTRY3.set(r.id, r);
   }
 
-  // ../shared/render-engine/src/mockups/retractable-stand.ts
+  // shared/render-engine/src/mockups/retractable-stand.ts
   var RetractableStandMockup = {
     id: "retractable-stand",
     label: "Retractable banner stand",
@@ -2994,7 +3189,7 @@
   };
   registerMockup(RetractableStandMockup);
 
-  // ../shared/render-engine/src/theme/background.ts
+  // shared/render-engine/src/theme/background.ts
   function drawBannerBackground(ctx, W, H, palette) {
     const grad = ctx.createLinearGradient(0, 0, 0, H);
     grad.addColorStop(0, lightenHex(palette.bg, 12));
@@ -3006,7 +3201,7 @@
     ctx.strokeRect(20, 20, W - 40, H - 40);
   }
 
-  // ../shared/render-engine/src/theme/text.ts
+  // shared/render-engine/src/theme/text.ts
   function renderBannerText(ctx, W, topY, theme, bannerText) {
     const fields = theme.fields ?? [];
     const palette = theme.palette;
@@ -3045,7 +3240,7 @@
     return y;
   }
 
-  // ../shared/render-engine/src/pipeline/render.ts
+  // shared/render-engine/src/pipeline/render.ts
   function renderBanner(ctx, input) {
     const { width: W, height: H, theme, bannerText, arrangement, photos, heroId } = input;
     drawBannerBackground(ctx, W, H, theme.palette);
@@ -3068,7 +3263,7 @@
     ctx.restore();
   }
 
-  // ../shared/render-engine/src/pipeline/preview.ts
+  // shared/render-engine/src/pipeline/preview.ts
   function renderPreview(target, input, opts = {}) {
     const W = opts.previewWidth ?? 800;
     const H = opts.previewHeight ?? 1200;
@@ -3080,7 +3275,7 @@
     renderBanner(ctx, { ...input, width: W, height: H });
   }
 
-  // ../shared/image-intelligence/src/orientation.ts
+  // shared/image-intelligence/src/orientation.ts
   var SQUARE_TOLERANCE = 0.02;
   function detectOrientation(width, height, tolerance = SQUARE_TOLERANCE) {
     if (!(width > 0) || !(height > 0)) return "square";
@@ -3131,14 +3326,17 @@
     };
   }
 
-  // ../shared/image-intelligence/src/hero.ts
+  // shared/image-intelligence/src/hero.ts
   var FACE_SAFE_FOCUS_Y = 0.1;
   var aspect = (width, height) => width > 0 && height > 0 ? width / height : 1;
-  function heroBoxAspect(arrangement, canvasWidth, _canvasHeight) {
+  var WOW_CLASSIC_HERO_HEIGHT_RATIO = 0.55;
+  function heroBoxAspect(arrangement, canvasWidth, canvasHeight, mode = "standard") {
     switch (arrangement) {
       case "classic": {
         const inner = canvasWidth - 80;
-        return inner > 0 ? aspect(inner, 360) : 1;
+        if (!(inner > 0)) return 1;
+        const heroHeight = mode === "wow" && canvasHeight && canvasHeight > 0 ? canvasHeight * WOW_CLASSIC_HERO_HEIGHT_RATIO : 360;
+        return aspect(inner, heroHeight);
       }
       case "pyramid":
         return 1;
@@ -3166,7 +3364,7 @@
     return { sx: 0, sy, sw: w, sh };
   }
 
-  // demo/renderer-binding.ts
+  // components/demo/renderer-binding.ts
   var FRAME_MAP = {
     "thin-gold": "double-gold",
     gold: "gold",
@@ -3254,7 +3452,8 @@
     const frames = {};
     const t = options.treatmentFor?.(req.conceptName);
     const supportingGrade = curate ? { contrast: t?.grade.contrast ?? 1.05, saturate: t?.grade.saturate ?? 0.94, brightness: t?.grade.brightness ?? 0.97, vignette: t?.vignette ?? 0.3 } : null;
-    const heroAspect = heroBoxAspect(req.arrangement, w, h2);
+    const renderMode = options.renderMode ?? "wow";
+    const heroAspect = heroBoxAspect(req.arrangement, w, h2, renderMode);
     const supportingAspect = t?.supportingAspect ?? SUPPORTING_ASPECT;
     const imageFor = (ref, targetAspect, grade, maxEdge) => {
       const src = resolveImage && resolveImage(ref);
@@ -3301,7 +3500,8 @@
       frames,
       defaultFrame: "rounded",
       seed: req.seed,
-      cinematicHero: t ? t.cinematicHero : req.cinematicHero
+      cinematicHero: t ? t.cinematicHero : req.cinematicHero,
+      renderMode
     };
   }
   function createCanvasRenderer(options = {}) {
@@ -3336,7 +3536,7 @@
     };
   }
 
-  // ../shared/render-adapter/src/types.ts
+  // shared/render-adapter/src/types.ts
   var SCHEMA_VERSION6 = "1.0.0";
   var REQUIRED_EXPORT_TARGETS = [
     "digital",
@@ -3345,7 +3545,7 @@
     "framed_24x36"
   ];
 
-  // ../shared/render-adapter/src/mapper.ts
+  // shared/render-adapter/src/mapper.ts
   var PREVIEW_LONG_EDGE = 1200;
   var THUMBNAIL_LONG_EDGE = 400;
   var PREVIEW_DPI = 72;
@@ -3473,7 +3673,7 @@
     };
   }
 
-  // ../shared/render-adapter/src/validator.ts
+  // shared/render-adapter/src/validator.ts
   function imageValid(img) {
     return !!img && typeof img.uri === "string" && img.uri.length > 0 && img.widthPx > 0 && img.heightPx > 0 && img.byteSize > 0;
   }
@@ -3511,7 +3711,7 @@
     };
   }
 
-  // ../shared/render-adapter/src/engine.ts
+  // shared/render-adapter/src/engine.ts
   function renderConcept(renderPlan, renderer, options = {}) {
     const arrangement = renderPlan.renderInstructions.arrangement;
     const base = {
@@ -3577,7 +3777,7 @@
     };
   }
 
-  // demo/concept-previews.ts
+  // components/demo/concept-previews.ts
   var msg = (err) => err instanceof Error ? err.message : String(err);
   function renderConceptPreview(result, conceptName, renderer, options = {}) {
     let plan;
@@ -3640,7 +3840,7 @@
     return out;
   }
 
-  // ../shared/memory-profile/fixtures/graduation.json
+  // shared/memory-profile/fixtures/graduation.json
   var graduation_default = {
     schema_version: "1.0.0",
     occasion: "graduation",
@@ -3831,7 +4031,7 @@
     }
   };
 
-  // ../shared/memory-profile/fixtures/championship.json
+  // shared/memory-profile/fixtures/championship.json
   var championship_default = {
     schema_version: "1.0.0",
     occasion: "championship",
@@ -3966,7 +4166,7 @@
     }
   };
 
-  // ../shared/memory-profile/fixtures/family.json
+  // shared/memory-profile/fixtures/family.json
   var family_default = {
     schema_version: "1.0.0",
     occasion: "family_reunion",
@@ -4163,7 +4363,7 @@
     }
   };
 
-  // ../shared/memory-profile/fixtures/wedding.json
+  // shared/memory-profile/fixtures/wedding.json
   var wedding_default = {
     schema_version: "1.0.0",
     occasion: "wedding",
@@ -4298,7 +4498,7 @@
     }
   };
 
-  // ../shared/memory-profile/fixtures/memorial.json
+  // shared/memory-profile/fixtures/memorial.json
   var memorial_default = {
     schema_version: "1.0.0",
     occasion: "memorial",
@@ -4485,7 +4685,7 @@
     }
   };
 
-  // demo/premium-reveal-demo.entry.ts
+  // components/demo/premium-reveal-demo.entry.ts
   function yieldToBrowser() {
     return new Promise((resolve) => {
       if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => resolve());
