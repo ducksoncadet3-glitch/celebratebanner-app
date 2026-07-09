@@ -50,12 +50,32 @@ export const heroFillsBox = (imageAspect: number, boxAspect: number): boolean =>
  *   pyramid   → heroSize × heroSize       (square)
  *   mosaic    → 320 × 380
  *   magazine  → 460 × 420
+ *
+ * In WOW mode (`render-engine/src/arrangements/wow-geometry.ts`) only `classic` differs:
+ * its hero grows downward into the space the old 40-cell grid used to waste, landing at
+ * roughly 55% of the canvas height. The other three keep their aspects by construction —
+ * pyramid stays square, mosaic keeps 320:380, magazine keeps 460:420 — so one branch is
+ * all that is needed here. `cropRatio` tolerates ±1.55×, far wider than the residual error.
  */
-export function heroBoxAspect(arrangement: ArrangementId | string, canvasWidth: number, _canvasHeight?: number): number {
+export type HeroBoxMode = 'standard' | 'wow';
+
+/** WOW classic's hero occupies about this fraction of the canvas height. */
+export const WOW_CLASSIC_HERO_HEIGHT_RATIO = 0.55;
+
+export function heroBoxAspect(
+  arrangement: ArrangementId | string,
+  canvasWidth: number,
+  canvasHeight?: number,
+  mode: HeroBoxMode = 'standard',
+): number {
   switch (arrangement) {
     case 'classic': {
       const inner = canvasWidth - 80;
-      return inner > 0 ? aspect(inner, 360) : 1;
+      if (!(inner > 0)) return 1;
+      const heroHeight = mode === 'wow' && canvasHeight && canvasHeight > 0
+        ? canvasHeight * WOW_CLASSIC_HERO_HEIGHT_RATIO
+        : 360;
+      return aspect(inner, heroHeight);
     }
     case 'pyramid': return 1;
     case 'mosaic': return aspect(320, 380);

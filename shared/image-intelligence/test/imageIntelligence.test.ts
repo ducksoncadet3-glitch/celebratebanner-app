@@ -14,6 +14,7 @@ import {
   hammingDistance, isNearDuplicate, curatePhotos, DEFAULT_MIN_KEEP,
   isPlaceholderText, sanitizeBannerText, SCHEMA_VERSION,
 } from '../src/index.ts';
+import { wowLayoutFor, WOW_SUPPORTING_CAP } from '../../render-engine/src/arrangements/wow-geometry.ts';
 import type { ArrangementId } from '../src/index.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -121,6 +122,36 @@ test('heroBoxAspect returns each arrangement box aspect', () => {
   assert.equal(heroBoxAspect('pyramid', PREVIEW_W), 1);
   assert.ok(Math.abs(heroBoxAspect('mosaic', PREVIEW_W) - 320 / 380) < 1e-9);
   assert.ok(Math.abs(heroBoxAspect('magazine', PREVIEW_W) - 460 / 420) < 1e-9);
+});
+// ── Sprint 15: the WOW hero box ──────────────────────────────────────
+test('the default heroBoxAspect is unchanged (standard mode is the default)', () => {
+  for (const arr of ['classic', 'pyramid', 'mosaic', 'magazine']) {
+    assert.equal(heroBoxAspect(arr, PREVIEW_W, 900), heroBoxAspect(arr, PREVIEW_W, 900, 'standard'), arr);
+  }
+});
+test('in wow mode only classic changes: its hero grows to ~55% of the canvas', () => {
+  assert.ok(Math.abs(heroBoxAspect('classic', 600, 900, 'wow') - 520 / (900 * 0.55)) < 1e-9);
+  assert.equal(heroBoxAspect('pyramid', 600, 900, 'wow'), 1);
+  assert.ok(Math.abs(heroBoxAspect('mosaic', 600, 900, 'wow') - 320 / 380) < 1e-9);
+  assert.ok(Math.abs(heroBoxAspect('magazine', 600, 900, 'wow') - 460 / 420) < 1e-9);
+});
+test('wow classic falls back to the standard box when no canvas height is known', () => {
+  assert.equal(heroBoxAspect('classic', 600, undefined, 'wow'), heroBoxAspect('classic', 600));
+  assert.equal(heroBoxAspect('classic', 600, 0, 'wow'), heroBoxAspect('classic', 600));
+});
+test('the wow hero box mirrors the REAL wow geometry: the hero always fills its frame', () => {
+  // Imported straight from the renderer so this mirror can never silently drift.
+  // wow-geometry.ts is dependency-free, which is what makes this import safe.
+  for (const [W, H] of [[600, 900], [800, 1200], [520, 780], [900, 700]] as const) {
+    for (const arr of ['classic', 'pyramid', 'mosaic', 'magazine'] as const) {
+      for (let n = 2; n <= WOW_SUPPORTING_CAP[arr]; n++) {
+        const { hero } = wowLayoutFor(arr, W, H, 200, n);
+        const box = aspect(hero.w, hero.h);
+        const prepared = heroBoxAspect(arr, W, H, 'wow');   // the aspect we pre-crop the hero to
+        assert.ok(heroFillsBox(prepared, box), `${arr} ${W}x${H}/${n}: cropRatio ${cropRatio(prepared, box).toFixed(2)}`);
+      }
+    }
+  }
 });
 test('heroBoxAspect degrades safely on tiny/unknown input', () => {
   assert.equal(heroBoxAspect('classic', 40), 1);
@@ -327,8 +358,14 @@ test('this module reads no pixels and emits no image data', () => {
   }).toLowerCase();
   for (const bad of ['data:image', 'base64', '<canvas', '<svg']) assert.ok(!s.includes(bad));
 });
-test('the existing renderer is unchanged (additive only)', () => {
+// Sprint 15 extends the renderer for the first time. The invariant is no longer
+// "no diff at all" but "every existing line survives": the standard path is reached
+// whenever `renderMode` is absent, so the default builder cannot regress.
+test('the existing renderer is extended, never rewritten (0 deletions)', () => {
   const root = execSync('git rev-parse --show-toplevel', { cwd: here }).toString().trim();
-  const status = execSync('git status --porcelain -- shared/render-engine/src', { cwd: root }).toString().trim();
-  assert.equal(status, '', 'render-engine must be untouched');
+  const numstat = execSync('git diff --numstat -- shared/render-engine/src', { cwd: root }).toString().trim();
+  for (const line of numstat.split('\n').filter(Boolean)) {
+    const [, deleted, file] = line.split(/\s+/);
+    assert.equal(deleted, '0', `${file}: ${deleted} line(s) deleted — renderer changes must be additive`);
+  }
 });

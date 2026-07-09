@@ -271,11 +271,22 @@ test('copyFor/bulletsFor are pure helpers over a direction', () => {
 });
 
 // ── No production regression ─────────────────────────────────────────
-test('the existing renderer, orchestrator and adapter are untouched', () => {
+// Sprint 15 extends the renderer for the first time. The invariant is no longer
+// "no diff at all" but "every existing line survives": the standard path is reached
+// whenever `renderMode` is absent, so the default builder cannot regress.
+function assertRendererAdditiveOnly(root: string): void {
+  const numstat = execSync('git diff --numstat -- shared/render-engine/src', { cwd: root }).toString().trim();
+  for (const line of numstat.split('\n').filter(Boolean)) {
+    const [, deleted, file] = line.split(/\s+/);
+    assert.equal(deleted, '0', `${file}: ${deleted} line(s) deleted — renderer changes must be additive`);
+  }
+}
+test('the orchestrator and adapter are untouched, and the renderer is additive only', () => {
   const root = execSync('git rev-parse --show-toplevel', { cwd: here }).toString().trim();
-  for (const p of ['shared/render-engine', 'shared/render-orchestrator/src', 'shared/render-adapter/src']) {
+  for (const p of ['shared/render-orchestrator/src', 'shared/render-adapter/src']) {
     assert.equal(execSync(`git status --porcelain -- ${p}`, { cwd: root }).toString().trim(), '', `${p} must be untouched`);
   }
+  assertRendererAdditiveOnly(root);
 });
 test('index.html is untouched by the art director', () => {
   const root = execSync('git rev-parse --show-toplevel', { cwd: here }).toString().trim();

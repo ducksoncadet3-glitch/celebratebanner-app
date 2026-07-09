@@ -14,7 +14,7 @@
  */
 import { renderPreview } from '../../shared/render-engine/src/index.ts';
 import type {
-  RenderInput, Photo, CanvasImage, FrameId, Theme, RenderTarget,
+  RenderInput, RenderMode, Photo, CanvasImage, FrameId, Theme, RenderTarget,
   ArrangementId as EngineArrangementId,
 } from '../../shared/render-engine/src/types.ts';
 import type { Renderer, RenderRequest, RenderedImage, RenderThemeSpec, RenderPhotoRef } from '../../shared/render-adapter/src/index.ts';
@@ -32,6 +32,13 @@ export interface CanvasRendererOptions {
   rotationFor?: (ref: RenderPhotoRef) => number;
   /** Run the image-intelligence pass (orientation + hero fill + curation). Default true. */
   curate?: boolean;
+  /**
+   * `'wow'` (the default here) asks the renderer for intentional, non-repeating geometry:
+   * fewer, larger supporting cells, never the same photo tiled to fill a grid. This
+   * binding only ever serves the WOW concept pipeline. Pass `'standard'` to get the
+   * historical tiled grid.
+   */
+  renderMode?: RenderMode;
   /**
    * The Art Director's treatment for a concept: grade, vignette, hero frame, supporting
    * aspect and cinematic hero. This is how four concepts become four visual identities
@@ -179,7 +186,8 @@ function toRenderInput(
     : null;
 
   // Hero fills its arrangement's box exactly; supporting tiles share one disciplined crop.
-  const heroAspect = heroBoxAspect(req.arrangement, w, h);
+  const renderMode: RenderMode = options.renderMode ?? 'wow';
+  const heroAspect = heroBoxAspect(req.arrangement, w, h, renderMode);
   const supportingAspect = t?.supportingAspect ?? SUPPORTING_ASPECT;
 
   const imageFor = (ref: RenderPhotoRef, targetAspect: number, grade: GradeSpec | null, maxEdge: number): CanvasImage => {
@@ -231,6 +239,7 @@ function toRenderInput(
     defaultFrame: 'rounded',
     seed: req.seed,
     cinematicHero: t ? t.cinematicHero : req.cinematicHero,
+    renderMode,
   };
 }
 

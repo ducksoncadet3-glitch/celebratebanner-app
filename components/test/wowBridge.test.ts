@@ -178,9 +178,19 @@ test('no checkout / pricing / Stripe / Printful / Gelato files were changed', ()
   const offenders = changed.split('\n').filter((l) => /checkout|pricing|stripe|printful|gelato/i.test(l));
   assert.deepEqual(offenders, [], `unexpected changes:\n${offenders.join('\n')}`);
 });
-test('the existing render engine and adapter sources are unchanged', () => {
-  assert.equal(gitStatus('shared/render-engine/src'), '', 'render-engine unchanged');
+// Sprint 15 extends the renderer for the first time. The invariant is no longer
+// "no diff at all" but "every existing line survives": the standard path is reached
+// whenever `renderMode` is absent, so the default builder cannot regress.
+function assertRendererAdditiveOnly(root: string): void {
+  const numstat = execSync('git diff --numstat -- shared/render-engine/src', { cwd: root }).toString().trim();
+  for (const line of numstat.split('\n').filter(Boolean)) {
+    const [, deleted, file] = line.split(/\s+/);
+    assert.equal(deleted, '0', `${file}: ${deleted} line(s) deleted — renderer changes must be additive`);
+  }
+}
+test('the adapter is unchanged, and the render engine is additive only', () => {
   assert.equal(gitStatus('shared/render-adapter/src'), '', 'render-adapter unchanged');
+  assertRendererAdditiveOnly(repoRoot());
 });
 
 // ── Sprint 13: image intelligence wiring ─────────────────────────────
@@ -279,8 +289,8 @@ test('the default builder is unchanged: WOW stays behind the flag', () => {
   assert.ok(html.includes('if(!isWOWMode())return;'), 'reveal still gated by the flag');
   assert.ok(/id="wow-reveal-slot"[^>]*display:none/.test(html), 'slot still inert by default');
 });
-test('image intelligence did not touch the existing renderer', () => {
-  assert.equal(gitStatus('shared/render-engine'), '', 'render-engine must be untouched');
+test('the renderer keeps every pre-existing line (wow geometry is purely additive)', () => {
+  assertRendererAdditiveOnly(repoRoot());
 });
 test('checkout and pricing are unchanged by image intelligence', () => {
   const html = readRepo('index.html');
