@@ -244,9 +244,12 @@ test('index.html does not use the render engine, so the default builder cannot r
   const hits = execSync('grep -c "render-engine" index.html || true', { cwd: root }).toString().trim();
   assert.equal(hits, '0', 'index.html has its own renderer and never imports this engine');
 });
-test('the orchestrator, the adapter and index.html are untouched', () => {
+test('the orchestrator and the adapter are untouched by the render engine', () => {
+  // index.html is intentionally NOT asserted untouched here: Sprint 15.1 (product-focus
+  // cleanup) removes retired themes from it. The invariant that still matters — index.html
+  // never imports this engine — is covered by the "0 render-engine references" test above.
   const root = execSync('git rev-parse --show-toplevel', { cwd: here }).toString().trim();
-  for (const p of ['shared/render-orchestrator/src', 'shared/render-adapter/src', 'index.html']) {
+  for (const p of ['shared/render-orchestrator/src', 'shared/render-adapter/src']) {
     assert.equal(execSync(`git status --porcelain -- ${p}`, { cwd: root }).toString().trim(), '', `${p} must be untouched`);
   }
 });

@@ -3,8 +3,6 @@ const THEMES = [
   { id: 'wedding', name: 'Wedding', emoji: '💍', sub: 'Couple names · soft palette' },
   { id: 'anniversary', name: 'Anniversary', emoji: '🥂', sub: 'Years · date · memories' },
   { id: 'champion', name: 'Champions', emoji: '🏆', sub: '10-photo team grid' },
-  { id: 'america250', name: 'America 250', emoji: '🇺🇸', sub: 'July 4, 2026 edition' },
-  { id: 'worldcup2026', name: 'World Cup 2026', emoji: '⚽', sub: 'Watch-party edition' },
   { id: 'pets', name: 'Pets', emoji: '🐾', sub: 'Best floofs of the year' },
   { id: 'milestone', name: 'Milestone', emoji: '✨', sub: 'Birthdays, retirements, more' },
 ];

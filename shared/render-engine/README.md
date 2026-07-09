@@ -115,8 +115,8 @@ registerArrangement({
 });
 ```
 
-Themes (`graduation`, `wedding`, `champion`, `pets`, `america250`,
-`worldcup2026`, …) are pure data — pass any `Theme` into `RenderInput.theme`.
+Themes (`graduation`, `wedding`, `champion`, `pets`, `anniversary`,
+`milestone`, …) are pure data — pass any `Theme` into `RenderInput.theme`.
 No registration needed; the engine doesn't care which themes exist.
 
 ## Roadmap

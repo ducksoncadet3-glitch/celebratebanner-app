@@ -340,8 +340,15 @@ test('the render adapter is unchanged, and the renderer is additive only', () =>
     assert.equal(deleted, '0', `${file}: ${deleted} line(s) deleted — renderer changes must be additive`);
   }
 });
-test('index.html and checkout/pricing are unchanged by this engine', () => {
-  assert.equal(gitStatus('index.html'), '', 'index.html must be untouched');
+test('index.html never references this engine, and its checkout/pricing survive', () => {
+  // index.html is intentionally editable by product sprints (Sprint 15.1 removed retired
+  // themes). This engine's invariant is decoupling: index.html must not reference the
+  // refinement engine, and its checkout + pricing markers must stay intact.
+  const root = execSync('git rev-parse --show-toplevel', { cwd: here }).toString().trim();
+  const html = readFileSync(join(root, 'index.html'), 'utf8');
+  assert.ok(!/refinement/i.test(html), 'index.html must not reference the refinement engine');
+  assert.ok(html.includes('goto(4)'), 'checkout navigation intact');
+  assert.ok(html.includes('9.99') || html.includes('999'), 'pricing markers intact');
 });
 
 // ── Review follow-up: parser gap fixes ───────────────────────────────
