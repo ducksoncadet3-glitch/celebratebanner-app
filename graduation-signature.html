@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Graduation Signature Banner — CelebrateBanner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Outfit:wght@300;400;500;600;700&family=Great+Vibes&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --obsidian:#0C0E14; --obsidian2:#12141d;
+    --gold:#C9A84C; --gold2:#E8C97A; --gold3:#F5E4B0;
+    --ivory:#FAF8F3; --border:rgba(201,168,76,0.22);
+    --sage:#5A8F6A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:radial-gradient(1200px 700px at 50% -10%, #171a24 0%, var(--obsidian) 55%);
+    color:var(--ivory); font-family:'Outfit',sans-serif; min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+
+  /* header */
+  header.site{padding:26px 0;text-align:center;border-bottom:1px solid var(--border)}
+  .brand{font-family:'Cormorant Garamond',serif;font-size:26px;letter-spacing:.5px;font-weight:600}
+  .brand b{color:var(--gold2);font-weight:600}
+  .brand .r{color:var(--ivory)}
+  .kicker{margin-top:6px;font-size:12px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);opacity:.85}
+
+  /* hero intro */
+  .intro{text-align:center;padding:54px 0 8px}
+  .intro h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:clamp(34px,5vw,58px);line-height:1.05}
+  .intro h1 em{font-style:italic;color:var(--gold2)}
+  .intro p{margin:16px auto 0;max-width:600px;color:rgba(250,248,243,.68);font-size:17px;line-height:1.6}
+
+  /* steps */
+  .panel{background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+    border:1px solid var(--border);border-radius:20px;padding:34px;margin:26px 0}
+  .step-tag{display:inline-flex;align-items:center;gap:10px;font-size:12px;letter-spacing:3px;
+    text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+  .step-tag .n{width:26px;height:26px;border-radius:50%;border:1px solid var(--gold);
+    display:grid;place-items:center;font-size:13px;color:var(--gold2)}
+  .panel h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:30px;margin-bottom:6px}
+  .panel .sub{color:rgba(250,248,243,.6);font-size:15px;margin-bottom:22px}
+
+  /* dropzone */
+  .drop{border:1.5px dashed rgba(201,168,76,.4);border-radius:16px;padding:44px 24px;text-align:center;
+    cursor:pointer;transition:.2s;background:rgba(201,168,76,.03)}
+  .drop:hover,.drop.over{border-color:var(--gold2);background:rgba(201,168,76,.08)}
+  .drop .ic{font-size:34px}
+  .drop .big{font-family:'Cormorant Garamond',serif;font-size:22px;margin-top:8px}
+  .drop .small{color:rgba(250,248,243,.5);font-size:14px;margin-top:6px}
+
+  .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:12px;margin-top:22px}
+  .thumb{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;border:1px solid var(--border);cursor:pointer}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb.hero{border-color:var(--gold2);box-shadow:0 0 0 2px var(--gold2), 0 8px 24px rgba(201,168,76,.25)}
+  .thumb .hbadge{position:absolute;left:8px;top:8px;background:var(--gold2);color:var(--obsidian);
+    font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:20px;text-transform:uppercase}
+  .thumb .rm{position:absolute;right:6px;top:6px;width:22px;height:22px;border:none;border-radius:50%;
+    background:rgba(12,14,20,.8);color:#fff;cursor:pointer;font-size:12px;line-height:1}
+  .hint{font-size:13px;color:rgba(250,248,243,.5);margin-top:12px}
+  .hint b{color:var(--gold2);font-weight:600}
+
+  /* form */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr}}
+  .build-grid{display:grid;grid-template-columns:1fr 340px;gap:34px;align-items:start}
+  @media(max-width:820px){.build-grid{grid-template-columns:1fr}}
+  .build-preview{position:sticky;top:24px}
+  .prev-label{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;text-align:center}
+  #live{width:100%;height:auto;display:block;border-radius:6px;
+    box-shadow:0 24px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(201,168,76,.22)}
+  label.fld{display:block}
+  label.fld .lb{font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;display:block}
+  input.in,textarea.in{width:100%;background:rgba(255,255,255,.03);border:1px solid var(--border);
+    border-radius:12px;padding:14px 16px;color:var(--ivory);font-family:'Outfit',sans-serif;font-size:16px;outline:none;transition:.2s}
+  input.in:focus,textarea.in:focus{border-color:var(--gold2);background:rgba(201,168,76,.05)}
+  textarea.in{resize:vertical;min-height:64px}
+
+  /* buttons */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:none;cursor:pointer;
+    font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;padding:16px 30px;border-radius:40px;transition:.2s}
+  .btn.gold{background:linear-gradient(135deg,var(--gold2),var(--gold));color:var(--obsidian);
+    box-shadow:0 10px 30px rgba(201,168,76,.28)}
+  .btn.gold:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(201,168,76,.4)}
+  .btn.ghost{background:transparent;border:1px solid var(--gold);color:var(--gold2)}
+  .btn.ghost:hover{background:rgba(201,168,76,.08)}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+  .cta-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+
+  /* reveal / loading */
+  #stage{display:none;text-align:center;padding:20px 0 70px}
+  .loading{display:none;text-align:center;padding:90px 0}
+  .loading .ring{width:64px;height:64px;margin:0 auto 26px;border-radius:50%;
+    border:3px solid rgba(201,168,76,.2);border-top-color:var(--gold2);animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading .t{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--gold3)}
+  .loading .s{color:rgba(250,248,243,.55);margin-top:8px;font-size:15px}
+
+  .reveal-head{margin-bottom:8px}
+  .reveal-head .lbl{font-size:12px;letter-spacing:4px;text-transform:uppercase;color:var(--gold)}
+  .reveal-head h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:clamp(30px,4vw,46px);margin-top:6px}
+  .reveal-head p{color:rgba(250,248,243,.6);margin-top:8px}
+
+  .poster-shell{position:relative;display:inline-block;margin:30px auto 6px;border-radius:8px;
+    box-shadow:0 40px 120px rgba(0,0,0,.7), 0 0 0 1px rgba(201,168,76,.25)}
+  #poster{width:min(560px,86vw);height:auto;display:block;border-radius:8px}
+
+  .specs{color:rgba(250,248,243,.5);font-size:13.5px;margin-top:18px;letter-spacing:.3px}
+  .specs b{color:var(--gold2);font-weight:600}
+  .price-tag{display:inline-block;font-size:13px;opacity:.75;margin-left:6px}
+
+  .divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:8px 0}
+  footer.site{text-align:center;padding:40px 0;color:rgba(250,248,243,.35);font-size:13px}
+  .toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(20px);opacity:0;
+    background:var(--obsidian2);border:1px solid var(--gold);color:var(--ivory);padding:14px 24px;border-radius:40px;
+    transition:.3s;z-index:50;pointer-events:none;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="brand"><b>Celebrate</b><span class="r">Banner</span></div>
+  <div class="kicker">Graduation Signature Banner</div>
+</header>
+
+<div class="wrap">
+
+  <section class="intro" id="intro">
+    <h1>Turn your photos into a <em>signature</em> graduation keepsake</h1>
+    <p>Upload your favorite moments. We arrange them into one premium black-and-gold poster,
+       ready to print at gallery quality or download instantly.</p>
+  </section>
+
+  <!-- BUILDER -->
+  <div id="builder">
+    <!-- Step 1 -->
+    <section class="panel">
+      <div class="step-tag"><span class="n">1</span> Upload your photos</div>
+      <h2>Add the graduate's best moments</h2>
+      <div class="sub">Add <b style="color:var(--gold2)">one hero portrait</b> plus <b style="color:var(--gold2)">4–8 favorite memories</b>. Your first photo becomes the centerpiece — tap any other to promote it.</div>
+
+      <div class="drop" id="drop">
+        <div class="ic">🎓</div>
+        <div class="big">Drag &amp; drop photos here</div>
+        <div class="small">or click to browse — 1 portrait + 4–8 memories · JPG or PNG</div>
+      </div>
+      <input type="file" id="file" accept="image/*" multiple hidden>
+
+      <div class="thumbs" id="thumbs"></div>
+      <div class="hint" id="pickhint" style="display:none">✨ Tap any photo to make it the <b>centerpiece portrait</b>.</div>
+    </section>
+
+    <!-- Step 2 -->
+    <section class="panel">
+      <div class="step-tag"><span class="n">2</span> Personalize &amp; preview</div>
+      <h2>Add the details</h2>
+      <div class="sub">These appear in elegant gold lettering. The preview updates live — empty photo frames fill in as you upload.</div>
+
+      <div class="build-grid">
+        <div class="build-form">
+          <div class="grid2">
+            <label class="fld"><span class="lb">Graduate name</span>
+              <input class="in" id="f-name" placeholder="e.g., Sarah Johnson" value=""></label>
+            <label class="fld"><span class="lb">Class year</span>
+              <input class="in" id="f-year" placeholder="e.g., 2026" value="2026"></label>
+            <label class="fld"><span class="lb">School</span>
+              <input class="in" id="f-school" placeholder="e.g., Riverside High" value=""></label>
+            <label class="fld"><span class="lb">Message <span style="opacity:.5;text-transform:none;letter-spacing:0">(optional)</span></span>
+              <input class="in" id="f-msg" placeholder="e.g., The world is yours" value=""></label>
+          </div>
+          <div class="cta-row" style="justify-content:flex-start;margin-top:28px">
+            <button class="btn gold" id="gen" disabled>Generate My Banner &nbsp;→</button>
+          </div>
+          <div class="hint" id="genhint" style="margin-top:14px">Add a hero portrait to continue.</div>
+        </div>
+
+        <div class="build-preview">
+          <div class="prev-label">Live preview</div>
+          <canvas id="live" width="1200" height="1800"></canvas>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading" id="loading">
+    <div class="ring"></div>
+    <div class="t">Designing your Signature Banner…</div>
+    <div class="s">Placing your photos and hand-setting the gold lettering.</div>
+  </div>
+
+  <!-- STAGE: final product -->
+  <section id="stage">
+    <div class="reveal-head">
+      <div class="lbl">Your finished product</div>
+      <h2>Graduation Signature Banner</h2>
+      <p>Built from your photos — ready to print or download.</p>
+    </div>
+
+    <div class="poster-shell">
+      <canvas id="poster" width="1200" height="1800"></canvas>
+    </div>
+
+    <div class="specs">
+      <b>24&nbsp;×&nbsp;36 in</b> · 300&nbsp;DPI · Enhanced Matte poster print &nbsp;•&nbsp; digital file available separately
+    </div>
+
+    <div class="cta-row" style="margin-top:26px">
+      <button class="btn gold" id="order">🖼 &nbsp;Order Printed Banner <span class="price-tag">$79.99</span></button>
+      <button class="btn ghost" id="download">⬇ &nbsp;Download Digital Version <span class="price-tag">$9.99</span></button>
+    </div>
+    <div class="cta-row" style="margin-top:6px">
+      <button class="btn ghost" id="restart" style="border-color:var(--border);color:rgba(250,248,243,.6)">← Start over</button>
+    </div>
+    <div style="margin-top:18px;font-size:13px;color:rgba(250,248,243,.42)">
+      Prefer the classic builder? <a href="index.html" style="color:var(--gold2);text-decoration:none">Open the full builder →</a>
+    </div>
+  </section>
+
+</div>
+
+<footer class="site">CelebrateBanner · Premium celebration keepsakes · Printed in the USA</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+const state = { photos: [], heroId: null };
+window.state = state;   // exposed for automated preview verification
+let uidc = 0;
+
+const $ = s => document.querySelector(s);
+const drop = $('#drop'), fileInput = $('#file'), thumbs = $('#thumbs');
+
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600); }
+
+// ---------- uploads ----------
+drop.addEventListener('click', ()=> fileInput.click());
+drop.addEventListener('dragover', e=>{e.preventDefault();drop.classList.add('over');});
+drop.addEventListener('dragleave', ()=>drop.classList.remove('over'));
+drop.addEventListener('drop', e=>{e.preventDefault();drop.classList.remove('over');addFiles(e.dataTransfer.files);});
+fileInput.addEventListener('change', e=> addFiles(e.target.files));
+
+function addFiles(list){
+  const files = Array.from(list).filter(f=>f.type.startsWith('image/'));
+  if(!files.length) return;
+  let pending = files.length;
+  files.forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const p = { id:'p'+(uidc++), url:ev.target.result, img, w:img.naturalWidth, h:img.naturalHeight, name:file.name };
+        state.photos.push(p);
+        if(!state.heroId) state.heroId = p.id;   // first upload becomes centerpiece
+        if(--pending===0) renderThumbs();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderThumbs(){
+  thumbs.innerHTML='';
+  state.photos.forEach((p,i)=>{
+    const el=document.createElement('div');
+    el.className='thumb'+(p.id===state.heroId?' hero':'');
+    el.innerHTML = `<img src="${p.url}" alt="">`+
+      (p.id===state.heroId?'<span class="hbadge">Hero</span>':'')+
+      `<button class="rm" title="Remove">✕</button>`;
+    el.addEventListener('click', ev=>{ if(ev.target.classList.contains('rm')){ removePhoto(p.id); ev.stopPropagation(); return;} state.heroId=p.id; renderThumbs(); });
+    thumbs.appendChild(el);
+  });
+  $('#pickhint').style.display = state.photos.length>1 ? 'block':'none';
+  const hasHero = !!state.heroId, mem = state.photos.length-(hasHero?1:0);
+  $('#gen').disabled = !hasHero;
+  $('#genhint').textContent = !hasHero ? 'Add a hero portrait to continue.'
+    : `Hero set · ${mem} memor${mem===1?'y':'ies'} added${mem<4?' — 4–8 recommended':''}. Preview updates live.`;
+  renderLive();
+}
+function removePhoto(id){
+  state.photos = state.photos.filter(p=>p.id!==id);
+  if(state.heroId===id) state.heroId = state.photos[0]?.id || null;
+  renderThumbs();
+}
+
+// ---------- generate ----------
+$('#gen').addEventListener('click', ()=>{
+  $('#builder').style.display='none';
+  $('#intro').style.display='none';
+  $('#loading').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+  setTimeout(async ()=>{
+    await drawFinal();
+    $('#loading').style.display='none';
+    $('#stage').style.display='block';
+    window.__posterReady = true;
+    window.scrollTo({top:0,behavior:'smooth'});
+  }, 1600);
+});
+
+$('#restart').addEventListener('click', ()=>{
+  $('#stage').style.display='none';
+  $('#builder').style.display='block';
+  $('#intro').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+// ── Checkout ──────────────────────────────────────────────────────────────
+// Reuses the EXISTING CelebrateBanner Stripe Payment Links, package IDs, prices,
+// and client_reference_id convention verbatim from index.html (placeholderCheckout).
+// Nothing about pricing, Stripe, or fulfillment is changed here — this page only
+// hands off to the same links the classic builder already uses for graduation-poster.
+const CHECKOUT = {
+  marketingProduct:'graduation-poster',
+  productName:'Graduation Signature Banner',
+  // Printed → "Standard Poster" tier (poster_standard), the base printed poster.
+  printed:{ pkg:'poster_standard', name:'Standard Poster', price:79.99,
+            stripeLink:'https://buy.stripe.com/bJe28j1S8fpDdQs81l83C05' },
+  // Digital → shared "Digital Download" package.
+  digital:{ pkg:'digital', name:'Digital Download', price:9.99,
+            stripeLink:'https://buy.stripe.com/7sY8wHeEUb9n27KgxR83C00' },
+};
+function goCheckout(which){
+  if(!state.heroId){ toast('Add your hero portrait first'); return; }
+  const c=CHECKOUT[which];
+  const cref=['pkg',c.pkg,'mkt',CHECKOUT.marketingProduct].join('_').slice(0,200);
+  const base=c.stripeLink, sep=base.includes('?')?'&':'?';
+  const url=base+sep
+    +'client_reference_id='+encodeURIComponent(cref)
+    +'&package='+encodeURIComponent(c.pkg)
+    +'&package_name='+encodeURIComponent(c.name)
+    +'&marketing_product='+encodeURIComponent(CHECKOUT.marketingProduct)
+    +'&product_name='+encodeURIComponent(CHECKOUT.productName);
+  window.__lastCheckoutUrl=url;   // exposed for launch verification
+  toast('Redirecting to secure Stripe checkout…');
+  setTimeout(function(){ window.open(url,'_blank'); }, 600);
+}
+$('#order').addEventListener('click', ()=> goCheckout('printed'));
+$('#download').addEventListener('click', ()=> goCheckout('digital'));
+
+['f-name','f-year','f-school','f-msg'].forEach(id=>$('#'+id).addEventListener('input', renderLive));
+
+// ---------- poster rendering (the reusable product) ----------
+// The layout defines fixed SLOTS. Each slot is filled by an uploaded customer
+// image when available, otherwise it renders as an elegant empty placeholder.
+// No customer photo is ever hardcoded — slots are data-driven from state.photos.
+const EMPTY_MEMORY_SLOTS = 6;   // template shows this many memory slots before upload
+
+function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function coverDraw(ctx,img,x,y,w,h,r){
+  ctx.save(); roundRect(ctx,x,y,w,h,r); ctx.clip();
+  const ir=img.naturalWidth/img.naturalHeight, br=w/h; let dw,dh,dx,dy;
+  if(ir>br){dh=h;dw=h*ir;dx=x-(dw-w)/2;dy=y;} else {dw=w;dh=w/ir;dx=x;dy=y-(dh-h)/2;}
+  ctx.drawImage(img,dx,dy,dw,dh); ctx.restore();
+}
+function goldFrame(ctx,x,y,w,h,r,lw,dim){
+  ctx.save();
+  const g=ctx.createLinearGradient(x,y,x+w,y+h);
+  g.addColorStop(0,dim?'#8a7534':'#F5E4B0');g.addColorStop(.5,dim?'#6b571f':'#C9A84C');g.addColorStop(1,dim?'#4a3c16':'#8a6f2e');
+  roundRect(ctx,x,y,w,h,r); ctx.lineWidth=lw; ctx.strokeStyle=g;
+  ctx.shadowColor=dim?'rgba(201,168,76,.18)':'rgba(201,168,76,.5)'; ctx.shadowBlur=dim?10:24; ctx.stroke();
+  ctx.restore();
+}
+// glyphs drawn inside empty slots (no fake people — abstract line art)
+function portraitGlyph(ctx,cx,cy,s,color){
+  ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=s*0.09; ctx.lineCap='round';
+  ctx.beginPath(); ctx.arc(cx,cy-s*0.35,s*0.32,0,7); ctx.stroke();          // head
+  ctx.beginPath(); ctx.moveTo(cx-s*0.62,cy+s*0.7);
+  ctx.quadraticCurveTo(cx,cy-s*0.05,cx+s*0.62,cy+s*0.7); ctx.stroke();      // shoulders
+  ctx.restore();
+}
+function photoGlyph(ctx,cx,cy,s,color){
+  ctx.save(); ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=s*0.08;
+  roundRect(ctx,cx-s*0.7,cy-s*0.5,s*1.4,s,s*0.12); ctx.stroke();            // frame
+  ctx.beginPath(); ctx.arc(cx-s*0.28,cy-s*0.16,s*0.12,0,7); ctx.fill();      // sun
+  ctx.beginPath(); ctx.moveTo(cx-s*0.62,cy+s*0.42);                          // mountains
+  ctx.lineTo(cx-s*0.18,cy-s*0.02); ctx.lineTo(cx+s*0.12,cy+s*0.24);
+  ctx.lineTo(cx+s*0.36,cy-s*0.06); ctx.lineTo(cx+s*0.62,cy+s*0.42); ctx.stroke();
+  ctx.restore();
+}
+// A single photo slot: filled with an uploaded image, or an empty placeholder.
+function photoSlot(ctx,photo,x,y,w,h,r,kind,label){
+  if(photo && photo.img){
+    ctx.save(); ctx.shadowColor='rgba(0,0,0,0.55)'; ctx.shadowBlur=kind==='hero'?40:18; ctx.shadowOffsetY=kind==='hero'?16:8;
+    roundRect(ctx,x,y,w,h,r); ctx.fillStyle='#000'; ctx.fill(); ctx.restore();
+    coverDraw(ctx,photo.img,x,y,w,h,r);
+    goldFrame(ctx,x,y,w,h,r,kind==='hero'?6:3,false);
+    return;
+  }
+  // empty placeholder slot
+  ctx.save();
+  roundRect(ctx,x,y,w,h,r); ctx.clip();
+  const g=ctx.createLinearGradient(x,y,x+w,y+h);
+  g.addColorStop(0,'#191d29'); g.addColorStop(1,'#0d0f16');
+  ctx.fillStyle=g; ctx.fillRect(x,y,w,h);
+  const gl=ctx.createRadialGradient(x+w/2,y+h/2,4,x+w/2,y+h/2,Math.max(w,h)*0.6);
+  gl.addColorStop(0,'rgba(201,168,76,0.10)'); gl.addColorStop(1,'rgba(201,168,76,0)');
+  ctx.fillStyle=gl; ctx.fillRect(x,y,w,h);
+  ctx.restore();
+  const gs=Math.min(w,h)*(kind==='hero'?0.16:0.30);
+  const gy=y+h/2-(kind==='hero'?gs*0.2:gs*0.2);
+  (kind==='hero'?portraitGlyph:photoGlyph)(ctx,x+w/2,gy,gs,'rgba(201,168,76,0.42)');
+  if(label){ tracked(ctx,label,x+w/2,y+h/2+gs*(kind==='hero'?1.4:1.5),
+    `500 ${kind==='hero'?22:15}px 'Outfit', sans-serif`,'rgba(201,168,76,0.5)',kind==='hero'?4:2); }
+  goldFrame(ctx,x,y,w,h,r,kind==='hero'?5:2.5,true);
+}
+function goldText(ctx,text,x,y,font,align){
+  ctx.save(); ctx.font=font; ctx.textAlign=align||'center'; ctx.textBaseline='alphabetic';
+  const w=ctx.measureText(text).width;
+  const g=ctx.createLinearGradient(x-w/2,y-40,x+w/2,y+10);
+  g.addColorStop(0,'#F5E4B0');g.addColorStop(.5,'#E8C97A');g.addColorStop(1,'#C9A84C');
+  ctx.fillStyle=g; ctx.fillText(text,x,y); ctx.restore();
+}
+function tracked(ctx,text,x,y,font,color,ls){
+  ctx.save(); ctx.font=font; ctx.fillStyle=color; ctx.textBaseline='alphabetic';
+  let total=0; const chars=[...text];
+  chars.forEach(c=> total+=ctx.measureText(c).width+ls); total-=ls;
+  let cx=x-total/2;
+  chars.forEach(c=>{ ctx.textAlign='left'; ctx.fillText(c,cx,y); cx+=ctx.measureText(c).width+ls; });
+  ctx.restore();
+}
+function capIcon(ctx,cx,cy,s,color){
+  ctx.save(); ctx.fillStyle=color; ctx.strokeStyle=color;
+  ctx.beginPath(); ctx.moveTo(cx-s,cy); ctx.lineTo(cx,cy-s*0.55); ctx.lineTo(cx+s,cy); ctx.lineTo(cx,cy+s*0.55); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx-s*0.55,cy+s*0.18); ctx.lineTo(cx-s*0.55,cy+s*0.6);
+  ctx.quadraticCurveTo(cx,cy+s*0.95,cx+s*0.55,cy+s*0.6); ctx.lineTo(cx+s*0.55,cy+s*0.18);
+  ctx.lineTo(cx,cy+s*0.5); ctx.closePath(); ctx.fill();
+  ctx.lineWidth=Math.max(1,s*0.06);
+  ctx.beginPath(); ctx.moveTo(cx+s,cy); ctx.lineTo(cx+s,cy+s*0.7); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx+s,cy+s*0.85,s*0.14,0,7); ctx.fill();
+  ctx.restore();
+}
+
+// Pure, reusable render. Draws the product template for ANY graduate.
+function renderPoster(ctx,W,H){
+  const cx=W/2;
+  const t = k => ($('#'+k).value||'').trim();
+  const name = t('f-name')||'Graduate Name';
+  const year = (t('f-year')||'2026').replace(/[^0-9]/g,'')||'2026';
+  const school = t('f-school'); const msg=t('f-msg');
+
+  // resolve SLOTS from uploaded photos (never hardcoded)
+  const hero = state.photos.find(p=>p.id===state.heroId) || null;
+  let memories = state.photos.filter(p=>p.id!==state.heroId).slice(0,8);
+  const templateMode = state.photos.length===0;   // nothing uploaded yet
+  if(templateMode) memories = new Array(EMPTY_MEMORY_SLOTS).fill(null);
+
+  // background
+  const bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#141824'); bg.addColorStop(.5,'#0C0E14'); bg.addColorStop(1,'#08090d');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+  const glow=ctx.createRadialGradient(W/2,H*0.42,60,W/2,H*0.42,W*0.72);
+  glow.addColorStop(0,'rgba(201,168,76,0.16)'); glow.addColorStop(1,'rgba(201,168,76,0)');
+  ctx.fillStyle=glow; ctx.fillRect(0,0,W,H);
+  const vg=ctx.createRadialGradient(W/2,H/2,H*0.3,W/2,H/2,H*0.75);
+  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,0.55)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+
+  // ornamental double border
+  ctx.strokeStyle='rgba(201,168,76,0.85)'; ctx.lineWidth=3;
+  roundRect(ctx,38,38,W-76,H-76,10); ctx.stroke();
+  ctx.strokeStyle='rgba(201,168,76,0.35)'; ctx.lineWidth=1;
+  roundRect(ctx,52,52,W-104,H-104,8); ctx.stroke();
+
+  // --- header ---
+  capIcon(ctx,cx,132,30,'#E8C97A');
+  goldText(ctx,'Congratulations',cx,250,"italic 600 96px 'Cormorant Garamond', serif");
+  tracked(ctx,'GRADUATE',cx,300,"600 30px 'Outfit', sans-serif",'rgba(250,248,243,0.82)',12);
+  ctx.strokeStyle='rgba(201,168,76,0.5)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(cx-150,326); ctx.lineTo(cx-40,326); ctx.moveTo(cx+40,326); ctx.lineTo(cx+150,326); ctx.stroke();
+  goldText(ctx,'CLASS OF '+year,cx,338,"600 22px 'Outfit', sans-serif");
+
+  // --- HERO SLOT ---
+  const hw=560, hh=680, hx=cx-hw/2, hy=372;
+  photoSlot(ctx,hero,hx,hy,hw,hh,14,'hero',templateMode?'YOUR PORTRAIT':(hero?null:'YOUR PORTRAIT'));
+
+  // --- Class of YEAR seal (top-right of hero) ---
+  const sx=hx+hw-30, sy=hy+2, sr=66;
+  ctx.save();
+  const sealg=ctx.createLinearGradient(sx-sr,sy-sr,sx+sr,sy+sr);
+  sealg.addColorStop(0,'#F5E4B0'); sealg.addColorStop(1,'#B8912F');
+  ctx.beginPath(); ctx.arc(sx,sy,sr,0,7); ctx.fillStyle=sealg; ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=18; ctx.fill();
+  ctx.shadowBlur=0; ctx.beginPath(); ctx.arc(sx,sy,sr-8,0,7); ctx.strokeStyle='rgba(12,14,20,.55)'; ctx.lineWidth=1.5; ctx.stroke();
+  capIcon(ctx,sx,sy-14,20,'#0C0E14');
+  ctx.fillStyle='#0C0E14'; ctx.textAlign='center';
+  ctx.font="700 15px 'Outfit', sans-serif"; ctx.fillText('CLASS OF',sx,sy+16);
+  ctx.font="700 30px 'Cormorant Garamond', serif"; ctx.fillText(year,sx,sy+42);
+  ctx.restore();
+
+  // --- name (script) ---
+  goldText(ctx,name,cx,1180,"600 104px 'Great Vibes', cursive");
+  // school with flanking rules
+  if(school){
+    ctx.strokeStyle='rgba(201,168,76,0.45)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(cx-260,1218); ctx.lineTo(cx-150,1218); ctx.moveTo(cx+150,1218); ctx.lineTo(cx+260,1218); ctx.stroke();
+    tracked(ctx,school.toUpperCase(),cx,1226,"500 25px 'Outfit', sans-serif",'rgba(250,248,243,0.78)',5);
+  }
+
+  // --- MEMORY SLOTS (adaptive single row, 1–8) ---
+  const n=memories.length;
+  if(n){
+    tracked(ctx,'CHERISHED MEMORIES',cx,1288,"500 17px 'Outfit', sans-serif",'rgba(201,168,76,0.75)',5);
+    const CW=W-170, gap=16;
+    const cw=Math.min(250,(CW-gap*(n-1))/n), ch=Math.min(285,cw*1.14);
+    const totalW=n*cw+(n-1)*gap; let mxp=cx-totalW/2; const myp=1306;
+    memories.forEach(p=>{ photoSlot(ctx,p,mxp,myp,cw,ch,10,'memory',templateMode?'MEMORY':(p?null:'MEMORY')); mxp+=cw+gap; });
+  }
+
+  // --- message ---
+  if(msg){
+    ctx.save(); ctx.fillStyle='rgba(250,248,243,0.7)'; ctx.textAlign='center';
+    ctx.font="italic 500 34px 'Cormorant Garamond', serif";
+    ctx.fillText('“'+msg+'”', cx, 1650);
+    ctx.restore();
+  }
+
+  // bottom accent
+  capIcon(ctx,cx,1712,22,'rgba(201,168,76,0.9)');
+  tracked(ctx,'CELEBRATE   BANNER',cx,1756,"500 15px 'Outfit', sans-serif",'rgba(201,168,76,0.6)',6);
+}
+
+function renderLive(){ const c=$('#live'); if(c) renderPoster(c.getContext('2d'),c.width,c.height); }
+async function drawFinal(){
+  try{ await document.fonts.ready; }catch(e){}
+  const c=$('#poster'); renderPoster(c.getContext('2d'),c.width,c.height);
+}
+
+renderThumbs();
+if(document.fonts && document.fonts.ready){ document.fonts.ready.then(renderLive); } else { renderLive(); }
+</script>
+</body>
+</html>
