@@ -120,6 +120,28 @@
     background:var(--obsidian2);border:1px solid var(--gold);color:var(--ivory);padding:14px 24px;border-radius:40px;
     transition:.3s;z-index:50;pointer-events:none;box-shadow:0 12px 40px rgba(0,0,0,.5)}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* checkout capture modal */
+  .modal-overlay{position:fixed;inset:0;background:rgba(6,7,11,.78);backdrop-filter:blur(4px);
+    display:none;align-items:flex-start;justify-content:center;z-index:60;padding:40px 18px;overflow-y:auto}
+  .modal-overlay.show{display:flex}
+  .modal{background:linear-gradient(180deg,#14161f,#0c0e14);border:1px solid var(--gold);border-radius:20px;
+    width:100%;max-width:520px;padding:30px;position:relative;box-shadow:0 40px 120px rgba(0,0,0,.7)}
+  .modal-x{position:absolute;right:16px;top:14px;background:none;border:none;color:rgba(250,248,243,.5);
+    font-size:20px;cursor:pointer;line-height:1}
+  .modal-kicker{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+  .modal h3{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:26px;margin-bottom:6px}
+  .modal .msub{color:rgba(250,248,243,.6);font-size:14px;margin-bottom:20px;line-height:1.5}
+  .modal .fld{margin-bottom:14px}
+  .modal .grid2{margin-bottom:0}
+  #c-submit{width:100%;margin-top:8px}
+  .modal-status{margin-top:14px;font-size:14px;min-height:20px;text-align:center;line-height:1.5}
+  .modal-status.err{color:var(--rose)}
+  .modal-status.ok{color:var(--sage)}
+  .modal-status.busy{color:var(--gold2)}
+  .consent{display:flex;gap:10px;align-items:flex-start;margin:6px 0 18px;font-size:13px;
+    color:rgba(250,248,243,.72);line-height:1.5;cursor:pointer}
+  .consent input{margin-top:2px;width:17px;height:17px;accent-color:var(--gold);flex:none;cursor:pointer}
 </style>
 </head>
 <body>
@@ -226,6 +248,44 @@
 </div>
 
 <footer class="site">CelebrateBanner · Premium celebration keepsakes · Printed in the USA</footer>
+
+<!-- Order-capture modal: saves the order (photos + details) BEFORE Stripe -->
+<div class="modal-overlay" id="checkout-modal" role="dialog" aria-modal="true">
+  <div class="modal">
+    <button class="modal-x" id="modal-close" aria-label="Close">✕</button>
+    <div class="modal-kicker" id="modal-kicker">Order</div>
+    <h3>Where should we send your order?</h3>
+    <div class="msub">We save your photos and details, then take you to secure checkout. Your card isn’t charged until the Stripe page.</div>
+
+    <div class="grid2">
+      <label class="fld"><span class="lb">Your name</span>
+        <input class="in" id="c-name" placeholder="Your full name" autocomplete="name"></label>
+      <label class="fld"><span class="lb">Email</span>
+        <input class="in" id="c-email" type="email" placeholder="you@email.com" autocomplete="email"></label>
+    </div>
+    <label class="fld"><span class="lb">Phone <span style="opacity:.5;text-transform:none;letter-spacing:0">(optional)</span></span>
+      <input class="in" id="c-phone" type="tel" placeholder="(optional)" autocomplete="tel"></label>
+
+    <div id="ship-fields">
+      <label class="fld"><span class="lb">Shipping address</span>
+        <input class="in" id="c-addr" placeholder="Street address" autocomplete="address-line1"></label>
+      <div class="grid2">
+        <label class="fld"><span class="lb">City</span><input class="in" id="c-city" autocomplete="address-level2"></label>
+        <label class="fld"><span class="lb">State</span><input class="in" id="c-state" autocomplete="address-level1"></label>
+      </div>
+      <label class="fld"><span class="lb">ZIP</span><input class="in" id="c-zip" inputmode="numeric" autocomplete="postal-code"></label>
+    </div>
+
+    <label class="consent" for="c-consent">
+      <input type="checkbox" id="c-consent">
+      <span>Your photos and order details will be securely saved so we can prepare and fulfill your banner.</span>
+    </label>
+
+    <button class="btn gold" id="c-submit">Save order &amp; continue to checkout →</button>
+    <div class="modal-status" id="c-status"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -325,10 +385,11 @@ const CHECKOUT = {
   digital:{ pkg:'digital', name:'Digital Download', price:9.99,
             stripeLink:'https://buy.stripe.com/7sY8wHeEUb9n27KgxR83C00' },
 };
-function goCheckout(which){
-  if(!state.heroId){ toast('Add your hero portrait first'); return; }
+function stripeUrl(which, orderNumber){
   const c=CHECKOUT[which];
-  const cref=['pkg',c.pkg,'mkt',CHECKOUT.marketingProduct].join('_').slice(0,200);
+  // order number rides along in client_reference_id so the Stripe payment is
+  // reconcilable to the captured order. Stripe Payment Links are unchanged.
+  const cref=['pkg',c.pkg,'mkt',CHECKOUT.marketingProduct,'ord',orderNumber].join('_').slice(0,200);
   const base=c.stripeLink, sep=base.includes('?')?'&':'?';
   const url=base+sep
     +'client_reference_id='+encodeURIComponent(cref)
@@ -336,12 +397,142 @@ function goCheckout(which){
     +'&package_name='+encodeURIComponent(c.name)
     +'&marketing_product='+encodeURIComponent(CHECKOUT.marketingProduct)
     +'&product_name='+encodeURIComponent(CHECKOUT.productName);
-  window.__lastCheckoutUrl=url;   // exposed for launch verification
-  toast('Redirecting to secure Stripe checkout…');
-  setTimeout(function(){ window.open(url,'_blank'); }, 600);
+  window.__lastCheckoutUrl=url;
+  return url;
 }
-$('#order').addEventListener('click', ()=> goCheckout('printed'));
-$('#download').addEventListener('click', ()=> goCheckout('digital'));
+
+// ── Concierge order capture (V1) ────────────────────────────────────────────
+// Every order (photos + details) is saved via a Google Apps Script Web App
+// BEFORE the customer reaches Stripe, so no paid order is ever lost.
+// Deploy concierge/order-capture.gs, then paste its /exec URL below.
+const ORDER_CAPTURE_URL   = 'https://script.google.com/macros/s/AKfycby8lNzyIDdtE7EU0qDPONnjVyDjfUlnzMlu6wgQWnMp_m2hn1_Xx57ILWQ2LuMjV5Cp/exec'; // ← REQUIRED: Apps Script Web-app URL
+const ORDER_CAPTURE_TOKEN = 'cb-concierge-v1'; // ← must match CAPTURE_TOKEN in order-capture.gs
+
+// safety limits (mirrored server-side in order-capture.gs)
+const MIN_SUPPORTING = 4, MAX_SUPPORTING = 8;           // 1 hero + 4–8 memories
+const MAX_PHOTO_BYTES = 25*1024*1024;                   // 25 MB per photo
+const MAX_TOTAL_BYTES = 90*1024*1024;                   // 90 MB per order
+const ALLOWED_MIME = /^image\/(jpe?g|png|webp|heic|heif|gif)$/i;
+
+function sanitizeText(s,max){ return String(s==null?'':s).replace(/[\u0000-\u001F\u007F]+/g,' ').replace(/\s+/g,' ').trim().slice(0,max||300); }
+function sanitizeFilename(s){ return (String(s==null?'':s).replace(/[\\/:*?"<>|\u0000-\u001F\u007F]+/g,'_').replace(/\s+/g,' ').trim().slice(0,80))||'photo.jpg'; }
+function b64Bytes(b64){ const pad=b64.endsWith('==')?2:(b64.endsWith('=')?1:0); return Math.floor(b64.length*3/4)-pad; }
+function parsePhoto(p){
+  const u=p.url||''; if(u.slice(0,5)!=='data:') return null;
+  const comma=u.indexOf(','); if(comma<0) return null;
+  const meta=u.slice(5,comma); const mime=(meta.split(';')[0]||'').toLowerCase();
+  const b64=u.slice(comma+1);
+  return { mime, b64, bytes:b64Bytes(b64), isHero:(p.id===state.heroId), filename:sanitizeFilename(p.name) };
+}
+// Validate the photo set: 1 hero + 4–8 memories, images only, no empties, size-capped.
+function validatePhotos(){
+  const photos=state.photos||[];
+  if(!state.heroId || !photos.some(p=>p.id===state.heroId)) return {ok:false,msg:'Please choose a hero portrait before ordering.'};
+  if(photos.length===0) return {ok:false,msg:'Please add your photos before ordering.'};
+  const supporting=photos.length-1;
+  if(supporting<MIN_SUPPORTING) return {ok:false,msg:'Please add at least '+MIN_SUPPORTING+' memory photos (you have '+supporting+').'};
+  if(supporting>MAX_SUPPORTING) return {ok:false,msg:'Please use 1 hero portrait plus up to '+MAX_SUPPORTING+' memories ('+(MAX_SUPPORTING+1)+' photos max).'};
+  const items=[]; let total=0;
+  for(const p of photos){
+    const it=parsePhoto(p);
+    if(!it || !ALLOWED_MIME.test(it.mime)) return {ok:false,msg:'Only image files (JPG, PNG, WEBP, HEIC) can be used. Please remove any non-image file.'};
+    if(it.bytes<=0) return {ok:false,msg:'One of your photos looks empty. Please remove it and re-add the photo.'};
+    if(it.bytes>MAX_PHOTO_BYTES) return {ok:false,msg:'One of your photos is larger than 25 MB. Please remove or replace it.'};
+    total+=it.bytes; items.push(it);
+  }
+  if(total>MAX_TOTAL_BYTES) return {ok:false,msg:'Your photos are too large to upload reliably. Please remove a few and try again.'};
+  return {ok:true, items};
+}
+
+function genOrderNumber(which){
+  const d=new Date();
+  const ymd=''+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+  const rand=Math.random().toString(36).slice(2,6).toUpperCase();
+  return 'CB-'+ymd+'-'+(which==='printed'?'P':'D')+rand;
+}
+
+let checkoutWhich=null, activeOrderNumber=null, submitting=false, capturedOrders={};
+const modal=$('#checkout-modal');
+function setStatus(msg,kind){ const el=$('#c-status'); el.textContent=msg; el.className='modal-status'+(kind?' '+kind:''); }
+function openCheckout(which){
+  if(which!=='printed' && which!=='digital'){ return; }
+  const chk=validatePhotos();
+  if(!chk.ok){ toast(chk.msg); return; }
+  checkoutWhich=which;
+  activeOrderNumber=genOrderNumber(which);   // one number per attempt, reused on retry (idempotency key)
+  const c=CHECKOUT[which];
+  $('#modal-kicker').textContent=(which==='printed'?'Order Printed Banner':'Digital Download')+' · $'+c.price.toFixed(2);
+  $('#ship-fields').style.display = which==='printed' ? 'block':'none';
+  $('#c-consent').checked=false;
+  setStatus('',''); modal.classList.add('show');
+}
+function closeCheckout(){ if(submitting) return; modal.classList.remove('show'); }
+$('#order').addEventListener('click', ()=> openCheckout('printed'));
+$('#download').addEventListener('click', ()=> openCheckout('digital'));
+$('#modal-close').addEventListener('click', closeCheckout);
+modal.addEventListener('click', e=>{ if(e.target===modal) closeCheckout(); });
+
+async function postCapture(payload){
+  const res=await fetch(ORDER_CAPTURE_URL,{
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'}, // simple request → avoids CORS preflight
+    body:JSON.stringify(payload), redirect:'follow'
+  });
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  let data; try{ data=await res.json(); }catch(e){ throw new Error('bad response'); }
+  if(!data || data.status!=='ok') throw new Error((data&&data.error)||'capture failed');
+  return data;
+}
+
+$('#c-submit').addEventListener('click', async ()=>{
+  if(submitting) return;                                   // dup-click guard
+  const which=checkoutWhich, c=CHECKOUT[which];
+  if(!c){ setStatus('Please choose Printed or Digital.','err'); return; }
+
+  // re-validate photos at submit time (nothing changed underneath us)
+  const chk=validatePhotos();
+  if(!chk.ok){ setStatus(chk.msg,'err'); return; }
+
+  const cust={ name:sanitizeText($('#c-name').value,120), email:sanitizeText($('#c-email').value,160),
+    phone:sanitizeText($('#c-phone').value,40), address:sanitizeText($('#c-addr').value,200),
+    city:sanitizeText($('#c-city').value,80), state:sanitizeText($('#c-state').value,40), zip:sanitizeText($('#c-zip').value,20) };
+  if(!cust.name){ setStatus('Please enter your name.','err'); return; }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cust.email)){ setStatus('Please enter a valid email.','err'); return; }
+  if(which==='printed' && (!cust.address||!cust.city||!cust.state||!cust.zip)){
+    setStatus('Please complete the shipping address for a printed order.','err'); return; }
+  if(!$('#c-consent').checked){ setStatus('Please check the box so we can save your photos and fulfill your order.','err'); return; }
+  if(!ORDER_CAPTURE_URL){
+    setStatus('Online ordering is being set up — please email info@celebratebanner.com to order. Your card will not be charged here.','err'); return; }
+
+  submitting=true; $('#c-submit').disabled=true; $('#modal-close').disabled=true;
+  const person={ graduateName:sanitizeText($('#f-name').value,120), classYear:sanitizeText($('#f-year').value,20),
+    school:sanitizeText($('#f-school').value,120), message:sanitizeText($('#f-msg').value,300) };
+  const orderNumber=activeOrderNumber;
+  const product=(which==='printed'?'Graduation Signature Banner — Printed':'Graduation Signature Banner — Digital');
+  try{
+    // idempotent: if this exact order already fully captured (e.g. retry after a read glitch), skip to Stripe
+    if(!capturedOrders[orderNumber]){
+      // 1) upload photos one-by-one (robust vs. one huge POST; full resolution preserved)
+      for(let i=0;i<chk.items.length;i++){
+        const it=chk.items[i]; setStatus('Saving your photos… ('+(i+1)+'/'+chk.items.length+')','busy');
+        await postCapture({ kind:'photo', token:ORDER_CAPTURE_TOKEN, orderNumber, graduateName:person.graduateName,
+          index:i, isHero:it.isHero, filename:it.filename, mime:it.mime, data:it.b64 });
+      }
+      // 2) order metadata → Sheet row + email alert
+      setStatus('Finalizing your order…','busy');
+      await postCapture({ kind:'order', token:ORDER_CAPTURE_TOKEN, orderNumber, product,
+        price:'$'+c.price.toFixed(2), timestamp:new Date().toISOString(),
+        customer:cust, personalization:person, photoCount:chk.items.length });
+      capturedOrders[orderNumber]=true;
+    }
+    // 3) only after a confirmed save → Stripe
+    setStatus('Order '+orderNumber+' saved ✓ Taking you to secure checkout…','ok');
+    setTimeout(()=>{ window.location.href=stripeUrl(which, orderNumber); }, 900);
+  }catch(err){
+    submitting=false; $('#c-submit').disabled=false; $('#modal-close').disabled=false;
+    setStatus('We couldn’t save your order, so we did NOT send you to payment — your card was not charged. Please try again.','err');
+  }
+});
 
 ['f-name','f-year','f-school','f-msg'].forEach(id=>$('#'+id).addEventListener('input', renderLive));
 
