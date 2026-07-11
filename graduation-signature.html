@@ -542,6 +542,7 @@ $('#c-submit').addEventListener('click', async ()=>{
 // No customer photo is ever hardcoded — slots are data-driven from state.photos.
 const EMPTY_MEMORY_SLOTS = 6;   // template shows this many memory slots before upload
 
+// ── low-level primitives ────────────────────────────────────────────────────
 function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 function coverDraw(ctx,img,x,y,w,h,r){
   ctx.save(); roundRect(ctx,x,y,w,h,r); ctx.clip();
@@ -549,62 +550,18 @@ function coverDraw(ctx,img,x,y,w,h,r){
   if(ir>br){dh=h;dw=h*ir;dx=x-(dw-w)/2;dy=y;} else {dw=w;dh=w/ir;dx=x;dy=y-(dh-h)/2;}
   ctx.drawImage(img,dx,dy,dw,dh); ctx.restore();
 }
-function goldFrame(ctx,x,y,w,h,r,lw,dim){
-  ctx.save();
+// deterministic PRNG so particles/rotations never flicker between renders
+function srand(seed){ let s=(seed>>>0)||1; return ()=>{ s=(s*1664525+1013904223)>>>0; return s/4294967296; }; }
+function goldStroke(ctx,x,y,w,h,r,lw){
   const g=ctx.createLinearGradient(x,y,x+w,y+h);
-  g.addColorStop(0,dim?'#8a7534':'#F5E4B0');g.addColorStop(.5,dim?'#6b571f':'#C9A84C');g.addColorStop(1,dim?'#4a3c16':'#8a6f2e');
-  roundRect(ctx,x,y,w,h,r); ctx.lineWidth=lw; ctx.strokeStyle=g;
-  ctx.shadowColor=dim?'rgba(201,168,76,.18)':'rgba(201,168,76,.5)'; ctx.shadowBlur=dim?10:24; ctx.stroke();
-  ctx.restore();
-}
-// glyphs drawn inside empty slots (no fake people — abstract line art)
-function portraitGlyph(ctx,cx,cy,s,color){
-  ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=s*0.09; ctx.lineCap='round';
-  ctx.beginPath(); ctx.arc(cx,cy-s*0.35,s*0.32,0,7); ctx.stroke();          // head
-  ctx.beginPath(); ctx.moveTo(cx-s*0.62,cy+s*0.7);
-  ctx.quadraticCurveTo(cx,cy-s*0.05,cx+s*0.62,cy+s*0.7); ctx.stroke();      // shoulders
-  ctx.restore();
-}
-function photoGlyph(ctx,cx,cy,s,color){
-  ctx.save(); ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=s*0.08;
-  roundRect(ctx,cx-s*0.7,cy-s*0.5,s*1.4,s,s*0.12); ctx.stroke();            // frame
-  ctx.beginPath(); ctx.arc(cx-s*0.28,cy-s*0.16,s*0.12,0,7); ctx.fill();      // sun
-  ctx.beginPath(); ctx.moveTo(cx-s*0.62,cy+s*0.42);                          // mountains
-  ctx.lineTo(cx-s*0.18,cy-s*0.02); ctx.lineTo(cx+s*0.12,cy+s*0.24);
-  ctx.lineTo(cx+s*0.36,cy-s*0.06); ctx.lineTo(cx+s*0.62,cy+s*0.42); ctx.stroke();
-  ctx.restore();
-}
-// A single photo slot: filled with an uploaded image, or an empty placeholder.
-function photoSlot(ctx,photo,x,y,w,h,r,kind,label){
-  if(photo && photo.img){
-    ctx.save(); ctx.shadowColor='rgba(0,0,0,0.55)'; ctx.shadowBlur=kind==='hero'?40:18; ctx.shadowOffsetY=kind==='hero'?16:8;
-    roundRect(ctx,x,y,w,h,r); ctx.fillStyle='#000'; ctx.fill(); ctx.restore();
-    coverDraw(ctx,photo.img,x,y,w,h,r);
-    goldFrame(ctx,x,y,w,h,r,kind==='hero'?6:3,false);
-    return;
-  }
-  // empty placeholder slot
-  ctx.save();
-  roundRect(ctx,x,y,w,h,r); ctx.clip();
-  const g=ctx.createLinearGradient(x,y,x+w,y+h);
-  g.addColorStop(0,'#191d29'); g.addColorStop(1,'#0d0f16');
-  ctx.fillStyle=g; ctx.fillRect(x,y,w,h);
-  const gl=ctx.createRadialGradient(x+w/2,y+h/2,4,x+w/2,y+h/2,Math.max(w,h)*0.6);
-  gl.addColorStop(0,'rgba(201,168,76,0.10)'); gl.addColorStop(1,'rgba(201,168,76,0)');
-  ctx.fillStyle=gl; ctx.fillRect(x,y,w,h);
-  ctx.restore();
-  const gs=Math.min(w,h)*(kind==='hero'?0.16:0.30);
-  const gy=y+h/2-(kind==='hero'?gs*0.2:gs*0.2);
-  (kind==='hero'?portraitGlyph:photoGlyph)(ctx,x+w/2,gy,gs,'rgba(201,168,76,0.42)');
-  if(label){ tracked(ctx,label,x+w/2,y+h/2+gs*(kind==='hero'?1.4:1.5),
-    `500 ${kind==='hero'?22:15}px 'Outfit', sans-serif`,'rgba(201,168,76,0.5)',kind==='hero'?4:2); }
-  goldFrame(ctx,x,y,w,h,r,kind==='hero'?5:2.5,true);
+  g.addColorStop(0,'#F5E4B0');g.addColorStop(.5,'#C9A84C');g.addColorStop(1,'#8a6f2e');
+  roundRect(ctx,x,y,w,h,r); ctx.lineWidth=lw; ctx.strokeStyle=g; ctx.stroke();
 }
 function goldText(ctx,text,x,y,font,align){
   ctx.save(); ctx.font=font; ctx.textAlign=align||'center'; ctx.textBaseline='alphabetic';
   const w=ctx.measureText(text).width;
-  const g=ctx.createLinearGradient(x-w/2,y-40,x+w/2,y+10);
-  g.addColorStop(0,'#F5E4B0');g.addColorStop(.5,'#E8C97A');g.addColorStop(1,'#C9A84C');
+  const g=ctx.createLinearGradient(x-w/2,y-80,x+w/2,y+16);
+  g.addColorStop(0,'#F7E9BE');g.addColorStop(.5,'#E8C97A');g.addColorStop(1,'#C9A84C');
   ctx.fillStyle=g; ctx.fillText(text,x,y); ctx.restore();
 }
 function tracked(ctx,text,x,y,font,color,ls){
@@ -626,6 +583,156 @@ function capIcon(ctx,cx,cy,s,color){
   ctx.beginPath(); ctx.arc(cx+s,cy+s*0.85,s*0.14,0,7); ctx.fill();
   ctx.restore();
 }
+function portraitGlyph(ctx,cx,cy,s,color){
+  ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=s*0.09; ctx.lineCap='round';
+  ctx.beginPath(); ctx.arc(cx,cy-s*0.35,s*0.32,0,7); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx-s*0.62,cy+s*0.7);
+  ctx.quadraticCurveTo(cx,cy-s*0.05,cx+s*0.62,cy+s*0.7); ctx.stroke();
+  ctx.restore();
+}
+function photoGlyph(ctx,cx,cy,s,color){
+  ctx.save(); ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=s*0.08;
+  roundRect(ctx,cx-s*0.7,cy-s*0.5,s*1.4,s,s*0.12); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx-s*0.28,cy-s*0.16,s*0.12,0,7); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx-s*0.62,cy+s*0.42);
+  ctx.lineTo(cx-s*0.18,cy-s*0.02); ctx.lineTo(cx+s*0.12,cy+s*0.24);
+  ctx.lineTo(cx+s*0.36,cy-s*0.06); ctx.lineTo(cx+s*0.62,cy+s*0.42); ctx.stroke();
+  ctx.restore();
+}
+function centerDivider(ctx,cx,y,half,gap){
+  ctx.save(); ctx.strokeStyle='rgba(201,168,76,0.55)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(cx-half,y); ctx.lineTo(cx-gap,y); ctx.moveTo(cx+gap,y); ctx.lineTo(cx+half,y); ctx.stroke();
+  ctx.fillStyle='#E8C97A'; ctx.beginPath();
+  ctx.moveTo(cx,y-6); ctx.lineTo(cx+6,y); ctx.lineTo(cx,y+6); ctx.lineTo(cx-6,y); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+// ── background: black + very soft gold particles + gentle vignette ───────────
+function drawBackground(ctx,W,H){
+  const bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#12151f'); bg.addColorStop(.5,'#0A0B11'); bg.addColorStop(1,'#050609');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+  const aura=ctx.createRadialGradient(W/2,H*0.40,40,W/2,H*0.40,W*0.66);
+  aura.addColorStop(0,'rgba(201,168,76,0.15)'); aura.addColorStop(1,'rgba(201,168,76,0)');
+  ctx.fillStyle=aura; ctx.fillRect(0,0,W,H);
+  const rnd=srand(20260711);
+  ctx.save();
+  for(let i=0;i<90;i++){
+    const px=rnd()*W, py=rnd()*H, rr=(0.6+rnd()*2.4)*3.2, a=0.05+rnd()*0.09;
+    const gg=ctx.createRadialGradient(px,py,0,px,py,rr);
+    gg.addColorStop(0,'rgba(232,201,122,'+a+')'); gg.addColorStop(1,'rgba(232,201,122,0)');
+    ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(px,py,rr,0,7); ctx.fill();
+  }
+  ctx.restore();
+  const vg=ctx.createRadialGradient(W/2,H*0.5,H*0.34,W/2,H*0.5,H*0.78);
+  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,0.6)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(201,168,76,0.85)'; ctx.lineWidth=2.5;
+  roundRect(ctx,40,40,W-80,H-80,14); ctx.stroke();
+  ctx.strokeStyle='rgba(201,168,76,0.30)'; ctx.lineWidth=1;
+  roundRect(ctx,58,58,W-116,H-116,10); ctx.stroke();
+}
+
+// ── HERO portrait: glow + luxury lighting + elegant gold frame ───────────────
+function drawHero(ctx,photo,x,y,w,h){
+  const cx=x+w/2, cy=y+h/2;
+  ctx.save();
+  const glow=ctx.createRadialGradient(cx,cy,60,cx,cy,Math.max(w,h)*0.80);
+  glow.addColorStop(0,'rgba(232,201,122,0.32)'); glow.addColorStop(.6,'rgba(201,168,76,0.10)'); glow.addColorStop(1,'rgba(201,168,76,0)');
+  ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(cx,cy,Math.max(w,h)*0.80,0,7); ctx.fill();
+  ctx.restore();
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,0.6)'; ctx.shadowBlur=48; ctx.shadowOffsetY=20;
+  roundRect(ctx,x,y,w,h,18); ctx.fillStyle='#05060a'; ctx.fill(); ctx.restore();
+  if(photo && photo.img){
+    coverDraw(ctx,photo.img,x,y,w,h,18);
+    ctx.save(); roundRect(ctx,x,y,w,h,18); ctx.clip();
+    const hl=ctx.createLinearGradient(x,y,x,y+h*0.45);
+    hl.addColorStop(0,'rgba(255,250,235,0.16)'); hl.addColorStop(1,'rgba(255,250,235,0)');
+    ctx.fillStyle=hl; ctx.fillRect(x,y,w,h*0.45);
+    const gr=ctx.createLinearGradient(x,y+h*0.55,x,y+h);
+    gr.addColorStop(0,'rgba(0,0,0,0)'); gr.addColorStop(1,'rgba(5,6,10,0.34)');
+    ctx.fillStyle=gr; ctx.fillRect(x,y+h*0.55,w,h*0.45);
+    ctx.restore();
+  } else {
+    ctx.save(); roundRect(ctx,x,y,w,h,18); ctx.clip();
+    const g=ctx.createLinearGradient(x,y,x+w,y+h);
+    g.addColorStop(0,'#1b2030'); g.addColorStop(1,'#0c0e16'); ctx.fillStyle=g; ctx.fillRect(x,y,w,h);
+    portraitGlyph(ctx,cx,cy-40,Math.min(w,h)*0.16,'rgba(201,168,76,0.42)');
+    tracked(ctx,'YOUR PORTRAIT',cx,cy+150,"500 24px 'Outfit', sans-serif",'rgba(201,168,76,0.55)',5);
+    ctx.restore();
+  }
+  goldStroke(ctx,x,y,w,h,18,7);
+  ctx.save(); ctx.strokeStyle='rgba(255,247,220,0.55)'; ctx.lineWidth=1.2;
+  roundRect(ctx,x+9,y+9,w-18,h-18,12); ctx.stroke(); ctx.restore();
+}
+
+// ── premium Class-of seal ────────────────────────────────────────────────────
+function drawSeal(ctx,cx,cy,r,year){
+  ctx.save();
+  ctx.shadowColor='rgba(0,0,0,0.55)'; ctx.shadowBlur=22; ctx.shadowOffsetY=6;
+  const g=ctx.createLinearGradient(cx-r,cy-r,cx+r,cy+r);
+  g.addColorStop(0,'#F7E9BE'); g.addColorStop(.5,'#E1B85A'); g.addColorStop(1,'#A97F27');
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.fillStyle=g; ctx.fill();
+  ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+  ctx.strokeStyle='rgba(12,14,20,0.35)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(cx,cy,r-7,0,7); ctx.stroke();
+  ctx.fillStyle='rgba(12,14,20,0.30)';
+  for(let i=0;i<36;i++){ const a=i/36*Math.PI*2; ctx.beginPath(); ctx.arc(cx+Math.cos(a)*(r-3.5),cy+Math.sin(a)*(r-3.5),1.4,0,7); ctx.fill(); }
+  ctx.strokeStyle='rgba(255,250,230,0.5)'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(cx,cy,r-13,0,7); ctx.stroke();
+  capIcon(ctx,cx,cy-r*0.34,r*0.30,'#0C0E14');
+  ctx.fillStyle='#0C0E14'; ctx.textAlign='center';
+  ctx.font="700 "+Math.round(r*0.22)+"px 'Outfit', sans-serif"; ctx.fillText('CLASS OF',cx,cy+r*0.10);
+  ctx.font="700 "+Math.round(r*0.46)+"px 'Cormorant Garamond', serif"; ctx.fillText(year,cx,cy+r*0.52);
+  ctx.restore();
+}
+
+// ── memory tile: rotated, soft shadow, thin gold frame ───────────────────────
+function drawMemory(ctx,photo,cx,cy,w,h,rot){
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(rot);
+  const x=-w/2,y=-h/2;
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=22; ctx.shadowOffsetY=12;
+  roundRect(ctx,x,y,w,h,10); ctx.fillStyle='#05060a'; ctx.fill(); ctx.restore();
+  if(photo && photo.img){
+    coverDraw(ctx,photo.img,x,y,w,h,10);
+    ctx.save(); roundRect(ctx,x,y,w,h,10); ctx.clip();
+    const hl=ctx.createLinearGradient(x,y,x,y+h*0.5);
+    hl.addColorStop(0,'rgba(255,250,235,0.10)'); hl.addColorStop(1,'rgba(255,250,235,0)');
+    ctx.fillStyle=hl; ctx.fillRect(x,y,w,h*0.5); ctx.restore();
+  } else {
+    ctx.save(); roundRect(ctx,x,y,w,h,10); ctx.clip();
+    const g=ctx.createLinearGradient(x,y,x+w,y+h);
+    g.addColorStop(0,'#191d29'); g.addColorStop(1,'#0d0f16'); ctx.fillStyle=g; ctx.fillRect(x,y,w,h);
+    photoGlyph(ctx,0,-6,Math.min(w,h)*0.28,'rgba(201,168,76,0.40)');
+    tracked(ctx,'MEMORY',0,h*0.30,"500 14px 'Outfit', sans-serif",'rgba(201,168,76,0.5)',3);
+    ctx.restore();
+  }
+  goldStroke(ctx,x,y,w,h,10,3);
+  ctx.restore();
+}
+
+// ── keepsake quote ───────────────────────────────────────────────────────────
+function drawKeepsake(ctx,cx,y,msg){
+  centerDivider(ctx,cx,y,120,22);
+  if(msg){
+    ctx.save(); ctx.textAlign='center'; ctx.fillStyle='rgba(250,248,243,0.9)';
+    ctx.font="italic 500 34px 'Cormorant Garamond', serif";
+    const q='“'+msg+'”'; const words=q.split(/\s+/); const lines=[]; let ln='';
+    for(const w of words){ if((ln+' '+w).trim().length>44 && ln){ lines.push(ln); ln=w; } else ln=(ln?ln+' ':'')+w; }
+    if(ln) lines.push(ln); const use=lines.slice(0,2);
+    use.forEach((l,i)=> ctx.fillText(l,cx,y+40+i*42));
+    ctx.restore();
+  }
+}
+
+// ── premium footer ───────────────────────────────────────────────────────────
+function drawFooter(ctx,cx,y){
+  ctx.save();
+  ctx.strokeStyle='rgba(201,168,76,0.45)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(cx-190,y-16); ctx.lineTo(cx-74,y-16); ctx.moveTo(cx+74,y-16); ctx.lineTo(cx+190,y-16); ctx.stroke();
+  capIcon(ctx,cx,y-18,15,'rgba(232,201,122,0.9)');
+  tracked(ctx,'CELEBRATE  ·  BANNER',cx,y+28,"600 17px 'Outfit', sans-serif",'rgba(232,201,122,0.78)',5);
+  ctx.restore();
+}
 
 // Pure, reusable render. Draws the product template for ANY graduate.
 function renderPoster(ctx,W,H){
@@ -638,81 +745,49 @@ function renderPoster(ctx,W,H){
   // resolve SLOTS from uploaded photos (never hardcoded)
   const hero = state.photos.find(p=>p.id===state.heroId) || null;
   let memories = state.photos.filter(p=>p.id!==state.heroId).slice(0,8);
-  const templateMode = state.photos.length===0;   // nothing uploaded yet
+  const templateMode = state.photos.length===0;
   if(templateMode) memories = new Array(EMPTY_MEMORY_SLOTS).fill(null);
 
-  // background
-  const bg=ctx.createLinearGradient(0,0,0,H);
-  bg.addColorStop(0,'#141824'); bg.addColorStop(.5,'#0C0E14'); bg.addColorStop(1,'#08090d');
-  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
-  const glow=ctx.createRadialGradient(W/2,H*0.42,60,W/2,H*0.42,W*0.72);
-  glow.addColorStop(0,'rgba(201,168,76,0.16)'); glow.addColorStop(1,'rgba(201,168,76,0)');
-  ctx.fillStyle=glow; ctx.fillRect(0,0,W,H);
-  const vg=ctx.createRadialGradient(W/2,H/2,H*0.3,W/2,H/2,H*0.75);
-  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,0.55)');
-  ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+  drawBackground(ctx,W,H);
 
-  // ornamental double border
-  ctx.strokeStyle='rgba(201,168,76,0.85)'; ctx.lineWidth=3;
-  roundRect(ctx,38,38,W-76,H-76,10); ctx.stroke();
-  ctx.strokeStyle='rgba(201,168,76,0.35)'; ctx.lineWidth=1;
-  roundRect(ctx,52,52,W-104,H-104,8); ctx.stroke();
+  // --- header / title ---
+  centerDivider(ctx,cx,120,120,26);
+  goldText(ctx,'Congratulations',cx,244,"italic 600 118px 'Cormorant Garamond', serif");
+  tracked(ctx,'GRADUATE',cx,312,"600 46px 'Outfit', sans-serif",'rgba(250,248,243,0.9)',18);
 
-  // --- header ---
-  capIcon(ctx,cx,132,30,'#E8C97A');
-  goldText(ctx,'Congratulations',cx,250,"italic 600 96px 'Cormorant Garamond', serif");
-  tracked(ctx,'GRADUATE',cx,300,"600 30px 'Outfit', sans-serif",'rgba(250,248,243,0.82)',12);
-  ctx.strokeStyle='rgba(201,168,76,0.5)'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.moveTo(cx-150,326); ctx.lineTo(cx-40,326); ctx.moveTo(cx+40,326); ctx.lineTo(cx+150,326); ctx.stroke();
-  goldText(ctx,'CLASS OF '+year,cx,338,"600 22px 'Outfit', sans-serif");
+  // --- HERO (~45% of height) ---
+  const hw=650, hh=806, hx=cx-hw/2, hy=350;   // 806/1800 = 44.8%
+  drawHero(ctx,hero,hx,hy,hw,hh);
+  drawSeal(ctx,hx+hw-44,hy+44,80,year);
 
-  // --- HERO SLOT ---
-  const hw=560, hh=680, hx=cx-hw/2, hy=372;
-  photoSlot(ctx,hero,hx,hy,hw,hh,14,'hero',templateMode?'YOUR PORTRAIT':(hero?null:'YOUR PORTRAIT'));
-
-  // --- Class of YEAR seal (top-right of hero) ---
-  const sx=hx+hw-30, sy=hy+2, sr=66;
-  ctx.save();
-  const sealg=ctx.createLinearGradient(sx-sr,sy-sr,sx+sr,sy+sr);
-  sealg.addColorStop(0,'#F5E4B0'); sealg.addColorStop(1,'#B8912F');
-  ctx.beginPath(); ctx.arc(sx,sy,sr,0,7); ctx.fillStyle=sealg; ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=18; ctx.fill();
-  ctx.shadowBlur=0; ctx.beginPath(); ctx.arc(sx,sy,sr-8,0,7); ctx.strokeStyle='rgba(12,14,20,.55)'; ctx.lineWidth=1.5; ctx.stroke();
-  capIcon(ctx,sx,sy-14,20,'#0C0E14');
-  ctx.fillStyle='#0C0E14'; ctx.textAlign='center';
-  ctx.font="700 15px 'Outfit', sans-serif"; ctx.fillText('CLASS OF',sx,sy+16);
-  ctx.font="700 30px 'Cormorant Garamond', serif"; ctx.fillText(year,sx,sy+42);
-  ctx.restore();
-
-  // --- name (script) ---
-  goldText(ctx,name,cx,1180,"600 104px 'Great Vibes', cursive");
-  // school with flanking rules
+  // --- graduate name (handwritten gold, fitted) + school ---
+  let ns=128; ctx.font="400 "+ns+"px 'Great Vibes', cursive";
+  while(ctx.measureText(name).width>980 && ns>60){ ns-=4; ctx.font="400 "+ns+"px 'Great Vibes', cursive"; }
+  goldText(ctx,name,cx,1268,"400 "+ns+"px 'Great Vibes', cursive");
   if(school){
     ctx.strokeStyle='rgba(201,168,76,0.45)'; ctx.lineWidth=1.5;
-    ctx.beginPath(); ctx.moveTo(cx-260,1218); ctx.lineTo(cx-150,1218); ctx.moveTo(cx+150,1218); ctx.lineTo(cx+260,1218); ctx.stroke();
-    tracked(ctx,school.toUpperCase(),cx,1226,"500 25px 'Outfit', sans-serif",'rgba(250,248,243,0.78)',5);
+    ctx.beginPath(); ctx.moveTo(cx-300,1318); ctx.lineTo(cx-180,1318); ctx.moveTo(cx+180,1318); ctx.lineTo(cx+300,1318); ctx.stroke();
+    tracked(ctx,school.toUpperCase(),cx,1326,"500 26px 'Outfit', sans-serif",'rgba(250,248,243,0.8)',5);
   }
 
-  // --- MEMORY SLOTS (adaptive single row, 1–8) ---
+  // --- memory collage (rotated, layered, varying sizes) ---
   const n=memories.length;
   if(n){
-    tracked(ctx,'CHERISHED MEMORIES',cx,1288,"500 17px 'Outfit', sans-serif",'rgba(201,168,76,0.75)',5);
-    const CW=W-170, gap=16;
-    const cw=Math.min(250,(CW-gap*(n-1))/n), ch=Math.min(285,cw*1.14);
-    const totalW=n*cw+(n-1)*gap; let mxp=cx-totalW/2; const myp=1306;
-    memories.forEach(p=>{ photoSlot(ctx,p,mxp,myp,cw,ch,10,'memory',templateMode?'MEMORY':(p?null:'MEMORY')); mxp+=cw+gap; });
+    tracked(ctx,'CHERISHED MEMORIES',cx,1356,"500 19px 'Outfit', sans-serif",'rgba(201,168,76,0.8)',5);
+    const availW=1010, cyRow=1476;
+    const baseW=Math.min(168, Math.max(120, availW/n));
+    const step=n>1?Math.min(baseW*0.88,(availW-baseW)/(n-1)):0;
+    const spread=step*(n-1);
+    let mx=cx-spread/2;
+    const rots=[-3,2.5,-2,3,-2.5,2,-3,2.5], sizeVar=[0.97,1.06,0.95,1.07,0.96,1.05,0.98,1.04];
+    memories.forEach((p,i)=>{ const w=baseW*sizeVar[i%8], h=w*1.16; drawMemory(ctx,p,mx,cyRow,w,h,rots[i%8]*Math.PI/180); mx+=step; });
   }
 
-  // --- message ---
-  if(msg){
-    ctx.save(); ctx.fillStyle='rgba(250,248,243,0.7)'; ctx.textAlign='center';
-    ctx.font="italic 500 34px 'Cormorant Garamond', serif";
-    ctx.fillText('“'+msg+'”', cx, 1650);
-    ctx.restore();
-  }
+  // --- keepsake quote ---
+  drawKeepsake(ctx,cx,1606,msg);
 
-  // bottom accent
-  capIcon(ctx,cx,1712,22,'rgba(201,168,76,0.9)');
-  tracked(ctx,'CELEBRATE   BANNER',cx,1756,"500 15px 'Outfit', sans-serif",'rgba(201,168,76,0.6)',6);
+  // --- premium footer ---
+  drawFooter(ctx,cx,1726);
 }
 
 function renderLive(){ const c=$('#live'); if(c) renderPoster(c.getContext('2d'),c.width,c.height); }
