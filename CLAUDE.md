@@ -119,13 +119,25 @@ This is a **single-page, multi-step wizard** built entirely in one HTML file. No
 ---
 
 ## Pricing (DO NOT CHANGE without Printmoz confirmation)
+
+### Graduation Signature Banner — LAUNCH pricing (authoritative)
 | Item | Price |
 |------|-------|
-| Print 24×36 in (Classic) | $39.99 |
-| Print 24×36 in (Premium arrangement) | $49.98 |
-| Digital download | $9.99 (flat) |
+| Printed Graduation Signature Banner (24×36 in) | **$79.99** |
+| Digital download | **$9.99** (flat) |
 
-Digital download is flat $9.99 regardless of arrangement. Premium arrangements add $9.99 only on printed orders.
+> **Verified 2026-07-10** against the live Stripe Payment Links (merchant **CDN4LLC**):
+> the printed link (`buy.stripe.com/bJe2…83C05`) charges **$79.99** and the digital link
+> (`buy.stripe.com/7sY8…83C00`) charges **$9.99**. Displayed prices in
+> `graduation-signature.html` and `index.html` (graduation-poster · Standard Poster tier)
+> are reconciled to match these Stripe amounts exactly.
+
+> ⚠️ **Legacy / unreconciled (fallback builder only):** `index.html`'s other graduation
+> poster tiers still display `poster_premium $86.00`, `poster_framed $129.99`,
+> `poster_gallery $159.99`, all pointing at the **same** $79.99 Stripe link. These
+> upper tiers are **not** part of the Graduation Signature launch and need their own
+> Stripe links (or corrected display prices) before they are sold. Digital remains a
+> flat $9.99 regardless of arrangement.
 
 ---
 
