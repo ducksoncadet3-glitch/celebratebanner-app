@@ -1,0 +1,81 @@
+{
+  "system": "Premium Cinematic — Landscape",
+  "version": "1.0.0",
+  "role": "GENERIC GOLD STANDARD — reusable visual rules only. Contains NO product wording, badges, or footer labels. A product adapter (design-references/products/*.json) supplies all content. Reference image: design-references/gold-standards/premium-cinematic-landscape-v1.png.",
+  "format": {
+    "orientation": "landscape",
+    "inches": [24, 18],
+    "px": [7200, 5400],
+    "dpi": 300,
+    "aspect": 1.3333,
+    "bleedIn": 0.125,
+    "safeMarginIn": 0.25,
+    "optionalPrint": { "inches": [36, 24], "px": [10800, 7200], "dpi": 300 }
+  },
+  "units": "fraction",
+  "palette": {
+    "black": "#05060a", "obsidian": "#0C0E14", "gold": "#C9A84C",
+    "gold2": "#E8C97A", "gold3": "#F5E4B0", "ivory": "#FAF8F3"
+  },
+  "lighting": {
+    "background": "#05060a",
+    "heroGlow": { "cx": 0.47, "cy": 0.42, "r": 0.62, "inner": "rgba(232,201,122,0.55)", "mid": "rgba(201,168,76,0.14)", "outer": "rgba(201,168,76,0)" },
+    "particles": { "count": 130, "seed": 20260713, "minRfrac": 0.0008, "maxRfrac": 0.0040, "minA": 0.05, "maxA": 0.32, "color": "232,201,122" },
+    "vignette": { "cx": 0.5, "cy": 0.48, "innerRfracH": 0.42, "outerRfracH": 0.95, "outer": "rgba(0,0,0,0.72)" }
+  },
+  "heroDominance": {
+    "role": "hero-cutout", "x": 0.315, "y": 0.055, "w": 0.315, "h": 0.75, "rotation": 0,
+    "note": "Center-dominant. NOT a rectangular frame — masked to a head/shoulders/torso bust.",
+    "faceBiasY": 0.12, "feather": 0.10,
+    "rimLight": { "color": "rgba(245,228,176,0.85)", "widthFracW": 0.006, "glowBlurFracW": 0.03 },
+    "groundShadow": { "cyFracH": 0.985, "rxFracW": 0.34, "ryFracH": 0.03, "color": "rgba(0,0,0,0.5)" },
+    "glow": { "cyFracH": 0.42, "rFracW": 0.75, "inner": "rgba(232,201,122,0.32)" },
+    "innerLight": { "topHighlight": "rgba(255,250,235,0.14)", "bottomGrounding": "rgba(5,6,10,0.4)" }
+  },
+  "collage": {
+    "framing": { "borderWhite": "#f7f4ee", "borderVintage": "#e8dcc0", "padFracW": 0.035, "cornerRadiusPx": 4, "shadow": { "blurFracW": 0.10, "offsetYFracH": 0.04, "color": "rgba(0,0,0,0.6)" } },
+    "left": [
+      { "slot": "left1", "x": 0.015, "y": 0.415, "w": 0.125, "h": 0.155, "rotation": -4, "border": "vintage" },
+      { "slot": "left2", "x": 0.165, "y": 0.445, "w": 0.165, "h": 0.315, "rotation": 2,  "border": "white" },
+      { "slot": "left3", "x": 0.005, "y": 0.575, "w": 0.150, "h": 0.220, "rotation": -3, "border": "white" }
+    ],
+    "right": [
+      { "slot": "right1", "x": 0.655, "y": 0.150, "w": 0.150, "h": 0.150, "rotation": -3, "border": "white" },
+      { "slot": "right2", "x": 0.812, "y": 0.160, "w": 0.150, "h": 0.150, "rotation": 3,  "border": "white" },
+      { "slot": "right3", "x": 0.650, "y": 0.320, "w": 0.180, "h": 0.190, "rotation": -2, "border": "white" },
+      { "slot": "right4", "x": 0.735, "y": 0.515, "w": 0.225, "h": 0.205, "rotation": 2,  "border": "white" }
+    ]
+  },
+  "typography": {
+    "hierarchy": [
+      { "role": "congratulations", "x": 0.03,  "y": 0.105, "align": "left",   "font": "Great Vibes, cursive",      "sizeFracH": 0.066, "fill": "goldGradient" },
+      { "role": "headline",        "x": 0.02,  "y": 0.235, "align": "left",   "font": "Anton, sans-serif",         "sizeFracH": 0.135, "fill": "ivoryGradient", "shadow": true },
+      { "role": "classLabel",      "x": 0.035, "y": 0.288, "align": "left",   "font": "Outfit, sans-serif",        "sizeFracH": 0.024, "trackingEm": 0.06, "fill": "#E8C97A" },
+      { "role": "year",            "x": 0.03,  "y": 0.365, "align": "left",   "font": "Cormorant Garamond, serif", "sizeFracH": 0.085, "fill": "goldGradient" },
+      { "role": "tagline",         "x": 0.18,  "y": 0.410, "align": "center", "font": "Outfit, sans-serif",        "sizeFracH": 0.019, "trackingEm": 0.02, "fill": "rgba(250,248,243,0.9)" },
+      { "role": "topQuote",        "x": 0.688, "y": 0.075, "align": "center", "font": "Outfit, sans-serif",        "sizeFracH": 0.030, "maxWfracW": 0.20, "maxLines": 2, "fill": "ivoryGradient", "goldQuotes": true },
+      { "role": "name",            "x": 0.472, "y": 0.715, "align": "center", "font": "Great Vibes, cursive",      "sizeFracH": 0.072, "maxWfracW": 0.34, "fill": "goldGradient", "underlineRule": true },
+      { "role": "school",          "x": 0.472, "y": 0.748, "align": "center", "font": "Outfit, sans-serif",        "sizeFracH": 0.017, "trackingEm": 0.04, "caps": true, "fill": "rgba(232,201,122,0.85)" },
+      { "role": "keepsake",        "x": 0.472, "y": 0.782, "align": "center", "font": "Cormorant Garamond, serif", "sizeFracH": 0.026, "maxWfracW": 0.27, "maxLines": 4, "caps": true, "lineStepFracH": 0.035, "fill": "rgba(250,248,243,0.9)" },
+      { "role": "proud",           "x": 0.472, "y": 0.90,  "align": "center", "font": "Great Vibes, cursive",      "sizeFracH": 0.040, "fill": "goldGradient" }
+    ]
+  },
+  "decorationSlots": {
+    "note": "The generic renderer draws product-supplied decorations in these phases and z-order. Each product adapter provides the actual decoration renderers + positions.",
+    "phases": [
+      { "phase": "background", "z": 42, "drawnAfter": "collage", "drawnBefore": "hero" },
+      { "phase": "title",      "z": 55, "anchoredTo": "year" },
+      { "phase": "topright",   "z": 58, "anchoredTo": "topQuote" }
+    ]
+  },
+  "footer": {
+    "band": { "y": 0.905, "h": 0.095, "fill": "#04050a", "ruleY": 0.905, "rule": "rgba(201,168,76,0.55)" },
+    "icons": { "xStart": 0.315, "xEnd": 0.99, "count": 5, "iconXfrac": 0.16, "labelXfrac": 0.30, "iconSizeFracH": 0.026, "topSizeFracH": 0.017, "bottomSizeFracH": 0.013, "dividers": true },
+    "note": "Icon glyphs, top labels and bottom labels are product content."
+  },
+  "zIndex": { "background": 0, "particles": 5, "vignette": 8, "collage": 30, "decorationsBackground": 42, "hero": 40, "text": 60, "decorationsTitle": 55, "decorationsTopright": 58, "footer": 70 },
+  "spacingRules": {
+    "margins": "Title block anchored to left margin ~0.02–0.035; footer band spans full width; collage hugs left/right edges; hero centered.",
+    "heroToNameOverlap": "Script name sits over the lower hero (y≈0.715); keepsake below."
+  }
+}

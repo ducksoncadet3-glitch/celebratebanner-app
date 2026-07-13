@@ -1,0 +1,62 @@
+{
+  "adapter": "graduation-cinematic-v1",
+  "extends": "gold-standards/premium-cinematic-landscape-v1.json",
+  "role": "PRODUCT ADAPTER — graduation-specific content only. Reuses the Premium Cinematic Gold Standard geometry/lighting/framing unchanged.",
+  "product": {
+    "id": "graduation-cinematic",
+    "name": "Cinematic Graduation Signature Banner",
+    "page": "graduation-cinematic.html",
+    "printPrice": 79.99,
+    "digitalPrice": 9.99,
+    "captureProduct": "graduation-cinematic"
+  },
+  "wording": {
+    "congratulations": "Congratulations",
+    "headline": "GRADUATE",
+    "classLabel": "CLASS OF",
+    "tagline": "YOUR JOURNEY. YOUR VICTORY. YOUR FUTURE.",
+    "proud": "We are so proud of you!"
+  },
+  "defaults": {
+    "name": "Graduate Name",
+    "year": "2026",
+    "quote": "The best is yet to come",
+    "keepsake": "Every step, every challenge, every sacrifice has led you here. Be proud of how far you’ve come."
+  },
+  "decorations": [
+    { "type": "goldenStaircase", "phase": "background", "x": 0.635, "y": 0.720, "w": 0.235, "h": 0.195, "meaning": "the climb / journey ahead" },
+    { "type": "starShield",      "phase": "background", "x": 0.865, "y": 0.720, "w": 0.125, "h": 0.185, "meaning": "achievement crest" },
+    { "type": "booksCapDiploma", "phase": "background", "x": 0.005, "y": 0.760, "w": 0.30,  "h": 0.235, "meaning": "education: books, graduation cap, diploma" },
+    { "type": "gradCap",         "phase": "title",      "x": 0.30,  "y": 0.32,  "s": 0.05,  "rot": -12, "meaning": "cap flourish beside the class year" },
+    { "type": "laurelShield",    "phase": "topright",   "x": 0.815, "y": 0.02,  "w": 0.165, "h": 0.225, "text": "year", "meaning": "CLASS OF <year> laurel crest" }
+  ],
+  "footerIcons": [
+    { "icon": "cross",  "top": "FAITH",      "bottom": "BUILT ME" },
+    { "icon": "family", "top": "FAMILY",     "bottom": "SUPPORTED ME" },
+    { "icon": "book",   "top": "EDUCATION",  "bottom": "CHALLENGED ME" },
+    { "icon": "shield", "top": "DISCIPLINE", "bottom": "STRENGTHENED ME" },
+    { "icon": "star",   "top": "FUTURE",     "bottom": "AWAITS ME" }
+  ],
+  "customerFields": [
+    { "id": "f-name",  "label": "Graduate name", "role": "name",     "maxLength": 40 },
+    { "id": "f-year",  "label": "Class year",    "role": "year",     "maxLength": 8 },
+    { "id": "f-school","label": "School name",   "role": "school",   "maxLength": 60 },
+    { "id": "f-quote", "label": "Top quote",     "role": "topQuote", "maxLength": 40 },
+    { "id": "f-msg",   "label": "Keepsake message", "role": "keepsake", "maxLength": 220, "multiline": true },
+    { "id": "f-v1",    "label": "Value 1 (optional)", "role": "footerLabel", "maxLength": 14 },
+    { "id": "f-v2",    "label": "Value 2 (optional)", "role": "footerLabel", "maxLength": 14 },
+    { "id": "f-v3",    "label": "Value 3 (optional)", "role": "footerLabel", "maxLength": 14 },
+    { "id": "f-v4",    "label": "Value 4 (optional)", "role": "footerLabel", "maxLength": 14 },
+    { "id": "f-v5",    "label": "Value 5 (optional)", "role": "footerLabel", "maxLength": 14 }
+  ],
+  "photoSlotLabels": {
+    "hero":   { "label": "Hero portrait",  "meaning": "the graduate, cap & gown" },
+    "left1":  { "label": "Left memory 1",  "meaning": "childhood / earliest photo (vintage frame)" },
+    "left2":  { "label": "Left memory 2",  "meaning": "family / milestone" },
+    "left3":  { "label": "Left memory 3",  "meaning": "friend / candid" },
+    "right1": { "label": "Right memory 1", "meaning": "family / friends" },
+    "right2": { "label": "Right memory 2", "meaning": "family / friends" },
+    "right3": { "label": "Right memory 3", "meaning": "family / friends" },
+    "right4": { "label": "Right memory 4", "meaning": "family / friends" }
+  }
+}
