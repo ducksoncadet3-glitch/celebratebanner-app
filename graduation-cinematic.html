@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cinematic Graduation Signature Banner — CelebrateBanner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Great+Vibes&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --obsidian:#0C0E14; --obsidian2:#12141d; --black:#05060a;
+    --gold:#C9A84C; --gold2:#E8C97A; --gold3:#F5E4B0;
+    --ivory:#FAF8F3; --border:rgba(201,168,76,0.22); --sage:#5A8F6A; --rose:#C4617A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:radial-gradient(1200px 700px at 50% -10%, #171a24 0%, var(--obsidian) 55%);
+    color:var(--ivory);font-family:'Outfit',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+  header.site{padding:26px 0;text-align:center;border-bottom:1px solid var(--border)}
+  .brand{font-family:'Cormorant Garamond',serif;font-size:26px;letter-spacing:.5px;font-weight:600}
+  .brand b{color:var(--gold2);font-weight:600}
+  .kicker{margin-top:6px;font-size:12px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);opacity:.85}
+
+  .intro{text-align:center;padding:54px 0 8px}
+  .intro h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:clamp(34px,5vw,58px);line-height:1.05}
+  .intro h1 em{font-style:italic;color:var(--gold2)}
+  .intro p{margin:16px auto 0;max-width:640px;color:rgba(250,248,243,.68);font-size:17px;line-height:1.6}
+  .concierge-note{margin:18px auto 0;max-width:600px;font-size:14px;color:var(--gold2);
+    background:rgba(201,168,76,.07);border:1px solid var(--border);border-radius:12px;padding:12px 18px;line-height:1.5}
+
+  .panel{background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+    border:1px solid var(--border);border-radius:20px;padding:34px;margin:26px 0}
+  .step-tag{display:inline-flex;align-items:center;gap:10px;font-size:12px;letter-spacing:3px;
+    text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+  .step-tag .n{width:26px;height:26px;border-radius:50%;border:1px solid var(--gold);
+    display:grid;place-items:center;font-size:13px;color:var(--gold2)}
+  .panel h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:30px;margin-bottom:6px}
+  .panel .sub{color:rgba(250,248,243,.6);font-size:15px;margin-bottom:22px}
+
+  .slots-label{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin:18px 0 10px}
+  .slot-grid{display:grid;gap:14px}
+  .slot-hero-grid{grid-template-columns:1fr}
+  .slot-side-grid{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:720px){.slot-side-grid{grid-template-columns:repeat(2,1fr)}}
+  .slot{position:relative;aspect-ratio:1;border:1.5px dashed rgba(201,168,76,.4);border-radius:12px;
+    overflow:hidden;cursor:pointer;transition:.18s;background:rgba(201,168,76,.03);display:flex;
+    align-items:center;justify-content:center;text-align:center}
+  .slot.hero{aspect-ratio:16/10}
+  .slot:hover{border-color:var(--gold2);background:rgba(201,168,76,.08)}
+  .slot.filled{border-style:solid;border-color:var(--gold2)}
+  .slot img{width:100%;height:100%;object-fit:cover;display:block}
+  .slot .ph{padding:8px}
+  .slot .ph .t{font-size:13px;color:var(--gold2);font-weight:600}
+  .slot .ph .s{font-size:11px;color:rgba(250,248,243,.45);margin-top:3px}
+  .slot .rm{position:absolute;right:6px;top:6px;width:22px;height:22px;border:none;border-radius:50%;
+    background:rgba(12,14,20,.82);color:#fff;cursor:pointer;font-size:12px;line-height:1;z-index:2}
+  .slot .tag{position:absolute;left:6px;top:6px;background:var(--gold2);color:var(--obsidian);
+    font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 7px;border-radius:20px;text-transform:uppercase}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr}}
+  .grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+  @media(max-width:720px){.grid5{grid-template-columns:repeat(2,1fr)}}
+  label.fld{display:block}
+  label.fld .lb{font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;display:block}
+  input.in,textarea.in{width:100%;background:rgba(255,255,255,.03);border:1px solid var(--border);
+    border-radius:12px;padding:13px 15px;color:var(--ivory);font-family:'Outfit',sans-serif;font-size:15px;outline:none;transition:.2s}
+  input.in:focus,textarea.in:focus{border-color:var(--gold2);background:rgba(201,168,76,.05)}
+  textarea.in{resize:vertical;min-height:70px}
+
+  .build-grid{display:grid;grid-template-columns:1fr 400px;gap:34px;align-items:start}
+  @media(max-width:900px){.build-grid{grid-template-columns:1fr}}
+  .build-preview{position:sticky;top:20px}
+  .prev-label{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;text-align:center}
+  #live{width:100%;height:auto;display:block;border-radius:6px;background:#05060a;
+    box-shadow:0 24px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(201,168,76,.22)}
+  .prev-spec{margin-top:12px;text-align:center;font-size:12px;color:rgba(250,248,243,.5)}
+  .prev-spec b{color:var(--gold2)}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:none;cursor:pointer;
+    font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;padding:16px 28px;border-radius:40px;transition:.2s;width:100%}
+  .btn.gold{background:linear-gradient(135deg,var(--gold2),var(--gold));color:var(--obsidian);box-shadow:0 10px 30px rgba(201,168,76,.28)}
+  .btn.gold:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(201,168,76,.4)}
+  .btn.ghost{background:transparent;border:1px solid var(--gold);color:var(--gold2)}
+  .btn.ghost:hover{background:rgba(201,168,76,.08)}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+  .price-tag{font-size:13px;opacity:.8;margin-left:4px}
+  .order-row{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+
+  footer.site{text-align:center;padding:40px 0;color:rgba(250,248,243,.35);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
+  .toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(20px);opacity:0;
+    background:var(--obsidian2);border:1px solid var(--gold);color:var(--ivory);padding:14px 24px;border-radius:40px;
+    transition:.3s;z-index:50;pointer-events:none;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* concierge capture modal (same pattern as graduation-signature.html) */
+  .modal-overlay{position:fixed;inset:0;background:rgba(6,7,11,.78);backdrop-filter:blur(4px);
+    display:none;align-items:flex-start;justify-content:center;z-index:60;padding:40px 18px;overflow-y:auto}
+  .modal-overlay.show{display:flex}
+  .modal{background:linear-gradient(180deg,#14161f,#0c0e14);border:1px solid var(--gold);border-radius:20px;
+    width:100%;max-width:520px;padding:30px;position:relative;box-shadow:0 40px 120px rgba(0,0,0,.7)}
+  .modal-x{position:absolute;right:16px;top:14px;background:none;border:none;color:rgba(250,248,243,.5);font-size:20px;cursor:pointer;line-height:1}
+  .modal-kicker{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+  .modal h3{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:26px;margin-bottom:6px}
+  .modal .msub{color:rgba(250,248,243,.6);font-size:14px;margin-bottom:20px;line-height:1.5}
+  .modal .fld{margin-bottom:14px}
+  #c-submit{margin-top:8px}
+  .modal-status{margin-top:14px;font-size:14px;min-height:20px;text-align:center;line-height:1.5}
+  .modal-status.err{color:var(--rose)} .modal-status.ok{color:var(--sage)} .modal-status.busy{color:var(--gold2)}
+  .consent{display:flex;gap:10px;align-items:flex-start;margin:6px 0 18px;font-size:13px;color:rgba(250,248,243,.72);line-height:1.5;cursor:pointer}
+  .consent input{margin-top:2px;width:17px;height:17px;accent-color:var(--gold);flex:none;cursor:pointer}
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand">Celebrate<b>Banner</b></div>
+    <div class="kicker">Cinematic Graduation Signature Banner</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="intro">
+    <h1>A <em>cinematic</em> graduation masterpiece, made from your photos</h1>
+    <p>One dominant hero portrait, a golden collage of your journey, and a premium black-and-gold composition — a 24×18" keepsake worthy of the moment.</p>
+    <div class="concierge-note">✦ Your premium cinematic proof will be personally prepared using your uploaded photos.</div>
+  </section>
+
+  <div class="build-grid">
+    <!-- LEFT: inputs -->
+    <div>
+      <section class="panel">
+        <div class="step-tag"><span class="n">1</span> Upload Your Photos</div>
+        <h2>Your hero &amp; your journey</h2>
+        <p class="sub">One hero portrait, three memories on the left, four on the right — eight photos tell the full story.</p>
+
+        <div class="slots-label">Hero portrait</div>
+        <div class="slot-grid slot-hero-grid">
+          <div class="slot hero" data-slot="hero"><div class="ph"><div class="t">＋ Hero portrait</div><div class="s">Cap &amp; gown works best · we prepare the cutout for you</div></div></div>
+        </div>
+
+        <div class="slots-label">Left memories (3)</div>
+        <div class="slot-grid slot-side-grid" id="left-grid"></div>
+
+        <div class="slots-label">Right memories (4)</div>
+        <div class="slot-grid slot-side-grid" id="right-grid"></div>
+      </section>
+
+      <section class="panel">
+        <div class="step-tag"><span class="n">2</span> Personalize</div>
+        <h2>Names, year &amp; words</h2>
+        <p class="sub">These are typeset into the design exactly where the Gold Standard places them.</p>
+        <div class="grid2">
+          <label class="fld"><span class="lb">Graduate name</span><input class="in" id="f-name" placeholder="e.g., Sarah Johnson" maxlength="40"></label>
+          <label class="fld"><span class="lb">Class year</span><input class="in" id="f-year" placeholder="2026" maxlength="8"></label>
+          <label class="fld"><span class="lb">School name</span><input class="in" id="f-school" placeholder="e.g., Lincoln High School" maxlength="60"></label>
+          <label class="fld"><span class="lb">Top quote</span><input class="in" id="f-quote" placeholder="The best is yet to come" maxlength="40"></label>
+        </div>
+        <label class="fld" style="margin-top:18px"><span class="lb">Keepsake message</span>
+          <textarea class="in" id="f-msg" maxlength="220" placeholder="Every step, every challenge, every sacrifice has led you here. Be proud of how far you've come."></textarea></label>
+        <div class="slots-label">Five value labels (optional)</div>
+        <div class="grid5">
+          <label class="fld"><input class="in" id="f-v1" placeholder="FAITH" maxlength="14"></label>
+          <label class="fld"><input class="in" id="f-v2" placeholder="FAMILY" maxlength="14"></label>
+          <label class="fld"><input class="in" id="f-v3" placeholder="EDUCATION" maxlength="14"></label>
+          <label class="fld"><input class="in" id="f-v4" placeholder="DISCIPLINE" maxlength="14"></label>
+          <label class="fld"><input class="in" id="f-v5" placeholder="FUTURE" maxlength="14"></label>
+        </div>
+      </section>
+    </div>
+
+    <!-- RIGHT: live preview + order -->
+    <div class="build-preview">
+      <div class="prev-label">Live Proof</div>
+      <canvas id="live" width="1400" height="1050"></canvas>
+      <div class="prev-spec">Landscape <b>24 × 18"</b> · <b>7200 × 5400 px</b> · 300 DPI · print &amp; digital</div>
+      <div class="order-row">
+        <button class="btn gold" id="order">Order Printed Banner <span class="price-tag">$79.99</span></button>
+        <button class="btn ghost" id="download">Download Digital Version <span class="price-tag">$9.99</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Order-capture modal: saves the order (photos + details) BEFORE Stripe -->
+<div class="modal-overlay" id="checkout-modal" role="dialog" aria-modal="true">
+  <div class="modal">
+    <button class="modal-x" id="modal-close" aria-label="Close">✕</button>
+    <div class="modal-kicker" id="modal-kicker">Order</div>
+    <h3>Where should we send your order?</h3>
+    <div class="msub">We save your photos and details, then take you to secure checkout. Your premium cinematic proof is personally prepared from your uploaded photos. Your card isn't charged until the Stripe page.</div>
+    <div class="grid2">
+      <label class="fld"><span class="lb">Your name</span><input class="in" id="c-name" autocomplete="name"></label>
+      <label class="fld"><span class="lb">Email</span><input class="in" id="c-email" type="email" autocomplete="email"></label>
+    </div>
+    <label class="fld"><span class="lb">Phone (optional)</span><input class="in" id="c-phone" type="tel" autocomplete="tel"></label>
+    <div id="ship-fields">
+      <label class="fld"><span class="lb">Shipping address</span><input class="in" id="c-addr" autocomplete="address-line1"></label>
+      <div class="grid2">
+        <label class="fld"><span class="lb">City</span><input class="in" id="c-city" autocomplete="address-level2"></label>
+        <label class="fld"><span class="lb">State</span><input class="in" id="c-state" autocomplete="address-level1"></label>
+      </div>
+      <label class="fld"><span class="lb">ZIP</span><input class="in" id="c-zip" inputmode="numeric" autocomplete="postal-code"></label>
+    </div>
+    <label class="consent" for="c-consent"><input type="checkbox" id="c-consent">
+      <span>Your photos and order details will be securely saved so we can personally prepare and fulfill your cinematic banner.</span></label>
+    <button class="btn gold" id="c-submit">Save order &amp; continue to checkout →</button>
+    <div class="modal-status" id="c-status"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+
+/* ─────────── DETERMINISTIC SCENE SPEC (mirror of design-references/graduation-cinematic-spec.json) ─────────── */
+/* ═══ A) GENERIC PREMIUM CINEMATIC GOLD STANDARD — reusable visual system (no product wording).
+   Mirrors design-references/gold-standards/premium-cinematic-landscape-v1.json. ═══ */
+const GOLD_STANDARD = {
+  format:{ inches:[24,18], px:[7200,5400], dpi:300, aspect:1.3333, bleedIn:0.125, safeMarginIn:0.25,
+           optionalPrint:{inches:[36,24],px:[10800,7200],dpi:300} },
+  photoSlotOrder:['hero','left1','left2','left3','right1','right2','right3','right4'],
+  bg:{ base:'#05060a', glow:{cx:0.47,cy:0.42,r:0.62}, particles:{count:130,seed:20260713},
+       vignette:{innerR:0.42,outerR:0.95} },
+  slots:[
+    {id:'hero',hero:true,x:0.315,y:0.055,w:0.315,h:0.75,rot:0,faceBiasY:0.12},
+    {id:'left1',x:0.015,y:0.415,w:0.125,h:0.155,rot:-4,border:'vintage'},
+    {id:'left2',x:0.165,y:0.445,w:0.165,h:0.315,rot:2,border:'white'},
+    {id:'left3',x:0.005,y:0.575,w:0.150,h:0.220,rot:-3,border:'white'},
+    {id:'right1',x:0.655,y:0.150,w:0.150,h:0.150,rot:-3,border:'white'},
+    {id:'right2',x:0.812,y:0.160,w:0.150,h:0.150,rot:3,border:'white'},
+    {id:'right3',x:0.650,y:0.320,w:0.180,h:0.190,rot:-2,border:'white'},
+    {id:'right4',x:0.735,y:0.515,w:0.225,h:0.205,rot:2,border:'white'}
+  ],
+  footer:{ band:{y:0.905,h:0.095}, xStart:0.315, xEnd:0.99 }
+};
+
+/* ═══ B) GRADUATION PRODUCT ADAPTER — content only (swap this to reuse the Gold Standard).
+   Mirrors design-references/products/graduation-cinematic-v1.json. ═══ */
+const PRODUCT = {
+  id:'graduation-cinematic-v1', name:'Cinematic Graduation Signature Banner',
+  wording:{ congratulations:'Congratulations', headline:'GRADUATE', classLabel:'CLASS OF',
+            tagline:'YOUR JOURNEY. YOUR VICTORY. YOUR FUTURE.', proud:'We are so proud of you!' },
+  defaults:{ name:'Graduate Name', year:'2026', quote:'The best is yet to come',
+             keepsake:'Every step, every challenge, every sacrifice has led you here. Be proud of how far you’ve come.' },
+  decorations:[
+    {type:'goldenStaircase',phase:'background',x:0.635,y:0.720,w:0.235,h:0.195},
+    {type:'starShield',phase:'background',x:0.865,y:0.720,w:0.125,h:0.185},
+    {type:'booksCapDiploma',phase:'background',x:0.005,y:0.760,w:0.30,h:0.235},
+    {type:'gradCap',phase:'title',x:0.30,y:0.32,s:0.05,rot:-12},
+    {type:'laurelShield',phase:'topright',x:0.815,y:0.02,w:0.165,h:0.225}
+  ],
+  footerIcons:[
+    {icon:'cross',top:'FAITH',bottom:'BUILT ME'},
+    {icon:'family',top:'FAMILY',bottom:'SUPPORTED ME'},
+    {icon:'book',top:'EDUCATION',bottom:'CHALLENGED ME'},
+    {icon:'shield',top:'DISCIPLINE',bottom:'STRENGTHENED ME'},
+    {icon:'star',top:'FUTURE',bottom:'AWAITS ME'}
+  ]
+};
+
+/* Decorative-layer interface — future products register their own decoration renderers here. */
+const DECOR = {
+  goldenStaircase:(ctx,W,H,d)=>goldenStaircase(ctx,W,H,d),
+  starShield:(ctx,W,H,d)=>starShield(ctx,W,H,d),
+  booksCapDiploma:(ctx,W,H,d)=>booksCapDiploma(ctx,W,H,d),
+  laurelShield:(ctx,W,H,d,data)=>laurelShield(ctx,W,H,d,data.year),
+  gradCap:(ctx,W,H,d)=>gradCap(ctx,d.x*W,d.y*H,d.s*W,d.rot)
+};
+function drawDecor(ctx,W,H,phase,data){ (PRODUCT.decorations||[]).filter(d=>d.phase===phase).forEach(d=>DECOR[d.type]&&DECOR[d.type](ctx,W,H,d,data)); }
+
+/* ─────────── STATE (fixed named slots — never random) ─────────── */
+const state = { photos:{}, };  // slotId -> {url, img, name}
+window.state = state;
+let uidc=0;
+
+/* build side slot DOM */
+function slotHTML(id,label,sub){ return `<div class="slot" data-slot="${id}"><div class="ph"><div class="t">＋ ${label}</div><div class="s">${sub}</div></div></div>`; }
+$('#left-grid').innerHTML = ['Memory 1','Memory 2','Memory 3'].map((l,i)=>slotHTML('left'+(i+1),l,'left side')).join('');
+$('#right-grid').innerHTML = ['Memory 1','Memory 2','Memory 3','Memory 4'].map((l,i)=>slotHTML('right'+(i+1),l,'right side')).join('');
+
+/* hidden file input reused for whichever slot was clicked */
+const fileInput = document.createElement('input'); fileInput.type='file'; fileInput.accept='image/*'; fileInput.style.display='none';
+document.body.appendChild(fileInput);
+let activeSlot=null;
+document.querySelectorAll('.slot').forEach(el=>{
+  el.addEventListener('click', ev=>{
+    if(ev.target.classList.contains('rm')){ removeSlot(el.dataset.slot); ev.stopPropagation(); return; }
+    activeSlot=el.dataset.slot; fileInput.value=''; fileInput.click();
+  });
+});
+fileInput.addEventListener('change', e=>{ const f=e.target.files&&e.target.files[0]; if(f&&activeSlot) loadInto(activeSlot,f); });
+function loadInto(slot,file){
+  if(!file.type.startsWith('image/')){ toast('Please choose an image file'); return; }
+  const reader=new FileReader();
+  reader.onload=ev=>{ const img=new Image(); img.onload=()=>{
+    state.photos[slot]={url:ev.target.result,img,name:file.name,id:'p'+(uidc++)};
+    paintSlot(slot); renderLive();
+  }; img.src=ev.target.result; };
+  reader.readAsDataURL(file);
+}
+function paintSlot(slot){
+  const el=document.querySelector('.slot[data-slot="'+slot+'"]'); if(!el)return;
+  const p=state.photos[slot];
+  if(p){ el.classList.add('filled'); el.innerHTML=`<img src="${p.url}" alt="">`+(slot==='hero'?'<span class="tag">Hero</span>':'')+`<button class="rm" title="Remove">✕</button>`; }
+}
+function removeSlot(slot){
+  delete state.photos[slot];
+  const el=document.querySelector('.slot[data-slot="'+slot+'"]'); if(!el)return;
+  el.classList.remove('filled');
+  const isHero=slot==='hero';
+  const label=isHero?'Hero portrait':(slot.startsWith('left')?'Memory '+slot.slice(4):'Memory '+slot.slice(5));
+  const sub=isHero?'Cap &amp; gown works best · we prepare the cutout for you':(slot.startsWith('left')?'left side':'right side');
+  el.innerHTML=`<div class="ph"><div class="t">＋ ${label}</div><div class="s">${sub}</div></div>`;
+  el.addEventListener('click', ev=>{ if(ev.target.classList.contains('rm')){removeSlot(slot);ev.stopPropagation();return;} activeSlot=slot; fileInput.value=''; fileInput.click(); });
+  renderLive();
+}
+['f-name','f-year','f-school','f-quote','f-msg','f-v1','f-v2','f-v3','f-v4','f-v5'].forEach(id=>$('#'+id).addEventListener('input', renderLive));
+
+/* ─────────── RENDERER (deterministic scene graph) ─────────── */
+function srand(seed){let s=(seed>>>0)||1;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};}
+function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function cover(ctx,img,x,y,w,h,biasY){biasY=biasY==null?0.5:biasY;const ir=img.naturalWidth/img.naturalHeight,br=w/h;let dw,dh,dx,dy;
+  if(ir>br){dh=h;dw=h*ir;dx=x-(dw-w)/2;dy=y;}else{dw=w;dh=w/ir;dx=x;dy=y-(dh-h)*biasY;}ctx.drawImage(img,dx,dy,dw,dh);}
+function goldFill(ctx,x,y,w){const g=ctx.createLinearGradient(x,y-w,x,y+w*0.2);g.addColorStop(0,'#F7E9BE');g.addColorStop(.5,'#E8C97A');g.addColorStop(1,'#C9A84C');return g;}
+function ivoryFill(ctx,x,y,w){const g=ctx.createLinearGradient(x,y-w,x,y+w*0.2);g.addColorStop(0,'#ffffff');g.addColorStop(1,'#d8d2c4');return g;}
+function tracked(ctx,text,x,y,ls,align){const chars=[...text];let tot=0;chars.forEach(c=>tot+=ctx.measureText(c).width+ls);tot-=ls;
+  let cx=align==='left'?x:(align==='right'?x-tot:x-tot/2);ctx.textAlign='left';chars.forEach(c=>{ctx.fillText(c,cx,y);cx+=ctx.measureText(c).width+ls;});}
+function wrapLines(ctx,text,maxW){const words=text.split(/\s+/);const lines=[];let ln='';for(const w of words){const t=(ln?ln+' ':'')+w;if(ctx.measureText(t).width>maxW&&ln){lines.push(ln);ln=w;}else ln=t;}if(ln)lines.push(ln);return lines;}
+
+function memoryPhoto(ctx,W,H,sl){
+  const p=state.photos[sl.id];
+  const x=sl.x*W,y=sl.y*H,w=sl.w*W,h=sl.h*H,cx=x+w/2,cy=y+h/2,rot=(sl.rot||0)*Math.PI/180;
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(rot);
+  const bx=-w/2,by=-h/2,pad=Math.max(3,w*0.035);
+  ctx.save();ctx.shadowColor='rgba(0,0,0,0.6)';ctx.shadowBlur=w*0.10;ctx.shadowOffsetY=h*0.04;
+  ctx.fillStyle=sl.border==='vintage'?'#e8dcc0':'#f7f4ee';rr(ctx,bx,by,w,h,4);ctx.fill();ctx.restore();
+  if(p&&p.img){ctx.save();rr(ctx,bx+pad,by+pad,w-pad*2,h-pad*2,2);ctx.clip();cover(ctx,p.img,bx+pad,by+pad,w-pad*2,h-pad*2,0.4);
+    if(sl.border==='vintage'){ctx.fillStyle='rgba(90,70,40,0.28)';ctx.fillRect(bx+pad,by+pad,w-pad*2,h-pad*2);}ctx.restore();}
+  else{ctx.save();rr(ctx,bx+pad,by+pad,w-pad*2,h-pad*2,2);ctx.clip();const g=ctx.createLinearGradient(bx,by,bx,by+h);g.addColorStop(0,'#20242f');g.addColorStop(1,'#0d0f16');ctx.fillStyle=g;ctx.fillRect(bx+pad,by+pad,w-pad*2,h-pad*2);
+    ctx.strokeStyle='rgba(201,168,76,0.4)';ctx.lineWidth=w*0.02;ctx.lineCap='round';const s=Math.min(w,h)*0.16;
+    ctx.beginPath();ctx.arc(0,-h*0.06,s*0.5,0,7);ctx.stroke();ctx.beginPath();ctx.moveTo(-s,h*0.14);ctx.quadraticCurveTo(0,-h*0.02,s,h*0.14);ctx.stroke();
+    ctx.fillStyle='rgba(201,168,76,0.55)';ctx.font='600 '+(w*0.09)+'px Outfit,sans-serif';ctx.textAlign='center';ctx.fillText('MEMORY',0,h*0.34);ctx.restore();}
+  ctx.restore();
+}
+
+/* hero cutout: bust-shaped mask (NOT a rectangle) + rim light + ground shadow + glow */
+function heroCutout(ctx,W,H,sl){
+  const x=sl.x*W,y=sl.y*H,w=sl.w*W,h=sl.h*H,cx=x+w/2;
+  // grounding shadow ellipse
+  ctx.save();ctx.fillStyle='rgba(0,0,0,0.5)';ctx.beginPath();ctx.ellipse(cx,y+h*0.985,w*0.34,h*0.03,0,0,7);ctx.fill();ctx.restore();
+  // cinematic glow behind subject
+  ctx.save();const gl=ctx.createRadialGradient(cx,y+h*0.42,w*0.05,cx,y+h*0.42,w*0.75);
+  gl.addColorStop(0,'rgba(232,201,122,0.32)');gl.addColorStop(.55,'rgba(201,168,76,0.10)');gl.addColorStop(1,'rgba(201,168,76,0)');
+  ctx.fillStyle=gl;ctx.beginPath();ctx.arc(cx,y+h*0.42,w*0.75,0,7);ctx.fill();ctx.restore();
+  const path=()=>{ctx.beginPath();
+    ctx.moveTo(x+w*0.06,y+h);ctx.lineTo(x+w*0.94,y+h);
+    ctx.lineTo(x+w*0.90,y+h*0.52);
+    ctx.quadraticCurveTo(x+w*0.86,y+h*0.34,cx+w*0.165,y+h*0.305);
+    ctx.quadraticCurveTo(cx+w*0.085,y+h*0.275,cx+w*0.07,y+h*0.235);
+    ctx.quadraticCurveTo(cx,y+h*0.255,cx-w*0.07,y+h*0.235);
+    ctx.quadraticCurveTo(cx-w*0.085,y+h*0.275,cx-w*0.165,y+h*0.305);
+    ctx.quadraticCurveTo(x+w*0.14,y+h*0.34,x+w*0.10,y+h*0.52);ctx.closePath();
+    ctx.moveTo(cx+w*0.16,y+h*0.135);ctx.ellipse(cx,y+h*0.135,w*0.16,h*0.145,0,0,Math.PI*2);};
+  const p=state.photos.hero;
+  ctx.save();path();ctx.clip();
+  if(p&&p.img){cover(ctx,p.img,x,y,w,h,sl.faceBiasY);
+    // luxury top light + grounding
+    const tl=ctx.createLinearGradient(x,y,x,y+h*0.4);tl.addColorStop(0,'rgba(255,250,235,0.14)');tl.addColorStop(1,'rgba(255,250,235,0)');ctx.fillStyle=tl;ctx.fillRect(x,y,w,h*0.4);
+    const bg=ctx.createLinearGradient(x,y+h*0.6,x,y+h);bg.addColorStop(0,'rgba(5,6,10,0)');bg.addColorStop(1,'rgba(5,6,10,0.4)');ctx.fillStyle=bg;ctx.fillRect(x,y+h*0.6,w,h*0.4);
+  }else{const g=ctx.createLinearGradient(x,y,x,y+h);g.addColorStop(0,'#20242f');g.addColorStop(1,'#0b0d14');ctx.fillStyle=g;ctx.fillRect(x,y,w,h);
+    ctx.strokeStyle='rgba(201,168,76,0.45)';ctx.lineWidth=w*0.012;ctx.lineCap='round';
+    ctx.beginPath();ctx.arc(cx,y+h*0.16,w*0.11,0,7);ctx.stroke();ctx.beginPath();ctx.moveTo(x+w*0.24,y+h*0.5);ctx.quadraticCurveTo(cx,y+h*0.22,x+w*0.76,y+h*0.5);ctx.stroke();
+    ctx.fillStyle='rgba(201,168,76,0.55)';ctx.font='600 '+(w*0.05)+'px Outfit,sans-serif';ctx.textAlign='center';tracked(ctx,'YOUR PORTRAIT',cx,y+h*0.62,w*0.006,'center');}
+  ctx.restore();
+  // gold rim light along the cutout edge
+  ctx.save();path();ctx.strokeStyle='rgba(245,228,176,0.85)';ctx.lineWidth=Math.max(2,w*0.006);ctx.shadowColor='rgba(232,201,122,0.7)';ctx.shadowBlur=w*0.03;ctx.stroke();ctx.restore();
+}
+
+function gradCap(ctx,cx,cy,s,rot){
+  ctx.save();ctx.translate(cx,cy);ctx.rotate((rot||0)*Math.PI/180);ctx.fillStyle='#0a0a0a';ctx.strokeStyle='#C9A84C';ctx.lineWidth=s*0.03;
+  ctx.beginPath();ctx.moveTo(-s,0);ctx.lineTo(0,-s*0.5);ctx.lineTo(s,0);ctx.lineTo(0,s*0.5);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-s*0.5,s*0.16);ctx.lineTo(-s*0.5,s*0.55);ctx.quadraticCurveTo(0,s*0.9,s*0.5,s*0.55);ctx.lineTo(s*0.5,s*0.16);ctx.lineTo(0,s*0.45);ctx.closePath();ctx.fillStyle='#111';ctx.fill();ctx.stroke();
+  ctx.strokeStyle='#E8C97A';ctx.lineWidth=s*0.04;ctx.beginPath();ctx.moveTo(s*0.02,-s*0.02);ctx.lineTo(s*0.7,s*0.05);ctx.stroke();
+  ctx.fillStyle='#E8C97A';ctx.beginPath();ctx.moveTo(s*0.66,s*0.05);ctx.lineTo(s*0.74,s*0.05);ctx.lineTo(s*0.72,s*0.4);ctx.lineTo(s*0.68,s*0.4);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.arc(s*0.02,-s*0.02,s*0.06,0,7);ctx.fill();ctx.restore();
+}
+function laurel(ctx,cx,cy,r,dir){ctx.save();ctx.strokeStyle='#C9A84C';ctx.lineWidth=r*0.05;ctx.fillStyle='#C9A84C';
+  for(let i=0;i<9;i++){const a=(-0.35+i*0.13)*Math.PI;const lx=cx+dir*Math.cos(a)*r,ly=cy-Math.sin(a)*r+ (i-4)*r*0.02;
+    ctx.save();ctx.translate(lx,ly);ctx.rotate(dir* (a));ctx.beginPath();ctx.ellipse(dir*r*0.09,0,r*0.11,r*0.045,0,0,7);ctx.fill();ctx.restore();}
+  ctx.beginPath();for(let i=0;i<=18;i++){const a=(-0.35+i*0.065)*Math.PI;const lx=cx+dir*Math.cos(a)*r,ly=cy-Math.sin(a)*r;if(i===0)ctx.moveTo(lx,ly);else ctx.lineTo(lx,ly);}ctx.stroke();ctx.restore();}
+function laurelShield(ctx,W,H,d,year){
+  const x=d.x*W,y=d.y*H,w=d.w*W,h=d.h*H,cx=x+w/2;
+  ctx.save();
+  // hexagon banner
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+w,y);ctx.lineTo(x+w,y+h*0.72);ctx.lineTo(cx,y+h);ctx.lineTo(x,y+h*0.72);ctx.closePath();
+  const g=ctx.createLinearGradient(x,y,x,y+h);g.addColorStop(0,'#14161f');g.addColorStop(1,'#0a0b10');ctx.fillStyle=g;ctx.fill();
+  ctx.strokeStyle='#C9A84C';ctx.lineWidth=w*0.02;ctx.stroke();
+  laurel(ctx,cx-w*0.30,y+h*0.55,h*0.34,1);laurel(ctx,cx+w*0.30,y+h*0.55,h*0.34,-1);
+  gradCap(ctx,cx,y+h*0.24,w*0.14,0);
+  ctx.fillStyle='#E8C97A';ctx.textAlign='center';ctx.font='700 '+(h*0.09)+'px Outfit,sans-serif';tracked(ctx,'CLASS OF',cx,y+h*0.52,h*0.02,'center');
+  ctx.fillStyle=goldFill(ctx,cx,y+h*0.72,h*0.16);ctx.font='700 '+(h*0.20)+'px "Cormorant Garamond",serif';ctx.fillText(year,cx,y+h*0.76);
+  ctx.restore();
+}
+function booksCapDiploma(ctx,W,H,d){
+  const x=d.x*W,y=d.y*H,w=d.w*W,h=d.h*H;
+  ctx.save();
+  // book stack
+  const bw=w*0.6,bx=x+w*0.06;let by=y+h*0.66;
+  ['#6b3b1f','#7a4a12','#5a2f1a'].forEach((col,i)=>{const bh=h*0.09;ctx.fillStyle=col;rr(ctx,bx+i*4,by,bw-i*8,bh,3);ctx.fill();
+    ctx.fillStyle='rgba(232,201,122,0.5)';ctx.fillRect(bx+i*4,by+bh*0.42,bw-i*8,bh*0.12);by-=bh+2;});
+  // diploma (rolled) with ribbon
+  const dx=x+w*0.5,dy=y+h*0.80;ctx.save();ctx.translate(dx,dy);ctx.rotate(-0.12);
+  ctx.fillStyle='#f3ede0';rr(ctx,-w*0.02,-w*0.28,w*0.46,w*0.10,w*0.05);ctx.fill();
+  ctx.strokeStyle='#d8cfbb';ctx.lineWidth=2;ctx.stroke();
+  ctx.strokeStyle='#C9A84C';ctx.lineWidth=w*0.02;ctx.beginPath();ctx.moveTo(w*0.2,-w*0.28);ctx.lineTo(w*0.2,-w*0.18);ctx.stroke();
+  ctx.fillStyle='#C9A84C';ctx.beginPath();ctx.arc(w*0.2,-w*0.23,w*0.03,0,7);ctx.fill();ctx.restore();
+  // cap on top
+  gradCap(ctx,x+w*0.34,y+h*0.30,w*0.26,-6);
+  ctx.restore();
+}
+function goldenStaircase(ctx,W,H,d){
+  const x=d.x*W,y=d.y*H,w=d.w*W,h=d.h*H,cx=x+w/2;
+  ctx.save();rr(ctx,x,y,w,h,6);ctx.clip();
+  const g=ctx.createLinearGradient(x,y+h,x,y);g.addColorStop(0,'#1a1206');g.addColorStop(.6,'#5a3d0e');g.addColorStop(1,'#f0c869');ctx.fillStyle=g;ctx.fillRect(x,y,w,h);
+  // perspective steps
+  ctx.strokeStyle='rgba(20,14,4,0.7)';ctx.lineWidth=2;
+  for(let i=0;i<14;i++){const t=i/14;const sy=y+h-t*h*0.9;const halfw=w*0.5*(1-t*0.72);ctx.beginPath();ctx.moveTo(cx-halfw,sy);ctx.lineTo(cx+halfw,sy);ctx.stroke();}
+  // glow at top + silhouette figure
+  const glow=ctx.createRadialGradient(cx,y+h*0.16,2,cx,y+h*0.16,w*0.28);glow.addColorStop(0,'rgba(255,236,180,0.95)');glow.addColorStop(1,'rgba(255,236,180,0)');ctx.fillStyle=glow;ctx.fillRect(x,y,w,h*0.5);
+  ctx.fillStyle='#100a03';ctx.beginPath();ctx.ellipse(cx,y+h*0.30,w*0.02,w*0.03,0,0,7);ctx.fill();ctx.fillRect(cx-w*0.022,y+h*0.31,w*0.044,h*0.14);
+  ctx.restore();
+  ctx.strokeStyle='rgba(201,168,76,0.6)';ctx.lineWidth=2;rr(ctx,x,y,w,h,6);ctx.stroke();
+}
+function starShield(ctx,W,H,d){
+  const x=d.x*W,y=d.y*H,w=d.w*W,h=d.h*H,cx=x+w/2;
+  ctx.save();
+  ctx.beginPath();ctx.moveTo(x,y+h*0.04);ctx.lineTo(x+w,y+h*0.04);ctx.lineTo(x+w,y+h*0.6);ctx.quadraticCurveTo(x+w,y+h*0.9,cx,y+h);ctx.quadraticCurveTo(x,y+h*0.9,x,y+h*0.6);ctx.closePath();
+  const g=ctx.createLinearGradient(x,y,x,y+h);g.addColorStop(0,'#14161f');g.addColorStop(1,'#0a0b10');ctx.fillStyle=g;ctx.fill();
+  ctx.strokeStyle='#C9A84C';ctx.lineWidth=w*0.03;ctx.stroke();
+  laurel(ctx,cx-w*0.34,y+h*0.62,h*0.24,1);laurel(ctx,cx+w*0.34,y+h*0.62,h*0.24,-1);
+  gradCap(ctx,cx,y+h*0.34,w*0.24,0);
+  ctx.fillStyle='#E8C97A';for(let i=0;i<3;i++){star(ctx,cx+(i-1)*w*0.16,y+h*0.6,w*0.05);}
+  ctx.restore();
+}
+function star(ctx,cx,cy,r){ctx.beginPath();for(let i=0;i<10;i++){const a=Math.PI/5*i-Math.PI/2;const rad=i%2?r*0.45:r;ctx.lineTo(cx+Math.cos(a)*rad,cy+Math.sin(a)*rad);}ctx.closePath();ctx.fill();}
+function footerIcon(ctx,type,cx,cy,s){ctx.save();ctx.strokeStyle='#E8C97A';ctx.fillStyle='#E8C97A';ctx.lineWidth=s*0.10;ctx.lineCap='round';ctx.lineJoin='round';
+  if(type==='cross'){ctx.beginPath();ctx.moveTo(cx,cy-s*0.6);ctx.lineTo(cx,cy+s*0.6);ctx.moveTo(cx-s*0.35,cy-s*0.18);ctx.lineTo(cx+s*0.35,cy-s*0.18);ctx.stroke();}
+  else if(type==='family'){ctx.beginPath();ctx.arc(cx-s*0.28,cy-s*0.15,s*0.2,0,7);ctx.arc(cx+s*0.28,cy-s*0.15,s*0.2,0,7);ctx.stroke();ctx.beginPath();ctx.moveTo(cx-s*0.55,cy+s*0.5);ctx.quadraticCurveTo(cx-s*0.28,cy+s*0.1,cx-s*0.02,cy+s*0.5);ctx.moveTo(cx+s*0.02,cy+s*0.5);ctx.quadraticCurveTo(cx+s*0.28,cy+s*0.1,cx+s*0.55,cy+s*0.5);ctx.stroke();}
+  else if(type==='book'){ctx.beginPath();ctx.moveTo(cx,cy-s*0.4);ctx.lineTo(cx,cy+s*0.45);ctx.moveTo(cx,cy-s*0.4);ctx.quadraticCurveTo(cx-s*0.5,cy-s*0.55,cx-s*0.55,cy-s*0.25);ctx.lineTo(cx-s*0.55,cy+s*0.35);ctx.quadraticCurveTo(cx-s*0.5,cy+s*0.2,cx,cy+s*0.45);ctx.moveTo(cx,cy-s*0.4);ctx.quadraticCurveTo(cx+s*0.5,cy-s*0.55,cx+s*0.55,cy-s*0.25);ctx.lineTo(cx+s*0.55,cy+s*0.35);ctx.quadraticCurveTo(cx+s*0.5,cy+s*0.2,cx,cy+s*0.45);ctx.stroke();}
+  else if(type==='shield'){ctx.beginPath();ctx.moveTo(cx,cy-s*0.55);ctx.lineTo(cx+s*0.45,cy-s*0.35);ctx.lineTo(cx+s*0.45,cy+s*0.1);ctx.quadraticCurveTo(cx+s*0.45,cy+s*0.45,cx,cy+s*0.6);ctx.quadraticCurveTo(cx-s*0.45,cy+s*0.45,cx-s*0.45,cy+s*0.1);ctx.lineTo(cx-s*0.45,cy-s*0.35);ctx.closePath();ctx.stroke();}
+  else if(type==='star'){star(ctx,cx,cy,s*0.55);}
+  ctx.restore();}
+
+function renderScene(ctx,W,H){
+  // background
+  ctx.fillStyle=GOLD_STANDARD.bg.base;ctx.fillRect(0,0,W,H);
+  const gl=ctx.createRadialGradient(GOLD_STANDARD.bg.glow.cx*W,GOLD_STANDARD.bg.glow.cy*H,W*0.03,GOLD_STANDARD.bg.glow.cx*W,GOLD_STANDARD.bg.glow.cy*H,GOLD_STANDARD.bg.glow.r*W);
+  gl.addColorStop(0,'rgba(232,201,122,0.55)');gl.addColorStop(.5,'rgba(201,168,76,0.14)');gl.addColorStop(1,'rgba(201,168,76,0)');ctx.fillStyle=gl;ctx.fillRect(0,0,W,H);
+  const rnd=srand(GOLD_STANDARD.bg.particles.seed);
+  for(let i=0;i<GOLD_STANDARD.bg.particles.count;i++){const px=rnd()*W,py=rnd()*H,r=(0.0008+rnd()*0.0032)*W,a=0.05+rnd()*0.27;
+    const pg=ctx.createRadialGradient(px,py,0,px,py,r*3);pg.addColorStop(0,'rgba(232,201,122,'+a+')');pg.addColorStop(1,'rgba(232,201,122,0)');ctx.fillStyle=pg;ctx.beginPath();ctx.arc(px,py,r*3,0,7);ctx.fill();}
+  const vg=ctx.createRadialGradient(W/2,H*0.48,H*GOLD_STANDARD.bg.vignette.innerR,W/2,H*0.48,H*GOLD_STANDARD.bg.vignette.outerR);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,0.72)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+
+  const t=k=>($('#'+k)?$('#'+k).value.trim():'')||'';
+  const name=t('f-name')||PRODUCT.defaults.name;
+  const year=(t('f-year')||PRODUCT.defaults.year).replace(/[^0-9]/g,'')||PRODUCT.defaults.year;
+  const school=t('f-school');const quote=t('f-quote')||PRODUCT.defaults.quote;
+  const msg=t('f-msg')||PRODUCT.defaults.keepsake;
+
+  // right + left memory photos (behind hero on inner edges)
+  GOLD_STANDARD.slots.filter(s=>!s.hero).forEach(s=>memoryPhoto(ctx,W,H,s));
+  // decorations behind/around hero — product-supplied via the generic decoration interface
+  drawDecor(ctx,W,H,'background',{year:year});
+  // hero cutout (dominant, on top of glow)
+  heroCutout(ctx,W,H,GOLD_STANDARD.slots[0]);
+
+  // ── TEXT ──
+  ctx.textBaseline='alphabetic';
+  // Congratulations (script)
+  ctx.fillStyle=goldFill(ctx,0.03*W,0.10*H,0.066*H);ctx.font='400 '+(0.066*H)+'px "Great Vibes",cursive';ctx.textAlign='left';ctx.fillText(PRODUCT.wording.congratulations,0.03*W,0.105*H);
+  // GRADUATE
+  ctx.fillStyle=ivoryFill(ctx,0.02*W,0.235*H,0.135*H);ctx.font='400 '+(0.135*H)+'px Anton,sans-serif';ctx.textAlign='left';
+  ctx.save();ctx.shadowColor='rgba(0,0,0,0.5)';ctx.shadowBlur=H*0.01;ctx.shadowOffsetY=H*0.004;ctx.fillText(PRODUCT.wording.headline,0.02*W,0.235*H);ctx.restore();
+  // CLASS OF / year
+  ctx.fillStyle='#E8C97A';ctx.font='700 '+(0.024*H)+'px Outfit,sans-serif';tracked(ctx,PRODUCT.wording.classLabel,0.035*W,0.288*H,0.06*(0.024*H),'left');
+  ctx.fillStyle=goldFill(ctx,0.03*W,0.365*H,0.085*H);ctx.font='700 '+(0.085*H)+'px "Cormorant Garamond",serif';ctx.textAlign='left';ctx.fillText(year,0.03*W,0.365*H);
+  drawDecor(ctx,W,H,'title',{year:year});
+  // tagline
+  ctx.fillStyle='rgba(250,248,243,0.9)';ctx.font='600 '+(0.019*H)+'px Outfit,sans-serif';tracked(ctx,PRODUCT.wording.tagline,0.18*W,0.41*H,0.02*(0.019*H),'center');
+
+  // top-right quote
+  ctx.fillStyle=ivoryFill(ctx,0.685*W,0.09*H,0.03*H);ctx.font='800 '+(0.03*H)+'px Outfit,sans-serif';ctx.textAlign='center';
+  const qL=wrapLines(ctx,quote.toUpperCase(),0.20*W);qL.slice(0,2).forEach((l,i)=>tracked(ctx,l,0.688*W,(0.075+i*0.035)*H,0.02*(0.03*H),'center'));
+  ctx.fillStyle='#E8C97A';ctx.font='800 '+(0.05*H)+'px Georgia,serif';ctx.textAlign='left';ctx.fillText('“',0.60*W,0.085*H);ctx.textAlign='right';ctx.fillText('”',0.79*W,(0.075+(Math.min(qL.length,2)-1)*0.035+0.005)*H);
+
+  // top-right shield — product-supplied
+  drawDecor(ctx,W,H,'topright',{year:year});
+
+  // name (script over hero) + underline + school
+  const nx=0.472*W;ctx.fillStyle=goldFill(ctx,nx,0.72*H,0.072*H);
+  let nsz=0.072*H;ctx.font='400 '+nsz+'px "Great Vibes",cursive';while(ctx.measureText(name).width>0.34*W&&nsz>0.03*H){nsz-=2;ctx.font='400 '+nsz+'px "Great Vibes",cursive';}
+  ctx.textAlign='center';ctx.save();ctx.shadowColor='rgba(0,0,0,0.5)';ctx.shadowBlur=H*0.008;ctx.fillText(name,nx,0.715*H);ctx.restore();
+  ctx.strokeStyle='rgba(201,168,76,0.6)';ctx.lineWidth=Math.max(1,H*0.0016);ctx.beginPath();ctx.moveTo(nx-0.14*W,0.728*H);ctx.lineTo(nx+0.14*W,0.728*H);ctx.stroke();
+  if(school){ctx.fillStyle='rgba(232,201,122,0.85)';ctx.font='600 '+(0.017*H)+'px Outfit,sans-serif';tracked(ctx,school.toUpperCase(),nx,0.748*H,0.04*(0.017*H),'center');}
+
+  // keepsake message (caps serif) + proud
+  ctx.fillStyle='rgba(250,248,243,0.9)';ctx.font='600 '+(0.026*H)+'px "Cormorant Garamond",serif';ctx.textAlign='center';
+  const mL=wrapLines(ctx,msg.toUpperCase(),0.27*W);const my0=school?0.79:0.782;mL.slice(0,4).forEach((l,i)=>tracked(ctx,l,nx,(my0+i*0.035)*H,0.02*(0.026*H),'center'));
+  ctx.fillStyle=goldFill(ctx,nx,0.90*H,0.04*H);ctx.font='400 '+(0.04*H)+'px "Great Vibes",cursive';ctx.textAlign='center';
+  ctx.fillText(PRODUCT.wording.proud,nx,(my0+Math.min(mL.length,4)*0.035+0.03)*H);
+
+  // ── FOOTER band + 5 value icons ──
+  ctx.fillStyle='#04050a';ctx.fillRect(0,0.905*H,W,0.095*H);
+  ctx.strokeStyle='rgba(201,168,76,0.55)';ctx.lineWidth=Math.max(1,H*0.0016);ctx.beginPath();ctx.moveTo(0.02*W,0.905*H);ctx.lineTo(0.98*W,0.905*H);ctx.stroke();
+  const vlabels=[t('f-v1'),t('f-v2'),t('f-v3'),t('f-v4'),t('f-v5')];
+  const fx0=0.315*W,fx1=0.99*W,n=PRODUCT.footerIcons.length,cellW=(fx1-fx0)/n,fy=0.955*H;
+  PRODUCT.footerIcons.forEach((ic,i)=>{const cellX=fx0+i*cellW;const icx=cellX+cellW*0.16;
+    footerIcon(ctx,ic.icon,icx,fy,0.026*H);
+    ctx.fillStyle='#F5E4B0';ctx.font='700 '+(0.017*H)+'px Outfit,sans-serif';ctx.textAlign='left';
+    ctx.fillText((vlabels[i]||ic.top).toUpperCase(),cellX+cellW*0.30,fy-0.006*H);
+    ctx.fillStyle='rgba(250,248,243,0.7)';ctx.font='500 '+(0.013*H)+'px Outfit,sans-serif';
+    ctx.fillText(ic.bottom,cellX+cellW*0.30,fy+0.016*H);
+    if(i>0){ctx.strokeStyle='rgba(201,168,76,0.35)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cellX,fy-0.03*H);ctx.lineTo(cellX,fy+0.028*H);ctx.stroke();}
+  });
+}
+function renderLive(){const c=$('#live');if(c)renderScene(c.getContext('2d'),c.width,c.height);}
+async function drawFinal(){try{await document.fonts.ready;}catch(e){}renderLive();}
+
+/* ─────────── CONCIERGE ORDER CAPTURE (reused unchanged from graduation-signature.html) ─────────── */
+const ORDER_CAPTURE_URL   = 'https://script.google.com/macros/s/AKfycby8lNzyIDdtE7EU0qDPONnjVyDjfUlnzMlu6wgQWnMp_m2hn1_Xx57ILWQ2LuMjV5Cp/exec';
+const ORDER_CAPTURE_TOKEN = 'cb-concierge-v1';
+const CHECKOUT = {
+  marketingProduct:'graduation-cinematic', productName:'Cinematic Graduation Signature Banner',
+  printed:{ pkg:'poster_standard', name:'Standard Poster', price:79.99, stripeLink:'https://buy.stripe.com/bJe28j1S8fpDdQs81l83C05' },
+  digital:{ pkg:'digital', name:'Digital Download', price:9.99, stripeLink:'https://buy.stripe.com/7sY8wHeEUb9n27KgxR83C00' },
+};
+function stripeUrl(which,orderNumber){const c=CHECKOUT[which];
+  const cref=['pkg',c.pkg,'mkt',CHECKOUT.marketingProduct,'ord',orderNumber].join('_').slice(0,200);
+  const base=c.stripeLink,sep=base.includes('?')?'&':'?';
+  return base+sep+'client_reference_id='+encodeURIComponent(cref)+'&package='+encodeURIComponent(c.pkg)+'&package_name='+encodeURIComponent(c.name)+'&marketing_product='+encodeURIComponent(CHECKOUT.marketingProduct)+'&product_name='+encodeURIComponent(CHECKOUT.productName);}
+
+const MIN_PHOTOS=5,MAX_PHOTOS=9,MAX_PHOTO_BYTES=25*1024*1024,MAX_TOTAL_BYTES=90*1024*1024;
+const ALLOWED_MIME=/^image\/(jpe?g|png|webp|heic|heif|gif)$/i;
+function sanitizeText(s,max){return String(s==null?'':s).replace(/[\u0000-\u001F\u007F]+/g,' ').replace(/\s+/g,' ').trim().slice(0,max||300);}
+function sanitizeFilename(s){return(String(s==null?'':s).replace(/[\\/:*?\"<>|\u0000-\u001F\u007F]+/g,'_').replace(/\s+/g,' ').trim().slice(0,80))||'photo.jpg';}
+function b64Bytes(b64){const pad=b64.endsWith('==')?2:(b64.endsWith('=')?1:0);return Math.floor(b64.length*3/4)-pad;}
+function orderedPhotos(){return GOLD_STANDARD.photoSlotOrder.map(id=>state.photos[id]?{slot:id,...state.photos[id]}:null).filter(Boolean);}
+function parsePhoto(p){const u=p.url||'';if(u.slice(0,5)!=='data:')return null;const comma=u.indexOf(',');if(comma<0)return null;
+  const mime=(u.slice(5,comma).split(';')[0]||'').toLowerCase();const b64=u.slice(comma+1);
+  return{slot:p.slot,mime,b64,bytes:b64Bytes(b64),isHero:p.slot==='hero',filename:sanitizeFilename(p.name)};}
+function validatePhotos(){
+  if(!state.photos.hero)return{ok:false,msg:'Please add your hero portrait before ordering.'};
+  const list=orderedPhotos();if(list.length<MIN_PHOTOS)return{ok:false,msg:'Please add your hero plus at least '+(MIN_PHOTOS-1)+' memory photos (you have '+list.length+').'};
+  const items=[];let total=0;
+  for(const p of list){const it=parsePhoto(p);if(!it||!ALLOWED_MIME.test(it.mime))return{ok:false,msg:'Only image files (JPG, PNG, WEBP, HEIC) can be used.'};
+    if(it.bytes<=0)return{ok:false,msg:'One of your photos looks empty. Please re-add it.'};
+    if(it.bytes>MAX_PHOTO_BYTES)return{ok:false,msg:'One of your photos is larger than 25 MB.'};total+=it.bytes;items.push(it);}
+  if(total>MAX_TOTAL_BYTES)return{ok:false,msg:'Your photos are too large to upload reliably. Please remove a few.'};
+  return{ok:true,items};
+}
+function genOrderNumber(which){const d=new Date();const ymd=''+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+  const rand=Math.random().toString(36).slice(2,6).toUpperCase();return 'CB-'+ymd+'-'+(which==='printed'?'P':'D')+rand;}
+
+let checkoutWhich=null,activeOrderNumber=null,submitting=false,capturedOrders={};
+const modal=$('#checkout-modal');
+function setStatus(msg,kind){const el=$('#c-status');el.textContent=msg;el.className='modal-status'+(kind?' '+kind:'');}
+function openCheckout(which){
+  if(which!=='printed'&&which!=='digital')return;
+  const chk=validatePhotos();if(!chk.ok){toast(chk.msg);return;}
+  checkoutWhich=which;activeOrderNumber=genOrderNumber(which);
+  const c=CHECKOUT[which];$('#modal-kicker').textContent=(which==='printed'?'Order Printed Banner':'Digital Download')+' · $'+c.price.toFixed(2);
+  $('#ship-fields').style.display=which==='printed'?'block':'none';$('#c-consent').checked=false;setStatus('','');modal.classList.add('show');
+}
+function closeCheckout(){if(submitting)return;modal.classList.remove('show');}
+$('#order').addEventListener('click',()=>openCheckout('printed'));
+$('#download').addEventListener('click',()=>openCheckout('digital'));
+$('#modal-close').addEventListener('click',closeCheckout);
+modal.addEventListener('click',e=>{if(e.target===modal)closeCheckout();});
+
+async function postCapture(payload){
+  const res=await fetch(ORDER_CAPTURE_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),redirect:'follow'});
+  if(!res.ok)throw new Error('HTTP '+res.status);let data;try{data=await res.json();}catch(e){throw new Error('bad response');}
+  if(!data||data.status!=='ok')throw new Error((data&&data.error)||'capture failed');return data;
+}
+$('#c-submit').addEventListener('click',async()=>{
+  if(submitting)return;const which=checkoutWhich,c=CHECKOUT[which];if(!c){setStatus('Please choose Printed or Digital.','err');return;}
+  const chk=validatePhotos();if(!chk.ok){setStatus(chk.msg,'err');return;}
+  const cust={name:sanitizeText($('#c-name').value,120),email:sanitizeText($('#c-email').value,160),phone:sanitizeText($('#c-phone').value,40),
+    address:sanitizeText($('#c-addr').value,200),city:sanitizeText($('#c-city').value,80),state:sanitizeText($('#c-state').value,40),zip:sanitizeText($('#c-zip').value,20)};
+  if(!cust.name){setStatus('Please enter your name.','err');return;}
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cust.email)){setStatus('Please enter a valid email.','err');return;}
+  if(which==='printed'&&(!cust.address||!cust.city||!cust.state||!cust.zip)){setStatus('Please complete the shipping address for a printed order.','err');return;}
+  if(!$('#c-consent').checked){setStatus('Please check the box so we can save your photos and fulfill your order.','err');return;}
+  submitting=true;$('#c-submit').disabled=true;$('#modal-close').disabled=true;
+  const val=id=>sanitizeText($('#'+id).value,220);
+  const extras=['Quote: '+(val('f-quote')||PRODUCT.defaults.quote)];
+  const vv=[val('f-v1'),val('f-v2'),val('f-v3'),val('f-v4'),val('f-v5')].filter(Boolean);if(vv.length)extras.push('Values: '+vv.join(', '));
+  const person={graduateName:val('f-name'),classYear:sanitizeText($('#f-year').value,20),school:val('f-school'),
+    message:'[CINEMATIC] '+(val('f-msg')||'')+' | '+extras.join(' | ')};
+  const orderNumber=activeOrderNumber,product=(which==='printed'?'Cinematic Graduation Banner — Printed':'Cinematic Graduation Banner — Digital');
+  try{
+    if(!capturedOrders[orderNumber]){
+      for(let i=0;i<chk.items.length;i++){const it=chk.items[i];setStatus('Saving your photos… ('+(i+1)+'/'+chk.items.length+')','busy');
+        await postCapture({kind:'photo',token:ORDER_CAPTURE_TOKEN,orderNumber,graduateName:person.graduateName,index:i,isHero:it.isHero,filename:(it.slot||'photo')+'-'+it.filename,mime:it.mime,data:it.b64});}
+      setStatus('Finalizing your order…','busy');
+      await postCapture({kind:'order',token:ORDER_CAPTURE_TOKEN,orderNumber,product,price:'$'+c.price.toFixed(2),timestamp:new Date().toISOString(),
+        customer:cust,personalization:person,photoCount:chk.items.length});
+      capturedOrders[orderNumber]=true;
+    }
+    setStatus('Order '+orderNumber+' saved ✓ Taking you to secure checkout…','ok');
+    setTimeout(()=>{window.location.href=stripeUrl(which,orderNumber);},900);
+  }catch(err){submitting=false;$('#c-submit').disabled=false;$('#modal-close').disabled=false;
+    setStatus('We couldn’t save your order, so we did NOT send you to payment — your card was not charged. Please try again.','err');}
+});
+
+if(document.fonts&&document.fonts.ready){document.fonts.ready.then(renderLive);}else{renderLive();}
+</script>
+</body>
+</html>
