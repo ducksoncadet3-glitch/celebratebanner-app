@@ -1,0 +1,96 @@
+{
+  "adapter": "team-cinematic-v1",
+  "extends": "gold-standards/premium-cinematic-landscape-v1.json",
+  "role": "PRODUCT ADAPTER — team-specific content only. Reuses the Premium Cinematic Gold Standard geometry/lighting/framing/hero/collage/footer unchanged; adds a team-color accent theme and team decorations via the documented DECOR interface.",
+  "product": {
+    "id": "team-cinematic",
+    "name": "Cinematic Team Banner",
+    "page": "team-cinematic.html",
+    "printPrice": 79.99,
+    "digitalPrice": 9.99,
+    "captureProduct": "team-cinematic"
+  },
+  "theme": {
+    "note": "Team colors are ACCENTS over the fixed black cinematic composition. primary drives the central glow, particles, rim light, dividers, and script text; secondary drives the year, subtitle, footer, badges and shields. Background stays black; composition/geometry never changes.",
+    "defaultPrimary": "#1D4E89",
+    "defaultSecondary": "#E8C97A"
+  },
+  "roleMapping": {
+    "congratulations": "sport (script lead, top-left) — e.g. Football",
+    "headline": "achievement/title (big caps, top-left) — e.g. CHAMPIONS (leading year auto-stripped so it never duplicates the Season badge)",
+    "classLabel": "SEASON",
+    "year": "season / year",
+    "tagline": "{league or school}  (falls back to sport if no league)",
+    "topQuote": "short quote or slogan",
+    "name": "team name (script over hero) — the SINGLE prominent placement of the team name",
+    "school": "COACH {coach}  (or league when no coach)",
+    "keepsake": "optional message",
+    "proud": "team motto (script, bottom) — sport-aware default, customer-overridable via f-motto"
+  },
+  "teamNameUsage": "Displayed once, prominently, as the script over the hero. The top-left script lead is the SPORT (not the team name) to avoid duplication.",
+  "defaults": {
+    "team": "Team Name",
+    "achievement": "CHAMPIONS",
+    "year": "2026",
+    "sport": "football",
+    "league": "State League",
+    "quote": "Together we rise",
+    "motto": "Leave it all out there."
+  },
+  "mottos": {
+    "note": "Sport-aware default motto (bottom script). Customer can overwrite with f-motto; falls back to 'motto' default for unknown sports.",
+    "football": "Leave it all on the field.",
+    "basketball": "Leave it all on the court.",
+    "soccer": "Leave it all on the pitch.",
+    "baseball": "Leave it all on the diamond.",
+    "softball": "Leave it all on the diamond.",
+    "volleyball": "Leave it all on the court.",
+    "hockey": "Leave it all on the ice.",
+    "cheer": "Leave it all on the mat.",
+    "other": "Leave it all out there."
+  },
+  "achievementExamples": ["CHAMPIONS", "STATE FINALISTS", "SENIOR NIGHT", "DISTRICT CHAMPIONS", "UNDEFEATED SEASON"],
+  "sports": ["football", "basketball", "baseball", "soccer", "volleyball", "cheer", "softball", "hockey", "other"],
+  "decorations": [
+    { "type": "trophy",        "phase": "background", "x": 0.005, "y": 0.760, "w": 0.30,  "h": 0.235, "meaning": "victory / trophy (replaces books+cap+diploma)" },
+    { "type": "stadiumLights", "phase": "background", "x": 0.635, "y": 0.720, "w": 0.235, "h": 0.195, "meaning": "stadium lights + team-color beams (replaces staircase)" },
+    { "type": "champShield",   "phase": "background", "x": 0.865, "y": 0.720, "w": 0.125, "h": 0.185, "meaning": "championship crest" },
+    { "type": "sportBall",     "phase": "title",      "x": 0.30,  "y": 0.32,  "s": 0.05,  "meaning": "selected sport ball beside the season year" },
+    { "type": "seasonBadge",   "phase": "topright",   "x": 0.815, "y": 0.02,  "w": 0.165, "h": 0.225, "text": "year", "meaning": "SEASON <year> crest" }
+  ],
+  "footerIcons": [
+    { "icon": "group",  "top": "TEAMWORK",   "bottom": "ABOVE ALL" },
+    { "icon": "shield", "top": "DISCIPLINE", "bottom": "EVERY DAY" },
+    { "icon": "star",   "top": "LEADERSHIP", "bottom": "BY EXAMPLE" },
+    { "icon": "fist",   "top": "UNITY",      "bottom": "ONE TEAM" },
+    { "icon": "trophy", "top": "VICTORY",    "bottom": "EARNED" }
+  ],
+  "customerFields": [
+    { "id": "f-team",        "label": "Team name",     "role": "team",        "maxLength": 40 },
+    { "id": "f-sport",       "label": "Sport",         "role": "sport",       "type": "select" },
+    { "id": "f-year",        "label": "Season / year", "role": "year",        "maxLength": 12 },
+    { "id": "f-league",      "label": "League or school", "role": "league",   "maxLength": 60 },
+    { "id": "f-coach",       "label": "Coach name (optional)", "role": "coach", "maxLength": 40 },
+    { "id": "f-achievement", "label": "Achievement / title", "role": "achievement", "maxLength": 26 },
+    { "id": "f-quote",       "label": "Quote or slogan", "role": "topQuote",  "maxLength": 40 },
+    { "id": "f-motto",       "label": "Team motto (optional)", "role": "motto", "maxLength": 46, "note": "overrides the sport-aware default" },
+    { "id": "f-msg",         "label": "Message (optional)", "role": "keepsake", "maxLength": 200, "multiline": true },
+    { "id": "f-color1",      "label": "Primary team color",   "role": "primary",   "type": "color" },
+    { "id": "f-color2",      "label": "Secondary team color", "role": "secondary", "type": "color" },
+    { "id": "f-v1", "label": "Value 1 (optional)", "role": "footerLabel", "maxLength": 14 },
+    { "id": "f-v2", "label": "Value 2 (optional)", "role": "footerLabel", "maxLength": 14 },
+    { "id": "f-v3", "label": "Value 3 (optional)", "role": "footerLabel", "maxLength": 14 },
+    { "id": "f-v4", "label": "Value 4 (optional)", "role": "footerLabel", "maxLength": 14 },
+    { "id": "f-v5", "label": "Value 5 (optional)", "role": "footerLabel", "maxLength": 14 }
+  ],
+  "photoSlotLabels": {
+    "hero":   { "label": "Hero / team photo", "meaning": "featured athlete or full team, cutout-ready", "placeholderState": "When empty, the page shows a labeled preview-placeholder note under the canvas making clear the centered figure is replaced by the customer's uploaded athlete (cutout hand-prepared during concierge production)." },
+    "left1":  { "label": "Left photo 1",  "meaning": "action / candid" },
+    "left2":  { "label": "Left photo 2",  "meaning": "action / candid" },
+    "left3":  { "label": "Left photo 3",  "meaning": "action / candid" },
+    "right1": { "label": "Right photo 1", "meaning": "action / candid" },
+    "right2": { "label": "Right photo 2", "meaning": "action / candid" },
+    "right3": { "label": "Right photo 3", "meaning": "action / candid" },
+    "right4": { "label": "Right photo 4", "meaning": "action / candid" }
+  }
+}

@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cinematic Team Banner — CelebrateBanner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Great+Vibes&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --obsidian:#0C0E14; --obsidian2:#12141d; --gold:#C9A84C; --gold2:#E8C97A;
+    --ivory:#FAF8F3; --border:rgba(201,168,76,0.22); --sage:#5A8F6A; --rose:#C4617A; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:radial-gradient(1200px 700px at 50% -10%, #171a24 0%, var(--obsidian) 55%);
+    color:var(--ivory);font-family:'Outfit',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+  header.site{padding:26px 0;text-align:center;border-bottom:1px solid var(--border)}
+  .brand{font-family:'Cormorant Garamond',serif;font-size:26px;letter-spacing:.5px;font-weight:600}
+  .brand b{color:var(--gold2);font-weight:600}
+  .kicker{margin-top:6px;font-size:12px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);opacity:.85}
+  .intro{text-align:center;padding:54px 0 8px}
+  .intro h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:clamp(34px,5vw,58px);line-height:1.05}
+  .intro h1 em{font-style:italic;color:var(--gold2)}
+  .intro p{margin:16px auto 0;max-width:660px;color:rgba(250,248,243,.68);font-size:17px;line-height:1.6}
+  .concierge-note{margin:18px auto 0;max-width:620px;font-size:14px;color:var(--gold2);
+    background:rgba(201,168,76,.07);border:1px solid var(--border);border-radius:12px;padding:12px 18px;line-height:1.5}
+  .panel{background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+    border:1px solid var(--border);border-radius:20px;padding:34px;margin:26px 0}
+  .step-tag{display:inline-flex;align-items:center;gap:10px;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+  .step-tag .n{width:26px;height:26px;border-radius:50%;border:1px solid var(--gold);display:grid;place-items:center;font-size:13px;color:var(--gold2)}
+  .panel h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:30px;margin-bottom:6px}
+  .panel .sub{color:rgba(250,248,243,.6);font-size:15px;margin-bottom:22px}
+  .slots-label{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin:18px 0 10px}
+  .slot-grid{display:grid;gap:14px}
+  .slot-hero-grid{grid-template-columns:1fr}
+  .slot-side-grid{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:720px){.slot-side-grid{grid-template-columns:repeat(2,1fr)}}
+  .slot{position:relative;aspect-ratio:1;border:1.5px dashed rgba(201,168,76,.4);border-radius:12px;overflow:hidden;cursor:pointer;transition:.18s;background:rgba(201,168,76,.03);display:flex;align-items:center;justify-content:center;text-align:center}
+  .slot.hero{aspect-ratio:16/10}
+  .slot:hover{border-color:var(--gold2);background:rgba(201,168,76,.08)}
+  .slot.filled{border-style:solid;border-color:var(--gold2)}
+  .slot img{width:100%;height:100%;object-fit:cover;display:block}
+  .slot .ph{padding:8px}
+  .slot .ph .t{font-size:13px;color:var(--gold2);font-weight:600}
+  .slot .ph .s{font-size:11px;color:rgba(250,248,243,.45);margin-top:3px}
+  .slot .rm{position:absolute;right:6px;top:6px;width:22px;height:22px;border:none;border-radius:50%;background:rgba(12,14,20,.82);color:#fff;cursor:pointer;font-size:12px;line-height:1;z-index:2}
+  .slot .tag{position:absolute;left:6px;top:6px;background:var(--gold2);color:var(--obsidian);font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 7px;border-radius:20px;text-transform:uppercase}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr}}
+  .grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+  @media(max-width:720px){.grid5{grid-template-columns:repeat(2,1fr)}}
+  label.fld{display:block}
+  label.fld .lb{font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;display:block}
+  input.in,textarea.in,select.in{width:100%;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:13px 15px;color:var(--ivory);font-family:'Outfit',sans-serif;font-size:15px;outline:none;transition:.2s}
+  input.in:focus,textarea.in:focus,select.in:focus{border-color:var(--gold2);background:rgba(201,168,76,.05)}
+  textarea.in{resize:vertical;min-height:70px}
+  select.in{cursor:pointer}
+  .color-row{display:flex;gap:18px}
+  .color-fld{flex:1}
+  .color-fld input[type=color]{width:100%;height:46px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.03);cursor:pointer;padding:4px}
+  .build-grid{display:grid;grid-template-columns:1fr 400px;gap:34px;align-items:start}
+  @media(max-width:900px){.build-grid{grid-template-columns:1fr}}
+  .build-preview{position:sticky;top:20px}
+  .prev-label{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;text-align:center}
+  #live{width:100%;height:auto;display:block;border-radius:6px;background:#05060a;box-shadow:0 24px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(201,168,76,.22)}
+  .prev-spec{margin-top:12px;text-align:center;font-size:12px;color:rgba(250,248,243,.5)}
+  .prev-spec b{color:var(--gold2)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:none;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;padding:16px 28px;border-radius:40px;transition:.2s;width:100%}
+  .btn.gold{background:linear-gradient(135deg,var(--gold2),var(--gold));color:var(--obsidian);box-shadow:0 10px 30px rgba(201,168,76,.28)}
+  .btn.gold:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(201,168,76,.4)}
+  .btn.ghost{background:transparent;border:1px solid var(--gold);color:var(--gold2)}
+  .btn.ghost:hover{background:rgba(201,168,76,.08)}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+  .price-tag{font-size:13px;opacity:.8;margin-left:4px}
+  .order-row{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+  .toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--obsidian2);border:1px solid var(--gold);color:var(--ivory);padding:14px 24px;border-radius:40px;transition:.3s;z-index:50;pointer-events:none;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .modal-overlay{position:fixed;inset:0;background:rgba(6,7,11,.78);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;z-index:60;padding:40px 18px;overflow-y:auto}
+  .modal-overlay.show{display:flex}
+  .modal{background:linear-gradient(180deg,#14161f,#0c0e14);border:1px solid var(--gold);border-radius:20px;width:100%;max-width:520px;padding:30px;position:relative;box-shadow:0 40px 120px rgba(0,0,0,.7)}
+  .modal-x{position:absolute;right:16px;top:14px;background:none;border:none;color:rgba(250,248,243,.5);font-size:20px;cursor:pointer;line-height:1}
+  .modal-kicker{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+  .modal h3{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:26px;margin-bottom:6px}
+  .modal .msub{color:rgba(250,248,243,.6);font-size:14px;margin-bottom:20px;line-height:1.5}
+  .modal .fld{margin-bottom:14px}
+  #c-submit{margin-top:8px}
+  .modal-status{margin-top:14px;font-size:14px;min-height:20px;text-align:center;line-height:1.5}
+  .modal-status.err{color:var(--rose)} .modal-status.ok{color:var(--sage)} .modal-status.busy{color:var(--gold2)}
+  .consent{display:flex;gap:10px;align-items:flex-start;margin:6px 0 18px;font-size:13px;color:rgba(250,248,243,.72);line-height:1.5;cursor:pointer}
+  .consent input{margin-top:2px;width:17px;height:17px;accent-color:var(--gold);flex:none;cursor:pointer}
+</style>
+</head>
+<body>
+<header class="site"><div class="wrap"><div class="brand">Celebrate<b>Banner</b></div><div class="kicker">Cinematic Team Banner</div></div></header>
+
+<div class="wrap">
+  <section class="intro">
+    <h1>Your team's season, made <em>cinematic</em></h1>
+    <p>One dominant hero, a golden collage of the season, your team colors, and a premium black-and-gold composition — a 24×18" banner built for champions.</p>
+    <div class="concierge-note">✦ Your premium cinematic banner will be personally prepared using your uploaded team photos.</div>
+  </section>
+
+  <div class="build-grid">
+    <div>
+      <section class="panel">
+        <div class="step-tag"><span class="n">1</span> Upload Your Photos</div>
+        <h2>Your hero &amp; your season</h2>
+        <p class="sub">One hero (featured athlete or full team), plus seven action &amp; candid photos.</p>
+        <div class="slots-label">Hero / team photo</div>
+        <div class="slot-grid slot-hero-grid">
+          <div class="slot hero" data-slot="hero"><div class="ph"><div class="t">＋ Hero / team photo</div><div class="s">Featured athlete or full team · we prepare the cutout for you</div></div></div>
+        </div>
+        <div class="slots-label">Left photos (3)</div>
+        <div class="slot-grid slot-side-grid" id="left-grid"></div>
+        <div class="slots-label">Right photos (4)</div>
+        <div class="slot-grid slot-side-grid" id="right-grid"></div>
+      </section>
+
+      <section class="panel">
+        <div class="step-tag"><span class="n">2</span> Team Details</div>
+        <h2>Name, season &amp; colors</h2>
+        <p class="sub">Typeset into the Premium Cinematic layout. Your team colors accent the artwork.</p>
+        <div class="grid2">
+          <label class="fld"><span class="lb">Team name</span><input class="in" id="f-team" placeholder="e.g., Eagles" maxlength="40"></label>
+          <label class="fld"><span class="lb">Sport</span>
+            <select class="in" id="f-sport">
+              <option value="football">Football</option><option value="basketball">Basketball</option>
+              <option value="baseball">Baseball</option><option value="soccer">Soccer</option>
+              <option value="volleyball">Volleyball</option><option value="cheer">Cheer</option>
+              <option value="softball">Softball</option><option value="hockey">Hockey</option>
+              <option value="other">Other</option>
+            </select></label>
+          <label class="fld"><span class="lb">Season / year</span><input class="in" id="f-year" placeholder="2026" maxlength="12"></label>
+          <label class="fld"><span class="lb">League or school</span><input class="in" id="f-league" placeholder="e.g., Lincoln High" maxlength="60"></label>
+          <label class="fld"><span class="lb">Coach name (optional)</span><input class="in" id="f-coach" placeholder="e.g., Coach Rivera" maxlength="40"></label>
+          <label class="fld"><span class="lb">Achievement / title</span><input class="in" id="f-achievement" placeholder="CHAMPIONS" maxlength="26"></label>
+        </div>
+        <label class="fld" style="margin-top:18px"><span class="lb">Quote or slogan</span><input class="in" id="f-quote" placeholder="Together we rise" maxlength="40"></label>
+        <label class="fld" style="margin-top:18px"><span class="lb">Team motto (optional)</span><input class="in" id="f-motto" placeholder="Leave blank for a sport-aware default (e.g., …on the court.)" maxlength="46"></label>
+        <label class="fld" style="margin-top:18px"><span class="lb">Message (optional)</span><textarea class="in" id="f-msg" maxlength="200" placeholder="One team. One goal. One unforgettable season."></textarea></label>
+        <div class="slots-label">Team colors</div>
+        <div class="color-row">
+          <div class="color-fld"><span class="lb" style="font-size:12px">Primary</span><input type="color" id="f-color1" value="#1D4E89"></div>
+          <div class="color-fld"><span class="lb" style="font-size:12px">Secondary</span><input type="color" id="f-color2" value="#E8C97A"></div>
+        </div>
+        <div class="slots-label">Five team values (optional)</div>
+        <div class="grid5">
+          <label class="fld"><input class="in" id="f-v1" placeholder="TEAMWORK" maxlength="14"></label>
+          <label class="fld"><input class="in" id="f-v2" placeholder="DISCIPLINE" maxlength="14"></label>
+          <label class="fld"><input class="in" id="f-v3" placeholder="LEADERSHIP" maxlength="14"></label>
+          <label class="fld"><input class="in" id="f-v4" placeholder="UNITY" maxlength="14"></label>
+          <label class="fld"><input class="in" id="f-v5" placeholder="VICTORY" maxlength="14"></label>
+        </div>
+      </section>
+    </div>
+
+    <div class="build-preview">
+      <div class="prev-label">Live Proof</div>
+      <canvas id="live" width="1400" height="1050"></canvas>
+      <div class="prev-spec">Landscape <b>24 × 18"</b> · <b>7200 × 5400 px</b> · 300 DPI · print &amp; digital</div>
+      <div id="hero-note" style="display:none;margin-top:10px;text-align:center;font-size:12.5px;line-height:1.5;color:var(--gold2);background:rgba(201,168,76,.08);border:1px solid var(--border);border-radius:10px;padding:9px 14px">The centered figure is a <b>preview placeholder</b>. Upload your hero photo and your athlete replaces it — our team hand-prepares the cutout during production.</div>
+      <div class="order-row">
+        <button class="btn gold" id="order">Order Printed Banner <span class="price-tag">$79.99</span></button>
+        <button class="btn ghost" id="download">Download Digital Version <span class="price-tag">$9.99</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="checkout-modal" role="dialog" aria-modal="true">
+  <div class="modal">
+    <button class="modal-x" id="modal-close" aria-label="Close">✕</button>
+    <div class="modal-kicker" id="modal-kicker">Order</div>
+    <h3>Where should we send your order?</h3>
+    <div class="msub">We save your photos and details, then take you to secure checkout. Your premium cinematic banner is personally prepared from your uploaded team photos. Your card isn't charged until the Stripe page.</div>
+    <div class="grid2">
+      <label class="fld"><span class="lb">Your name</span><input class="in" id="c-name" autocomplete="name"></label>
+      <label class="fld"><span class="lb">Email</span><input class="in" id="c-email" type="email" autocomplete="email"></label>
+    </div>
+    <label class="fld"><span class="lb">Phone (optional)</span><input class="in" id="c-phone" type="tel" autocomplete="tel"></label>
+    <div id="ship-fields">
+      <label class="fld"><span class="lb">Shipping address</span><input class="in" id="c-addr" autocomplete="address-line1"></label>
+      <div class="grid2">
+        <label class="fld"><span class="lb">City</span><input class="in" id="c-city" autocomplete="address-level2"></label>
+        <label class="fld"><span class="lb">State</span><input class="in" id="c-state" autocomplete="address-level1"></label>
+      </div>
+      <label class="fld"><span class="lb">ZIP</span><input class="in" id="c-zip" inputmode="numeric" autocomplete="postal-code"></label>
+    </div>
+    <label class="consent" for="c-consent"><input type="checkbox" id="c-consent">
+      <span>Your photos and order details will be securely saved so we can personally prepare and fulfill your cinematic banner.</span></label>
+    <button class="btn gold" id="c-submit">Save order &amp; continue to checkout →</button>
+    <div class="modal-status" id="c-status"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+
+/* ═══ A) GENERIC PREMIUM CINEMATIC GOLD STANDARD — reused geometry/lighting/framing.
+   Mirrors design-references/gold-standards/premium-cinematic-landscape-v1.json (unchanged). ═══ */
+const GOLD_STANDARD = {
+  format:{ inches:[24,18], px:[7200,5400], dpi:300, aspect:1.3333, bleedIn:0.125, safeMarginIn:0.25,
+           optionalPrint:{inches:[36,24],px:[10800,7200],dpi:300} },
+  photoSlotOrder:['hero','left1','left2','left3','right1','right2','right3','right4'],
+  bg:{ base:'#05060a', glow:{cx:0.47,cy:0.42,r:0.62}, particles:{count:130,seed:20260713}, vignette:{innerR:0.42,outerR:0.95} },
+  slots:[
+    {id:'hero',hero:true,x:0.315,y:0.055,w:0.315,h:0.75,rot:0,faceBiasY:0.12},
+    {id:'left1',x:0.015,y:0.415,w:0.125,h:0.155,rot:-4,border:'vintage'},
+    {id:'left2',x:0.165,y:0.445,w:0.165,h:0.315,rot:2,border:'white'},
+    {id:'left3',x:0.005,y:0.575,w:0.150,h:0.220,rot:-3,border:'white'},
+    {id:'right1',x:0.655,y:0.150,w:0.150,h:0.150,rot:-3,border:'white'},
+    {id:'right2',x:0.812,y:0.160,w:0.150,h:0.150,rot:3,border:'white'},
+    {id:'right3',x:0.650,y:0.320,w:0.180,h:0.190,rot:-2,border:'white'},
+    {id:'right4',x:0.735,y:0.515,w:0.225,h:0.205,rot:2,border:'white'}
+  ],
+  footer:{ band:{y:0.905,h:0.095}, xStart:0.315, xEnd:0.99 }
+};
+
+/* ═══ B) TEAM PRODUCT ADAPTER — content + team-color theme.
+   Mirrors design-references/products/team-cinematic-v1.json. ═══ */
+const PRODUCT = {
+  id:'team-cinematic-v1', name:'Cinematic Team Banner',
+  wording:{ classLabel:'SEASON' },
+  mottos:{ football:'Leave it all on the field.', basketball:'Leave it all on the court.',
+           soccer:'Leave it all on the pitch.', baseball:'Leave it all on the diamond.',
+           softball:'Leave it all on the diamond.', volleyball:'Leave it all on the court.',
+           hockey:'Leave it all on the ice.', cheer:'Leave it all on the mat.',
+           other:'Leave it all out there.' },
+  defaults:{ team:'Team Name', achievement:'CHAMPIONS', year:'2026', sport:'football',
+             league:'State League', quote:'Together we rise', motto:'Leave it all out there.' },
+  decorations:[
+    {type:'trophy',        phase:'background', x:0.005, y:0.760, w:0.30,  h:0.235},
+    {type:'stadiumLights', phase:'background', x:0.635, y:0.720, w:0.235, h:0.195},
+    {type:'champShield',   phase:'background', x:0.865, y:0.720, w:0.125, h:0.185},
+    {type:'sportBall',     phase:'title',      x:0.30,  y:0.32,  s:0.05},
+    {type:'seasonBadge',   phase:'topright',   x:0.815, y:0.02,  w:0.165, h:0.225}
+  ],
+  footerIcons:[
+    {icon:'group', top:'TEAMWORK',   bottom:'ABOVE ALL'},
+    {icon:'shield',top:'DISCIPLINE', bottom:'EVERY DAY'},
+    {icon:'star',  top:'LEADERSHIP', bottom:'BY EXAMPLE'},
+    {icon:'fist',  top:'UNITY',      bottom:'ONE TEAM'},
+    {icon:'trophy',top:'VICTORY',    bottom:'EARNED'}
+  ]
+};
+
+/* Team-color theme (accents over the fixed black cinematic composition). */
+let TH = { primary:'#1D4E89', secondary:'#E8C97A' };
+function hx(hex){hex=(hex||'#000').replace('#','');if(hex.length===3)hex=hex.split('').map(c=>c+c).join('');return [parseInt(hex.slice(0,2),16)||0,parseInt(hex.slice(2,4),16)||0,parseInt(hex.slice(4,6),16)||0];}
+function rgba(hex,a){const c=hx(hex);return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')';}
+function lighten(hex,amt){const c=hx(hex);const l=v=>Math.min(255,Math.round(v+(255-v)*amt));return 'rgb('+l(c[0])+','+l(c[1])+','+l(c[2])+')';}
+function readTheme(){ TH={ primary:($('#f-color1')&&$('#f-color1').value)||'#1D4E89', secondary:($('#f-color2')&&$('#f-color2').value)||'#E8C97A' }; }
+
+/* ═══ STATE (fixed named slots — never random) ═══ */
+const state = { photos:{} };
+window.state = state; let uidc=0;
+function slotHTML(id,label,sub){ return `<div class="slot" data-slot="${id}"><div class="ph"><div class="t">＋ ${label}</div><div class="s">${sub}</div></div></div>`; }
+$('#left-grid').innerHTML = ['Left photo 1','Left photo 2','Left photo 3'].map((l,i)=>slotHTML('left'+(i+1),l,'action / candid')).join('');
+$('#right-grid').innerHTML = ['Right photo 1','Right photo 2','Right photo 3','Right photo 4'].map((l,i)=>slotHTML('right'+(i+1),l,'action / candid')).join('');
+const fileInput=document.createElement('input');fileInput.type='file';fileInput.accept='image/*';fileInput.style.display='none';document.body.appendChild(fileInput);
+let activeSlot=null;
+document.querySelectorAll('.slot').forEach(el=>el.addEventListener('click',ev=>{if(ev.target.classList.contains('rm')){removeSlot(el.dataset.slot);ev.stopPropagation();return;}activeSlot=el.dataset.slot;fileInput.value='';fileInput.click();}));
+fileInput.addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f&&activeSlot)loadInto(activeSlot,f);});
+function loadInto(slot,file){if(!file.type.startsWith('image/')){toast('Please choose an image file');return;}const r=new FileReader();
+  r.onload=ev=>{const img=new Image();img.onload=()=>{state.photos[slot]={url:ev.target.result,img,name:file.name,id:'p'+(uidc++)};paintSlot(slot);renderLive();};img.src=ev.target.result;};r.readAsDataURL(file);}
+function paintSlot(slot){const el=document.querySelector('.slot[data-slot="'+slot+'"]');if(!el)return;const p=state.photos[slot];
+  if(p){el.classList.add('filled');el.innerHTML=`<img src="${p.url}" alt="">`+(slot==='hero'?'<span class="tag">Hero</span>':'')+`<button class="rm" title="Remove">✕</button>`;}}
+function removeSlot(slot){delete state.photos[slot];const el=document.querySelector('.slot[data-slot="'+slot+'"]');if(!el)return;el.classList.remove('filled');
+  const label=slot==='hero'?'Hero / team photo':(slot.startsWith('left')?'Left photo '+slot.slice(4):'Right photo '+slot.slice(5));
+  const sub=slot==='hero'?'Featured athlete or full team · we prepare the cutout for you':'action / candid';
+  el.innerHTML=`<div class="ph"><div class="t">＋ ${label}</div><div class="s">${sub}</div></div>`;
+  el.addEventListener('click',ev=>{if(ev.target.classList.contains('rm')){removeSlot(slot);ev.stopPropagation();return;}activeSlot=slot;fileInput.value='';fileInput.click();});renderLive();}
+['f-team','f-sport','f-year','f-league','f-coach','f-achievement','f-quote','f-motto','f-msg','f-color1','f-color2','f-v1','f-v2','f-v3','f-v4','f-v5'].forEach(id=>{const el=$('#'+id);if(el)el.addEventListener('input',renderLive);});
+
+/* ═══ GENERIC RENDERER PRIMITIVES (reused) ═══ */
+function srand(seed){let s=(seed>>>0)||1;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};}
+function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function cover(ctx,img,x,y,w,h,biasY){biasY=biasY==null?0.5:biasY;const ir=img.naturalWidth/img.naturalHeight,br=w/h;let dw,dh,dx,dy;
+  if(ir>br){dh=h;dw=h*ir;dx=x-(dw-w)/2;dy=y;}else{dw=w;dh=w/ir;dx=x;dy=y-(dh-h)*biasY;}ctx.drawImage(img,dx,dy,dw,dh);}
+function accentGrad(ctx,x,y,w){const g=ctx.createLinearGradient(x,y-w,x,y+w*0.2);g.addColorStop(0,lighten(TH.primary,0.75));g.addColorStop(.5,lighten(TH.primary,0.35));g.addColorStop(1,TH.primary);return g;}
+function ivoryFill(ctx,x,y,w){const g=ctx.createLinearGradient(x,y-w,x,y+w*0.2);g.addColorStop(0,'#ffffff');g.addColorStop(1,lighten(TH.secondary,0.2));return g;}
+function tracked(ctx,text,x,y,ls,align){const chars=[...text];let tot=0;chars.forEach(c=>tot+=ctx.measureText(c).width+ls);tot-=ls;
+  let cx=align==='left'?x:(align==='right'?x-tot:x-tot/2);ctx.textAlign='left';chars.forEach(c=>{ctx.fillText(c,cx,y);cx+=ctx.measureText(c).width+ls;});}
+function wrapLines(ctx,text,maxW){const words=text.split(/\s+/);const lines=[];let ln='';for(const w of words){const t=(ln?ln+' ':'')+w;if(ctx.measureText(t).width>maxW&&ln){lines.push(ln);ln=w;}else ln=t;}if(ln)lines.push(ln);return lines;}
+function star(ctx,cx,cy,r){ctx.beginPath();for(let i=0;i<10;i++){const a=Math.PI/5*i-Math.PI/2;const rad=i%2?r*0.45:r;ctx.lineTo(cx+Math.cos(a)*rad,cy+Math.sin(a)*rad);}ctx.closePath();ctx.fill();}
+
+function memoryPhoto(ctx,W,H,sl){
+  const p=state.photos[sl.id];const x=sl.x*W,y=sl.y*H,w=sl.w*W,h=sl.h*H,cx=x+w/2,cy=y+h/2,rot=(sl.rot||0)*Math.PI/180;
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(rot);const bx=-w/2,by=-h/2,pad=Math.max(3,w*0.035);
+  ctx.save();ctx.shadowColor='rgba(0,0,0,0.6)';ctx.shadowBlur=w*0.10;ctx.shadowOffsetY=h*0.04;ctx.fillStyle=sl.border==='vintage'?'#e8dcc0':'#f7f4ee';rr(ctx,bx,by,w,h,4);ctx.fill();ctx.restore();
+  if(p&&p.img){ctx.save();rr(ctx,bx+pad,by+pad,w-pad*2,h-pad*2,2);ctx.clip();cover(ctx,p.img,bx+pad,by+pad,w-pad*2,h-pad*2,0.4);ctx.restore();}
+  else{ctx.save();rr(ctx,bx+pad,by+pad,w-pad*2,h-pad*2,2);ctx.clip();const g=ctx.createLinearGradient(bx,by,bx,by+h);g.addColorStop(0,'#20242f');g.addColorStop(1,'#0d0f16');ctx.fillStyle=g;ctx.fillRect(bx+pad,by+pad,w-pad*2,h-pad*2);
+    ctx.strokeStyle=rgba(TH.primary,0.5);ctx.lineWidth=w*0.02;ctx.lineCap='round';const s=Math.min(w,h)*0.16;
+    ctx.beginPath();ctx.arc(0,-h*0.06,s*0.5,0,7);ctx.stroke();ctx.beginPath();ctx.moveTo(-s,h*0.14);ctx.quadraticCurveTo(0,-h*0.02,s,h*0.14);ctx.stroke();
+    ctx.fillStyle=rgba(TH.secondary,0.6);ctx.font='600 '+(w*0.09)+'px Outfit,sans-serif';ctx.textAlign='center';ctx.fillText('PHOTO',0,h*0.34);ctx.restore();}
+  ctx.restore();
+}
+function heroCutout(ctx,W,H,sl){
+  const x=sl.x*W,y=sl.y*H,w=sl.w*W,h=sl.h*H,cx=x+w/2;
+  ctx.save();ctx.fillStyle='rgba(0,0,0,0.5)';ctx.beginPath();ctx.ellipse(cx,y+h*0.985,w*0.34,h*0.03,0,0,7);ctx.fill();ctx.restore();
+  ctx.save();const gl=ctx.createRadialGradient(cx,y+h*0.42,w*0.05,cx,y+h*0.42,w*0.75);
+  gl.addColorStop(0,rgba(TH.primary,0.34));gl.addColorStop(.55,rgba(TH.primary,0.10));gl.addColorStop(1,rgba(TH.primary,0));ctx.fillStyle=gl;ctx.beginPath();ctx.arc(cx,y+h*0.42,w*0.75,0,7);ctx.fill();ctx.restore();
+  const path=()=>{ctx.beginPath();ctx.moveTo(x+w*0.06,y+h);ctx.lineTo(x+w*0.94,y+h);ctx.lineTo(x+w*0.90,y+h*0.52);
+    ctx.quadraticCurveTo(x+w*0.86,y+h*0.34,cx+w*0.165,y+h*0.305);ctx.quadraticCurveTo(cx+w*0.085,y+h*0.275,cx+w*0.07,y+h*0.235);
+    ctx.quadraticCurveTo(cx,y+h*0.255,cx-w*0.07,y+h*0.235);ctx.quadraticCurveTo(cx-w*0.085,y+h*0.275,cx-w*0.165,y+h*0.305);
+    ctx.quadraticCurveTo(x+w*0.14,y+h*0.34,x+w*0.10,y+h*0.52);ctx.closePath();
+    ctx.moveTo(cx+w*0.16,y+h*0.135);ctx.ellipse(cx,y+h*0.135,w*0.16,h*0.145,0,0,Math.PI*2);};
+  const p=state.photos.hero;ctx.save();path();ctx.clip();
+  if(p&&p.img){cover(ctx,p.img,x,y,w,h,sl.faceBiasY);
+    const tl=ctx.createLinearGradient(x,y,x,y+h*0.4);tl.addColorStop(0,'rgba(255,250,235,0.16)');tl.addColorStop(1,'rgba(255,250,235,0)');ctx.fillStyle=tl;ctx.fillRect(x,y,w,h*0.4);
+    const bg=ctx.createLinearGradient(x,y+h*0.6,x,y+h);bg.addColorStop(0,'rgba(5,6,10,0)');bg.addColorStop(1,'rgba(5,6,10,0.4)');ctx.fillStyle=bg;ctx.fillRect(x,y+h*0.6,w,h*0.4);
+  }else{const g=ctx.createLinearGradient(x,y,x,y+h);g.addColorStop(0,'#20242f');g.addColorStop(1,'#0b0d14');ctx.fillStyle=g;ctx.fillRect(x,y,w,h);
+    ctx.strokeStyle=rgba(TH.primary,0.5);ctx.lineWidth=w*0.012;ctx.lineCap='round';ctx.beginPath();ctx.arc(cx,y+h*0.16,w*0.11,0,7);ctx.stroke();ctx.beginPath();ctx.moveTo(x+w*0.24,y+h*0.5);ctx.quadraticCurveTo(cx,y+h*0.22,x+w*0.76,y+h*0.5);ctx.stroke();
+    ctx.fillStyle=rgba(TH.secondary,0.55);ctx.font='600 '+(w*0.05)+'px Outfit,sans-serif';ctx.textAlign='center';tracked(ctx,'YOUR HERO',cx,y+h*0.62,w*0.006,'center');}
+  ctx.restore();
+  ctx.save();path();ctx.strokeStyle=lighten(TH.secondary,0.4);ctx.lineWidth=Math.max(2,w*0.006);ctx.shadowColor=rgba(TH.secondary,0.7);ctx.shadowBlur=w*0.03;ctx.stroke();ctx.restore();
+}
+function footerIcon(ctx,type,cx,cy,s){ctx.save();ctx.strokeStyle=TH.secondary;ctx.fillStyle=TH.secondary;ctx.lineWidth=s*0.10;ctx.lineCap='round';ctx.lineJoin='round';
+  if(type==='group'){ctx.beginPath();ctx.arc(cx-s*0.28,cy-s*0.15,s*0.2,0,7);ctx.arc(cx+s*0.28,cy-s*0.15,s*0.2,0,7);ctx.stroke();ctx.beginPath();ctx.moveTo(cx-s*0.55,cy+s*0.5);ctx.quadraticCurveTo(cx-s*0.28,cy+s*0.1,cx-s*0.02,cy+s*0.5);ctx.moveTo(cx+s*0.02,cy+s*0.5);ctx.quadraticCurveTo(cx+s*0.28,cy+s*0.1,cx+s*0.55,cy+s*0.5);ctx.stroke();}
+  else if(type==='shield'){ctx.beginPath();ctx.moveTo(cx,cy-s*0.55);ctx.lineTo(cx+s*0.45,cy-s*0.35);ctx.lineTo(cx+s*0.45,cy+s*0.1);ctx.quadraticCurveTo(cx+s*0.45,cy+s*0.45,cx,cy+s*0.6);ctx.quadraticCurveTo(cx-s*0.45,cy+s*0.45,cx-s*0.45,cy+s*0.1);ctx.lineTo(cx-s*0.45,cy-s*0.35);ctx.closePath();ctx.stroke();}
+  else if(type==='flame'){ctx.beginPath();ctx.moveTo(cx,cy+s*0.55);ctx.quadraticCurveTo(cx-s*0.5,cy+s*0.2,cx-s*0.2,cy-s*0.2);ctx.quadraticCurveTo(cx-s*0.05,cy-s*0.55,cx+s*0.15,cy-s*0.25);ctx.quadraticCurveTo(cx+s*0.5,cy+s*0.15,cx,cy+s*0.55);ctx.closePath();ctx.stroke();}
+  else if(type==='fist'){ctx.strokeRect(cx-s*0.35,cy-s*0.1,s*0.7,s*0.5);ctx.beginPath();for(let i=0;i<4;i++){ctx.moveTo(cx-s*0.28+i*s*0.19,cy-s*0.1);ctx.lineTo(cx-s*0.28+i*s*0.19,cy-s*0.42);}ctx.stroke();}
+  else if(type==='trophy'){ctx.beginPath();ctx.moveTo(cx-s*0.3,cy-s*0.4);ctx.lineTo(cx+s*0.3,cy-s*0.4);ctx.quadraticCurveTo(cx+s*0.3,cy+s*0.1,cx,cy+s*0.18);ctx.quadraticCurveTo(cx-s*0.3,cy+s*0.1,cx-s*0.3,cy-s*0.4);ctx.closePath();ctx.stroke();ctx.beginPath();ctx.moveTo(cx,cy+s*0.18);ctx.lineTo(cx,cy+s*0.42);ctx.moveTo(cx-s*0.22,cy+s*0.5);ctx.lineTo(cx+s*0.22,cy+s*0.5);ctx.stroke();}
+  else{star(ctx,cx,cy,s*0.55);}
+  ctx.restore();}
+
+/* ═══ TEAM DECORATIONS (registered via the generic DECOR interface) ═══ */
+function sportIcon(ctx,cx,cy,s,sport){ctx.save();const P=TH.primary,S=TH.secondary;ctx.lineCap='round';
+  if(sport==='football'){ctx.fillStyle='#8B4513';ctx.beginPath();ctx.ellipse(cx,cy,s,s*0.6,0,0,7);ctx.fill();ctx.strokeStyle='#f5f0e0';ctx.lineWidth=s*0.06;ctx.beginPath();ctx.moveTo(cx-s*0.4,cy);ctx.lineTo(cx+s*0.4,cy);ctx.stroke();for(let i=-2;i<=2;i++){ctx.beginPath();ctx.moveTo(cx+i*s*0.14,cy-s*0.08);ctx.lineTo(cx+i*s*0.14,cy+s*0.08);ctx.stroke();}}
+  else if(sport==='basketball'){ctx.fillStyle='#d3742a';ctx.beginPath();ctx.arc(cx,cy,s,0,7);ctx.fill();ctx.strokeStyle='#1a1a1a';ctx.lineWidth=s*0.05;ctx.beginPath();ctx.arc(cx,cy,s,0,7);ctx.stroke();ctx.beginPath();ctx.moveTo(cx-s,cy);ctx.lineTo(cx+s,cy);ctx.moveTo(cx,cy-s);ctx.lineTo(cx,cy+s);ctx.stroke();ctx.beginPath();ctx.arc(cx-s,cy,s*0.9,-0.9,0.9);ctx.stroke();ctx.beginPath();ctx.arc(cx+s,cy,s*0.9,Math.PI-0.9,Math.PI+0.9);ctx.stroke();}
+  else if(sport==='soccer'){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx,cy,s,0,7);ctx.fill();ctx.fillStyle='#111';ctx.beginPath();for(let i=0;i<5;i++){const a=i/5*Math.PI*2-1.57;ctx.lineTo(cx+Math.cos(a)*s*0.34,cy+Math.sin(a)*s*0.34);}ctx.closePath();ctx.fill();ctx.strokeStyle='#111';ctx.lineWidth=s*0.04;ctx.beginPath();ctx.arc(cx,cy,s,0,7);ctx.stroke();}
+  else if(sport==='baseball'||sport==='softball'){ctx.fillStyle=sport==='softball'?'#e8e04a':'#fff';ctx.beginPath();ctx.arc(cx,cy,s,0,7);ctx.fill();ctx.strokeStyle='#c0392b';ctx.lineWidth=s*0.05;ctx.beginPath();ctx.arc(cx-s*0.7,cy,s*1.5,-0.55,0.55);ctx.stroke();ctx.beginPath();ctx.arc(cx+s*0.7,cy,s*1.5,Math.PI-0.55,Math.PI+0.55);ctx.stroke();}
+  else if(sport==='volleyball'){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx,cy,s,0,7);ctx.fill();ctx.strokeStyle=P;ctx.lineWidth=s*0.05;ctx.beginPath();ctx.arc(cx,cy,s,0,7);ctx.stroke();ctx.beginPath();ctx.arc(cx-s,cy-s*0.3,s*1.2,-0.5,0.5);ctx.stroke();ctx.beginPath();ctx.arc(cx+s*0.6,cy+s,s*1.2,Math.PI+0.3,Math.PI+1.3);ctx.stroke();}
+  else if(sport==='hockey'){ctx.fillStyle='#111';ctx.beginPath();ctx.ellipse(cx,cy,s,s*0.42,0,0,7);ctx.fill();ctx.strokeStyle=S;ctx.lineWidth=s*0.05;ctx.stroke();}
+  else if(sport==='cheer'){ctx.fillStyle=P;ctx.beginPath();ctx.moveTo(cx-s,cy-s*0.4);ctx.lineTo(cx+s*0.8,cy-s*0.7);ctx.lineTo(cx+s*0.8,cy+s*0.7);ctx.lineTo(cx-s,cy+s*0.4);ctx.closePath();ctx.fill();ctx.fillStyle=S;ctx.fillRect(cx+s*0.75,cy-s*0.18,s*0.3,s*0.36);}
+  else{ctx.fillStyle=S;star(ctx,cx,cy,s);}
+  ctx.restore();}
+function trophy(ctx,W,H,d){const x=d.x*W,y=d.y*H,w=d.w*W,h=d.h*H,cx=x+w*0.5;ctx.save();
+  const g=ctx.createLinearGradient(cx-w*0.2,y,cx+w*0.2,y+h);g.addColorStop(0,lighten(TH.secondary,0.5));g.addColorStop(1,TH.secondary);ctx.fillStyle=g;
+  ctx.beginPath();ctx.moveTo(cx-w*0.22,y+h*0.15);ctx.lineTo(cx+w*0.22,y+h*0.15);ctx.quadraticCurveTo(cx+w*0.22,y+h*0.5,cx,y+h*0.55);ctx.quadraticCurveTo(cx-w*0.22,y+h*0.5,cx-w*0.22,y+h*0.15);ctx.closePath();ctx.fill();
+  ctx.strokeStyle=TH.secondary;ctx.lineWidth=w*0.03;ctx.beginPath();ctx.arc(cx-w*0.25,y+h*0.24,w*0.09,-1.1,1.9);ctx.stroke();ctx.beginPath();ctx.arc(cx+w*0.25,y+h*0.24,w*0.09,Math.PI+1.1,Math.PI-1.9,true);ctx.stroke();
+  ctx.fillStyle=g;ctx.fillRect(cx-w*0.03,y+h*0.55,w*0.06,h*0.18);ctx.fillRect(cx-w*0.16,y+h*0.73,w*0.32,h*0.06);ctx.fillRect(cx-w*0.22,y+h*0.79,w*0.44,h*0.08);
+  ctx.fillStyle=rgba(TH.primary,0.85);star(ctx,cx,y+h*0.32,w*0.09);ctx.restore();}
+function stadiumLights(ctx,W,H,d){const x=d.x*W,y=d.y*H,w=d.w*W,h=d.h*H;ctx.save();rr(ctx,x,y,w,h,6);ctx.clip();
+  ctx.fillStyle='#080a10';ctx.fillRect(x,y,w,h);
+  [0.28,0.72].forEach(fx=>{const tx=x+w*fx;
+    const bg=ctx.createRadialGradient(tx,y+h*0.28,2,tx,y+h*0.28,w*0.5);bg.addColorStop(0,rgba(TH.primary,0.45));bg.addColorStop(1,rgba(TH.primary,0));ctx.fillStyle=bg;ctx.beginPath();ctx.moveTo(tx,y+h*0.28);ctx.lineTo(x+w*(fx-0.4),y+h);ctx.lineTo(x+w*(fx+0.4),y+h);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#2a2f3a';ctx.lineWidth=w*0.015;ctx.beginPath();ctx.moveTo(tx,y+h*0.32);ctx.lineTo(tx,y+h);ctx.stroke();
+    ctx.fillStyle=lighten(TH.secondary,0.35);rr(ctx,tx-w*0.09,y+h*0.18,w*0.18,h*0.15,3);ctx.fill();
+    ctx.fillStyle=rgba(TH.primary,0.5);for(let i=0;i<3;i++)for(let j=0;j<2;j++){ctx.beginPath();ctx.arc(tx-w*0.06+i*w*0.06,y+h*0.215+j*h*0.06,w*0.012,0,7);ctx.fill();}
+  });
+  ctx.restore();ctx.strokeStyle=rgba(TH.primary,0.6);ctx.lineWidth=2;rr(ctx,x,y,w,h,6);ctx.stroke();}
+function champShield(ctx,W,H,d){const x=d.x*W,y=d.y*H,w=d.w*W,h=d.h*H,cx=x+w/2;ctx.save();
+  ctx.beginPath();ctx.moveTo(x,y+h*0.04);ctx.lineTo(x+w,y+h*0.04);ctx.lineTo(x+w,y+h*0.6);ctx.quadraticCurveTo(x+w,y+h*0.9,cx,y+h);ctx.quadraticCurveTo(x,y+h*0.9,x,y+h*0.6);ctx.closePath();
+  const g=ctx.createLinearGradient(x,y,x,y+h);g.addColorStop(0,rgba(TH.primary,0.92));g.addColorStop(1,'#0a0b10');ctx.fillStyle=g;ctx.fill();
+  ctx.strokeStyle=TH.secondary;ctx.lineWidth=w*0.03;ctx.stroke();
+  ctx.fillStyle=TH.secondary;star(ctx,cx,y+h*0.4,w*0.16);for(let i=0;i<3;i++)star(ctx,cx+(i-1)*w*0.18,y+h*0.62,w*0.05);ctx.restore();}
+function seasonBadge(ctx,W,H,d,data){const x=d.x*W,y=d.y*H,w=d.w*W,h=d.h*H,cx=x+w/2;ctx.save();
+  ctx.shadowColor='rgba(0,0,0,0.5)';ctx.shadowBlur=w*0.06;
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+w,y);ctx.lineTo(x+w,y+h*0.72);ctx.lineTo(cx,y+h);ctx.lineTo(x,y+h*0.72);ctx.closePath();
+  const g=ctx.createLinearGradient(x,y,x,y+h);g.addColorStop(0,rgba(TH.primary,0.96));g.addColorStop(1,'#0a0b10');ctx.fillStyle=g;ctx.fill();ctx.shadowBlur=0;
+  ctx.strokeStyle=TH.secondary;ctx.lineWidth=w*0.02;ctx.stroke();
+  ctx.fillStyle=TH.secondary;star(ctx,cx,y+h*0.26,w*0.13);
+  ctx.textAlign='center';ctx.fillStyle=lighten(TH.secondary,0.2);ctx.font='700 '+(h*0.09)+'px Outfit,sans-serif';tracked(ctx,'SEASON',cx,y+h*0.55,h*0.02,'center');
+  ctx.fillStyle=ivoryFill(ctx,cx,y+h*0.72,h*0.16);ctx.font='700 '+(h*0.20)+'px "Cormorant Garamond",serif';ctx.fillText(String(data.year),cx,y+h*0.78);ctx.restore();}
+
+const DECOR = {
+  trophy:(c,W,H,d)=>trophy(c,W,H,d),
+  stadiumLights:(c,W,H,d)=>stadiumLights(c,W,H,d),
+  champShield:(c,W,H,d)=>champShield(c,W,H,d),
+  sportBall:(c,W,H,d,data)=>sportIcon(c,d.x*W,d.y*H,d.s*W,data.sport),
+  seasonBadge:(c,W,H,d,data)=>seasonBadge(c,W,H,d,data)
+};
+function drawDecor(ctx,W,H,phase,data){(PRODUCT.decorations||[]).filter(d=>d.phase===phase).forEach(d=>DECOR[d.type]&&DECOR[d.type](ctx,W,H,d,data));}
+
+/* ═══ GENERIC renderScene — team-adapted content + theme ═══ */
+function renderScene(ctx,W,H){
+  readTheme();
+  ctx.fillStyle=GOLD_STANDARD.bg.base;ctx.fillRect(0,0,W,H);
+  const gl=ctx.createRadialGradient(GOLD_STANDARD.bg.glow.cx*W,GOLD_STANDARD.bg.glow.cy*H,W*0.03,GOLD_STANDARD.bg.glow.cx*W,GOLD_STANDARD.bg.glow.cy*H,GOLD_STANDARD.bg.glow.r*W);
+  gl.addColorStop(0,rgba(TH.primary,0.5));gl.addColorStop(.5,rgba(TH.primary,0.13));gl.addColorStop(1,rgba(TH.primary,0));ctx.fillStyle=gl;ctx.fillRect(0,0,W,H);
+  const rnd=srand(GOLD_STANDARD.bg.particles.seed);
+  for(let i=0;i<GOLD_STANDARD.bg.particles.count;i++){const px=rnd()*W,py=rnd()*H,r=(0.0008+rnd()*0.0032)*W,a=0.05+rnd()*0.27;const useS=rnd()>0.5;
+    const pg=ctx.createRadialGradient(px,py,0,px,py,r*3);pg.addColorStop(0,rgba(useS?TH.secondary:TH.primary,a));pg.addColorStop(1,rgba(useS?TH.secondary:TH.primary,0));ctx.fillStyle=pg;ctx.beginPath();ctx.arc(px,py,r*3,0,7);ctx.fill();}
+  const vg=ctx.createRadialGradient(W/2,H*0.48,H*GOLD_STANDARD.bg.vignette.innerR,W/2,H*0.48,H*GOLD_STANDARD.bg.vignette.outerR);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,0.72)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+
+  const t=k=>($('#'+k)?$('#'+k).value.trim():'')||'';
+  const team=t('f-team')||PRODUCT.defaults.team;
+  const achievement=(t('f-achievement')||PRODUCT.defaults.achievement).replace(/^\s*(?:19|20)\d{2}\s+/,'').toUpperCase();
+  const year=t('f-year')||PRODUCT.defaults.year;
+  const sport=t('f-sport')||PRODUCT.defaults.sport;
+  const league=t('f-league');const coach=t('f-coach');
+  const quote=t('f-quote')||PRODUCT.defaults.quote;
+  const msg=t('f-msg');const motto=t('f-motto')||PRODUCT.mottos[sport]||PRODUCT.defaults.motto;
+
+  GOLD_STANDARD.slots.filter(s=>!s.hero).forEach(s=>memoryPhoto(ctx,W,H,s));
+  drawDecor(ctx,W,H,'background',{year:year,sport:sport});
+  heroCutout(ctx,W,H,GOLD_STANDARD.slots[0]);
+
+  ctx.textBaseline='alphabetic';
+  // team name (script, top-left)
+  ctx.fillStyle=accentGrad(ctx,0.03*W,0.10*H,0.066*H);ctx.font='400 '+(0.066*H)+'px "Great Vibes",cursive';ctx.textAlign='left';ctx.fillText(sport.charAt(0).toUpperCase()+sport.slice(1),0.03*W,0.105*H);
+  // achievement (big caps)
+  ctx.fillStyle=ivoryFill(ctx,0.02*W,0.235*H,0.135*H);ctx.font='400 '+(0.135*H)+'px Anton,sans-serif';ctx.textAlign='left';
+  let ah=0.135*H;ctx.font='400 '+ah+'px Anton,sans-serif';while(ctx.measureText(achievement).width>0.42*W&&ah>0.06*H){ah-=2;ctx.font='400 '+ah+'px Anton,sans-serif';}
+  ctx.save();ctx.shadowColor='rgba(0,0,0,0.5)';ctx.shadowBlur=H*0.01;ctx.shadowOffsetY=H*0.004;ctx.fillText(achievement,0.02*W,0.235*H);ctx.restore();
+  // SEASON / year
+  ctx.fillStyle=lighten(TH.secondary,0.15);ctx.font='700 '+(0.024*H)+'px Outfit,sans-serif';tracked(ctx,PRODUCT.wording.classLabel,0.035*W,0.288*H,0.06*(0.024*H),'left');
+  ctx.fillStyle=ivoryFill(ctx,0.03*W,0.365*H,0.085*H);ctx.font='700 '+(0.085*H)+'px "Cormorant Garamond",serif';ctx.textAlign='left';ctx.fillText(year,0.03*W,0.365*H);
+  drawDecor(ctx,W,H,'title',{year:year,sport:sport});
+  // tagline: sport · league
+  const taglineTxt=(league?league.toUpperCase():sport.toUpperCase());
+  ctx.fillStyle=rgba(TH.secondary,0.95);ctx.font='600 '+(0.019*H)+'px Outfit,sans-serif';tracked(ctx,taglineTxt,0.18*W,0.41*H,0.02*(0.019*H),'center');
+
+  // top-right slogan
+  ctx.fillStyle=ivoryFill(ctx,0.685*W,0.09*H,0.03*H);ctx.font='800 '+(0.03*H)+'px Outfit,sans-serif';ctx.textAlign='center';
+  const qL=wrapLines(ctx,quote.toUpperCase(),0.20*W);qL.slice(0,2).forEach((l,i)=>tracked(ctx,l,0.688*W,(0.075+i*0.035)*H,0.02*(0.03*H),'center'));
+  ctx.fillStyle=TH.secondary;ctx.font='800 '+(0.05*H)+'px Georgia,serif';ctx.textAlign='left';ctx.fillText('“',0.60*W,0.085*H);ctx.textAlign='right';ctx.fillText('”',0.79*W,(0.075+(Math.min(qL.length,2)-1)*0.035+0.005)*H);
+
+  drawDecor(ctx,W,H,'topright',{year:year,sport:sport});
+
+  // team name (script over hero) + rule + coach/league
+  const nx=0.472*W;ctx.fillStyle=accentGrad(ctx,nx,0.72*H,0.072*H);
+  let nsz=0.072*H;ctx.font='400 '+nsz+'px "Great Vibes",cursive';while(ctx.measureText(team).width>0.34*W&&nsz>0.03*H){nsz-=2;ctx.font='400 '+nsz+'px "Great Vibes",cursive';}
+  ctx.textAlign='center';ctx.save();ctx.shadowColor='rgba(0,0,0,0.5)';ctx.shadowBlur=H*0.008;ctx.fillText(team,nx,0.715*H);ctx.restore();
+  ctx.strokeStyle=rgba(TH.primary,0.7);ctx.lineWidth=Math.max(1,H*0.0016);ctx.beginPath();ctx.moveTo(nx-0.14*W,0.728*H);ctx.lineTo(nx+0.14*W,0.728*H);ctx.stroke();
+  const sub=coach?('COACH '+coach.toUpperCase()):(league?league.toUpperCase():'');
+  if(sub){ctx.fillStyle=rgba(TH.secondary,0.9);ctx.font='600 '+(0.017*H)+'px Outfit,sans-serif';tracked(ctx,sub,nx,0.748*H,0.04*(0.017*H),'center');}
+
+  // message (optional) + motto
+  const my0=sub?0.79:0.782;
+  if(msg){ctx.fillStyle='rgba(250,248,243,0.9)';ctx.font='600 '+(0.026*H)+'px "Cormorant Garamond",serif';ctx.textAlign='center';
+    const mL=wrapLines(ctx,msg.toUpperCase(),0.27*W);mL.slice(0,3).forEach((l,i)=>tracked(ctx,l,nx,(my0+i*0.035)*H,0.02*(0.026*H),'center'));}
+  ctx.fillStyle=accentGrad(ctx,nx,0.90*H,0.04*H);ctx.font='400 '+(0.04*H)+'px "Great Vibes",cursive';ctx.textAlign='center';
+  ctx.fillText(motto,nx,(my0+(msg?Math.min(wrapLines(ctx,msg.toUpperCase(),0.27*W).length,3):0)*0.035+0.03)*H);
+
+  // footer band + 5 team value icons
+  ctx.fillStyle='#04050a';ctx.fillRect(0,0.905*H,W,0.095*H);
+  ctx.strokeStyle=rgba(TH.primary,0.6);ctx.lineWidth=Math.max(1,H*0.0016);ctx.beginPath();ctx.moveTo(0.02*W,0.905*H);ctx.lineTo(0.98*W,0.905*H);ctx.stroke();
+  const vlabels=[t('f-v1'),t('f-v2'),t('f-v3'),t('f-v4'),t('f-v5')];
+  const fx0=GOLD_STANDARD.footer.xStart*W,fx1=GOLD_STANDARD.footer.xEnd*W,n=PRODUCT.footerIcons.length,cellW=(fx1-fx0)/n,fy=0.955*H;
+  PRODUCT.footerIcons.forEach((ic,i)=>{const cellX=fx0+i*cellW;const icx=cellX+cellW*0.16;
+    footerIcon(ctx,ic.icon,icx,fy,0.026*H);
+    ctx.fillStyle=lighten(TH.secondary,0.2);ctx.font='700 '+(0.017*H)+'px Outfit,sans-serif';ctx.textAlign='left';ctx.fillText((vlabels[i]||ic.top).toUpperCase(),cellX+cellW*0.30,fy-0.006*H);
+    ctx.fillStyle='rgba(250,248,243,0.7)';ctx.font='500 '+(0.013*H)+'px Outfit,sans-serif';ctx.fillText(ic.bottom,cellX+cellW*0.30,fy+0.016*H);
+    if(i>0){ctx.strokeStyle=rgba(TH.primary,0.35);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cellX,fy-0.03*H);ctx.lineTo(cellX,fy+0.028*H);ctx.stroke();}
+  });
+}
+function renderLive(){const c=$('#live');if(c)renderScene(c.getContext('2d'),c.width,c.height);const note=$('#hero-note');if(note)note.style.display=state.photos.hero?'none':'block';}
+
+/* ═══ CONCIERGE ORDER CAPTURE (reused unchanged — same endpoint + Stripe links) ═══ */
+const ORDER_CAPTURE_URL   = 'https://script.google.com/macros/s/AKfycby8lNzyIDdtE7EU0qDPONnjVyDjfUlnzMlu6wgQWnMp_m2hn1_Xx57ILWQ2LuMjV5Cp/exec';
+const ORDER_CAPTURE_TOKEN = 'cb-concierge-v1';
+const CHECKOUT = {
+  marketingProduct:'team-cinematic', productName:'Cinematic Team Banner',
+  printed:{ pkg:'poster_standard', name:'Standard Poster', price:79.99, stripeLink:'https://buy.stripe.com/bJe28j1S8fpDdQs81l83C05' },
+  digital:{ pkg:'digital', name:'Digital Download', price:9.99, stripeLink:'https://buy.stripe.com/7sY8wHeEUb9n27KgxR83C00' },
+};
+function stripeUrl(which,orderNumber){const c=CHECKOUT[which];const cref=['pkg',c.pkg,'mkt',CHECKOUT.marketingProduct,'ord',orderNumber].join('_').slice(0,200);
+  const base=c.stripeLink,sep=base.includes('?')?'&':'?';
+  return base+sep+'client_reference_id='+encodeURIComponent(cref)+'&package='+encodeURIComponent(c.pkg)+'&package_name='+encodeURIComponent(c.name)+'&marketing_product='+encodeURIComponent(CHECKOUT.marketingProduct)+'&product_name='+encodeURIComponent(CHECKOUT.productName);}
+
+const MIN_PHOTOS=5,MAX_PHOTOS=9,MAX_PHOTO_BYTES=25*1024*1024,MAX_TOTAL_BYTES=90*1024*1024;
+const ALLOWED_MIME=/^image\/(jpe?g|png|webp|heic|heif|gif)$/i;
+function sanitizeText(s,max){return String(s==null?'':s).replace(/[\u0000-\u001F\u007F]+/g,' ').replace(/\s+/g,' ').trim().slice(0,max||300);}
+function sanitizeFilename(s){return(String(s==null?'':s).replace(/[\\/:*?\"<>|\u0000-\u001F\u007F]+/g,'_').replace(/\s+/g,' ').trim().slice(0,80))||'photo.jpg';}
+function b64Bytes(b64){const pad=b64.endsWith('==')?2:(b64.endsWith('=')?1:0);return Math.floor(b64.length*3/4)-pad;}
+function orderedPhotos(){return GOLD_STANDARD.photoSlotOrder.map(id=>state.photos[id]?{slot:id,...state.photos[id]}:null).filter(Boolean);}
+function parsePhoto(p){const u=p.url||'';if(u.slice(0,5)!=='data:')return null;const comma=u.indexOf(',');if(comma<0)return null;
+  const mime=(u.slice(5,comma).split(';')[0]||'').toLowerCase();const b64=u.slice(comma+1);
+  return{slot:p.slot,mime,b64,bytes:b64Bytes(b64),isHero:p.slot==='hero',filename:sanitizeFilename(p.name)};}
+function validatePhotos(){
+  if(!state.photos.hero)return{ok:false,msg:'Please add your hero / team photo before ordering.'};
+  const list=orderedPhotos();if(list.length<MIN_PHOTOS)return{ok:false,msg:'Please add your hero plus at least '+(MIN_PHOTOS-1)+' photos (you have '+list.length+').'};
+  const items=[];let total=0;
+  for(const p of list){const it=parsePhoto(p);if(!it||!ALLOWED_MIME.test(it.mime))return{ok:false,msg:'Only image files (JPG, PNG, WEBP, HEIC) can be used.'};
+    if(it.bytes<=0)return{ok:false,msg:'One of your photos looks empty. Please re-add it.'};
+    if(it.bytes>MAX_PHOTO_BYTES)return{ok:false,msg:'One of your photos is larger than 25 MB.'};total+=it.bytes;items.push(it);}
+  if(total>MAX_TOTAL_BYTES)return{ok:false,msg:'Your photos are too large to upload reliably. Please remove a few.'};
+  return{ok:true,items};
+}
+function genOrderNumber(which){const d=new Date();const ymd=''+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+  const rand=Math.random().toString(36).slice(2,6).toUpperCase();return 'CB-'+ymd+'-'+(which==='printed'?'P':'D')+rand;}
+
+let checkoutWhich=null,activeOrderNumber=null,submitting=false,capturedOrders={};
+const modal=$('#checkout-modal');
+function setStatus(msg,kind){const el=$('#c-status');el.textContent=msg;el.className='modal-status'+(kind?' '+kind:'');}
+function openCheckout(which){if(which!=='printed'&&which!=='digital')return;const chk=validatePhotos();if(!chk.ok){toast(chk.msg);return;}
+  checkoutWhich=which;activeOrderNumber=genOrderNumber(which);const c=CHECKOUT[which];
+  $('#modal-kicker').textContent=(which==='printed'?'Order Printed Banner':'Digital Download')+' · $'+c.price.toFixed(2);
+  $('#ship-fields').style.display=which==='printed'?'block':'none';$('#c-consent').checked=false;setStatus('','');modal.classList.add('show');}
+function closeCheckout(){if(submitting)return;modal.classList.remove('show');}
+$('#order').addEventListener('click',()=>openCheckout('printed'));
+$('#download').addEventListener('click',()=>openCheckout('digital'));
+$('#modal-close').addEventListener('click',closeCheckout);
+modal.addEventListener('click',e=>{if(e.target===modal)closeCheckout();});
+async function postCapture(payload){const res=await fetch(ORDER_CAPTURE_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),redirect:'follow'});
+  if(!res.ok)throw new Error('HTTP '+res.status);let data;try{data=await res.json();}catch(e){throw new Error('bad response');}
+  if(!data||data.status!=='ok')throw new Error((data&&data.error)||'capture failed');return data;}
+$('#c-submit').addEventListener('click',async()=>{
+  if(submitting)return;const which=checkoutWhich,c=CHECKOUT[which];if(!c){setStatus('Please choose Printed or Digital.','err');return;}
+  const chk=validatePhotos();if(!chk.ok){setStatus(chk.msg,'err');return;}
+  const cust={name:sanitizeText($('#c-name').value,120),email:sanitizeText($('#c-email').value,160),phone:sanitizeText($('#c-phone').value,40),
+    address:sanitizeText($('#c-addr').value,200),city:sanitizeText($('#c-city').value,80),state:sanitizeText($('#c-state').value,40),zip:sanitizeText($('#c-zip').value,20)};
+  if(!cust.name){setStatus('Please enter your name.','err');return;}
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cust.email)){setStatus('Please enter a valid email.','err');return;}
+  if(which==='printed'&&(!cust.address||!cust.city||!cust.state||!cust.zip)){setStatus('Please complete the shipping address for a printed order.','err');return;}
+  if(!$('#c-consent').checked){setStatus('Please check the box so we can save your photos and fulfill your order.','err');return;}
+  submitting=true;$('#c-submit').disabled=true;$('#modal-close').disabled=true;
+  const val=id=>sanitizeText(($('#'+id)?$('#'+id).value:''),200);
+  const extras=['Sport: '+(val('f-sport')||'')+' | Team: '+val('f-team')+' | Achievement: '+val('f-achievement')+' | League: '+val('f-league')+' | Coach: '+(val('f-coach')||'-')+' | Colors: '+($('#f-color1').value)+'/'+($('#f-color2').value)+' | Quote: '+(val('f-quote')||PRODUCT.defaults.quote)];
+  const vv=[val('f-v1'),val('f-v2'),val('f-v3'),val('f-v4'),val('f-v5')].filter(Boolean);if(vv.length)extras.push('Values: '+vv.join(', '));
+  const person={graduateName:val('f-team'),classYear:sanitizeText($('#f-year').value,20),school:val('f-league'),message:'[TEAM CINEMATIC] '+(val('f-msg')||'')+' | '+extras.join(' | ')};
+  const orderNumber=activeOrderNumber,product=(which==='printed'?'Cinematic Team Banner — Printed':'Cinematic Team Banner — Digital');
+  try{
+    if(!capturedOrders[orderNumber]){
+      for(let i=0;i<chk.items.length;i++){const it=chk.items[i];setStatus('Saving your photos… ('+(i+1)+'/'+chk.items.length+')','busy');
+        await postCapture({kind:'photo',token:ORDER_CAPTURE_TOKEN,orderNumber,graduateName:person.graduateName,index:i,isHero:it.isHero,filename:(it.slot||'photo')+'-'+it.filename,mime:it.mime,data:it.b64});}
+      setStatus('Finalizing your order…','busy');
+      await postCapture({kind:'order',token:ORDER_CAPTURE_TOKEN,orderNumber,product,price:'$'+c.price.toFixed(2),timestamp:new Date().toISOString(),customer:cust,personalization:person,photoCount:chk.items.length});
+      capturedOrders[orderNumber]=true;
+    }
+    setStatus('Order '+orderNumber+' saved ✓ Taking you to secure checkout…','ok');
+    setTimeout(()=>{window.location.href=stripeUrl(which,orderNumber);},900);
+  }catch(err){submitting=false;$('#c-submit').disabled=false;$('#modal-close').disabled=false;
+    setStatus('We couldn’t save your order, so we did NOT send you to payment — your card was not charged. Please try again.','err');}
+});
+
+if(document.fonts&&document.fonts.ready){document.fonts.ready.then(renderLive);}else{renderLive();}
+</script>
+</body>
+</html>
