@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://celebratebanner.com/schemas/adapter.schema.json",
+  "title": "Product Adapter (content pack)",
+  "description": "Per-product content pack. Content only: no geometry, lighting, or print spec (those come from the bound gold standard). Shared shape reused by every product adapter. Architecture-only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "version", "displayName", "goldStandard", "fields", "photoSlots", "content", "promptFragments"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "displayName": { "type": "string", "minLength": 1 },
+    "goldStandard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" }
+      }
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "label", "type"],
+        "properties": {
+          "key": { "type": "string" },
+          "label": { "type": "string" },
+          "type": { "enum": ["text", "enum", "palette", "date", "number"] },
+          "required": { "type": "boolean" },
+          "maxLen": { "type": "integer" },
+          "options": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "photoSlots": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["meaning", "min", "max"],
+        "properties": {
+          "meaning": { "type": "string" },
+          "min": { "type": "integer", "minimum": 0 },
+          "max": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "content": { "type": "object" },
+    "palette": { "type": "object" },
+    "promptFragments": {
+      "type": "object",
+      "required": ["voice", "negatives"],
+      "properties": {
+        "voice": { "type": "string", "minLength": 1 },
+        "negatives": { "type": "string" }
+      }
+    }
+  }
+}
