@@ -1,0 +1,36 @@
+{
+  "id": "graduation",
+  "version": "1.0.0",
+  "displayName": "Graduation Signature Banner",
+  "goldStandard": { "id": "premium-cinematic-landscape", "version": "1.0.0" },
+  "fields": [
+    { "key": "name", "label": "Graduate name", "type": "text", "required": true, "maxLen": 28 },
+    { "key": "classYear", "label": "Class / Year", "type": "text", "required": true, "maxLen": 12 },
+    { "key": "school", "label": "School", "type": "text", "required": false, "maxLen": 40 },
+    { "key": "colors", "label": "Colors", "type": "palette", "required": false }
+  ],
+  "photoSlots": {
+    "hero": { "meaning": "the graduate, full-body or portrait, cap & gown preferred", "min": 1, "max": 1 },
+    "supporting": { "meaning": "milestone moments, friends, family", "min": 0, "max": 8 }
+  },
+  "content": {
+    "mottos": {
+      "default": "The future is yours",
+      "highschool": "The best is yet to come",
+      "college": "Earned, every step of the way"
+    },
+    "footerIcons": [
+      { "key": "PERSEVERANCE", "subtitle": "You never quit" },
+      { "key": "GROWTH", "subtitle": "How far you've come" },
+      { "key": "ACHIEVEMENT", "subtitle": "Earned in full" },
+      { "key": "FAMILY", "subtitle": "Behind you always" },
+      { "key": "FUTURE", "subtitle": "Yours to write" }
+    ],
+    "decorations": ["editorial-gold-accents", "soft-bokeh", "gold-particles"]
+  },
+  "palette": { "primaryFrom": "colors", "accent": "#C9A84C" },
+  "promptFragments": {
+    "voice": "proud, aspirational, editorial graduation tribute; timeless and refined; celebrates the achievement",
+    "negatives": "no school logos or seals, no license/diploma text artifacts, no real institution marks"
+  }
+}

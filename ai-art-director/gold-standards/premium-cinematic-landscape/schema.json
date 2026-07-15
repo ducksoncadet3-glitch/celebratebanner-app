@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://celebratebanner.com/schemas/gold-standard.schema.json",
+  "title": "Gold Standard (visual DNA)",
+  "description": "Product-agnostic visual DNA every product inherits. Content-free: no wording, occasion, or literal fixed palette. Architecture-only; validated by tooling, not executed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "version", "orientation", "print", "canvas", "composition", "palette", "styleConstitution", "compositionContract", "printContract"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "orientation": { "enum": ["landscape", "portrait"] },
+    "print": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["widthIn", "heightIn", "dpi", "bleedIn", "safeMarginIn", "colorMode", "formats"],
+      "properties": {
+        "widthIn": { "type": "number", "exclusiveMinimum": 0 },
+        "heightIn": { "type": "number", "exclusiveMinimum": 0 },
+        "dpi": { "type": "integer", "const": 300 },
+        "bleedIn": { "type": "number", "minimum": 0 },
+        "safeMarginIn": { "type": "number", "minimum": 0 },
+        "colorMode": { "const": "CMYK" },
+        "formats": { "type": "array", "items": { "enum": ["pdf", "jpg"] }, "minItems": 1 }
+      }
+    },
+    "canvas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["aspect", "referencePx"],
+      "properties": {
+        "aspect": { "type": "number", "exclusiveMinimum": 0 },
+        "referencePx": { "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 }
+      }
+    },
+    "composition": {
+      "type": "object",
+      "required": ["hero", "slots"],
+      "properties": {
+        "hero": { "$ref": "#/$defs/fracBox" },
+        "name": { "type": "object" },
+        "slots": { "type": "array", "items": { "$ref": "#/$defs/slot" } },
+        "footer": { "type": "object" }
+      }
+    },
+    "lighting": { "type": "object" },
+    "palette": {
+      "type": "object",
+      "required": ["roles", "rules"],
+      "properties": {
+        "roles": { "type": "array", "items": { "type": "string" } },
+        "rules": {
+          "type": "object",
+          "properties": {
+            "contrastFloor": { "type": "number", "minimum": 1 },
+            "cmykSafe": { "type": "boolean" },
+            "goldAccent": { "type": "string" }
+          }
+        }
+      }
+    },
+    "atmosphere": { "type": "object" },
+    "typography": { "type": "object" },
+    "styleConstitution": { "type": "string", "minLength": 1 },
+    "compositionContract": { "type": "string", "minLength": 1 },
+    "printContract": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "fracBox": {
+      "type": "object",
+      "required": ["cx", "cy", "w", "h"],
+      "properties": {
+        "cx": { "type": "number", "minimum": 0, "maximum": 1 },
+        "cy": { "type": "number", "minimum": 0, "maximum": 1 },
+        "w": { "type": "number", "minimum": 0, "maximum": 1 },
+        "h": { "type": "number", "minimum": 0, "maximum": 1 },
+        "anchor": { "type": "string" }
+      }
+    },
+    "slot": {
+      "type": "object",
+      "required": ["id", "cx", "cy", "w", "h", "importance"],
+      "properties": {
+        "id": { "type": "string" },
+        "cx": { "type": "number", "minimum": 0, "maximum": 1 },
+        "cy": { "type": "number", "minimum": 0, "maximum": 1 },
+        "w": { "type": "number", "minimum": 0, "maximum": 1 },
+        "h": { "type": "number", "minimum": 0, "maximum": 1 },
+        "importance": { "enum": ["primary", "secondary", "tertiary"] }
+      }
+    }
+  }
+}

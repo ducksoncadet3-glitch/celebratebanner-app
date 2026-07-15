@@ -1,0 +1,19 @@
+{
+  "name": "@celebratebanner/ai-art-director",
+  "version": "0.1.0-architecture",
+  "private": true,
+  "description": "AI Art Director pipeline — ARCHITECTURE ONLY. No production generation code, no external AI calls. Independent, isolated module for CelebrateBanner 3.0.",
+  "type": "module",
+  "milestone": "architecture-only",
+  "boundaries": {
+    "readOnlyProduction": true,
+    "callsExternalAI": false,
+    "containsGenerationCode": false,
+    "modifiesExistingApp": false
+  },
+  "scripts": {
+    "note": "echo 'ai-art-director is architecture-only in this milestone — no build/run yet.'"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
