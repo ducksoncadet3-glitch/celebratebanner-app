@@ -21,18 +21,42 @@ export interface CheckoutLineItem {
   quantity?: number;
 }
 
+/** Physical shipping address, collected on the Order Review page for print orders. */
+export interface ShippingAddress {
+  name: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  /** ISO-3166-1 alpha-2 country code (e.g. "US"). */
+  country: string;
+}
+
 export interface CreateCheckoutInput {
   projectId: string;
   templateId: string;
   renderType: RenderType;
   customerEmail: string;
   items: CheckoutLineItem[];
+  /** Optional customer name for the order record / shipping label. */
+  customerName?: string;
+  /** Optional shipping address — sent only for products that require shipping.
+   *  Additive + backward compatible: the backend ignores it for digital orders. */
+  shipping?: ShippingAddress;
   /** Optional discount code applied by the user. */
   couponCode?: string;
   /** Optional affiliate referral code captured from the URL. */
   affiliateRef?: string;
   /** Optional cart-recovery token returned by abandoned-cart emails. */
   recoveryToken?: string;
+}
+
+/** Payload for the order-confirmation email integration point (same-origin route). */
+export interface OrderConfirmationInput {
+  email: string;
+  sessionId?: string;
+  projectId?: string;
 }
 
 export interface CreateCheckoutResponse {
@@ -121,6 +145,27 @@ export const api = {
   /** GET /api/projects/:id/status — used by /success to poll render progress. */
   getProjectStatus(projectId: string): Promise<ProjectStatus> {
     return request<ProjectStatus>(`/api/projects/${encodeURIComponent(projectId)}/status`);
+  },
+
+  /**
+   * POST /api/order-confirmation — fire-and-forget confirmation-email trigger.
+   * This hits our OWN same-origin Next route handler (not the external API), which
+   * sends the email if a provider is configured and otherwise no-ops gracefully.
+   * Never throws to the caller: a failed confirmation must not break the success page.
+   */
+  async sendOrderConfirmation(input: OrderConfirmationInput): Promise<{ sent: boolean }> {
+    try {
+      const res = await fetch('/api/order-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(input),
+        cache: 'no-store',
+      });
+      if (!res.ok) return { sent: false };
+      return (await res.json()) as { sent: boolean };
+    } catch {
+      return { sent: false };
+    }
   },
 
   /**

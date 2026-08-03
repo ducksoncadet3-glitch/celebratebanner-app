@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Outfit } from 'next/font/google';
 import Script from 'next/script';
 import { Nav } from '@/components/nav';
 import { Footer } from '@/components/footer';
+import { StickyProofCta } from '@/components/storefront/sticky-proof-cta';
 import { SITE } from '@/lib/seo';
 import './globals.css';
 
@@ -72,6 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Nav />
         <main id="main">{children}</main>
         <Footer />
+        <StickyProofCta />
         <Script
           id="ld-org"
           type="application/ld+json"

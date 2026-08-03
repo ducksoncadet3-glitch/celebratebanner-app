@@ -1,0 +1,124 @@
+import { describe, expect, it } from 'vitest';
+import {
+  getAllCollections,
+  getAllProducts,
+  getFeaturedProducts,
+  getProductBySlug,
+  getProductsByCollection,
+  getRelatedProducts,
+} from './products';
+import { proofHrefForProduct } from './proof-link';
+import { resolveProductId } from '@/lib/proof/options';
+
+const products = getAllProducts();
+const collections = getAllCollections();
+const collectionSlugs = new Set(collections.map((c) => c.slug));
+
+describe('catalog integrity', () => {
+  it('contains exactly 24 products', () => {
+    expect(products).toHaveLength(24);
+  });
+
+  it('every product has a unique slug', () => {
+    const slugs = products.map((p) => p.slug);
+    expect(new Set(slugs).size).toBe(24);
+  });
+
+  it('every product has a valid positive starting price in cents', () => {
+    for (const p of products) {
+      expect(Number.isInteger(p.startingPriceCents)).toBe(true);
+      expect(p.startingPriceCents).toBeGreaterThan(0);
+    }
+  });
+
+  it('enforces launch pricing business rules', () => {
+    // Banners minimum $79.99; Senior Night $89.99; digital social $9.99.
+    expect(getProductBySlug('senior-night-banner')!.startingPriceCents).toBe(8999);
+    expect(getProductBySlug('team-banner')!.startingPriceCents).toBe(7999);
+    expect(getProductBySlug('game-day-graphic')!.startingPriceCents).toBe(999);
+    for (const p of products) {
+      if (p.productType === 'banner') expect(p.startingPriceCents).toBeGreaterThanOrEqual(7999);
+    }
+  });
+
+  it('every product belongs to a valid collection', () => {
+    for (const p of products) expect(collectionSlugs.has(p.collectionSlug)).toBe(true);
+  });
+
+  it('every product has a proofProductKey that the proof flow resolves', () => {
+    for (const p of products) {
+      expect(resolveProductId(p.proofProductKey)).toBe(p.proofProductKey);
+    }
+  });
+
+  it('every related product slug resolves to a real product', () => {
+    for (const p of products) {
+      for (const rel of p.relatedProductSlugs) {
+        expect(getProductBySlug(rel), `related slug ${rel} of ${p.slug}`).toBeTruthy();
+      }
+    }
+  });
+
+  it('every product has non-empty required copy fields', () => {
+    for (const p of products) {
+      expect(p.name.length).toBeGreaterThan(0);
+      expect(p.shortDescription.length).toBeGreaterThan(0);
+      expect(p.fullDescription.length).toBeGreaterThan(0);
+      expect(p.features.length).toBeGreaterThan(0);
+      expect(p.faq.length).toBeGreaterThan(0);
+      expect(p.seoTitle.length).toBeGreaterThan(0);
+      expect(p.seoDescription.length).toBeGreaterThan(0);
+      expect(p.image.startsWith('data:image/svg+xml,')).toBe(true);
+    }
+  });
+});
+
+describe('catalog helpers', () => {
+  it('getFeaturedProducts returns the expected featured set', () => {
+    const featured = getFeaturedProducts();
+    expect(featured.map((p) => p.slug)).toEqual([
+      'team-banner',
+      'senior-night-banner',
+      'graduation-banner',
+      'graduation-poster',
+      'championship-banner',
+      'game-day-graphic',
+    ]);
+  });
+
+  it('getProductsByCollection returns only that collection, 6 each', () => {
+    for (const c of collections) {
+      const inC = getProductsByCollection(c.slug);
+      expect(inC.length).toBe(6);
+      for (const p of inC) expect(p.collectionSlug).toBe(c.slug);
+    }
+  });
+
+  it('there are 4 collections', () => {
+    expect(collections).toHaveLength(4);
+  });
+
+  it('getProductBySlug returns undefined for an unknown slug (safe handling)', () => {
+    expect(getProductBySlug('does-not-exist')).toBeUndefined();
+  });
+
+  it('getRelatedProducts excludes self, resolves, and never exceeds the limit', () => {
+    for (const p of products) {
+      const related = getRelatedProducts(p.slug, 3);
+      expect(related.length).toBeLessThanOrEqual(3);
+      expect(related.some((r) => r.slug === p.slug)).toBe(false);
+    }
+    expect(getRelatedProducts('does-not-exist')).toEqual([]);
+  });
+});
+
+describe('proof CTA URL', () => {
+  it('produces /proof?product=<resolvable key> for every product', () => {
+    for (const p of products) {
+      const href = proofHrefForProduct(p);
+      expect(href).toBe(`/proof?product=${p.proofProductKey}`);
+      const key = new URLSearchParams(href.split('?')[1]).get('product');
+      expect(resolveProductId(key)).toBe(key);
+    }
+  });
+});
