@@ -6,6 +6,7 @@ import { Container } from '@/components/ui/container';
 import { FaqAccordion } from '@/components/collection/faq-accordion';
 import { ProductGrid } from '@/components/storefront/product-grid';
 import { CollectionGrid } from '@/components/storefront/collection-grid';
+import { TrustBar } from '@/components/storefront/trust-bar';
 import { PerfectFor } from '@/components/storefront/perfect-for';
 import { BundleCard } from '@/components/storefront/bundle-card';
 import { TrustSection } from '@/components/storefront/trust-section';
@@ -46,6 +47,9 @@ export default function HomePage() {
   return (
     <>
       <Hero />
+
+      {/* Above-the-fold factual reassurance + catalog-derived price anchor */}
+      <TrustBar />
 
       {/* Featured products */}
       <Section background="ivory" spacing="lg" aria-labelledby="home-featured-heading">
