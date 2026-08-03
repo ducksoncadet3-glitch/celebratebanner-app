@@ -1,0 +1,5 @@
+# Runtime artifacts never belong in git — only the schema and this README are tracked.
+*
+!.gitignore
+!README.md
+!manifest.schema.json

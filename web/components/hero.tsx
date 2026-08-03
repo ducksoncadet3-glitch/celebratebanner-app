@@ -12,29 +12,28 @@ export function Hero() {
       <Container className="relative">
         <div className="mx-auto max-w-3xl text-center">
           <p className="animate-fade-in text-xs font-semibold uppercase tracking-[0.22em] text-gold-dark">
-            Custom celebration banners · 300 DPI · ships in 3–5 days
+            Custom banners · posters · social graphics · 300 DPI
           </p>
-          <h1 className="mt-5 animate-fade-up text-balance text-5xl leading-[1.05] sm:text-6xl md:text-7xl">
-            The moment deserves a{' '}
+          <h1 className="mt-5 animate-fade-up text-balance text-4xl leading-[1.08] sm:text-5xl md:text-6xl">
+            Celebrate Every Achievement with a Personalized Banner{' '}
             <span className="bg-gradient-to-br from-gold-dark via-gold to-gold-light bg-clip-text text-transparent">
-              banner
+              They&apos;ll Never Forget
             </span>
-            .
           </h1>
           <p className="mt-6 animate-fade-up text-pretty text-lg text-obsidian/75 [animation-delay:120ms]">
-            Upload your photos. Pick a theme. We&apos;ll lay it out beautifully — and either email
-            you the print-ready file or ship a 24×36&quot; banner to your door.
+            From championships to graduation, create a custom banner or poster in minutes. Review
+            your FREE design proof before placing an order.
           </p>
           <div className="mt-9 flex animate-fade-up flex-wrap justify-center gap-3 [animation-delay:240ms]">
             <Button asChild size="lg" variant="gold">
-              <Link href="/create">Start designing — free</Link>
+              <Link href="/proof">Start Free Design Proof</Link>
             </Button>
             <Button asChild size="lg" variant="secondary">
-              <Link href="/gallery">See examples</Link>
+              <Link href="/shop">Shop Products</Link>
             </Button>
           </div>
           <p className="mt-6 animate-fade-up text-xs text-obsidian/55 [animation-delay:360ms]">
-            No account required · Pay once · Up to 50 photos per banner
+            No payment required to see your proof · Your photos &amp; colors
           </p>
         </div>
 

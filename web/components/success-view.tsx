@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Button } from './ui/button';
 import { Spinner } from './ui/spinner';
 import { ProcessingStatus } from './processing-status';
+import { api } from '@/lib/api';
+import { logOperationalEvent } from '@/lib/orders/events';
 import { getStoredEmail } from '@/lib/utils';
 
 export function SuccessView() {
@@ -15,10 +17,29 @@ export function SuccessView() {
   const [readyUrl, setReadyUrl] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [email, setEmail] = useState<string>('');
+  const confirmationSent = useRef(false);
 
   useEffect(() => {
     setEmail(getStoredEmail());
   }, []);
+
+  // Fire the order-confirmation email integration point once, after a confirmed payment.
+  // Fire-and-forget: never blocks or breaks the success page (Stripe sends its own receipt).
+  useEffect(() => {
+    if (confirmationSent.current) return;
+    if (!sessionId && !projectId) return;
+    const to = getStoredEmail();
+    if (!to) return;
+    confirmationSent.current = true;
+    logOperationalEvent({
+      orderId: projectId || sessionId,
+      scope: 'payment',
+      message: 'Payment confirmed; customer reached success page',
+      actor: 'customer',
+      metadata: { sessionId: sessionId || undefined },
+    });
+    void api.sendOrderConfirmation({ email: to, sessionId: sessionId || undefined, projectId: projectId || undefined });
+  }, [sessionId, projectId]);
 
   if (!sessionId && !projectId) {
     return (

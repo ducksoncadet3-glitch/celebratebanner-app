@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useProjectStore } from '@/lib/project-store';
+import { useProofHandoff } from '@/lib/proof/handoff';
 import { buildRenderInput, serializeRenderInput, type RenderInputV1 } from '@/lib/render-input.schema';
 import { themeById, THEME_DISPLAY } from '@/lib/themes';
 import { api, ApiError } from '@/lib/api';
@@ -19,6 +20,9 @@ const STEPS = ['Theme', 'Photos', 'Design'] as const;
 
 export function CreateFlow() {
   const { state, dispatch, isDirty } = useProjectStore();
+  // Prefill from the Free Design Proof wizard, if the customer arrived from it.
+  // No-op for direct visitors → fully backward compatible.
+  useProofHandoff(dispatch);
   const [step, setStep] = useState(0);
 
   // Build the canonical RenderInput from state — used by both the preview and
@@ -279,6 +283,7 @@ export function CreateFlow() {
               templateId={state.themeId}
               renderType="standard"
               variant="gold"
+              flow="review"
             >
               Get digital — $9.99
             </CheckoutButton>
@@ -288,13 +293,14 @@ export function CreateFlow() {
               templateId={state.themeId}
               renderType="premium"
               variant="primary"
+              flow="review"
             >
               Order printed — $49
             </CheckoutButton>
           </div>
 
           <p className="mt-4 text-[11px] text-obsidian/55">
-            Stripe Checkout. You only pay at this step.{' '}
+            Review your order &amp; shipping next — you only pay after that.{' '}
             <Link href="/pricing" className="underline-offset-2 hover:underline">
               See what&apos;s included
             </Link>

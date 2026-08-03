@@ -15,6 +15,13 @@ interface Props {
   renderType?: RenderType;
   variant?: 'primary' | 'gold' | 'secondary';
   className?: string;
+  /**
+   * 'direct' (default) → the original behavior: prompt for email and redirect straight to
+   * Stripe. 'review' → route to the /checkout Order Review page first (summary + shipping),
+   * which then creates the order and redirects to Stripe. Opt-in, so existing callers are
+   * unchanged.
+   */
+  flow?: 'direct' | 'review';
   children: ReactNode;
 }
 
@@ -28,6 +35,7 @@ export function CheckoutButton({
   renderType = 'standard',
   variant = 'primary',
   className,
+  flow = 'direct',
   children,
 }: Props) {
   const [loading, setLoading] = useState(false);
@@ -35,6 +43,18 @@ export function CheckoutButton({
 
   async function go() {
     setError(null);
+
+    // Review flow: hand the order intent to the Order Review page (no email prompt here —
+    // contact + shipping are collected there before payment).
+    if (flow === 'review') {
+      const q = new URLSearchParams({ product: productId, template: templateId, render: renderType });
+      if (projectId) q.set('project', projectId);
+      if (addVideo && productId !== 'video') q.set('video', '1');
+      setLoading(true);
+      window.location.assign(`/checkout?${q.toString()}`);
+      return;
+    }
+
     setLoading(true);
     try {
       const email =

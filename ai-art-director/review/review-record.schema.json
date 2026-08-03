@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://celebratebanner.com/schemas/review-record.schema.json",
+  "title": "Review Record (QA scorecard + human decision + audit trail)",
+  "description": "Every candidate's QA result, pinned versions, and human decision. See docs/REVIEW_WORKFLOW.md. Architecture-only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["reviewRecordId", "jobId", "candidateRef", "qa", "state", "pinned"],
+  "properties": {
+    "reviewRecordId": { "type": "string" },
+    "jobId": { "type": "string" },
+    "candidateRef": { "type": "string" },
+    "qa": {
+      "type": "object",
+      "required": ["passed", "gates"],
+      "properties": {
+        "passed": { "type": "boolean" },
+        "wowScore": { "type": "number", "minimum": 0, "maximum": 1 },
+        "gates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["gate", "passed"],
+            "properties": {
+              "gate": { "enum": ["safety", "brand", "masterpiece", "wow", "identity", "no-duplicate-photos", "print-readiness", "legibility"] },
+              "passed": { "type": "boolean" },
+              "score": { "type": "number" },
+              "reasons": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "state": { "enum": ["PENDING", "IN_REVIEW", "APPROVED", "CHANGES_REQUESTED", "REJECTED", "REGENERATING", "FALLBACK"] },
+    "pinned": {
+      "type": "object",
+      "required": ["goldStandard", "adapter", "promptBundleId", "seed"],
+      "properties": {
+        "goldStandard": { "$ref": "#/$defs/idVersion" },
+        "adapter": { "$ref": "#/$defs/idVersion" },
+        "promptBundleId": { "type": "string" },
+        "seed": { "type": "integer" }
+      }
+    },
+    "reviewer": { "type": "string" },
+    "notes": { "type": "string" },
+    "createdAt": { "type": "string" },
+    "decidedAt": { "type": "string" }
+  },
+  "$defs": {
+    "idVersion": {
+      "type": "object",
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "type": "string" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" }
+      }
+    }
+  }
+}

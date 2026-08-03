@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://celebratebanner.com/schemas/manifest.schema.json",
+  "title": "Output Manifest (reproducibility record)",
+  "description": "Pins exactly what produced one output so any keepsake can be reproduced or explained. See docs/VERSIONING.md. Architecture-only; nothing is produced in this milestone.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["manifestVersion", "jobId", "product", "pinned", "pipelineVersion", "outputs"],
+  "properties": {
+    "manifestVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "jobId": { "type": "string" },
+    "product": { "type": "string" },
+    "pinned": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["goldStandard", "adapter", "promptTemplate", "promptBundleId", "generator", "seed", "inputsHash"],
+      "properties": {
+        "goldStandard": { "$ref": "#/$defs/idVersion" },
+        "adapter": { "$ref": "#/$defs/idVersion" },
+        "promptTemplate": { "$ref": "#/$defs/idVersion" },
+        "promptBundleId": { "type": "string" },
+        "policy": { "type": "object", "properties": { "version": { "type": "string" } } },
+        "generator": {
+          "type": "object",
+          "required": ["backend"],
+          "properties": {
+            "backend": { "enum": ["browser-renderer", "bg-removal", "scene", "compositor"] },
+            "model": { "type": "string" },
+            "paramsHash": { "type": "string" }
+          }
+        },
+        "seed": { "type": "integer" },
+        "inputsHash": { "type": "string" }
+      }
+    },
+    "pipelineVersion": { "type": "string" },
+    "fellBackToBrowserRenderer": { "type": "boolean" },
+    "outputs": {
+      "type": "object",
+      "properties": {
+        "webPreview": { "type": "string" },
+        "printJpg": { "type": "string" },
+        "printPdf": { "type": "string" }
+      }
+    },
+    "createdAt": { "type": "string", "description": "ISO timestamp, stamped by runtime" }
+  },
+  "$defs": {
+    "idVersion": {
+      "type": "object",
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "type": "string" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" }
+      }
+    }
+  }
+}

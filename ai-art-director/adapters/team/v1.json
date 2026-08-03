@@ -1,0 +1,43 @@
+{
+  "id": "team",
+  "version": "1.0.0",
+  "displayName": "Team Cinematic Banner",
+  "goldStandard": { "id": "premium-cinematic-landscape", "version": "1.0.0" },
+  "fields": [
+    { "key": "teamName", "label": "Team name", "type": "text", "required": true, "maxLen": 28 },
+    { "key": "sport", "label": "Sport", "type": "enum", "required": true,
+      "options": ["football", "basketball", "soccer", "volleyball", "baseball", "softball", "hockey", "cheer", "other"] },
+    { "key": "season", "label": "Season / Year", "type": "text", "required": false, "maxLen": 12 },
+    { "key": "colors", "label": "Team colors", "type": "palette", "required": false }
+  ],
+  "photoSlots": {
+    "hero": { "meaning": "team or key player, full-body preferred", "min": 1, "max": 1 },
+    "supporting": { "meaning": "teammates / action shots", "min": 0, "max": 7 }
+  },
+  "content": {
+    "mottos": {
+      "football": "Leave it all on the field",
+      "basketball": "Own the court",
+      "volleyball": "Own the court",
+      "soccer": "Rule the pitch",
+      "baseball": "Earned on the diamond",
+      "softball": "Earned on the diamond",
+      "hockey": "Rule the ice",
+      "cheer": "Own the mat",
+      "other": "Give it everything out there"
+    },
+    "footerIcons": [
+      { "key": "TEAMWORK", "subtitle": "One unit" },
+      { "key": "DISCIPLINE", "subtitle": "Every rep" },
+      { "key": "LEADERSHIP", "subtitle": "Set the tone" },
+      { "key": "UNITY", "subtitle": "One family" },
+      { "key": "VICTORY", "subtitle": "Earned, not given" }
+    ],
+    "decorations": ["stadium-atmosphere", "field-lights", "gold-particles"]
+  },
+  "palette": { "primaryFrom": "colors", "accent": "#C9A84C" },
+  "promptFragments": {
+    "voice": "high-energy athletic tribute; cinematic stadium atmosphere; pride and grit",
+    "negatives": "no team logos, no league marks, no real player likenesses, no jersey numbers of real athletes"
+  }
+}

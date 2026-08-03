@@ -1,21 +1,30 @@
 import Link from 'next/link';
 
-const COL_PRODUCT = [
+interface FooterLink {
+  href: string;
+  label: string;
+  /** External (marketing-site) link — rendered as a plain <a>, not prefetched by Next. */
+  external?: boolean;
+}
+
+const COL_PRODUCT: FooterLink[] = [
   { href: '/create', label: 'Create a banner' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/gallery', label: 'Gallery' },
 ];
 
-const COL_COMPANY = [
+// Blog removed: no blog route exists yet (avoid an empty/fake blog).
+const COL_COMPANY: FooterLink[] = [
   { href: '/about', label: 'About' },
   { href: '/contact', label: 'Contact' },
-  { href: '/blog', label: 'Blog' },
 ];
 
-const COL_LEGAL = [
-  { href: '/terms', label: 'Terms' },
-  { href: '/privacy', label: 'Privacy' },
-  { href: '/refunds', label: 'Refund policy' },
+// Terms & Privacy point to the approved canonical pages on the marketing site
+// (verified HTTP 200). Refund policy removed pending an approved page — no live
+// route or approved content exists, and legal copy must not be fabricated.
+const COL_LEGAL: FooterLink[] = [
+  { href: 'https://www.celebratebanner.com/terms', label: 'Terms', external: true },
+  { href: 'https://www.celebratebanner.com/privacy', label: 'Privacy', external: true },
 ];
 
 export function Footer() {
@@ -50,16 +59,27 @@ export function Footer() {
   );
 }
 
-function FooterCol({ title, items }: { title: string; items: { href: string; label: string }[] }) {
+function FooterCol({ title, items }: { title: string; items: FooterLink[] }) {
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold/80">{title}</p>
       <ul className="mt-4 space-y-2 text-sm">
         {items.map((i) => (
           <li key={i.href}>
-            <Link href={i.href} className="text-ivory/75 transition hover:text-ivory">
-              {i.label}
-            </Link>
+            {i.external ? (
+              <a
+                href={i.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-ivory/75 transition hover:text-ivory"
+              >
+                {i.label}
+              </a>
+            ) : (
+              <Link href={i.href} className="text-ivory/75 transition hover:text-ivory">
+                {i.label}
+              </Link>
+            )}
           </li>
         ))}
       </ul>

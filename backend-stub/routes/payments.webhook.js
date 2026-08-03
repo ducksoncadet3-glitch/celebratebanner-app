@@ -30,6 +30,13 @@ const { deserializeRenderInput } = require('../utils/render-input');
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-12-18.acacia' });
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 
+// Fail loudly at boot if the signing secret is missing: without it EVERY event
+// fails verification and 400s, silently dropping all paid orders. This turns a
+// hard-to-diagnose "no orders arriving" incident into an obvious startup error.
+if (!WEBHOOK_SECRET) {
+  logger.error({}, 'webhook.missing-secret: STRIPE_WEBHOOK_SECRET is not set — all events will be rejected');
+}
+
 const webhookRawParser = express.raw({ type: 'application/json' });
 
 async function webhookHandler(req, res) {
@@ -58,6 +65,10 @@ async function webhookHandler(req, res) {
     metrics.incWebhookOk();
     logger.info({ eventId: event.id, type: event.type, prior: claim.status }, 'webhook.replay');
     return res.status(200).json({ received: true, deduped: true });
+  }
+  if (claim.reclaimed) {
+    // Re-processing a previously failed or orphaned event on a Stripe retry.
+    logger.warn({ eventId: event.id, type: event.type }, 'webhook.reclaimed');
   }
 
   // Acknowledge fast — Stripe needs 2xx within ~10s. The slow work happens
