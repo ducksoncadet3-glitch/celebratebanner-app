@@ -15,6 +15,7 @@ import {
   getAllSports,
   getFeaturedProducts,
 } from '@/lib/catalog/products';
+import { thumbnailOverrides } from '@/lib/catalog/resolve-thumbnails';
 import { poster } from '@/lib/catalog/poster';
 import { buildMetadata, SITE } from '@/lib/seo';
 
@@ -36,6 +37,7 @@ export default function ShopPage() {
   const featured = getFeaturedProducts();
   const collections = getAllCollections();
   const products = getAllProducts();
+  const overrides = thumbnailOverrides(products);
 
   const itemList = {
     '@context': 'https://schema.org',
@@ -71,7 +73,7 @@ export default function ShopPage() {
             </h2>
           </div>
         </div>
-        <ProductGrid products={featured} />
+        <ProductGrid products={featured} imageOverrides={overrides} />
       </Section>
 
       {/* Shop by collection */}
@@ -92,7 +94,7 @@ export default function ShopPage() {
           </h2>
           <p className="mt-2 text-obsidian/60">Filter by occasion or sport, or search by name.</p>
         </div>
-        <ShopFilter products={products} occasions={getAllOccasions()} sports={getAllSports()} />
+        <ShopFilter products={products} occasions={getAllOccasions()} sports={getAllSports()} imageOverrides={overrides} />
       </Section>
 
       <TrustSection />

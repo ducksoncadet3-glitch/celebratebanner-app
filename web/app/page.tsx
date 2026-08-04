@@ -12,6 +12,7 @@ import { BundleCard } from '@/components/storefront/bundle-card';
 import { TrustSection } from '@/components/storefront/trust-section';
 import { getAllCollections, getFeaturedProducts } from '@/lib/catalog/products';
 import { getAllBundles } from '@/lib/catalog/bundles';
+import { thumbnailOverrides } from '@/lib/catalog/resolve-thumbnails';
 import { buildMetadata } from '@/lib/seo';
 
 export const metadata = buildMetadata({
@@ -43,6 +44,7 @@ export default function HomePage() {
   const featured = getFeaturedProducts();
   const collections = getAllCollections();
   const bundles = getAllBundles();
+  const featuredOverrides = thumbnailOverrides(featured);
 
   return (
     <>
@@ -59,7 +61,7 @@ export default function HomePage() {
             Popular products
           </h2>
         </div>
-        <ProductGrid products={featured} />
+        <ProductGrid products={featured} imageOverrides={featuredOverrides} />
         <div className="mt-10 text-center">
           <Button asChild size="lg" variant="secondary">
             <Link href="/shop">Shop all products</Link>

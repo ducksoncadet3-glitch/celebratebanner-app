@@ -2,11 +2,19 @@ import { ProductCard } from '@/components/product/product-card';
 import { cn } from '@/lib/utils';
 import type { Product } from '@/lib/catalog/types';
 
+/**
+ * Per-slug resolved image (src + alt) computed on the SERVER and passed down as plain data.
+ * ProductGrid stays fs-free so it remains safe inside the client ShopFilter bundle.
+ */
+export type ImageOverrides = Record<string, { src: string; alt: string }>;
+
 export interface ProductGridProps {
   products: Product[];
   /** Tailwind grid column classes; defaults to a responsive 1→2→3 grid. */
   columnsClassName?: string;
   className?: string;
+  /** Approved-asset overrides keyed by slug. Absent slug → the catalog placeholder is used. */
+  imageOverrides?: ImageOverrides;
 }
 
 /**
@@ -14,22 +22,25 @@ export interface ProductGridProps {
  * the product detail page — the proof CTA lives on the detail page, so browsing funnels
  * cleanly: card → product → free proof.
  */
-export function ProductGrid({ products, columnsClassName, className }: ProductGridProps) {
+export function ProductGrid({ products, columnsClassName, className, imageOverrides }: ProductGridProps) {
   return (
     <div className={cn('grid gap-6', columnsClassName ?? 'sm:grid-cols-2 lg:grid-cols-3', className)}>
-      {products.map((p) => (
-        <ProductCard
-          key={p.slug}
-          image={p.image}
-          imageAlt={`${p.name} — sample design (placeholder)`}
-          title={p.name}
-          description={p.shortDescription}
-          href={`/products/${p.slug}`}
-          price={p.priceLabel}
-          badge={p.badge ? { label: p.badge, variant: 'featured' } : undefined}
-          buttonText="View product"
-        />
-      ))}
+      {products.map((p) => {
+        const override = imageOverrides?.[p.slug];
+        return (
+          <ProductCard
+            key={p.slug}
+            image={override?.src ?? p.image}
+            imageAlt={override?.alt ?? `${p.name} — sample design (placeholder)`}
+            title={p.name}
+            description={p.shortDescription}
+            href={`/products/${p.slug}`}
+            price={p.priceLabel}
+            badge={p.badge ? { label: p.badge, variant: 'featured' } : undefined}
+            buttonText="View product"
+          />
+        );
+      })}
     </div>
   );
 }

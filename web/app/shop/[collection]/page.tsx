@@ -14,6 +14,7 @@ import {
   getCollectionBySlug,
   getProductsByCollection,
 } from '@/lib/catalog/products';
+import { thumbnailOverrides } from '@/lib/catalog/resolve-thumbnails';
 import { poster } from '@/lib/catalog/poster';
 import { buildMetadata, SITE } from '@/lib/seo';
 
@@ -79,7 +80,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ col
             {products.length} {products.length === 1 ? 'product' : 'products'} · {c.tagline}
           </p>
         </div>
-        <ProductGrid products={products} />
+        <ProductGrid products={products} imageOverrides={thumbnailOverrides(products)} />
       </Section>
 
       <TrustSection background="ivory-dim" />

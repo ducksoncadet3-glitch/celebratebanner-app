@@ -23,6 +23,7 @@ import {
   getProductBySlug,
 } from '@/lib/catalog/products';
 import { proofHrefForProduct } from '@/lib/catalog/proof-link';
+import { resolveProductImage } from '@/lib/catalog/product-image';
 import { buildMetadata, SITE } from '@/lib/seo';
 
 export function generateStaticParams() {
@@ -58,6 +59,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const collection = getCollectionBySlug(product.collectionSlug);
   const proofHref = proofHrefForProduct(product);
   const url = `${SITE.url}/products/${product.slug}`;
+
+  // Approved flagship hero if present, else the catalog placeholder (never broken).
+  const hero = resolveProductImage(product.slug, 'hero');
+  const heroAlt = hero.isPlaceholder ? `${product.name} — sample design (placeholder)` : hero.alt;
 
   // Product + Breadcrumb structured data. No rating/review schema (nothing to substantiate).
   // `image` intentionally omitted while assets are placeholders (see lib/catalog/poster.ts).
@@ -103,7 +108,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         />
 
         <div className="mt-6 grid gap-10 lg:grid-cols-2">
-          <ProductGallery images={product.gallery} alt={`${product.name} — sample design (placeholder)`} />
+          <ProductGallery images={[hero.src]} alt={heroAlt} />
 
           <div>
             {product.badge && <Badge variant="featured">{product.badge}</Badge>}
