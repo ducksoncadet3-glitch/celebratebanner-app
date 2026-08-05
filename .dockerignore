@@ -1,0 +1,30 @@
+# Docker build context lives at the repo root (both web and backend images build
+# from here because they depend on shared/render-engine via file:). Exclude
+# everything heavy or irrelevant; each Dockerfile COPYs only the subtrees it needs.
+
+# Fresh installs/builds happen inside the image — never ship host artifacts.
+**/node_modules
+**/.next
+**/dist
+**/*.tsbuildinfo
+
+.git
+.github
+
+# Root-level marketing / QA / screenshot artifacts (not part of any image).
+*.png
+*.jpg
+*.jpeg
+*.html
+CNAME
+
+# Sibling projects and docs not needed by the web or backend images.
+ai-engine-v2
+ai-art-director
+admin-stub
+concierge
+design-references
+wow
+docs
+components
+scripts
