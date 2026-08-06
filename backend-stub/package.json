@@ -11,7 +11,8 @@
     "worker": "node worker.js",
     "recovery": "node recovery.js",
     "migrate": "node db/migrate.js",
-    "check": "node scripts/check-env.js"
+    "check": "node scripts/check-env.js",
+    "test": "node --test"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.720.0",
