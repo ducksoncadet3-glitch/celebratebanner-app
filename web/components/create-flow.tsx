@@ -295,7 +295,7 @@ export function CreateFlow() {
               variant="primary"
               flow="review"
             >
-              Order printed — $49
+              Order printed — $79.99
             </CheckoutButton>
           </div>
 
