@@ -19,6 +19,12 @@ import { newProjectId } from './utils';
 
 export interface ProjectState {
   projectId: string;
+  /**
+   * Project access token minted by the backend on the first successful autosave
+   * (trust-on-first-use). Persisted so this browser can prove ownership on later
+   * saves and on the /success status poll. Absent until the first save is acked.
+   */
+  projectToken?: string;
   themeId: string;
   arrangement: ArrangementId;
   bannerText: Record<string, string>;
@@ -46,7 +52,8 @@ export type ProjectAction =
   | { type: 'rotatePhoto'; id: string }
   | { type: 'reseed' }
   | { type: 'hydrate'; state: Partial<ProjectState> }
-  | { type: 'markSaved'; rev: number };
+  | { type: 'markSaved'; rev: number }
+  | { type: 'setToken'; token: string };
 
 const STORAGE_KEY = 'cb_project_v1';
 
@@ -84,6 +91,8 @@ export function reducer(state: ProjectState, action: ProjectAction): ProjectStat
     case 'reseed':             return bump({ ...state, seed: Math.floor(Math.random() * 2 ** 31) });
     case 'hydrate':            return { ...state, ...action.state };
     case 'markSaved':          return { ...state, serverRev: action.rev };
+    // Not a content change — don't bump rev (would mark the project dirty again).
+    case 'setToken':           return { ...state, projectToken: action.token };
     default:                   return state;
   }
 }

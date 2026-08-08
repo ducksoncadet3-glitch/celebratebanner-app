@@ -78,6 +78,7 @@ export function SuccessView() {
         <div className="mt-6">
           <ProcessingStatus
             projectId={projectId}
+            sessionId={sessionId}
             onReady={(s) => {
               if (s.downloadUrl) setReadyUrl(s.downloadUrl);
               if (s.videoUrl) setVideoUrl(s.videoUrl);

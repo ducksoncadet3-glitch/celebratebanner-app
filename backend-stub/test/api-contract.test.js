@@ -59,3 +59,18 @@ test('PATCH save body contract matches the client { renderInput, rev } shape', (
   assert.match(src, /saveRenderInput/, 'save handler must call the existing db saveRenderInput');
   assert.match(src, /getStatus/, 'status handler must call the existing db getStatus');
 });
+
+test('both project routes are authorized (regression guard against unprotected routes)', () => {
+  // Static wiring assertion (avoids loading pg/redis). Behavior is unit-tested in project-auth.test.js.
+  const src = fs.readFileSync(path.join(__dirname, '..', 'routes', 'projects.js'), 'utf8');
+  assert.match(src, /require\('\.\.\/services\/project-token'\)/, 'must use the project-token service');
+  // Read handler consults the credential before returning status.
+  assert.match(src, /authorizeRead/, 'status handler must run an authorization check');
+  assert.match(src, /verifyProjectToken/, 'must verify the project token');
+  // Consistent, non-enumerating rejection codes on both routes.
+  assert.match(src, /status\(401\)/, 'must return 401 when no credential is presented');
+  assert.match(src, /status\(403\)/, 'must return 403 when a credential does not authorize the project');
+  // Write handler is gated by token/internal and only claims an unclaimed project.
+  assert.match(src, /verifyProjectToken\(id,\s*token\)/, 'save handler must verify the token for this project');
+  assert.match(src, /getById/, 'save handler must check existence before trust-on-first-use claim');
+});

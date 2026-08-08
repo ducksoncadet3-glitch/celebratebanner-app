@@ -142,9 +142,21 @@ export const api = {
     });
   },
 
-  /** GET /api/projects/:id/status — used by /success to poll render progress. */
-  getProjectStatus(projectId: string): Promise<ProjectStatus> {
-    return request<ProjectStatus>(`/api/projects/${encodeURIComponent(projectId)}/status`);
+  /**
+   * GET /api/projects/:id/status — used by /success to poll render progress.
+   *
+   * The route is authorized: pass whichever project-scoped credential the caller holds —
+   * the owner's `projectToken` (from autosave) and/or the Stripe `sessionId` (present on
+   * the /success page, verified against the payment record). At least one is required.
+   */
+  getProjectStatus(
+    projectId: string,
+    opts: { projectToken?: string; sessionId?: string } = {},
+  ): Promise<ProjectStatus> {
+    const qs = opts.sessionId ? `?session_id=${encodeURIComponent(opts.sessionId)}` : '';
+    return request<ProjectStatus>(`/api/projects/${encodeURIComponent(projectId)}/status${qs}`, {
+      headers: opts.projectToken ? { 'x-project-token': opts.projectToken } : undefined,
+    });
   },
 
   /**
@@ -190,14 +202,27 @@ export const api = {
   },
 
   /**
-   * PATCH /api/projects/:id — autosave the canonical RenderInput. Versioned;
-   * the server rejects payloads whose `version` field is unknown.
+   * PATCH /api/projects/:id — autosave the canonical RenderInput. Versioned (rev
+   * optimistic-concurrency).
+   *
+   * Authorized write: send the owner's `projectToken` if we already hold one. The very
+   * first save for a brand-new project has no token yet — the server claims the project
+   * (trust-on-first-use) and returns a `projectToken` the caller must persist and send on
+   * every subsequent save. Once a project is claimed, saves without the token are rejected.
    */
-  saveProject(projectId: string, body: { renderInput: unknown; rev: number }): Promise<{ rev: number }> {
-    return request<{ rev: number }>(`/api/projects/${encodeURIComponent(projectId)}`, {
-      method: 'PATCH',
-      json: body,
-    });
+  saveProject(
+    projectId: string,
+    body: { renderInput: unknown; rev: number },
+    projectToken?: string,
+  ): Promise<{ rev: number; projectToken?: string }> {
+    return request<{ rev: number; projectToken?: string }>(
+      `/api/projects/${encodeURIComponent(projectId)}`,
+      {
+        method: 'PATCH',
+        json: body,
+        headers: projectToken ? { 'x-project-token': projectToken } : undefined,
+      },
+    );
   },
 };
 
