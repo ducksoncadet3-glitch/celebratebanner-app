@@ -52,11 +52,15 @@ export interface CreateCheckoutInput {
   recoveryToken?: string;
 }
 
-/** Payload for the order-confirmation email integration point (same-origin route). */
+/**
+ * Payload for the order-confirmation email integration point (same-origin route).
+ *
+ * Only the Stripe Checkout session id is sent. The recipient email, projectId, and order
+ * reference are derived server-side from the verified payment record — the browser never
+ * supplies (and cannot influence) the recipient address.
+ */
 export interface OrderConfirmationInput {
-  email: string;
-  sessionId?: string;
-  projectId?: string;
+  sessionId: string;
 }
 
 export interface CreateCheckoutResponse {
@@ -162,7 +166,7 @@ export const api = {
   /**
    * POST /api/order-confirmation — fire-and-forget confirmation-email trigger.
    * This hits our OWN same-origin Next route handler (not the external API), which
-   * sends the email if a provider is configured and otherwise no-ops gracefully.
+   * verifies the session server-side and asks the backend (Postmark) to send once.
    * Never throws to the caller: a failed confirmation must not break the success page.
    */
   async sendOrderConfirmation(input: OrderConfirmationInput): Promise<{ sent: boolean }> {
@@ -170,7 +174,7 @@ export const api = {
       const res = await fetch('/api/order-confirmation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(input),
+        body: JSON.stringify({ sessionId: input.sessionId }),
         cache: 'no-store',
       });
       if (!res.ok) return { sent: false };
@@ -234,6 +238,22 @@ export function serverApi() {
     getProjectStatus(projectId: string): Promise<ProjectStatus> {
       return request<ProjectStatus>(`/api/projects/${encodeURIComponent(projectId)}/status`, {
         base,
+        headers: secret ? { 'x-internal-secret': secret } : undefined,
+      });
+    },
+
+    /**
+     * POST /api/emails/order-confirmation — ask the backend (the single Postmark
+     * mailer) to send the order-confirmation email. Server-to-server: authenticated
+     * with the internal shared secret, so POSTMARK_API_TOKEN stays on the backend.
+     * Only the session id is forwarded; the backend verifies it and derives the
+     * recipient/order reference from the stored payment, and de-duplicates the send.
+     */
+    sendOrderConfirmation(input: OrderConfirmationInput): Promise<{ sent: boolean }> {
+      return request<{ sent: boolean }>('/api/emails/order-confirmation', {
+        base,
+        method: 'POST',
+        json: { sessionId: input.sessionId },
         headers: secret ? { 'x-internal-secret': secret } : undefined,
       });
     },

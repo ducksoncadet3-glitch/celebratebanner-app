@@ -141,6 +141,44 @@ async function getStatus(projectId) {
   };
 }
 
+/**
+ * Atomically claim the order-confirmation send for a paid session.
+ *
+ * Flips confirmation_sent_at from NULL → NOW() on the succeeded payment row and returns
+ * its stored { projectId, email } — but only for the FIRST caller. Repeat/concurrent
+ * callers match zero rows (already claimed) and get null. The recipient is read from the
+ * stored row, never from the request, so this cannot be steered to an arbitrary address.
+ */
+async function claimConfirmation(stripeSessionId) {
+  const row = await one(
+    `UPDATE payments
+        SET confirmation_sent_at = NOW()
+      WHERE stripe_session_id = $1
+        AND status = 'succeeded'
+        AND confirmation_sent_at IS NULL
+      RETURNING project_id, customer_email`,
+    [stripeSessionId],
+  );
+  return row ? { projectId: row.project_id, email: row.customer_email } : null;
+}
+
+/** Does a SUCCEEDED payment exist for this session? (distinguishes already-sent from unknown/unpaid). */
+async function paidSessionExists(stripeSessionId) {
+  const row = await one(
+    `SELECT 1 AS ok FROM payments WHERE stripe_session_id = $1 AND status = 'succeeded' LIMIT 1`,
+    [stripeSessionId],
+  );
+  return !!row;
+}
+
+/** Release a claim so a transient transport failure can be retried (at-least-once with dedup). */
+async function releaseConfirmation(stripeSessionId) {
+  await query(
+    `UPDATE payments SET confirmation_sent_at = NULL WHERE stripe_session_id = $1`,
+    [stripeSessionId],
+  );
+}
+
 async function listRecent(limit = 50) {
   return rows(
     `SELECT id, customer_email, template_id, arrangement, status, created_at, paid_at
@@ -158,5 +196,8 @@ module.exports = {
   markReady,
   getById,
   getStatus,
+  claimConfirmation,
+  paidSessionExists,
+  releaseConfirmation,
   listRecent,
 };

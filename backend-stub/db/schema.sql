@@ -99,6 +99,7 @@ CREATE TABLE IF NOT EXISTS payments (
   shipping_address     JSONB,
   refunded_amount_cents BIGINT,
   status               TEXT NOT NULL DEFAULT 'succeeded',  -- succeeded|refunded|failed
+  confirmation_sent_at TIMESTAMPTZ,                        -- idempotency: order-confirmation email claimed/sent
   created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS payments_project_idx ON payments (project_id);

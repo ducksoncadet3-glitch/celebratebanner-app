@@ -33,7 +33,7 @@ once we move it to a registry.
 | S3 + CloudFront  | AWS                           | 10–50 GB images/mo         |
 | API host         | Fly.io / Railway / Render     | 1× 2 GB instance           |
 | Worker host      | Same provider, SEPARATE process | 2× 1 GB instances        |
-| Email            | Postmark / Resend             | <10k tx/mo                 |
+| Email            | Postmark (sole provider)      | <10k tx/mo                 |
 | Stripe webhook   | Stripe dashboard              | one prod endpoint          |
 | Sentry           | sentry.io free tier           | error reporting            |
 

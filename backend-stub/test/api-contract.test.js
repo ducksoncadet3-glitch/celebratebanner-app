@@ -36,6 +36,10 @@ test('the previously-missing project routes are now present (regression guard)',
   assert.ok(has('PATCH', '/api/projects/:id'), 'PATCH /api/projects/:id must be mounted');
 });
 
+test('internal order-confirmation email endpoint is mounted', () => {
+  assert.ok(has('POST', '/api/emails/order-confirmation'), 'order-confirmation email endpoint must be mounted');
+});
+
 test('health endpoints are mounted', () => {
   for (const p of ['/health/live', '/health/ready', '/health/dependencies']) {
     assert.ok(has('GET', p), `missing ${p}`);

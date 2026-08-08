@@ -29,6 +29,7 @@ const { downloadHandler, middlewares: downloadMw } = require('./routes/downloads
 const { hdRenderHandler, hdStatusHandler } = require('./routes/render.hd');
 const { previewHandler } = require('./routes/render.preview');
 const projects = require('./routes/projects');
+const emails = require('./routes/emails');
 const admin = require('./routes/admin');
 const { liveHandler, readyHandler, depsHandler } = require('./routes/health');
 const {
@@ -66,6 +67,9 @@ app.get('/metrics', metricsHandler);
 // Project status polling + autosave (thin wrappers over db/projects).
 app.get('/api/projects/:id/status', projects.statusHandler);
 app.patch('/api/projects/:id', ...projects.saveMiddlewares, projects.saveHandler);
+
+// Internal transactional email (server-to-server only; gated by x-internal-secret).
+app.post('/api/emails/order-confirmation', emails.orderConfirmationHandler);
 
 // ── Admin auth: login/logout/csrf are open (you obtain a session here); the rest is gated ──
 app.post('/api/admin/auth/login', loginRateLimit, loginHandler);

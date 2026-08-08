@@ -25,20 +25,20 @@ export function SuccessView() {
 
   // Fire the order-confirmation email integration point once, after a confirmed payment.
   // Fire-and-forget: never blocks or breaks the success page (Stripe sends its own receipt).
+  // We send ONLY the Stripe session id — the backend verifies it, derives the recipient from
+  // the stored payment, and de-duplicates, so no email address leaves the browser here.
   useEffect(() => {
     if (confirmationSent.current) return;
-    if (!sessionId && !projectId) return;
-    const to = getStoredEmail();
-    if (!to) return;
+    if (!sessionId) return; // the payment credential is required to send
     confirmationSent.current = true;
     logOperationalEvent({
       orderId: projectId || sessionId,
       scope: 'payment',
       message: 'Payment confirmed; customer reached success page',
       actor: 'customer',
-      metadata: { sessionId: sessionId || undefined },
+      metadata: { sessionId },
     });
-    void api.sendOrderConfirmation({ email: to, sessionId: sessionId || undefined, projectId: projectId || undefined });
+    void api.sendOrderConfirmation({ sessionId });
   }, [sessionId, projectId]);
 
   if (!sessionId && !projectId) {
