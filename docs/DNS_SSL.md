@@ -10,10 +10,10 @@ Set TTL to **300 seconds** during cutover so you can revert quickly. Bump to
 
 | Host                          | Type    | Value                                            | Purpose                          |
 | ----------------------------- | ------- | ------------------------------------------------ | -------------------------------- |
-| `celebratebanner.com`         | A/ALIAS | host running `/web` (Cloudflare Pages / Fly)     | Marketing + builder              |
+| `celebratebanner.com`         | A/ALIAS | `celebratebanner-web` on Fly.io (`*.fly.dev`)    | Marketing + builder              |
 | `www.celebratebanner.com`     | CNAME   | `celebratebanner.com`                            | Redirect to apex (host handles it) |
-| `app.celebratebanner.com`     | CNAME   | host running `/web`                              | (Optional, same as apex)         |
-| `api.celebratebanner.com`     | CNAME   | host running celebratebanner-api                 | API + Stripe webhook + uploads   |
+| `app.celebratebanner.com`     | CNAME   | `celebratebanner-web` on Fly.io (`*.fly.dev`)    | The Next.js app (post-cutover)   |
+| `api.celebratebanner.com`     | CNAME   | `celebratebanner-api` on Fly.io (`*.fly.dev`)    | API + Stripe webhook + uploads   |
 | `admin.celebratebanner.com`   | CNAME   | host running celebratebanner-admin               | Operator dashboard               |
 | `cdn.celebratebanner.com`     | CNAME   | `dxxxxxxxxxxxxx.cloudfront.net`                  | Render + upload CDN              |
 
@@ -33,8 +33,8 @@ delivery. Move to `p=reject` once SPF + DKIM are reliably green for ~2 weeks.
 
 | Host                          | Cert provider                | Notes                                |
 | ----------------------------- | ---------------------------- | ------------------------------------ |
-| `celebratebanner.com`         | host's ACME (Cloudflare/Fly) | Auto-renews                          |
-| `api.celebratebanner.com`     | host's ACME                  | Same                                 |
+| `celebratebanner.com`         | Fly.io ACME (`fly certs add`)| Auto-renews                          |
+| `api.celebratebanner.com`     | Fly.io ACME (`fly certs add`)| Same                                 |
 | `admin.celebratebanner.com`   | host's ACME                  | Same                                 |
 | `cdn.celebratebanner.com`     | **ACM in us-east-1**         | CloudFront pulls certs from us-east-1 |
 
@@ -132,8 +132,8 @@ curl -X POST "https://api.postmarkapp.com/email" \
 
 1. Provision the new hosts (api, admin, cdn). Keep `celebratebanner.com` apex
    still pointing at the legacy static `index.html`.
-2. Verify each new host responds correctly via its `.fly.dev` / `.pages.dev`
-   placeholder URL.
+2. Verify each new host responds correctly via its Fly `*.fly.dev` placeholder URL
+   (`celebratebanner-web.fly.dev`, `celebratebanner-api.fly.dev`).
 3. Add the new DNS records, but leave the apex unchanged.
 4. Verify each new domain individually with the commands above.
 5. Run the smoke test against `api.celebratebanner.com`.
@@ -148,8 +148,8 @@ while true; do
 done
 ```
 
-You should see the response transition from the legacy nginx/Vercel banner to
-your Next.js `x-powered-by: …` headers within ~5 minutes.
+You should see the response transition from the legacy GitHub Pages static
+`index.html` to the Fly.io Next.js app within ~5 minutes.
 
 ## Rollback DNS
 

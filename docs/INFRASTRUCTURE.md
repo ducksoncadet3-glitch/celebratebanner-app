@@ -227,13 +227,13 @@ Three host records to set on `celebratebanner.com`:
 
 | Host                       | Type  | Value                                           | TTL |
 | -------------------------- | ----- | ----------------------------------------------- | --- |
-| `app.celebratebanner.com`  | CNAME | the host running /web (Cloudflare Pages / Fly)  | 300 |
-| `api.celebratebanner.com`  | CNAME | the host running celebratebanner-api            | 300 |
+| `app.celebratebanner.com`  | CNAME | `celebratebanner-web` on Fly.io (`*.fly.dev`)   | 300 |
+| `api.celebratebanner.com`  | CNAME | `celebratebanner-api` on Fly.io (`*.fly.dev`)   | 300 |
 | `admin.celebratebanner.com`| CNAME | the host running celebratebanner-admin          | 300 |
 | `cdn.celebratebanner.com`  | CNAME | the CloudFront distribution                     | 300 |
 
-SSL: all four hosts must terminate TLS. Recommended: ACM certificate at the
-host level (Cloudflare/Fly/Vercel auto-provision via ACME). For CloudFront,
+SSL: all four hosts must terminate TLS. Fly.io auto-provisions certs via ACME —
+run `fly certs add <host>` per app once it's live on `*.fly.dev`. For CloudFront,
 issue an ACM cert in **us-east-1** (CloudFront is global but pulls certs from
 us-east-1) and attach to the distribution.
 
@@ -244,12 +244,12 @@ the current legacy `index.html` until cutover. Then change `app.` → apex.
 
 ```
 PRE-CUTOVER  (legacy live)
-  celebratebanner.com           → static index.html (Vercel project A)
-  app.celebratebanner.com       → /web Next.js     (Vercel project B / Cloudflare Pages)
-  api.celebratebanner.com       → celebratebanner-api
+  celebratebanner.com           → static index.html (legacy GitHub Pages)
+  app.celebratebanner.com       → celebratebanner-web on Fly.io (/web Next.js)
+  api.celebratebanner.com       → celebratebanner-api on Fly.io
 
 CUTOVER  (DNS swap, < 5 min downtime per record at TTL 300)
-  celebratebanner.com           → /web Next.js     (the new app)
+  celebratebanner.com           → celebratebanner-web on Fly.io (the new app)
   legacy.celebratebanner.com    → static index.html (retain for 30 days)
 ```
 

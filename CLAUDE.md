@@ -10,11 +10,19 @@
 ---
 
 ## What this repo is
-This is the **banner builder front-end app** — a single-file HTML/CSS/JS canvas-based application deployed at:
-- **Live URL:** https://app.celebratebanner.com (GitHub Pages — serves `index.html` from repo root)
-- **Production URL:** https://app.celebratebanner.com
+This repo now holds **two** front-ends:
+- **Active:** the **Next.js 15 app in [`web/`](web/)** — the production storefront + builder,
+  deployed to **Fly.io** (`celebratebanner-web`) via [`Dockerfile.web`](Dockerfile.web) +
+  [`fly.web.toml`](fly.web.toml). This is what `app.celebratebanner.com` serves after cutover.
+- **Legacy:** the single-file `index.html` canvas app at the repo root. It predates the Next.js
+  app and remains only as a fallback/reference. **Legacy only — not the deploy target.**
+
+Deployment facts:
+- **App domain:** https://app.celebratebanner.com → the Next.js app on Fly.io (post-cutover)
 - **GitHub:** ducksoncadet3-glitch/celebratebanner-app
-- **Deploy:** Commit to GitHub → Vercel auto-deploys
+- **Deploy (active):** `fly deploy --config fly.web.toml --dockerfile Dockerfile.web .`
+  (see [docs/DEPLOY_COMMANDS.md](docs/DEPLOY_COMMANDS.md) — the authoritative topology)
+- **NOT** deployed on Vercel; the legacy GitHub Pages / single-file model is legacy only.
 
 ---
 
@@ -166,26 +174,34 @@ Key endpoints used:
 ---
 
 ## Deploy Workflow
+
+### Active (Next.js app in `web/` → Fly.io)
+The authoritative, full sequence — build context, process groups, migration release
+command, health endpoints, required secrets, deploy order, DNS cutover, and rollback —
+lives in **[docs/DEPLOY_COMMANDS.md](docs/DEPLOY_COMMANDS.md) → "Deployment topology (authoritative)"**.
+In short:
 ```
-1. Edit index.html in Claude Code
-2. Open GitHub: github.com/ducksoncadet3-glitch/celebratebanner-app
-3. Click index.html → Edit (pencil icon)
-4. Select All → Paste updated file → Commit changes
-5. GitHub Pages auto-deploys `index.html` from the repo root → https://app.celebratebanner.com
+web: fly deploy --config fly.web.toml --dockerfile Dockerfile.web .
+api + workers: fly deploy --config backend-stub/fly.toml --dockerfile backend-stub/Dockerfile .
 ```
 
-> ⚠️ Always deliver the **complete index.html** — never partial snippets.
-> This is a single-file app. Every edit = full file replacement.
+### Legacy (single-file `index.html`) — legacy only
+The old GitHub-Pages-style "edit index.html and paste the whole file" flow applied to the
+single-file app. It is **not** the production deploy path anymore; do not treat edits to
+`index.html` as a release.
 
 ---
 
 ## Deployment (authoritative)
-- **This app deploys via GitHub Pages**, serving `index.html` from the root of the
-  `celebratebanner-app` repo. It is **NOT** deployed on Vercel.
-- The **marketing site** (`celebratebanner` repo) is also GitHub Pages.
+- **The active app deploys to Fly.io** — `web/` (Next.js) as `celebratebanner-web`, and
+  `backend-stub/` (API + render worker + recovery worker) as `celebratebanner-api` with three
+  process groups. See [docs/DEPLOY_COMMANDS.md](docs/DEPLOY_COMMANDS.md) and
+  [docs/INFRASTRUCTURE.md](docs/INFRASTRUCTURE.md).
+- It is **NOT** deployed on Vercel, and the GitHub Pages / single-file model is **legacy only**.
 - Any **Vercel checks appearing on PRs** are a dead/abandoned integration and do
   **not** reflect the real deploy. They can be ignored, and the Vercel GitHub-app
-  integration should be disconnected in repo **Settings**.
+  integration should be disconnected in repo **Settings**. (There is no Vercel workflow
+  file in this repo — the check comes from the external Vercel GitHub App.)
 
 ---
 

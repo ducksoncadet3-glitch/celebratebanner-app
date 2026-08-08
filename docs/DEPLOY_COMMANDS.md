@@ -4,6 +4,64 @@ Copy-paste-runnable. No narrative — every line goes in the terminal. Assumes
 infra is provisioned per [INFRASTRUCTURE.md](INFRASTRUCTURE.md) and env vars
 are loaded per [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md) section A2.
 
+---
+
+## 0 · Deployment topology (authoritative)
+
+CelebrateBanner runs on **Fly.io** (two apps) with **Neon** (Postgres), **Upstash**
+(Redis), **AWS S3 + CloudFront**, **Postmark** (email), and **Stripe** (payments).
+Any Vercel / GitHub Pages / Cloudflare Pages references elsewhere are **legacy or
+illustrative**, not the target.
+
+| Unit | Fly app | Build file | Fly config | Serves |
+| --- | --- | --- | --- | --- |
+| Web (Next.js, `web/`) | `celebratebanner-web` | [`Dockerfile.web`](../Dockerfile.web) | [`fly.web.toml`](../fly.web.toml) | `app.celebratebanner.com` |
+| API + workers (`backend-stub/`) | `celebratebanner-api` | [`backend-stub/Dockerfile`](../backend-stub/Dockerfile) | [`backend-stub/fly.toml`](../backend-stub/fly.toml) | `api.celebratebanner.com` |
+
+**Both images build from the repo root** (`.`) because `web/` and `backend-stub/`
+depend on `shared/render-engine` via a `file:` path.
+
+**Process groups** (single API image, from `backend-stub/fly.toml`):
+
+| Group | Command | HTTP? | VM |
+| --- | --- | --- | --- |
+| `api` | `node server.js` | yes (port 8080) | shared-cpu-1x / 1 GB |
+| `worker` | `node worker.js` | no | shared-cpu-2x / 2 GB (canvas + ffmpeg) |
+| `recovery` | `node recovery.js` | no | shared-cpu-1x / 512 MB |
+
+**Health endpoints**
+
+| App | Path | Meaning |
+| --- | --- | --- |
+| web | `GET /api/health` | Next.js app up |
+| api | `GET /health/live` | process up (liveness) |
+| api | `GET /health/ready` | Postgres + Redis reachable (503 when not) |
+| api | `GET /health/dependencies` | per-dependency detail (Postgres/Redis/queue/S3) |
+
+**Migration release command** — Postgres migrations run **once per API release,
+before traffic shifts**, via `release_command = "node db/migrate.js"` in
+`backend-stub/fly.toml` (`strategy = "bluegreen"`). No manual migrate step on deploy.
+
+**Required secrets** (set with `fly secrets set`, never committed):
+- **api / worker / recovery:** `DATABASE_URL`, `PG_SSL=require`, `REDIS_URL` (api+worker),
+  `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (api), `AWS_REGION`/`AWS_ACCESS_KEY_ID`/
+  `AWS_SECRET_ACCESS_KEY`/`S3_BUCKET`/`S3_CDN_BASE` (api+worker), `DOWNLOAD_TOKEN_SECRET`,
+  `POSTMARK_API_TOKEN` + `MAIL_FROM`, `ADMIN_JWT_SECRET` (api), `API_SHARED_SECRET`.
+  Optional: `PROJECT_TOKEN_SECRET` (recommended; else falls back to `DOWNLOAD_TOKEN_SECRET`).
+- **web:** `API_INTERNAL_BASE_URL`, `API_SHARED_SECRET` (server-only), plus the
+  `NEXT_PUBLIC_*` build args (baked at image build). Full matrix: [INFRASTRUCTURE.md](INFRASTRUCTURE.md#6-environment-variables--every-var-every-process).
+
+**Deployment order:** provision data stores → deploy **api** (its release_command
+migrates) → verify `/health/ready` → deploy **web** → verify `/api/health` → DNS cutover.
+
+**DNS cutover order:** see [DNS_SSL.md](DNS_SSL.md#cutover-order) — validate on `*.fly.dev`
+first, add subdomain records, verify each, then flip the apex last.
+
+**Rollback path:** `fly releases --app <app>` then `fly deploy --image <previous-image>`
+(or `fly releases rollback`) per app. Web and API roll back independently; a bad
+migration is handled by shipping a forward-fixing migration (migrations are additive).
+DNS rollback = repoint the record at the legacy host (TTL 300 → < 5 min).
+
 If your terminal isn't logged into the right tools, do that first:
 
 ```bash
@@ -52,21 +110,19 @@ gh workflow run deploy-api.yml --repo $YOUR_ORG/celebratebanner-api --ref main
 gh run watch --repo $YOUR_ORG/celebratebanner-api
 ```
 
-Direct deploy per host (use only when you can't go through CI):
+Direct deploy (use only when you can't go through CI). **Fly.io is authoritative**;
+the Render / VPS lines are illustrative alternates, not the CelebrateBanner target.
 
 ```bash
-# Fly.io
-cd celebratebanner-api
-flyctl deploy --remote-only --strategy bluegreen
+# Fly.io (authoritative). Build context = repo ROOT; migrations run via the
+# release_command in backend-stub/fly.toml before traffic shifts (bluegreen).
+fly deploy --config backend-stub/fly.toml --dockerfile backend-stub/Dockerfile .
 
-# Render
-curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
-  -H "Authorization: Bearer $RENDER_API_KEY"
-
-# Plain VPS via SSH
-ssh deploy@$HOST 'cd /srv/celebratebanner-api && \
-  git fetch && git checkout main && npm ci --omit=dev && \
-  sudo systemctl reload celebratebanner-api'
+# ── Illustrative alternates (NOT used by CelebrateBanner) ──────────────────
+# Render:  curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+#            -H "Authorization: Bearer $RENDER_API_KEY"
+# VPS:     ssh deploy@$HOST 'cd /srv/celebratebanner-api && git fetch && \
+#            git checkout main && npm ci --omit=dev && sudo systemctl reload celebratebanner-api'
 ```
 
 Verify:
@@ -222,7 +278,7 @@ curl -sX POST -H 'Stripe-Signature: bogus' \
 
 ---
 
-## 9 · Frontend deployment
+## 9 · Frontend deployment (web → Fly.io)
 
 ```bash
 # Via GitHub Actions
@@ -231,9 +287,8 @@ gh workflow run deploy-web.yml --repo $YOUR_ORG/celebratebanner-app --ref main
 # Watch
 gh run watch --repo $YOUR_ORG/celebratebanner-app
 
-# Direct (Cloudflare Pages)
-cd web && npm ci && npm run build
-wrangler pages deploy .next --project-name=celebratebanner-web --branch=main
+# Direct (Fly.io — authoritative). Build context = repo ROOT (file: dep on shared/render-engine).
+fly deploy --config fly.web.toml --dockerfile Dockerfile.web .
 ```
 
 Verify:

@@ -134,8 +134,8 @@ gh run list --workflow=deploy-web.yml --limit=10
 gh workflow run deploy-web.yml --ref <sha>
 ```
 
-Cloudflare Pages / Vercel also let you promote a previous build via their UI;
-either way works.
+On Fly.io you can also roll back directly: `fly releases --app celebratebanner-web`
+then `fly deploy --image <previous-image>` (or `fly releases rollback`).
 
 ### Backend (celebratebanner-api)
 

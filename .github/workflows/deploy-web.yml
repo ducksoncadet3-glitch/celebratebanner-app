@@ -73,10 +73,20 @@ jobs:
           name: web-build
           path: web-build
 
-      # Pick ONE of the deploy paths below and uncomment.
-      # All three honor `DEPLOY_HOST` repo variable so swapping targets is one knob.
+      # AUTHORITATIVE TARGET: Fly.io (`celebratebanner-web`). Uncomment Option A to enable.
+      # The build job above produces a `web-build` artifact for inspection; the Fly deploy
+      # builds the production image itself (Dockerfile.web), so it does not consume that
+      # artifact. Options B and C are illustrative alternates only and are NOT used by
+      # CelebrateBanner — do not enable them.
 
-      # ── Option A · Cloudflare Pages (recommended for static + edge) ─────────
+      # ── Option A · Fly.io (authoritative) ──────────────────────────────────
+      # Build context = repo ROOT because /web depends on shared/render-engine via a file: path.
+      # - uses: superfly/flyctl-actions/setup-flyctl@master
+      # - run: flyctl deploy --remote-only --config fly.web.toml --dockerfile Dockerfile.web .
+      #   env:
+      #     FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      # ── Option B · Cloudflare Pages (NOT used — illustrative only) ─────────
       # - name: deploy to Cloudflare Pages
       #   uses: cloudflare/wrangler-action@v3
       #   with:
@@ -84,13 +94,7 @@ jobs:
       #     accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       #     command: pages deploy web-build/.next/standalone --project-name=celebratebanner-web --branch=main
 
-      # ── Option B · Fly.io (best if you also host the API/worker there) ─────
-      # - uses: superfly/flyctl-actions/setup-flyctl@master
-      # - run: flyctl deploy --remote-only --config web/fly.toml
-      #   env:
-      #     FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-
-      # ── Option C · Raw rsync to a VPS (Hetzner/DO/lightsail) ───────────────
+      # ── Option C · Raw rsync to a VPS (NOT used — illustrative only) ───────
       # - name: rsync to host
       #   uses: easingthemes/ssh-deploy@v5
       #   with:
@@ -106,5 +110,5 @@ jobs:
       - name: deploy not configured
         if: ${{ vars.DEPLOY_HOST == '' }}
         run: |
-          echo "::warning::No deploy target configured. Uncomment the host of your choice in .github/workflows/deploy-web.yml."
+          echo "::warning::No deploy target configured. Uncomment Option A (Fly.io) in .github/workflows/deploy-web.yml."
           echo "Build artifact 'web-build' is available for manual deploy from the Actions tab."
