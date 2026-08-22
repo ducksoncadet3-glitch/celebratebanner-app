@@ -198,7 +198,11 @@ export function OrderReview({ params }: OrderReviewProps) {
           )}
           <p className="mt-3 text-center text-[11px] leading-relaxed text-obsidian/50">
             Secure payment via Stripe. You are only charged after this step. By continuing you agree to
-            our terms.
+            our{' '}
+            <Link href="/terms" className="underline underline-offset-2 hover:text-obsidian/70">terms</Link>
+            {' '}and{' '}
+            <Link href="/privacy" className="underline underline-offset-2 hover:text-obsidian/70">privacy policy</Link>
+            .
           </p>
           <p className="mt-4 text-center text-xs">
             <Link href="/create" className="text-gold-dark underline-offset-2 hover:underline">

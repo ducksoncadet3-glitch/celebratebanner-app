@@ -1,23 +1,18 @@
 {
   "Rules": [
     {
-      "ID": "originals-to-glacier",
+      "ID": "uploads-expire-90d",
       "Status": "Enabled",
       "Filter": { "Prefix": "uploads/" },
-      "Transitions": [
-        { "Days": 90,  "StorageClass": "STANDARD_IA" },
-        { "Days": 180, "StorageClass": "DEEP_ARCHIVE" }
-      ],
+      "Expiration": { "Days": 90 },
       "NoncurrentVersionExpiration": { "NoncurrentDays": 30 },
       "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 }
     },
     {
-      "ID": "renders-keep-warm",
+      "ID": "renders-expire-365d",
       "Status": "Enabled",
       "Filter": { "Prefix": "renders/" },
-      "Transitions": [
-        { "Days": 30, "StorageClass": "STANDARD_IA" }
-      ],
+      "Expiration": { "Days": 365 },
       "NoncurrentVersionExpiration": { "NoncurrentDays": 14 }
     }
   ]

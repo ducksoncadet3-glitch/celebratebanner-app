@@ -7,7 +7,9 @@
  *   • medium_*.webp  — 1280 px wide, q82, used by /create live preview (so the
  *                       preview canvas decodes a 1280px image, not a 24MP one)
  *
- * Originals are NEVER modified or removed — print-quality renders use them.
+ * The retained original is re-encoded in place WITHOUT metadata (see normalizeOriginal) so
+ * no EXIF/GPS is kept in long-term storage (Privacy Policy §1). Pixels + orientation are
+ * preserved; only the metadata is dropped. Print-quality renders use this cleaned original.
  *
  * Triggered by an S3 ObjectCreated event (or polled from the upload route as
  * a fallback). Updates `uploads.thumb_url` + `uploads.medium_url`.
@@ -62,6 +64,30 @@ async function fetchOriginal(bucket, key) {
 }
 
 /**
+ * Re-encode the stored original at the SAME key WITHOUT metadata, so no EXIF/GPS is retained
+ * in long-term customer image storage (Privacy Policy §1). sharp drops input metadata unless
+ * withMetadata() is called (we never call it); .rotate() bakes in EXIF orientation first so
+ * the image still displays correctly. With bucket versioning enabled, the metadata-bearing
+ * version becomes noncurrent and is purged by the lifecycle's NoncurrentVersionExpiration.
+ */
+async function normalizeOriginal(s3Key, original) {
+  const pipeline = sharp(original).rotate();
+  let body;
+  let contentType;
+  if (/\.png$/i.test(s3Key)) {
+    body = await pipeline.png().toBuffer();
+    contentType = 'image/png';
+  } else if (/\.webp$/i.test(s3Key)) {
+    body = await pipeline.webp({ quality: 90 }).toBuffer();
+    contentType = 'image/webp';
+  } else {
+    body = await pipeline.jpeg({ quality: 92 }).toBuffer();
+    contentType = 'image/jpeg';
+  }
+  await putBuffer({ key: s3Key, body, contentType, cacheControl: 'public, max-age=31536000, immutable' });
+}
+
+/**
  * Optimize a single uploaded image. Idempotent — safe to call repeatedly.
  * Returns the URLs of the generated variants.
  */
@@ -100,6 +126,14 @@ async function optimize({ projectId, s3Key, bucket }) {
         WHERE project_id = $3 AND s3_key = $4`,
       [out.thumb, out.medium, projectId, s3Key],
     );
+
+    // Strip EXIF/GPS from the retained original (best-effort; a failure here must not fail
+    // the whole optimize pass — the variants are already saved).
+    try {
+      await normalizeOriginal(s3Key, original);
+    } catch (err) {
+      logger.warn({ err: err.message, s3Key }, 'image-opt.normalize-failed');
+    }
 
     logger.info({ projectId, s3Key, ms: Date.now() - t0 }, 'image-opt.done');
     return out;
