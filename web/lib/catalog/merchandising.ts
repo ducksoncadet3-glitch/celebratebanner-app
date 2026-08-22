@@ -40,7 +40,7 @@ export function getWhyChoose(product: Product): string[] {
         ? 'Printed and shipped to you'
         : 'Instant digital download';
   return [
-    'See a free design proof before you pay',
+    'See your free design preview before you pay',
     'Personalized with your photos, colors, and text',
     delivery,
     'Secure checkout when you’re ready',

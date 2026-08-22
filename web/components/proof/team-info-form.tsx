@@ -8,9 +8,9 @@ export interface TeamInfoFormProps {
 }
 
 /**
- * Collects who the proof is for and how to reach them. Team name, contact name, and email
- * are required; phone is optional. Controlled entirely by the wizard so navigating away and
- * back preserves every field.
+ * Collects who the design is for and how to reach them if they order. Team name, contact
+ * name, and email are required; phone is optional. Controlled entirely by the wizard so
+ * navigating away and back preserves every field.
  */
 export function TeamInfoForm({ value, onChange, errors }: TeamInfoFormProps) {
   return (
@@ -43,7 +43,7 @@ export function TeamInfoForm({ value, onChange, errors }: TeamInfoFormProps) {
         onChange={(v) => onChange({ email: v })}
         required
         error={errors.email}
-        hint="We'll send your free proof here."
+        hint="Used only for your order confirmation if you decide to buy."
         placeholder="you@example.com"
         autoComplete="email"
       />
@@ -54,7 +54,7 @@ export function TeamInfoForm({ value, onChange, errors }: TeamInfoFormProps) {
           inputMode="tel"
           value={value.phone}
           onChange={(v) => onChange({ phone: v })}
-          hint="Optional — only if you'd like a call about your design."
+          hint="Optional — for order or shipping updates only."
           placeholder="(555) 123-4567"
           autoComplete="tel"
         />

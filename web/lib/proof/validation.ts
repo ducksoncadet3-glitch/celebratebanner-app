@@ -22,7 +22,7 @@ export function validateStep(step: number, data: ProofFormData): ProofErrors {
     if (!data.team.teamName.trim()) errors.teamName = 'Team or event name is required.';
     if (!data.team.contactName.trim()) errors.contactName = 'Your name is required.';
     if (!data.team.email.trim()) {
-      errors.email = 'An email is required so we can send your proof.';
+      errors.email = 'An email is required — we use it only for your order confirmation.';
     } else if (!isEmail(data.team.email)) {
       errors.email = 'Please enter a valid email address.';
     }

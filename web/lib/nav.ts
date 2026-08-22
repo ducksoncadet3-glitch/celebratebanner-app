@@ -20,7 +20,7 @@ export const PRIMARY_LINKS: NavLink[] = [{ href: '/#how-it-works', label: 'How I
 /** Contact is an email link, not an internal route (avoids a broken /contact link). */
 export const CONTACT_HREF = 'mailto:info@celebratebanner.com';
 
-export const PROOF_CTA: NavLink = { href: '/proof', label: 'Start Free Design Proof' };
+export const PROOF_CTA: NavLink = { href: '/proof', label: 'Create Your Free Preview' };
 
 /** Every INTERNAL href the nav renders — validated by the nav-link test to be non-broken. */
 export const NAV_INTERNAL_HREFS: string[] = [

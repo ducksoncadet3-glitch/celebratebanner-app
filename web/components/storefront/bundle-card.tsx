@@ -42,7 +42,7 @@ export function BundleCard({ bundle }: { bundle: Bundle }) {
           <Button asChild variant="gold" fullWidth>
             <Link href={bundleProofHref(bundle)}>Build This Package</Link>
           </Button>
-          <p className="mt-2 text-center text-xs text-obsidian/55">Start your free design proof — no payment required.</p>
+          <p className="mt-2 text-center text-xs text-obsidian/55">Start your free preview — no payment required.</p>
         </div>
       </div>
     </article>

@@ -100,7 +100,7 @@ export default function FootballCollectionPage() {
             Season packages
           </h2>
           <p className="mt-4 text-base leading-relaxed text-obsidian/60">
-            Bundle the essentials for your program — every package includes a free proof before you order.
+            Bundle the essentials for your program — preview every design for free before you order.
           </p>
         </div>
         <div className="grid gap-6 md:grid-cols-3">
@@ -126,7 +126,7 @@ export default function FootballCollectionPage() {
             How it works
           </h2>
           <p className="mt-4 text-base leading-relaxed text-obsidian/60">
-            From photos to an approved proof in minutes — no payment required to preview.
+            From photos to a finished design in minutes — no payment required to preview.
           </p>
         </div>
         <ProcessSteps steps={data.process} />

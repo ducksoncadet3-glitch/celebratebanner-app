@@ -18,12 +18,12 @@ import { buildMetadata } from '@/lib/seo';
 export const metadata = buildMetadata({
   title: 'Custom Banners, Posters & Graphics for Your Celebration',
   description:
-    'Custom banners, posters, and social graphics for teams, graduations, and championships. Upload your photos, get a free design proof, and order only when you love it.',
+    'Custom banners, posters, and social graphics for teams, graduations, and championships. Upload your photos, preview your personalized design for free, and order only when you love it.',
   path: '/',
 });
 
 const VALUE_PROPS = [
-  { title: 'Free proof first', body: 'See your personalized design before you pay. No payment required to preview.' },
+  { title: 'Free preview first', body: 'See your personalized design before you pay. No payment required to preview.' },
   { title: 'Your photos & colors', body: 'Every design is built from your own photos, team colors, and text.' },
   { title: 'Printed & digital', body: 'Choose a printed keepsake, a digital file, or both — where the product supports it.' },
 ];
@@ -31,11 +31,11 @@ const VALUE_PROPS = [
 const STEPS = [
   { n: '01', title: 'Choose a product', body: 'Banners, posters, yard signs, or social graphics for your celebration.' },
   { n: '02', title: 'Upload your photos', body: 'Add your photos, colors, and details — we lay it out for you.' },
-  { n: '03', title: 'Review your free proof', body: 'Preview your personalized design and order only when you love it.' },
+  { n: '03', title: 'See your free preview', body: 'Preview your personalized design and order only when you love it.' },
 ];
 
 const HOME_FAQ = [
-  { q: 'Do I pay before I see my design?', a: 'No. Start a free design proof, personalize it, and preview your design. You only pay when you approve it.' },
+  { q: 'Do I pay before I see my design?', a: 'No. Create your free preview — personalize your design and see it on screen first. You only pay if you decide to order or download.' },
   { q: 'Can I use my own photos and colors?', a: 'Yes — every product is personalized with your photos, colors, and text.' },
   { q: 'Do you offer printed and digital?', a: 'Many products offer printed, digital, or both. The available options are shown during customization.' },
 ];
@@ -80,7 +80,7 @@ export default function HomePage() {
             Save a step with a ready-made package
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-obsidian/60">
-            Everything for the moment in one place — build the whole package from a single free proof.
+            Everything for the moment in one place — build the whole package from a single free preview.
           </p>
         </div>
         <div className="grid gap-6 md:grid-cols-3">
@@ -105,7 +105,7 @@ export default function HomePage() {
         <Container>
           <div className="mb-12 text-center">
             <h2 id="how-heading" className="text-balance text-3xl sm:text-4xl">How it works</h2>
-            <p className="mt-3 text-obsidian/70">From your photos to an approved proof — free to preview.</p>
+            <p className="mt-3 text-obsidian/70">From your photos to a finished design — free to preview.</p>
           </div>
           <ol className="grid gap-8 sm:grid-cols-3">
             {STEPS.map((s) => (
@@ -118,7 +118,7 @@ export default function HomePage() {
           </ol>
           <div className="mt-12 text-center">
             <Button asChild size="lg" variant="gold">
-              <Link href="/proof">Start Free Design Proof</Link>
+              <Link href="/proof">Create Your Free Preview</Link>
             </Button>
           </div>
         </Container>
@@ -152,15 +152,15 @@ export default function HomePage() {
             See Your Personalized Design Before You Pay
           </h2>
           <p className="mt-4 text-lg leading-relaxed text-ivory/75">
-            Start with a free proof, review your personalized design, and place your order only when
+            Start with a free preview, review your personalized design, and place your order only when
             you are satisfied.
           </p>
           <div className="mt-8 flex justify-center">
             <Button asChild variant="gold" size="lg">
-              <Link href="/proof">Start Free Design Proof</Link>
+              <Link href="/proof">Create Your Free Preview</Link>
             </Button>
           </div>
-          <p className="mt-3 text-sm text-ivory/55">No payment required to see your proof.</p>
+          <p className="mt-3 text-sm text-ivory/55">No payment required to see your preview.</p>
         </div>
       </Section>
 

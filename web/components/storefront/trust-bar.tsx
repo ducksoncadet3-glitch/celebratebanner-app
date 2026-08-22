@@ -11,7 +11,7 @@ import { getAllProducts } from '@/lib/catalog/products';
  * (lowest overall price and lowest banner price), so it can never drift from real prices.
  */
 const POINTS = [
-  'Free design proof',
+  'Free design preview',
   'No payment to preview',
   'Secure Stripe checkout',
   'Printed & digital options',

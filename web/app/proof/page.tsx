@@ -5,9 +5,9 @@ import { resolveProductId } from '@/lib/proof/options';
 import { buildMetadata } from '@/lib/seo';
 
 export const metadata = buildMetadata({
-  title: 'Free Design Proof',
+  title: 'Create Your Free Preview',
   description:
-    'Request a free design proof for your team banner, poster, or social graphic. Choose a product, share your details, and preview your design before you order — no payment required.',
+    'Set up your team banner, poster, or social graphic, then see your personalized design in the builder before you pay. No payment required to create your preview.',
   path: '/proof',
 });
 
@@ -27,14 +27,14 @@ export default async function ProofPage({
       <Section background="ivory" spacing="lg" width="narrow" aria-labelledby="proof-page-title">
         <header className="mb-8 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gold-dark">
-            Free Design Proof
+            Free Preview
           </p>
           <h1 id="proof-page-title" className="mt-3 font-display text-4xl font-semibold text-obsidian sm:text-5xl">
-            See your design before you order
+            See your design before you pay
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-obsidian/60">
-            Answer a few quick questions and we&apos;ll prepare a free proof — no payment required to
-            preview. It only takes a minute.
+            Answer a few quick questions to set up your design, then continue into the builder to add
+            photos and see your live preview. No payment required to create your preview.
           </p>
         </header>
 

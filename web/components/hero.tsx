@@ -21,19 +21,19 @@ export function Hero() {
             </span>
           </h1>
           <p className="mt-6 animate-fade-up text-pretty text-lg text-obsidian/75 [animation-delay:120ms]">
-            From championships to graduation, create a custom banner or poster in minutes. Review
-            your FREE design proof before placing an order.
+            From championships to graduation, create a custom banner or poster in minutes. See
+            your personalized design in a FREE preview before placing an order.
           </p>
           <div className="mt-9 flex animate-fade-up flex-wrap justify-center gap-3 [animation-delay:240ms]">
             <Button asChild size="lg" variant="gold">
-              <Link href="/proof">Start Free Design Proof</Link>
+              <Link href="/proof">Create Your Free Preview</Link>
             </Button>
             <Button asChild size="lg" variant="secondary">
               <Link href="/shop">Shop Products</Link>
             </Button>
           </div>
           <p className="mt-6 animate-fade-up text-xs text-obsidian/55 [animation-delay:360ms]">
-            No payment required to see your proof · Your photos &amp; colors
+            No payment required to see your preview · Your photos &amp; colors
           </p>
         </div>
 
