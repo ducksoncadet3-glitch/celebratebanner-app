@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { PriceDisplay } from './price-display';
-import { getBundleProducts, bundleImage, bundleProofHref, bundleStartingCents, type Bundle } from '@/lib/catalog/bundles';
+import { getBundleProducts, bundleImage, bundleProofHref, type Bundle } from '@/lib/catalog/bundles';
 
 /**
  * Featured bundle card: what's included (linked real products), starting price (sum of the
@@ -33,8 +32,10 @@ export function BundleCard({ bundle }: { bundle: Bundle }) {
         </ul>
 
         <div className="mt-6 border-t border-obsidian/8 pt-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-obsidian/50">Starting price</p>
-          <PriceDisplay cents={bundleStartingCents(bundle)} size="md" className="mt-0.5" />
+          <p className="text-sm text-obsidian/70">
+            Each product is personalized and priced individually at checkout — printed from
+            $79.99, digital from $9.99.
+          </p>
         </div>
 
         <div className="mt-5 mt-auto pt-5">

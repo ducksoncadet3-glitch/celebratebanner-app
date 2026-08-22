@@ -21,7 +21,7 @@ const PRICING = {
     id: 'print',
     label: 'CelebrateBanner — Printed Banner (24×36")',
     description: 'Professionally printed 24×36" vinyl banner with grommets, ships in 3–5 days.',
-    amountCents: 4900,
+    amountCents: 7999,
     fulfillment: 'print',
     requiresShipping: true,
   },

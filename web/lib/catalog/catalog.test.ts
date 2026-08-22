@@ -32,12 +32,14 @@ describe('catalog integrity', () => {
   });
 
   it('enforces launch pricing business rules', () => {
-    // Banners minimum $79.99; Senior Night $89.99; digital social $9.99.
-    expect(getProductBySlug('senior-night-banner')!.startingPriceCents).toBe(8999);
+    // Reconciled to what checkout can actually charge: every physical product $79.99,
+    // every digital product $9.99. No physical product is advertised below $79.99.
+    expect(getProductBySlug('senior-night-banner')!.startingPriceCents).toBe(7999);
     expect(getProductBySlug('team-banner')!.startingPriceCents).toBe(7999);
     expect(getProductBySlug('game-day-graphic')!.startingPriceCents).toBe(999);
     for (const p of products) {
-      if (p.productType === 'banner') expect(p.startingPriceCents).toBeGreaterThanOrEqual(7999);
+      const isPhysical = p.deliveryType === 'printed' || p.deliveryType === 'both';
+      if (isPhysical) expect(p.startingPriceCents).toBeGreaterThanOrEqual(7999);
     }
   });
 

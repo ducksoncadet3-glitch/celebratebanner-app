@@ -1,4 +1,4 @@
-import { formatUSD } from '@/lib/pricing';
+import { formatUSD, PRICING } from '@/lib/pricing';
 import { poster, type PosterAspect } from './poster';
 import type {
   Collection,
@@ -61,6 +61,20 @@ export function deliveryLabel(d: DeliveryType): string {
   return d === 'both' ? 'Printed & digital' : d === 'printed' ? 'Printed & shipped' : 'Instant digital download';
 }
 
+/**
+ * Delivery-aware price line — always exactly what checkout can charge (see lib/pricing.ts):
+ *   • both      → "Print from $79.99 · Digital $9.99" (both options shown)
+ *   • printed   → "$79.99" (single flat price, no "From")
+ *   • digital   → "$9.99"
+ */
+export function priceLabelFor(d: DeliveryType): string {
+  const print = formatUSD(PRICING.print.amountCents); // $79.99
+  const digital = formatUSD(PRICING.digital.amountCents); // $9.99
+  if (d === 'both') return `Print from ${print} · Digital ${digital}`;
+  if (d === 'digital') return digital;
+  return print; // printed-only
+}
+
 const COMMON_FAQ: ProductFaq[] = [
   {
     q: 'Do I pay before I see my design?',
@@ -112,7 +126,7 @@ function build(seed: Seed): Product {
     category: seed.category,
     collectionSlug: seed.collectionSlug,
     startingPriceCents: seed.startingPriceCents,
-    priceLabel: `From ${formatUSD(seed.startingPriceCents)}`,
+    priceLabel: priceLabelFor(seed.deliveryType),
     image,
     gallery: [image],
     badge: seed.badge,
@@ -200,7 +214,7 @@ const SEEDS: Seed[] = [
   },
   {
     slug: 'senior-night-banner', name: 'Senior Night Banner', collectionSlug: 'team-banners', category: 'Banner',
-    productType: 'banner', deliveryType: 'both', startingPriceCents: 8999, proofProductKey: 'senior-night-banner',
+    productType: 'banner', deliveryType: 'both', startingPriceCents: 7999, proofProductKey: 'senior-night-banner',
     badge: 'Most Popular', featured: true,
     shortDescription: 'Spotlight a graduating senior with their photo, number, and years played.',
     fullDescription:
@@ -212,7 +226,7 @@ const SEEDS: Seed[] = [
   },
   {
     slug: 'team-poster', name: 'Team Poster', collectionSlug: 'team-banners', category: 'Poster',
-    productType: 'poster', deliveryType: 'both', startingPriceCents: 3999, proofProductKey: 'team-roster-banner',
+    productType: 'poster', deliveryType: 'both', startingPriceCents: 7999, proofProductKey: 'team-roster-banner',
     shortDescription: 'A compact team poster — your roster and hero photo, ready for the wall.',
     fullDescription:
       'The team banner in a wall-friendly poster size. Feature your roster and a hero photo, personalized with your colors and headline. Free proof before you order.',
@@ -245,7 +259,7 @@ const SEEDS: Seed[] = [
   },
   {
     slug: 'team-photo-collage', name: 'Team Photo Collage', collectionSlug: 'team-banners', category: 'Collage',
-    productType: 'collage', deliveryType: 'both', startingPriceCents: 4999, proofProductKey: 'team-roster-banner',
+    productType: 'collage', deliveryType: 'both', startingPriceCents: 7999, proofProductKey: 'team-roster-banner',
     shortDescription: 'A photo collage of your season — many moments on one keepsake.',
     fullDescription:
       'Turn a season of photos into one keepsake. Add your favorite team moments and we’ll arrange them into a clean collage personalized with your colors. Free proof first.',
@@ -270,7 +284,7 @@ const SEEDS: Seed[] = [
   },
   {
     slug: 'graduation-poster', name: 'Graduation Poster', collectionSlug: 'graduation', category: 'Poster',
-    productType: 'poster', deliveryType: 'both', startingPriceCents: 4999, proofProductKey: 'graduation-banner',
+    productType: 'poster', deliveryType: 'both', startingPriceCents: 7999, proofProductKey: 'graduation-banner',
     featured: true,
     shortDescription: 'A wall-ready graduation poster personalized with your graduate’s photo.',
     fullDescription:
@@ -282,7 +296,7 @@ const SEEDS: Seed[] = [
   },
   {
     slug: 'graduation-yard-sign', name: 'Graduation Yard Sign', collectionSlug: 'graduation', category: 'Yard Sign',
-    productType: 'yard-sign', deliveryType: 'printed', startingPriceCents: 2999, proofProductKey: 'graduation-banner',
+    productType: 'yard-sign', deliveryType: 'printed', startingPriceCents: 7999, proofProductKey: 'graduation-banner',
     shortDescription: 'A personalized yard sign to announce your graduate at home.',
     fullDescription:
       'Announce your graduate from the front lawn. A personalized yard sign with their photo, name, and year — designed to be seen and celebrated. Preview your design free.',
@@ -315,7 +329,7 @@ const SEEDS: Seed[] = [
   },
   {
     slug: 'graduation-memory-collage', name: 'Graduation Memory Collage', collectionSlug: 'graduation', category: 'Collage',
-    productType: 'collage', deliveryType: 'both', startingPriceCents: 5999, proofProductKey: 'graduation-banner',
+    productType: 'collage', deliveryType: 'both', startingPriceCents: 7999, proofProductKey: 'graduation-banner',
     shortDescription: 'A photo collage tracing your graduate’s journey to the stage.',
     fullDescription:
       'From first day to graduation day. Add photos across the years and we’ll arrange them into a memory collage personalized with your colors. See your free proof first.',
@@ -340,7 +354,7 @@ const SEEDS: Seed[] = [
   },
   {
     slug: 'championship-poster', name: 'Championship Poster', collectionSlug: 'championship', category: 'Poster',
-    productType: 'poster', deliveryType: 'both', startingPriceCents: 4999, proofProductKey: 'championship-poster',
+    productType: 'poster', deliveryType: 'both', startingPriceCents: 7999, proofProductKey: 'championship-poster',
     shortDescription: 'A wall-ready championship poster with your title year and roster.',
     fullDescription:
       'The championship banner in poster size. Feature your team name, title year, and roster in a bold layout personalized with your colors. Free proof first.',
@@ -362,7 +376,7 @@ const SEEDS: Seed[] = [
   },
   {
     slug: 'mvp-poster', name: 'MVP Poster', collectionSlug: 'championship', category: 'Poster',
-    productType: 'poster', deliveryType: 'both', startingPriceCents: 3999, proofProductKey: 'player-spotlight-poster',
+    productType: 'poster', deliveryType: 'both', startingPriceCents: 7999, proofProductKey: 'player-spotlight-poster',
     shortDescription: 'A standout-player MVP poster with an action photo and name.',
     fullDescription:
       'Honor the difference-maker. An MVP poster featuring an action photo, name, and your team colors — perfect for the season’s standout. See your free proof first.',
@@ -384,7 +398,7 @@ const SEEDS: Seed[] = [
   },
   {
     slug: 'championship-social-pack', name: 'Championship Social Pack', collectionSlug: 'championship', category: 'Social Pack',
-    productType: 'social-pack', deliveryType: 'digital', startingPriceCents: 1499, proofProductKey: 'football-social-graphics',
+    productType: 'social-pack', deliveryType: 'digital', startingPriceCents: 999, proofProductKey: 'football-social-graphics',
     shortDescription: 'A set of share-ready championship graphics for social.',
     fullDescription:
       'Announce the title everywhere. A pack of personalized championship graphics sized for social, featuring your team, colors, and result. Free proof before you download.',
@@ -431,7 +445,7 @@ const SEEDS: Seed[] = [
   },
   {
     slug: 'schedule-graphic', name: 'Schedule Graphic', collectionSlug: 'social-graphics', category: 'Social Graphic',
-    productType: 'social-graphic', deliveryType: 'digital', startingPriceCents: 1499, proofProductKey: 'football-social-graphics',
+    productType: 'social-graphic', deliveryType: 'digital', startingPriceCents: 999, proofProductKey: 'football-social-graphics',
     shortDescription: 'A season schedule graphic to share all your matchups.',
     fullDescription:
       'Put the whole season in one post. A personalized schedule graphic listing your matchups and dates in your team colors — sized for social. Free proof first.',

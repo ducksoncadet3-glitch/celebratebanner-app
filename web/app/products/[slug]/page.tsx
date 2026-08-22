@@ -22,6 +22,7 @@ import {
   getCollectionBySlug,
   getProductBySlug,
 } from '@/lib/catalog/products';
+import { productOffer } from '@/lib/catalog/structured-data';
 import { proofHrefForProduct } from '@/lib/catalog/proof-link';
 import { resolveProductImage } from '@/lib/catalog/product-image';
 import { buildMetadata, SITE } from '@/lib/seo';
@@ -73,13 +74,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     description: product.shortDescription,
     category: product.category,
     brand: { '@type': 'Brand', name: SITE.name },
-    offers: {
-      '@type': 'Offer',
-      price: (product.startingPriceCents / 100).toFixed(2),
-      priceCurrency: 'USD',
-      availability: 'https://schema.org/InStock',
-      url,
-    },
+    offers: { ...productOffer(product), url },
   };
   const breadcrumbLd = {
     '@context': 'https://schema.org',
@@ -113,7 +108,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <div>
             {product.badge && <Badge variant="featured">{product.badge}</Badge>}
             <h1 className="mt-3 font-display text-4xl font-semibold text-obsidian sm:text-5xl">{product.name}</h1>
-            <PriceDisplay cents={product.startingPriceCents} size="lg" className="mt-3" />
+            <PriceDisplay label={product.priceLabel} size="lg" className="mt-3" />
             <p className="mt-4 text-lg leading-relaxed text-obsidian/70">{product.shortDescription}</p>
             <p className="mt-4 text-base leading-relaxed text-obsidian/60">{product.fullDescription}</p>
 

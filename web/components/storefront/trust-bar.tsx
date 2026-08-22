@@ -44,7 +44,7 @@ export function TrustBar() {
           ))}
           {lowest > 0 && lowestBanner > 0 && (
             <li className="font-medium text-obsidian">
-              Digital from {formatUSD(lowest)} · Printed banners from {formatUSD(lowestBanner)}
+              Digital {formatUSD(lowest)} · Printed from {formatUSD(lowestBanner)}
             </li>
           )}
         </ul>
