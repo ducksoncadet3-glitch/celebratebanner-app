@@ -12,6 +12,17 @@ primary_region = "iad"
 [build]
   dockerfile = "Dockerfile.web"
 
+  # NEXT_PUBLIC_* are inlined into the CLIENT bundle at `next build` — Fly *secrets* are
+  # runtime-only and can never reach the browser. Declared here so the shipped bundle does
+  # not depend on Dockerfile.web ARG defaults.
+  [build.args]
+    NEXT_PUBLIC_SITE_URL     = "https://app.celebratebanner.com"
+    NEXT_PUBLIC_API_BASE_URL = "https://api.celebratebanner.com"
+    # Intentionally EMPTY. The static payment link cannot carry projectId metadata, so
+    # payments.webhook.js would drop the order — paid, never fulfilled. Do not populate
+    # without a metadata-capable fallback.
+    NEXT_PUBLIC_LEGACY_STRIPE_LINK = ""
+
 # Non-secret runtime config only. NEXT_PUBLIC_* are baked at build time (see Dockerfile.web
 # build args); set the same values as Fly build secrets/args at deploy time.
 [env]
