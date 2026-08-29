@@ -99,8 +99,13 @@ function filesUnder(dir: string, exts: string[]): string[] {
   return out;
 }
 
-/** Root marketing pages that link across to the app. */
-const MARKETING_PAGES = ['home.html', 'graduation-signature.html'];
+/**
+ * Root marketing pages that link across to the app.
+ *
+ * TRACKED pages only. `home.html` is deliberately not in the repository, so listing it
+ * here would make the suite fail on a fresh clone (ENOENT) while passing locally.
+ */
+const MARKETING_PAGES = ['graduation-signature.html'];
 
 describe('Start Free Proof CTAs point at real application routes', () => {
   it('no file in the web app targets /index.html', () => {
@@ -141,24 +146,21 @@ describe('Start Free Proof CTAs point at real application routes', () => {
   });
 
   it('free-proof CTAs enter the proof funnel, never the builder or checkout directly', () => {
-    const body = readFileSync(path.join(REPO_ROOT, 'home.html'), 'utf8');
-    for (const m of body.matchAll(/<a href="(https:\/\/app\.celebratebanner\.com[^"]*)"[^>]*>([^<]*)<\/a>/g)) {
-      const [, href, label] = m;
-      if (!/proof/i.test(label)) continue;
-      expect(href, `"${label.trim()}" must enter /proof`).toContain('/proof');
-      expect(href, `"${label.trim()}" must not skip to checkout`).not.toContain('/checkout');
+    for (const page of MARKETING_PAGES) {
+      const body = readFileSync(path.join(REPO_ROOT, page), 'utf8');
+      for (const m of body.matchAll(/<a href="(https:\/\/app\.celebratebanner\.com[^"]*)"[^>]*>([^<]*)<\/a>/g)) {
+        const [, href, label] = m;
+        if (!/proof/i.test(label)) continue;
+        expect(href, `${page}: "${label.trim()}" must enter /proof`).toContain('/proof');
+        expect(href, `${page}: "${label.trim()}" must not skip to checkout`).not.toContain('/checkout');
+      }
     }
   });
 
-  it('product CTAs preserve their product context as a valid ?product= key', () => {
-    const body = readFileSync(path.join(REPO_ROOT, 'home.html'), 'utf8');
-    const keys = [...body.matchAll(/\/proof\?product=([a-z0-9-]+)/g)].map((m) => m[1]);
-    expect(keys.length, 'product cards should deep-link into the proof wizard').toBeGreaterThan(0);
-    const valid = new Set<string>(getAllProducts().map((p) => p.proofProductKey));
-    for (const key of keys) {
-      expect(valid.has(key), `?product=${key} is not a catalog proofProductKey`).toBe(true);
-    }
-  });
+  // NOTE: the "?product=<key> is a real catalog key" invariant is asserted directly against
+  // the catalog in lib/catalog/catalog.test.ts ("produces /proof?product=<resolvable key> for
+  // every product") and lib/catalog/bundles.test.ts. It previously duplicated that check by
+  // scraping home.html, which is not tracked — the catalog tests cover it without that dependency.
 
   it('the "full builder" link uses the canonical /create route', () => {
     const body = readFileSync(path.join(REPO_ROOT, 'graduation-signature.html'), 'utf8');
