@@ -72,11 +72,14 @@ function drawCounts(arrangement: string, photoCount: number, renderMode?: 'stand
 const supportingDraws = (c: Map<string, number>) => [...c].filter(([id]) => id !== 'p0');
 const supportingTotal = (c: Map<string, number>) => supportingDraws(c).reduce((s, [, n]) => s + n, 0);
 
-// ── 1) The defect: standard mode repeats; WOW mode does not ──────────
-test('BEFORE (standard): Signature Edition tiles 4 photos across a 40-cell grid', () => {
+// ── 1) Neither mode repeats a photo ──────────────────────────────────
+// Standard mode USED to tile 4 photos across a fixed 8×5 grid, which is what this test
+// originally pinned. The arrangements are adaptive now (see arrangements.test.ts), so
+// the two modes agree on the one rule that matters: a photo is drawn once or not at all.
+test('standard mode draws each supporting photo exactly once — no tiling', () => {
   const c = drawCounts('classic', 5); // hero + 4 supporting
-  assert.equal(supportingTotal(c), 40, 'the classic grid is 8×5 = 40 cells');
-  assert.ok(supportingDraws(c).some(([, n]) => n > 1), 'photos are repeated to fill it');
+  assert.equal(supportingTotal(c), 4, 'one frame per supporting photo, not a 40-cell grid');
+  assert.ok(supportingDraws(c).every(([, n]) => n === 1), 'photos are never repeated to fill slots');
 });
 test('AFTER (wow): Signature Edition draws each supporting photo exactly once', () => {
   const c = drawCounts('classic', 5, 'wow');
@@ -227,15 +230,17 @@ test('DEFAULT (no renderMode) is identical to explicit standard mode', () => {
     assert.deepEqual([...a].sort(), [...b].sort(), `${arr} must be unchanged by the new option`);
   }
 });
-test('standard mode still fills its historical cell counts (no regression)', () => {
-  assert.equal(supportingTotal(drawCounts('classic', 5)), 40, 'classic 8×5 grid');
-  assert.equal(supportingTotal(drawCounts('pyramid', 5)), 4, 'pyramid places exactly what exists');
-  assert.ok(supportingTotal(drawCounts('mosaic', 5)) > 8, 'mosaic still fills its slots');
-  assert.ok(supportingTotal(drawCounts('magazine', 5)) > 8, 'magazine still fills its grids');
+test('standard mode places exactly what exists, in every arrangement', () => {
+  for (const arr of ARRANGEMENTS) {
+    assert.equal(supportingTotal(drawCounts(arr, 5)), 4, `${arr} places 4 supporting photos for a 5-photo upload`);
+  }
+  assert.equal(supportingTotal(drawCounts('scattered', 5)), 4, 'scattered too');
 });
-test('standard mode still repeats photos to fill the grid (unchanged tiling)', () => {
-  const c = drawCounts('classic', 5);
-  assert.ok(supportingDraws(c).every(([, n]) => n === 10), 'four photos × 10 = 40 cells, as before');
+test('standard mode never repeats a photo to fill a slot', () => {
+  for (const arr of [...ARRANGEMENTS, 'scattered']) {
+    const c = drawCounts(arr, 5);
+    assert.ok(supportingDraws(c).every(([, n]) => n === 1), `${arr} draws each photo once`);
+  }
 });
 
 // ── 7) No production regression ──────────────────────────────────────

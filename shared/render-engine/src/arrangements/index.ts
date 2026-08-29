@@ -15,3 +15,14 @@ export {
   registerArrangement,
 } from './registry.js';
 export type { ArrangementRenderer } from '../types.js';
+
+// Adaptive geometry — the photo-count-driven layout math shared by the arrangements.
+export {
+  ARRANGEMENT_MAX_PHOTOS,
+  ARRANGEMENT_MIN_PHOTOS,
+  HERO_MIN_AREA_RATIO,
+  adaptiveLayoutFor,
+  supportingCapacity,
+  supportingCount,
+} from './adaptive-geometry.js';
+export type { AdaptiveArrangementId, AdaptiveLayout, Rect } from './adaptive-geometry.js';

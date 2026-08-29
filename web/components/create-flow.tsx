@@ -220,6 +220,7 @@ export function CreateFlow() {
                   <ArrangementPicker
                     value={state.arrangement}
                     onChange={(arrangement) => dispatch({ type: 'setArrangement', arrangement })}
+                    photoCount={state.photos.length}
                   />
                 </div>
               </div>
