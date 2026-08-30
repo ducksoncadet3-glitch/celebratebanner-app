@@ -79,12 +79,48 @@ jobs:
       # artifact. Options B and C are illustrative alternates only and are NOT used by
       # CelebrateBanner — do not enable them.
 
-      # ── Option A · Fly.io (authoritative) ──────────────────────────────────
+      # ── Option A · Fly.io (authoritative, ENABLED) ─────────────────────────
       # Build context = repo ROOT because /web depends on shared/render-engine via a file: path.
-      # - uses: superfly/flyctl-actions/setup-flyctl@master
-      # - run: flyctl deploy --remote-only --config fly.web.toml --dockerfile Dockerfile.web .
-      #   env:
-      #     FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      # Deploys ONLY celebratebanner-web. The API (celebratebanner-api) is deliberately not
+      # deployed here: it is a separate Fly app with its own release_command (migrations) and
+      # three process groups, and it must never ship as a side effect of a web change.
+      #
+      # fly.web.toml already carries every NEXT_PUBLIC_* the app reads
+      # (SITE_URL, API_BASE_URL, LEGACY_STRIPE_LINK), so FLY_API_TOKEN is the only secret
+      # this deploy needs.
+      - name: check deploy credential
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          if [ -z "${FLY_API_TOKEN}" ]; then
+            echo "::error::FLY_API_TOKEN is not set. Add an app-scoped deploy token for the"
+            echo "::error::'celebratebanner-web' Fly app as a repository secret named FLY_API_TOKEN."
+            exit 1
+          fi
+          echo "FLY_API_TOKEN present."
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: deploy celebratebanner-web
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: flyctl deploy --remote-only --config fly.web.toml --dockerfile Dockerfile.web .
+
+      - name: verify the release is serving
+        run: |
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' https://app.celebratebanner.com/api/health || true)
+            [ "$code" = "200" ] && echo "health OK" && break
+            sleep 5
+          done
+          # The corrected proof copy only exists from commit 61c8540 onward, so its presence
+          # proves the NEW build is live rather than the previous stale one.
+          if curl -sf https://app.celebratebanner.com/proof | grep -q "See your design before you pay"; then
+            echo "Release verified: corrected proof copy is live."
+          else
+            echo "::error::Deployed build does not contain the corrected proof copy."
+            exit 1
+          fi
 
       # ── Option B · Cloudflare Pages (NOT used — illustrative only) ─────────
       # - name: deploy to Cloudflare Pages
@@ -107,8 +143,3 @@ jobs:
       #       ln -sfn /srv/celebratebanner-web/releases/${{ github.sha }} /srv/celebratebanner-web/current
       #       systemctl restart celebratebanner-web
 
-      - name: deploy not configured
-        if: ${{ vars.DEPLOY_HOST == '' }}
-        run: |
-          echo "::warning::No deploy target configured. Uncomment Option A (Fly.io) in .github/workflows/deploy-web.yml."
-          echo "Build artifact 'web-build' is available for manual deploy from the Actions tab."
