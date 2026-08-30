@@ -4,7 +4,7 @@
 # Required GitHub repo settings on celebratebanner-api:
 #   Variables:
 #     DEPLOY_HOST          which Fly app / Render service / VPS we're targeting
-#     PUBLIC_SITE_URL      https://celebratebanner.com
+#     PUBLIC_SITE_URL      https://app.celebratebanner.com   (serves /success + /cancel)
 #     API_PUBLIC_URL       https://api.celebratebanner.com
 #   Secrets:
 #     DATABASE_URL, REDIS_URL, S3_*, STRIPE_*, POSTMARK_API_TOKEN, etc.
