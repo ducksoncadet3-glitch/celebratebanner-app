@@ -99,8 +99,13 @@ jobs:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: |
           if [ -z "${FLY_API_TOKEN}" ]; then
-            echo "::error::FLY_API_TOKEN is not set. Add an app-scoped deploy token for the"
-            echo "::error::'celebratebanner-web' Fly app as a repository secret named FLY_API_TOKEN."
+            echo "::error::FLY_API_TOKEN resolved to an EMPTY value for this job."
+            echo "::error::It must be a REPOSITORY secret on ducksoncadet3-glitch/celebratebanner-app:"
+            echo "::error::  Settings -> Secrets and variables -> Actions -> Repository secrets"
+            echo "::error::This repo also has Environments (Production, github-pages, ...). A secret"
+            echo "::error::stored under an Environment is NOT visible here, because this job declares"
+            echo "::error::no 'environment:'. Environment and Dependabot secrets are separate stores."
+            echo "::error::Token should be app-scoped to the Fly app 'celebratebanner-web'."
             exit 1
           fi
           echo "FLY_API_TOKEN present."
