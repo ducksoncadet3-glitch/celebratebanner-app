@@ -64,10 +64,19 @@ export function CreateFlow() {
     saveTimer.current = window.setTimeout(async () => {
       setSaving(true);
       try {
-        const { rev } = await api.saveProject(state.projectId, {
-          renderInput: JSON.parse(serializeRenderInput(renderInput)),
-          rev: state.rev,
-        });
+        const { rev, projectToken } = await api.saveProject(
+          state.projectId,
+          {
+            renderInput: JSON.parse(serializeRenderInput(renderInput)),
+            rev: state.rev,
+          },
+          state.projectToken,
+        );
+        // First save claims the project and returns its access token — persist it so
+        // later saves and the /success status poll can prove ownership.
+        if (projectToken && projectToken !== state.projectToken) {
+          dispatch({ type: 'setToken', token: projectToken });
+        }
         dispatch({ type: 'markSaved', rev });
       } catch (err) {
         if (!(err instanceof ApiError) || err.status >= 500) {
@@ -79,7 +88,7 @@ export function CreateFlow() {
       }
     }, 5000);
     return () => window.clearTimeout(saveTimer.current);
-  }, [isDirty, renderInput, state.projectId, state.rev, dispatch]);
+  }, [isDirty, renderInput, state.projectId, state.rev, state.projectToken, dispatch]);
 
   // For the preview canvas we hand it photos with image: HTMLImageElement-like
   // objects (the lazy <img> below decodes them; we shim with a fake CanvasImage
@@ -211,6 +220,7 @@ export function CreateFlow() {
                   <ArrangementPicker
                     value={state.arrangement}
                     onChange={(arrangement) => dispatch({ type: 'setArrangement', arrangement })}
+                    photoCount={state.photos.length}
                   />
                 </div>
               </div>
@@ -295,7 +305,7 @@ export function CreateFlow() {
               variant="primary"
               flow="review"
             >
-              Order printed — $49
+              Order printed — $79.99
             </CheckoutButton>
           </div>
 

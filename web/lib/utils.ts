@@ -6,13 +6,16 @@ export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
 }
 
-/** Generate a short, URL-safe project id on the client. */
+/** Generate a URL-safe project id on the client.
+ *
+ * Uses crypto.randomUUID() (a CSPRNG, ~122 bits) rather than Math.random(): the
+ * trust-on-first-use ownership model treats an unguessed project id as a claim
+ * secret, so ids must be unpredictable, not merely unique. Hyphens are stripped
+ * for compactness; the result stays [a-z0-9] after the "proj_" prefix, so it is
+ * URL/path-safe. Available in all modern browsers and Node 19+ (no dependency).
+ */
 export function newProjectId(): string {
-  // 11 chars of base36, ~57 bits of entropy — fine for project ids that are
-  // also gated by server-side ownership checks.
-  const a = Math.random().toString(36).slice(2, 8);
-  const b = Math.random().toString(36).slice(2, 7);
-  return `proj_${a}${b}`;
+  return `proj_${crypto.randomUUID().replace(/-/g, '')}`;
 }
 
 /** Persist + read the user's email across pages so /success can show it. */

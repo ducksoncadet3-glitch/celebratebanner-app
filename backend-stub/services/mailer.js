@@ -14,6 +14,7 @@
 const deliveryTemplate = require('../email/templates/delivery');
 const recoveryTemplate = require('../email/templates/recovery');
 const failureTemplate  = require('../email/templates/failure');
+const confirmationTemplate = require('../email/templates/confirmation');
 const { logger } = require('./logger');
 const { metrics } = require('./metrics');
 
@@ -39,10 +40,19 @@ async function sendFailureEmail({ to, projectId }) {
   await transport({ to, subject, html, text, kind: 'failure' });
 }
 
+/** Order-confirmation ("we got your order"). Returns true only if actually dispatched. */
+async function sendConfirmationEmail({ to, projectId }) {
+  if (!to) return false;
+  const { subject, html, text } = confirmationTemplate({ projectId });
+  return transport({ to, subject, html, text, kind: 'confirmation' });
+}
+
+// Returns true only if the provider accepted the message. Existing callers ignore the
+// return value; the confirmation endpoint uses it to report { sent } to the web proxy.
 async function transport({ to, subject, html, text, kind }) {
   if (!POSTMARK_TOKEN) {
     logger.info({ to, subject, kind }, 'mailer.dryrun');
-    return;
+    return false;
   }
   try {
     const res = await fetch('https://api.postmarkapp.com/email', {
@@ -64,12 +74,14 @@ async function transport({ to, subject, html, text, kind }) {
     if (!res.ok) {
       const body = await res.text();
       logger.error({ status: res.status, body: body.slice(0, 200), kind }, 'mailer.send-failed');
-      return;
+      return false;
     }
     metrics.incEmailsSent(kind || 'unknown');
+    return true;
   } catch (err) {
     logger.error({ err: err.message, kind }, 'mailer.transport-error');
+    return false;
   }
 }
 
-module.exports = { sendDeliveryEmail, sendRecoveryEmail, sendFailureEmail };
+module.exports = { sendDeliveryEmail, sendRecoveryEmail, sendFailureEmail, sendConfirmationEmail };

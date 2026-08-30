@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-/** Routes where a floating "Start Free Design Proof" would be redundant or intrusive. */
+/** Routes where a floating "Create Your Free Preview" would be redundant or intrusive. */
 const HIDDEN_PREFIXES = ['/proof', '/create', '/checkout', '/success', '/cancel', '/admin'];
 
 /**
@@ -21,9 +21,9 @@ export function StickyProofCta() {
         <Link
           href="/proof"
           className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-gold to-gold-light px-6 py-3 text-sm font-semibold text-obsidian shadow-lift ring-1 ring-obsidian/5 transition hover:from-gold-light hover:to-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
-          aria-label="Start a free design proof"
+          aria-label="Create your free preview"
         >
-          Start Free Design Proof
+          Create Your Free Preview
           <span aria-hidden="true">→</span>
         </Link>
       </div>

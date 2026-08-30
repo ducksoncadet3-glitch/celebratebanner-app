@@ -77,9 +77,15 @@ export function hexToRgba(hex: string, alpha: number): string {
 }
 
 /**
- * Repeat the base array to produce exactly `count` entries so layouts always
- * fill every slot, even when the user uploaded fewer photos than the slot
- * count. Returns shallow clones so callers can mutate without aliasing.
+ * Repeat the base array to produce exactly `count` entries.
+ *
+ * DEPRECATED for arrangements. This is what made the built-in layouts read as
+ * templates: it duplicates a customer's photo when `base` is shorter than `count`,
+ * and silently discards the tail when `base` is longer. Arrangements now derive their
+ * geometry from the real photo count instead — see `arrangements/adaptive-geometry.ts`.
+ * Retained only for third-party/custom renderers that already depend on the export.
+ *
+ * Returns shallow clones so callers can mutate without aliasing.
  */
 export function tileToCount<T>(base: T[], count: number): T[] {
   const out: T[] = [];

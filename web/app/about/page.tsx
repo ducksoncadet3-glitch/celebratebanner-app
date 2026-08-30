@@ -6,7 +6,7 @@ import { buildMetadata } from '@/lib/seo';
 export const metadata = buildMetadata({
   title: 'About CelebrateBanner',
   description:
-    'CelebrateBanner makes personalized celebration banners, posters, and social graphics for teams, graduations, and championships — with a free design proof before you order.',
+    'CelebrateBanner makes personalized celebration banners, posters, and social graphics for teams, graduations, and championships — with a free preview before you order.',
   path: '/about',
 });
 
@@ -21,14 +21,14 @@ export default function AboutPage() {
         <p className="mt-5 text-lg leading-relaxed text-obsidian/70">
           CelebrateBanner makes personalized celebration banners, posters, and social graphics — for
           teams, graduations, championships, and the milestones that matter. Upload your photos,
-          review a free design proof, and order only when you love the result.
+          preview your design for free, and order only when you love the result.
         </p>
 
         <div className="mt-10">
           <h2 className="font-display text-2xl font-semibold text-obsidian">How we work</h2>
           <ul role="list" className="mt-4 space-y-2.5">
             {[
-              'Free design proof first — see your personalized design before you pay.',
+              'Free design preview first — see your personalized design before you pay.',
               'Built from your own photos, colors, and text.',
               'Printed and digital options, where the product supports it.',
             ].map((line) => (
@@ -66,9 +66,9 @@ export default function AboutPage() {
 
         <div className="mt-10">
           <Button asChild variant="gold" size="lg">
-            <Link href="/proof">Start Free Design Proof</Link>
+            <Link href="/proof">Create Your Free Preview</Link>
           </Button>
-          <p className="mt-3 text-sm text-obsidian/55">No payment required to see your proof.</p>
+          <p className="mt-3 text-sm text-obsidian/55">No payment required to see your preview.</p>
         </div>
       </Section>
     </>

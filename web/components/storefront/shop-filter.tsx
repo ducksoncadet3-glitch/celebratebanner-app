@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ProductGrid } from './product-grid';
+import { ProductGrid, type ImageOverrides } from './product-grid';
 import { cn } from '@/lib/utils';
 import type { Product } from '@/lib/catalog/types';
 
@@ -9,6 +9,8 @@ export interface ShopFilterProps {
   products: Product[];
   occasions: string[];
   sports: string[];
+  /** Approved-asset overrides (computed on the server) forwarded to the grid. */
+  imageOverrides?: ImageOverrides;
 }
 
 function humanize(tag: string): string {
@@ -20,7 +22,7 @@ function humanize(tag: string): string {
  * sport chips. Derived entirely from catalog data — no search infrastructure. Filtering is
  * instant and the result set is announced for assistive tech.
  */
-export function ShopFilter({ products, occasions, sports }: ShopFilterProps) {
+export function ShopFilter({ products, occasions, sports, imageOverrides }: ShopFilterProps) {
   const [query, setQuery] = useState('');
   const [occasion, setOccasion] = useState<string | null>(null);
   const [sport, setSport] = useState<string | null>(null);
@@ -59,7 +61,7 @@ export function ShopFilter({ products, occasions, sports }: ShopFilterProps) {
           Showing {filtered.length} of {products.length} products
         </p>
         {filtered.length > 0 ? (
-          <ProductGrid products={filtered} />
+          <ProductGrid products={filtered} imageOverrides={imageOverrides} />
         ) : (
           <p className="rounded-xl border border-obsidian/10 bg-white p-8 text-center text-obsidian/60">
             No products match. Try clearing a filter.

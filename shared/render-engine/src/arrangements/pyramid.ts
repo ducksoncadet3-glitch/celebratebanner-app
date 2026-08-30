@@ -1,4 +1,4 @@
-import { tileToCount } from '../canvas/helpers.js';
+import { supportingCapacity } from './adaptive-geometry.js';
 import { wowLayoutFor, wowSupportingCount } from './wow-geometry.js';
 import { photoRot } from '../canvas/rng.js';
 import { drawHero3D, drawPhotoFramed } from '../frames/dispatch.js';
@@ -8,6 +8,12 @@ import { registerArrangement } from './registry.js';
 /**
  * Pyramid — hero centered top, widening rows of supporting photos below.
  * Rows are 2, 3, 4, 5, 6, 7, ... — extend until all photos are placed.
+ *
+ * This arrangement was already adaptive and its composition is deliberately preserved.
+ * The only corrections are the two the diagnostics found: the documented 28-photo
+ * maximum is now actually enforced, and the cell size can no longer exceed its row
+ * height (the old `max(28, …)` floor could push the lowest rows off the canvas when a
+ * long headline pushed `contentTop` down).
  */
 export const PyramidArrangement: ArrangementRenderer = {
   id: 'pyramid',
@@ -18,7 +24,8 @@ export const PyramidArrangement: ArrangementRenderer = {
     const margin = 40;
     const innerW = W - margin * 2;
     const innerH = H - contentTop - 60;
-    const supporting = photos.slice(1);
+    // The advertised maximum is TOTAL photos, hero included — clamp here, once.
+    const supporting = photos.slice(1, 1 + supportingCapacity('pyramid'));
 
     // ── WOW mode: intentional geometry, never a repeated photo ──────────────
     if (input.renderMode === 'wow' && photos.length > 0) {
@@ -59,9 +66,17 @@ export const PyramidArrangement: ArrangementRenderer = {
     const rowH = pyH / rowCounts.length;
     const widestRow = Math.max(...rowCounts);
     const maxCellByWidth = (innerW - 10 * (widestRow - 1)) / Math.max(1, widestRow);
-    const cellSize = Math.max(28, Math.min(rowH * 0.85, maxCellByWidth));
+    // Three constraints, all of which the old `max(28, …)` floor could violate:
+    //   • never wider than its share of the row,
+    //   • never taller than its own row (or the lowest rows walk off the canvas),
+    //   • never rivalling the hero — at low counts a single supporting photo used to
+    //     render LARGER than the hero. 0.42 matches the WOW pyramid's cap.
+    const cellSize = Math.min(
+      Math.max(12, Math.min(rowH * 0.85, maxCellByWidth)),
+      rowH,
+      heroSize * 0.42,
+    );
 
-    const drawList = tileToCount(supporting, supporting.length);
     let idx = 0;
     rowCounts.forEach((count, r) => {
       if (count === 0) return;
@@ -69,7 +84,7 @@ export const PyramidArrangement: ArrangementRenderer = {
       let xCursor = (W - totalW) / 2;
       const yTop = pyTop + r * rowH + (rowH - cellSize) / 2;
       for (let c = 0; c < count; c++) {
-        drawPhotoFramed(ctx, input, drawList[idx], 0, 0, cellSize, cellSize, {
+        drawPhotoFramed(ctx, input, supporting[idx], 0, 0, cellSize, cellSize, {
           cx: xCursor + cellSize / 2,
           cy: yTop + cellSize / 2,
           rotation: photoRot(rng, 2.5),

@@ -30,7 +30,10 @@ const { createProjectIfMissing } = require('../services/projects');
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-12-18.acacia' });
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const SITE = process.env.PUBLIC_SITE_URL || 'https://celebratebanner.com';
+// Required at boot by assertEnv('api'), so the fallback only applies to ad-hoc dev
+// runs. It must still name the app that serves /success and /cancel — the apex and
+// www hosts are the GitHub Pages marketing site and 404 on both routes.
+const SITE = process.env.PUBLIC_SITE_URL || 'https://app.celebratebanner.com';
 
 async function checkoutHandler(req, res) {
   try {

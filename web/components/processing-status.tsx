@@ -7,6 +7,10 @@ import { cn } from '@/lib/utils';
 
 interface Props {
   projectId: string;
+  /** Stripe checkout session id — authorizes the status read on the /success page. */
+  sessionId?: string;
+  /** Owner's project token (if this browser built the project) — alternate credential. */
+  projectToken?: string;
   /** Poll interval in ms while rendering. Default 2.5s. */
   intervalMs?: number;
   /** Stop polling after this many attempts. Default 120 (~5 min @ 2.5s). */
@@ -21,7 +25,7 @@ const STAGES = [
   { from: 90, to: 100, label: 'Finalizing your downloads' },
 ];
 
-export function ProcessingStatus({ projectId, intervalMs = 2500, maxAttempts = 120, onReady }: Props) {
+export function ProcessingStatus({ projectId, sessionId, projectToken, intervalMs = 2500, maxAttempts = 120, onReady }: Props) {
   const [status, setStatus] = useState<ProjectStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const attempts = useRef(0);
@@ -34,7 +38,7 @@ export function ProcessingStatus({ projectId, intervalMs = 2500, maxAttempts = 1
       if (cancelled) return;
       attempts.current += 1;
       try {
-        const s = await api.getProjectStatus(projectId);
+        const s = await api.getProjectStatus(projectId, { sessionId, projectToken });
         if (cancelled) return;
         setStatus(s);
         if (s.status === 'ready') {
@@ -49,6 +53,14 @@ export function ProcessingStatus({ projectId, intervalMs = 2500, maxAttempts = 1
         timer = window.setTimeout(tick, intervalMs);
       } catch (err) {
         if (cancelled) return;
+        // Right after checkout the payment record may not be written yet, so the status
+        // read can be briefly unauthorized (401/403). That's expected — keep polling
+        // quietly rather than alarming the customer, until we give up at maxAttempts.
+        const authPending = err instanceof ApiError && (err.status === 401 || err.status === 403);
+        if (authPending && attempts.current < maxAttempts) {
+          timer = window.setTimeout(tick, intervalMs);
+          return;
+        }
         const msg = err instanceof ApiError ? err.message : 'Could not reach server';
         setError(msg);
         timer = window.setTimeout(tick, intervalMs * 2);
@@ -59,7 +71,7 @@ export function ProcessingStatus({ projectId, intervalMs = 2500, maxAttempts = 1
       cancelled = true;
       if (timer) window.clearTimeout(timer);
     };
-  }, [projectId, intervalMs, maxAttempts, onReady]);
+  }, [projectId, sessionId, projectToken, intervalMs, maxAttempts, onReady]);
 
   const progress = status?.renderProgress ?? 5;
   const stage = STAGES.find((s) => progress >= s.from && progress < s.to) ?? STAGES[STAGES.length - 1];

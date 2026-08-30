@@ -2,10 +2,10 @@
 
 Production-ready storefront + builder for [celebratebanner.com](https://celebratebanner.com).
 
-This is the **new** React/Next.js frontend. The current live site at
-`celebratebanner-app.vercel.app` is still served by the single-file
-`index.html` at the repo root — that keeps shipping until this app reaches
-feature parity. Deploy this app to its own Vercel project pointed at `/web`.
+This is the **active** React/Next.js frontend. It deploys to **Fly.io** as
+`celebratebanner-web` (see [`../Dockerfile.web`](../Dockerfile.web) +
+[`../fly.web.toml`](../fly.web.toml)). The legacy single-file `index.html` at the
+repo root predates this app and remains only as a fallback/reference (legacy only).
 
 ## Stack
 
@@ -67,13 +67,17 @@ and register as shown in that README.
 
 ## Deploy
 
-Two safe options:
+Authoritative target: **Fly.io** (`celebratebanner-web`). Build context is the repo
+**root** because this app depends on `shared/render-engine` via a `file:` path.
 
-1. **Separate Vercel project** pointed at this `/web` subdirectory. Domain:
-   start with `web-celebratebanner.vercel.app`, promote to `app.celebratebanner.com`
-   when ready. The current static site keeps serving from `index.html`.
-2. **Promote to root** once feature parity is reached — move files up and delete
-   the legacy `index.html`. Until then, leave Vercel root unchanged.
+```bash
+# from the repo root
+fly deploy --config fly.web.toml --dockerfile Dockerfile.web .
+```
+
+Validate on `celebratebanner-web.fly.dev`, then `fly certs add app.celebratebanner.com`
+and cut over DNS (see [../docs/DNS_SSL.md](../docs/DNS_SSL.md)). Full sequence:
+[../docs/DEPLOY_COMMANDS.md](../docs/DEPLOY_COMMANDS.md). Not deployed on Vercel.
 
 ## Architecture decisions
 

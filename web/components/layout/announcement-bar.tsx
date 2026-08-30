@@ -2,13 +2,13 @@ import { cn } from '@/lib/utils';
 import type { ReactNode } from 'react';
 
 /**
- * Slim top-of-page announcement strip. Defaults to the free-proof message; pass
+ * Slim top-of-page announcement strip. Defaults to the free-preview message; pass
  * `children` to override.
  */
 export function AnnouncementBar({
   children = (
     <>
-      <span aria-hidden="true">✦</span> FREE Design Proof Before You Order
+      <span aria-hidden="true">✦</span> Free Preview — See Your Design Before You Pay
     </>
   ),
   className,

@@ -12,7 +12,7 @@ import type { CollectionData } from './types';
 /**
  * Primary conversion path: Football Collection → /proof → /create.
  * Every CTA routes through the Free Design Proof wizard (which hands off into the builder),
- * so customers see a free proof before the builder. Passing a product slug deep-links that
+ * so customers see a free preview before the builder. Passing a product slug deep-links that
  * product as preselected in the wizard (/proof?product=<slug>).
  */
 const proofHref = (product?: string) => (product ? `/proof?product=${product}` : '/proof');
@@ -44,7 +44,7 @@ export const footballCollection: CollectionData = {
   seo: {
     title: 'Football Banners & Posters',
     description:
-      'Personalized football banners, posters, and social graphics — team rosters, senior night, championships, and player spotlights. Built from your team photos with a free proof before you order.',
+      'Personalized football banners, posters, and social graphics — team rosters, senior night, championships, and player spotlights. Built from your team photos with a free preview before you order.',
     path: '/football',
     ogImage: '/og-default.png',
   },
@@ -61,7 +61,7 @@ export const footballCollection: CollectionData = {
   intro: {
     eyebrow: 'The Football Collection',
     heading: 'Everything your program needs to celebrate the season',
-    body: 'From full-roster team banners to senior night tributes and championship posters, every design is personalized with your athletes, colors, and messaging — and you see a free proof before you order.',
+    body: 'From full-roster team banners to senior night tributes and championship posters, every design is personalized with your athletes, colors, and messaging — and you see a free preview before you order.',
   },
 
   products: [
@@ -132,7 +132,7 @@ export const footballCollection: CollectionData = {
         'Team roster banner',
         'Matching social graphics',
         'Your team colors & logo-free design',
-        'Free proof before you order',
+        'Free preview before you order',
       ],
       href: proofHref('team-roster-banner'),
       ctaLabel: 'Build the Season Pack',
@@ -146,7 +146,7 @@ export const footballCollection: CollectionData = {
         'Individual senior banners',
         'A senior night group banner',
         'Printed & digital options',
-        'Free proof before you order',
+        'Free preview before you order',
       ],
       href: proofHref('senior-night-banner'),
       ctaLabel: 'Build the Senior Night Pack',
@@ -161,7 +161,7 @@ export const footballCollection: CollectionData = {
         'Championship poster',
         'Championship social graphic',
         'Roster & record personalization',
-        'Free proof before you order',
+        'Free preview before you order',
       ],
       href: proofHref('championship-poster'),
       ctaLabel: 'Build the Championship Pack',
@@ -172,21 +172,21 @@ export const footballCollection: CollectionData = {
     { title: 'Choose a design', description: 'Start from a football layout built for teams and players.' },
     { title: 'Upload your photos', description: 'Add your athletes, coaches, and team colors.' },
     { title: 'Personalize', description: 'Enter names, numbers, records, and messaging.' },
-    { title: 'Preview your proof', description: 'See your personalized design — free, before you order.' },
+    { title: 'See your free preview', description: 'See your personalized design — free, before you order.' },
     { title: 'Approve & order', description: 'Approve the design and choose printed, digital, or both.' },
   ],
 
   trust: [
-    { icon: '✓', title: 'Free proof first', description: 'See and approve your design before you pay — no payment required to preview.' },
+    { icon: '✓', title: 'Free preview first', description: 'See and approve your design before you pay — no payment required to preview.' },
     { icon: '🎨', title: 'Your colors & photos', description: 'Every design is personalized with your team\'s colors, athletes, and messaging.' },
     { icon: '🖨️', title: 'Printed & digital', description: 'Choose a ready-to-hang printed banner, a digital file, or both.' },
-    { icon: '⚡', title: 'Made in minutes', description: 'A fast online flow gets you from photos to an approved proof quickly.' },
+    { icon: '⚡', title: 'Made in minutes', description: 'A fast online flow gets you from photos to a finished design quickly.' },
   ],
 
   faqs: [
     {
       q: 'Do I pay anything before I see my design?',
-      a: 'No. You can choose a design, upload photos, personalize it, and preview your proof for free. Payment happens only when you approve the design and choose to order.',
+      a: 'No. You can choose a design, upload photos, personalize it, and preview your design for free. Payment happens only if you choose to order.',
     },
     {
       q: 'Can I use my team\'s colors and photos?',
@@ -208,7 +208,7 @@ export const footballCollection: CollectionData = {
 
   finalCta: {
     heading: 'Ready to celebrate your season?',
-    body: 'Start with a free design proof — no payment required to see it. Approve when it\'s exactly right.',
+    body: 'Start with a free design preview — no payment required to see it. Approve when it\'s exactly right.',
     cta: { href: proofHref(), label: 'Create Your Design' },
   },
 };

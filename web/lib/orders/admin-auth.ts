@@ -5,14 +5,18 @@
  * (ADMIN_API_TOKEN) gates it. Behavior:
  *   • token configured  → requests must present it (x-admin-token header or admin_token
  *     cookie / ?key= for the page). Non-matching → denied.
- *   • token NOT configured → treated as local/dev: access is allowed but the UI shows an
- *     "unsecured" banner. Production MUST set ADMIN_API_TOKEN.
+ *   • token NOT configured → DENIED when NODE_ENV=production (fail closed); allowed only
+ *     outside production, where the UI shows an "unsecured" banner.
+ *     Production MUST set ADMIN_API_TOKEN or the queue is unreachable.
  *
  * Real SSO/bearer auth lives in the backend (middleware/admin-auth.js); this mirrors its
  * intent at the edge without pulling in that dependency.
  */
 
 const ENV_TOKEN = () => process.env.ADMIN_API_TOKEN?.trim() || '';
+
+/** Dev convenience only. In production an unset token must DENY, never allow. */
+const ALLOW_UNCONFIGURED = process.env.NODE_ENV !== 'production';
 
 export function adminTokenConfigured(): boolean {
   return ENV_TOKEN().length > 0;
@@ -22,7 +26,7 @@ export function adminTokenConfigured(): boolean {
  * we avoid an early-exit char compare out of habit. */
 function tokenMatches(provided: string): boolean {
   const expected = ENV_TOKEN();
-  if (!expected) return true; // dev mode: no token configured
+  if (!expected) return ALLOW_UNCONFIGURED; // unset: allowed in dev, DENIED in production
   if (!provided || provided.length !== expected.length) return false;
   let diff = 0;
   for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ provided.charCodeAt(i);

@@ -22,7 +22,9 @@ import {
   getCollectionBySlug,
   getProductBySlug,
 } from '@/lib/catalog/products';
+import { productOffer } from '@/lib/catalog/structured-data';
 import { proofHrefForProduct } from '@/lib/catalog/proof-link';
+import { resolveProductImage } from '@/lib/catalog/product-image';
 import { buildMetadata, SITE } from '@/lib/seo';
 
 export function generateStaticParams() {
@@ -40,8 +42,8 @@ const HOW_IT_WORKS = [
   { title: 'Choose this product', description: 'Start from a layout built for your celebration.' },
   { title: 'Upload your photos', description: 'Add your photos, colors, and details.' },
   { title: 'Personalize', description: 'Enter names, text, and any specifics.' },
-  { title: 'Preview your proof', description: 'See your personalized design — free, before you order.' },
-  { title: 'Approve & order', description: 'Approve the design and choose your options.' },
+  { title: 'See your free preview', description: 'See your personalized design — free, before you order.' },
+  { title: 'Order when ready', description: 'Choose your options and check out only when you love it.' },
 ];
 
 function formatsFor(delivery: 'printed' | 'digital' | 'both'): string[] {
@@ -59,6 +61,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const proofHref = proofHrefForProduct(product);
   const url = `${SITE.url}/products/${product.slug}`;
 
+  // Approved flagship hero if present, else the catalog placeholder (never broken).
+  const hero = resolveProductImage(product.slug, 'hero');
+  const heroAlt = hero.isPlaceholder ? `${product.name} — sample design (placeholder)` : hero.alt;
+
   // Product + Breadcrumb structured data. No rating/review schema (nothing to substantiate).
   // `image` intentionally omitted while assets are placeholders (see lib/catalog/poster.ts).
   const productLd = {
@@ -68,13 +74,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     description: product.shortDescription,
     category: product.category,
     brand: { '@type': 'Brand', name: SITE.name },
-    offers: {
-      '@type': 'Offer',
-      price: (product.startingPriceCents / 100).toFixed(2),
-      priceCurrency: 'USD',
-      availability: 'https://schema.org/InStock',
-      url,
-    },
+    offers: { ...productOffer(product), url },
   };
   const breadcrumbLd = {
     '@context': 'https://schema.org',
@@ -103,20 +103,20 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         />
 
         <div className="mt-6 grid gap-10 lg:grid-cols-2">
-          <ProductGallery images={product.gallery} alt={`${product.name} — sample design (placeholder)`} />
+          <ProductGallery images={[hero.src]} alt={heroAlt} />
 
           <div>
             {product.badge && <Badge variant="featured">{product.badge}</Badge>}
             <h1 className="mt-3 font-display text-4xl font-semibold text-obsidian sm:text-5xl">{product.name}</h1>
-            <PriceDisplay cents={product.startingPriceCents} size="lg" className="mt-3" />
+            <PriceDisplay label={product.priceLabel} size="lg" className="mt-3" />
             <p className="mt-4 text-lg leading-relaxed text-obsidian/70">{product.shortDescription}</p>
             <p className="mt-4 text-base leading-relaxed text-obsidian/60">{product.fullDescription}</p>
 
             <div className="mt-7">
               <Button asChild variant="gold" size="lg" fullWidth>
-                <Link href={proofHref}>Start Free Design Proof</Link>
+                <Link href={proofHref}>Create Your Free Preview</Link>
               </Button>
-              <p className="mt-3 text-center text-sm text-obsidian/60">No payment required to see your proof.</p>
+              <p className="mt-3 text-center text-sm text-obsidian/60">No payment required to see your preview.</p>
             </div>
 
             {/* Available formats */}
@@ -162,7 +162,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <Section background="ivory" spacing="lg" aria-labelledby="how-heading">
         <div className="mx-auto mb-12 max-w-2xl text-center">
           <h2 id="how-heading" className="font-display text-3xl font-semibold text-obsidian sm:text-4xl">How it works</h2>
-          <p className="mt-4 text-base leading-relaxed text-obsidian/60">From photos to an approved proof — free to preview.</p>
+          <p className="mt-4 text-base leading-relaxed text-obsidian/60">From photos to a finished design — free to preview.</p>
         </div>
         <ProcessSteps steps={HOW_IT_WORKS} />
       </Section>
@@ -207,11 +207,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               Ready to see your {product.name.toLowerCase()}?
             </h2>
             <p className="mt-4 text-lg leading-relaxed text-ivory/75">
-              Start with a free design proof — no payment required to see it.
+              Create your free preview — no payment required to see your design.
             </p>
             <div className="mt-8 flex justify-center">
               <Button asChild variant="gold" size="lg">
-                <Link href={proofHref}>Start Free Design Proof</Link>
+                <Link href={proofHref}>Create Your Free Preview</Link>
               </Button>
             </div>
           </div>

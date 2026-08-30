@@ -11,23 +11,23 @@ import { ReviewSummary } from './review-summary';
 import { PROOF_PRODUCTS } from '@/lib/proof/options';
 import { validateStep } from '@/lib/proof/validation';
 import { writeProofHandoff } from '@/lib/proof/handoff';
+import { setStoredEmail } from '@/lib/utils';
 import { EMPTY_PROOF } from '@/lib/proof/types';
 import type {
   DesignPreferences,
   ProductOption,
   ProofErrors,
   ProofFormData,
-  ProofSubmission,
   TeamInfo,
 } from '@/lib/proof/types';
 
 const STEPS = ['Product', 'Team info', 'Preferences', 'Review'] as const;
 
 const STEP_META: { title: string; description: string; nextLabel: string }[] = [
-  { title: 'Choose your product', description: 'Pick the design you want a free proof of. You can change this later.', nextLabel: 'Continue' },
-  { title: 'Team & contact details', description: 'Tell us who this is for and where to send your proof.', nextLabel: 'Continue' },
-  { title: 'Design preferences', description: 'Optional — share colors, size, and any details to guide your proof.', nextLabel: 'Review request' },
-  { title: 'Review your request', description: 'Check everything below, then continue into the design studio to add photos and preview your proof.', nextLabel: 'Continue to design studio →' },
+  { title: 'Choose your product', description: 'Pick the design you want to personalize. You can change this later.', nextLabel: 'Continue' },
+  { title: 'Team & contact details', description: 'Tell us who this is for. Your email is only used for your order confirmation if you decide to buy.', nextLabel: 'Continue' },
+  { title: 'Design preferences', description: 'Optional — share colors, size, and any details to guide your design.', nextLabel: 'Continue' },
+  { title: 'Review your details', description: 'Check everything below, then continue into the builder to add photos and see your live preview.', nextLabel: 'Continue to the builder →' },
 ];
 
 export interface ProofWizardProps {
@@ -38,9 +38,11 @@ export interface ProofWizardProps {
 }
 
 /**
- * Free Design Proof Wizard. All state is local to this component (no store, no network) —
- * the four steps read and write one ProofFormData object, so moving backward and forward
- * never loses input. Submit is a placeholder: it logs the payload and shows a confirmation.
+ * Free Preview intake. A guided, four-step setup that hands directly into the builder — it
+ * does NOT create a stored proof, email anyone, or queue a human review. All state is local
+ * (no store, no network); the four steps read and write one ProofFormData object, so moving
+ * backward and forward never loses input. On finish it seeds the builder with the compatible
+ * answers and continues into the live preview.
  */
 export function ProofWizard({ products = PROOF_PRODUCTS, initialProductId = null }: ProofWizardProps) {
   const router = useRouter();
@@ -120,14 +122,11 @@ export function ProofWizard({ products = PROOF_PRODUCTS, initialProductId = null
 
   function handleSubmit() {
     setSubmitting(true);
-    const submission: ProofSubmission = { ...data, submittedAtLabel: 'demo submission' };
-
-    // PLACEHOLDER: no storage, uploads, email, or payment yet.
-    // eslint-disable-next-line no-console
-    console.log('[proof] submission payload', submission);
-
-    // Hand the compatible answers to the builder, then continue directly into it.
-    // The builder consumes this once on mount (see useProofHandoff) — no duplicate entry.
+    // Persist the contact email so it prefills at checkout — it's used only for the order
+    // confirmation AFTER payment. Nothing is emailed, stored server-side, or queued here.
+    if (data.team.email) setStoredEmail(data.team.email);
+    // Seed the builder with the compatible answers, then continue directly into the live
+    // preview. The builder consumes this once on mount (useProofHandoff) — no re-entry.
     writeProofHandoff(data);
     router.push('/create');
   }

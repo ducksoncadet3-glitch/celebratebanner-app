@@ -1,0 +1,48 @@
+# Fly.io configuration — CelebrateBanner web (Next.js, Node runtime).
+# Deploy from the repo root (build context = root, required by the file: dep):
+#   fly deploy --config fly.web.toml --dockerfile Dockerfile.web .
+#
+# Custom domain (documented only — do NOT change DNS here):
+#   fly certs add app.celebratebanner.com   # after the app is validated on *.fly.dev
+# See docs/DNS_SSL.md for the app.celebratebanner.com cutover.
+
+app = "celebratebanner-web"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile.web"
+
+  # NEXT_PUBLIC_* are inlined into the CLIENT bundle at `next build` — Fly *secrets* are
+  # runtime-only and can never reach the browser. Declared here so the shipped bundle does
+  # not depend on Dockerfile.web ARG defaults.
+  [build.args]
+    NEXT_PUBLIC_SITE_URL     = "https://app.celebratebanner.com"
+    NEXT_PUBLIC_API_BASE_URL = "https://api.celebratebanner.com"
+    # Intentionally EMPTY. The static payment link cannot carry projectId metadata, so
+    # payments.webhook.js would drop the order — paid, never fulfilled. Do not populate
+    # without a metadata-capable fallback.
+    NEXT_PUBLIC_LEGACY_STRIPE_LINK = ""
+
+# Non-secret runtime config only. NEXT_PUBLIC_* are baked at build time (see Dockerfile.web
+# build args); set the same values as Fly build secrets/args at deploy time.
+[env]
+  NODE_ENV = "production"
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080          # container listens here (matches Dockerfile PORT)
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    interval = "15s"
+    timeout = "3s"
+    grace_period = "20s"
+    method = "GET"
+    path = "/api/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

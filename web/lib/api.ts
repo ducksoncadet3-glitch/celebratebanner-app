@@ -52,11 +52,15 @@ export interface CreateCheckoutInput {
   recoveryToken?: string;
 }
 
-/** Payload for the order-confirmation email integration point (same-origin route). */
+/**
+ * Payload for the order-confirmation email integration point (same-origin route).
+ *
+ * Only the Stripe Checkout session id is sent. The recipient email, projectId, and order
+ * reference are derived server-side from the verified payment record — the browser never
+ * supplies (and cannot influence) the recipient address.
+ */
 export interface OrderConfirmationInput {
-  email: string;
-  sessionId?: string;
-  projectId?: string;
+  sessionId: string;
 }
 
 export interface CreateCheckoutResponse {
@@ -142,15 +146,30 @@ export const api = {
     });
   },
 
-  /** GET /api/projects/:id/status — used by /success to poll render progress. */
-  getProjectStatus(projectId: string): Promise<ProjectStatus> {
-    return request<ProjectStatus>(`/api/projects/${encodeURIComponent(projectId)}/status`);
+  /**
+   * GET /api/projects/:id/status — used by /success to poll render progress.
+   *
+   * The route is authorized: pass whichever project-scoped credential the caller holds —
+   * the owner's `projectToken` (from autosave) and/or the Stripe `sessionId` (present on
+   * the /success page, verified against the payment record). At least one is required.
+   */
+  getProjectStatus(
+    projectId: string,
+    opts: { projectToken?: string; sessionId?: string } = {},
+  ): Promise<ProjectStatus> {
+    const qs = opts.sessionId ? `?session_id=${encodeURIComponent(opts.sessionId)}` : '';
+    return request<ProjectStatus>(`/api/projects/${encodeURIComponent(projectId)}/status${qs}`, {
+      // `Authorization: Bearer` (not `x-project-token`): the API accepts either
+      // (services/project-token.js extractProjectToken), but only Authorization is on the
+      // production CORS allow-list, so the custom header is blocked by the browser preflight.
+      headers: opts.projectToken ? { Authorization: `Bearer ${opts.projectToken}` } : undefined,
+    });
   },
 
   /**
    * POST /api/order-confirmation — fire-and-forget confirmation-email trigger.
    * This hits our OWN same-origin Next route handler (not the external API), which
-   * sends the email if a provider is configured and otherwise no-ops gracefully.
+   * verifies the session server-side and asks the backend (Postmark) to send once.
    * Never throws to the caller: a failed confirmation must not break the success page.
    */
   async sendOrderConfirmation(input: OrderConfirmationInput): Promise<{ sent: boolean }> {
@@ -158,7 +177,7 @@ export const api = {
       const res = await fetch('/api/order-confirmation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(input),
+        body: JSON.stringify({ sessionId: input.sessionId }),
         cache: 'no-store',
       });
       if (!res.ok) return { sent: false };
@@ -190,14 +209,29 @@ export const api = {
   },
 
   /**
-   * PATCH /api/projects/:id — autosave the canonical RenderInput. Versioned;
-   * the server rejects payloads whose `version` field is unknown.
+   * PATCH /api/projects/:id — autosave the canonical RenderInput. Versioned (rev
+   * optimistic-concurrency).
+   *
+   * Authorized write: send the owner's `projectToken` if we already hold one. The very
+   * first save for a brand-new project has no token yet — the server claims the project
+   * (trust-on-first-use) and returns a `projectToken` the caller must persist and send on
+   * every subsequent save. Once a project is claimed, saves without the token are rejected.
    */
-  saveProject(projectId: string, body: { renderInput: unknown; rev: number }): Promise<{ rev: number }> {
-    return request<{ rev: number }>(`/api/projects/${encodeURIComponent(projectId)}`, {
-      method: 'PATCH',
-      json: body,
-    });
+  saveProject(
+    projectId: string,
+    body: { renderInput: unknown; rev: number },
+    projectToken?: string,
+  ): Promise<{ rev: number; projectToken?: string }> {
+    return request<{ rev: number; projectToken?: string }>(
+      `/api/projects/${encodeURIComponent(projectId)}`,
+      {
+        method: 'PATCH',
+        json: body,
+        // See getProjectStatus: Authorization is CORS-allowed in production; the
+        // equivalent `x-project-token` header is not, so autosaves would be blocked.
+        headers: projectToken ? { Authorization: `Bearer ${projectToken}` } : undefined,
+      },
+    );
   },
 };
 
@@ -209,6 +243,22 @@ export function serverApi() {
     getProjectStatus(projectId: string): Promise<ProjectStatus> {
       return request<ProjectStatus>(`/api/projects/${encodeURIComponent(projectId)}/status`, {
         base,
+        headers: secret ? { 'x-internal-secret': secret } : undefined,
+      });
+    },
+
+    /**
+     * POST /api/emails/order-confirmation — ask the backend (the single Postmark
+     * mailer) to send the order-confirmation email. Server-to-server: authenticated
+     * with the internal shared secret, so POSTMARK_API_TOKEN stays on the backend.
+     * Only the session id is forwarded; the backend verifies it and derives the
+     * recipient/order reference from the stored payment, and de-duplicates the send.
+     */
+    sendOrderConfirmation(input: OrderConfirmationInput): Promise<{ sent: boolean }> {
+      return request<{ sent: boolean }>('/api/emails/order-confirmation', {
+        base,
+        method: 'POST',
+        json: { sessionId: input.sessionId },
         headers: secret ? { 'x-internal-secret': secret } : undefined,
       });
     },

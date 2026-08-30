@@ -3,7 +3,7 @@ import { TrustGrid } from '@/components/collection/trust-grid';
 
 /** Factual trust indicators only — no fabricated reviews, ratings, or guarantees. */
 const TRUST_FEATURES = [
-  { icon: '✓', title: 'Free Design Proof', description: 'See your personalized design before you pay — no payment required to preview.' },
+  { icon: '✓', title: 'Free Design Preview', description: 'See your personalized design before you pay — no payment required to preview.' },
   { icon: '✓', title: 'Personalized Design', description: 'Every design is built from your own photos, colors, and text.' },
   { icon: '✓', title: 'Secure Checkout', description: 'Payments are processed securely through Stripe when you’re ready.' },
   { icon: '✓', title: 'Printed & Digital Options', description: 'Choose printed, digital, or both — where the product supports it.' },

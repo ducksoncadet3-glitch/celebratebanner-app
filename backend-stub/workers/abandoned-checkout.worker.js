@@ -34,6 +34,31 @@ const { shutdown: dbShutdown } = require('../db/index');
 const DELAY_HOURS = Number.parseInt(process.env.RECOVERY_DELAY_HOURS || '4', 10);
 const INTERVAL_MS = Number.parseInt(process.env.RECOVERY_INTERVAL_MS || `${15 * 60 * 1000}`, 10);
 const DAILY_CAP   = Number.parseInt(process.env.RECOVERY_DAILY_CAP || '500', 10);
+// Draft retention: abandoned unpaid drafts are deleted after this many days (Privacy §4).
+const DRAFT_RETENTION_DAYS = Number.parseInt(process.env.DRAFT_RETENTION_DAYS || '90', 10);
+const PURGE_CAP = Number.parseInt(process.env.RECOVERY_PURGE_CAP || '500', 10);
+
+/**
+ * Delete abandoned DRAFTS — unpaid projects still in 'pending' status that haven't been edited
+ * in > DRAFT_RETENTION_DAYS (90). Cascades to uploads/renders/download_tokens via FK
+ * ON DELETE CASCADE. Only 'pending' rows are touched, so PAID order records (paid/rendering/
+ * ready/refunded/failed) are never deleted and their 7-year retention is preserved. The S3
+ * objects themselves expire separately via the bucket lifecycle. Batched by PURGE_CAP per tick.
+ */
+async function purgeStaleDrafts() {
+  const res = await query(
+    `DELETE FROM projects
+      WHERE id IN (
+        SELECT id FROM projects
+         WHERE status = 'pending'
+           AND updated_at < NOW() - ($1 || ' days')::interval
+         ORDER BY updated_at ASC
+         LIMIT $2
+      )`,
+    [String(DRAFT_RETENTION_DAYS), PURGE_CAP],
+  );
+  return res.rowCount || 0;
+}
 
 async function tick() {
   const t0 = Date.now();
@@ -84,7 +109,15 @@ async function tick() {
       logger.warn({ projectId: c.id, err: err.message }, 'recovery.send-failed');
     }
   }
-  logger.info({ candidates: candidates.length, sent, skipped, ms: Date.now() - t0 }, 'recovery.tick');
+  // Purge abandoned drafts past the retention window (best-effort; never fails the tick).
+  let purged = 0;
+  try {
+    purged = await purgeStaleDrafts();
+  } catch (err) {
+    logger.warn({ err: err.message }, 'recovery.purge-failed');
+  }
+
+  logger.info({ candidates: candidates.length, sent, skipped, purged, ms: Date.now() - t0 }, 'recovery.tick');
 }
 
 async function main() {

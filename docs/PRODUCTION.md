@@ -33,7 +33,7 @@ once we move it to a registry.
 | S3 + CloudFront  | AWS                           | 10–50 GB images/mo         |
 | API host         | Fly.io / Railway / Render     | 1× 2 GB instance           |
 | Worker host      | Same provider, SEPARATE process | 2× 1 GB instances        |
-| Email            | Postmark / Resend             | <10k tx/mo                 |
+| Email            | Postmark (sole provider)      | <10k tx/mo                 |
 | Stripe webhook   | Stripe dashboard              | one prod endpoint          |
 | Sentry           | sentry.io free tier           | error reporting            |
 
@@ -62,11 +62,12 @@ Cost at launch volume: ~$15-30/mo before AWS, ~$50-80/mo with AWS.
 6. **Configure Postmark**:
    - Verify sender domain `celebratebanner.com` (SPF/DKIM/Return-Path)
    - Copy server token into `POSTMARK_API_TOKEN`
-7. **Deploy /web**:
-   - Create separate Vercel project pointed at `/web` subdirectory
-   - Fill in env vars from `web/.env.example` (API URL, Stripe pk, etc.)
-   - Domain: start `web-celebratebanner.vercel.app`, promote to
-     `app.celebratebanner.com` when validated
+7. **Deploy /web** (Fly.io — `celebratebanner-web`):
+   - `fly deploy --config fly.web.toml --dockerfile Dockerfile.web .` (build context = repo root)
+   - Provide env vars from `web/.env.example`: `NEXT_PUBLIC_*` as build args (baked at
+     build), `API_INTERNAL_BASE_URL` / `API_SHARED_SECRET` as `fly secrets set`
+   - Validate on `celebratebanner-web.fly.dev`, then `fly certs add app.celebratebanner.com`
+     and cut over DNS (see [DNS_SSL.md](DNS_SSL.md#cutover-order))
 8. **Deploy celebratebanner-admin**:
    - Copy `admin-stub/` files into the admin repo
    - Implement admin API endpoints in celebratebanner-api (see
@@ -109,8 +110,9 @@ Prometheus rules + Grafana dashboards live in `backend-stub/services/metrics.js`
 
 ## Migration from the legacy static Stripe link
 
-The current live site (`celebratebanner-app.vercel.app`) uses a static Stripe
-payment link. The new flow uses dynamic Checkout Sessions. Cut over:
+The legacy single-file storefront (the GitHub Pages `index.html`) uses a static
+Stripe payment link. The new flow (the Fly.io Next.js app) uses dynamic Checkout
+Sessions. Cut over:
 
 1. Both flows work simultaneously while migrating — the new frontend falls
    back to the legacy link on API 5xx via `NEXT_PUBLIC_LEGACY_STRIPE_LINK`.
@@ -119,8 +121,8 @@ payment link. The new flow uses dynamic Checkout Sessions. Cut over:
 
 ## What's untouched
 
-- `index.html` keeps serving from `celebratebanner-app.vercel.app` unchanged.
+- The legacy `index.html` storefront (GitHub Pages) keeps serving unchanged until cutover.
 - The render engine is additive infrastructure — no business logic depends
-  on it until the new Vercel deploy of `/web` goes live.
+  on it until the new Fly.io deploy of `/web` goes live.
 - This guide doesn't touch DNS. Coordinate that separately when promoting
   `app.celebratebanner.com` to the new app.

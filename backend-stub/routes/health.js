@@ -23,6 +23,14 @@ const { getQueueHealth, connection: redisConnection } = require('../services/que
 const { DEFAULTS: S3_DEFAULTS, s3 } = require('../services/s3');
 const { HeadBucketCommand } = require('@aws-sdk/client-s3');
 const { logger } = require('../services/logger');
+const { withTimeout } = require('../lib/with-timeout');
+
+// Per-dependency probe timeout. Bounds every network health check so /health/ready and
+// /health/dependencies always return, even when Postgres/Redis/S3/queue are unreachable
+// (the underlying clients keep their own retry behavior — only the probe is bounded).
+// Configurable; safe default 2s. Since probes run in parallel, the handler's worst case is
+// ~one timeout window, not the sum.
+const HEALTH_CHECK_TIMEOUT_MS = Math.max(1, Number(process.env.HEALTH_CHECK_TIMEOUT_MS) || 2000);
 
 // ── Liveness ────────────────────────────────────────────────────────────────
 function liveHandler(_req, res) {
@@ -33,7 +41,10 @@ function liveHandler(_req, res) {
 // ── Readiness ───────────────────────────────────────────────────────────────
 async function readyHandler(_req, res) {
   res.setHeader('Cache-Control', 'no-store');
-  const checks = await Promise.all([checkPg(), checkRedis()]);
+  const checks = await Promise.all([
+    withTimeout(checkPg, HEALTH_CHECK_TIMEOUT_MS, 'pg'),
+    withTimeout(checkRedis, HEALTH_CHECK_TIMEOUT_MS, 'redis'),
+  ]);
   const failed = checks.filter((c) => !c.ok);
   if (failed.length > 0) {
     res.status(503).json({ ok: false, failed: failed.map((f) => f.name) });
@@ -51,11 +62,11 @@ async function depsHandler(_req, res) {
     return res.status(200).json(depCache.payload);
   }
   const [pg, redis, queueHealth, s3State, memory] = await Promise.all([
-    checkPg(),
-    checkRedis(),
-    checkQueue(),
-    checkS3(),
-    Promise.resolve(checkMemory()),
+    withTimeout(checkPg, HEALTH_CHECK_TIMEOUT_MS, 'pg'),
+    withTimeout(checkRedis, HEALTH_CHECK_TIMEOUT_MS, 'redis'),
+    withTimeout(checkQueue, HEALTH_CHECK_TIMEOUT_MS, 'queue'),
+    withTimeout(checkS3, HEALTH_CHECK_TIMEOUT_MS, 's3'),
+    Promise.resolve(checkMemory()), // local, synchronous — no external call to bound
   ]);
   const payload = {
     ok: [pg, redis, queueHealth, s3State, memory].every((c) => c.ok || c.degraded),

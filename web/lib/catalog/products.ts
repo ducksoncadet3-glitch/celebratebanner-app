@@ -1,4 +1,4 @@
-import { formatUSD } from '@/lib/pricing';
+import { formatUSD, PRICING } from '@/lib/pricing';
 import { poster, type PosterAspect } from './poster';
 import type {
   Collection,
@@ -61,10 +61,24 @@ export function deliveryLabel(d: DeliveryType): string {
   return d === 'both' ? 'Printed & digital' : d === 'printed' ? 'Printed & shipped' : 'Instant digital download';
 }
 
+/**
+ * Delivery-aware price line — always exactly what checkout can charge (see lib/pricing.ts):
+ *   • both      → "Print from $79.99 · Digital $9.99" (both options shown)
+ *   • printed   → "$79.99" (single flat price, no "From")
+ *   • digital   → "$9.99"
+ */
+export function priceLabelFor(d: DeliveryType): string {
+  const print = formatUSD(PRICING.print.amountCents); // $79.99
+  const digital = formatUSD(PRICING.digital.amountCents); // $9.99
+  if (d === 'both') return `Print from ${print} · Digital ${digital}`;
+  if (d === 'digital') return digital;
+  return print; // printed-only
+}
+
 const COMMON_FAQ: ProductFaq[] = [
   {
     q: 'Do I pay before I see my design?',
-    a: 'No. Start a free design proof, personalize it, and preview your design first. You only pay when you approve it.',
+    a: 'No. Create your free preview — pick a product, add your photos, and personalize your design, then see it in the builder before you decide. You only pay if you choose to order or download.',
   },
   {
     q: 'What sizes and formats are available?',
@@ -112,7 +126,7 @@ function build(seed: Seed): Product {
     category: seed.category,
     collectionSlug: seed.collectionSlug,
     startingPriceCents: seed.startingPriceCents,
-    priceLabel: `From ${formatUSD(seed.startingPriceCents)}`,
+    priceLabel: priceLabelFor(seed.deliveryType),
     image,
     gallery: [image],
     badge: seed.badge,
@@ -146,7 +160,7 @@ export const COLLECTIONS: Collection[] = [
     heroLabel: 'TEAM',
     seoTitle: 'Team Banners & Posters',
     seoDescription:
-      'Custom team banners, senior night banners, coach appreciation, and player spotlights — personalized from your team photos with a free design proof.',
+      'Custom team banners, senior night banners, coach appreciation, and player spotlights — personalized from your team photos with a free design preview.',
   },
   {
     slug: 'graduation',
@@ -157,7 +171,7 @@ export const COLLECTIONS: Collection[] = [
     heroLabel: 'GRAD',
     seoTitle: 'Graduation Banners, Posters & Yard Signs',
     seoDescription:
-      'Custom graduation banners, posters, yard signs, and social graphics personalized with your graduate’s photos — free design proof before you order.',
+      'Custom graduation banners, posters, yard signs, and social graphics personalized with your graduate’s photos — free design preview before you order.',
   },
   {
     slug: 'championship',
@@ -168,7 +182,7 @@ export const COLLECTIONS: Collection[] = [
     heroLabel: 'CHAMPS',
     seoTitle: 'Championship Banners & Posters',
     seoDescription:
-      'Custom championship banners, posters, MVP prints, and celebration graphics personalized with your team’s title season — free design proof first.',
+      'Custom championship banners, posters, MVP prints, and celebration graphics personalized with your team’s title season — free design preview first.',
   },
   {
     slug: 'social-graphics',
@@ -195,30 +209,30 @@ const SEEDS: Seed[] = [
       'Rally the whole program around one banner. Add your roster, coaches, and a hero photo, then personalize the colors and headline to match your team. See your design free before you order.',
     features: ['Full roster and coaches', 'Hero photo with supporting grid', 'Your team colors & headline', 'Logo-free, likeness-safe design'],
     occasionTags: ['team', 'season', 'game-day'], sportTags: SPORTS,
-    seoTitle: 'Custom Team Banner', seoDescription: 'Personalized team banner with your full roster, coaches, and colors. Start a free design proof — no payment required.',
+    seoTitle: 'Custom Team Banner', seoDescription: 'Personalized team banner with your full roster, coaches, and colors. Start a free design preview — no payment required.',
     posterLabel: 'EAGLES', posterSub: 'Team Roster',
   },
   {
     slug: 'senior-night-banner', name: 'Senior Night Banner', collectionSlug: 'team-banners', category: 'Banner',
-    productType: 'banner', deliveryType: 'both', startingPriceCents: 8999, proofProductKey: 'senior-night-banner',
+    productType: 'banner', deliveryType: 'both', startingPriceCents: 7999, proofProductKey: 'senior-night-banner',
     badge: 'Most Popular', featured: true,
     shortDescription: 'Spotlight a graduating senior with their photo, number, and years played.',
     fullDescription:
       'Give your seniors the send-off they earned. Feature each athlete’s photo, number, position, and years played on a banner built for the moment. Preview your personalized design for free.',
     features: ['Senior photo, number & position', 'Years-played and tribute text', 'Your team colors', 'Great for game-day and keepsakes'],
     occasionTags: ['senior-night', 'team', 'celebration'], sportTags: SPORTS,
-    seoTitle: 'Senior Night Banner', seoDescription: 'Personalized senior night banner spotlighting your graduating athlete. Free design proof — pay only when you love it.',
+    seoTitle: 'Senior Night Banner', seoDescription: 'Personalized senior night banner spotlighting your graduating athlete. Free design preview — pay only when you love it.',
     posterLabel: 'SENIORS', posterSub: 'Senior Night',
   },
   {
     slug: 'team-poster', name: 'Team Poster', collectionSlug: 'team-banners', category: 'Poster',
-    productType: 'poster', deliveryType: 'both', startingPriceCents: 3999, proofProductKey: 'team-roster-banner',
+    productType: 'poster', deliveryType: 'both', startingPriceCents: 7999, proofProductKey: 'team-roster-banner',
     shortDescription: 'A compact team poster — your roster and hero photo, ready for the wall.',
     fullDescription:
-      'The team banner in a wall-friendly poster size. Feature your roster and a hero photo, personalized with your colors and headline. Free proof before you order.',
+      'The team banner in a wall-friendly poster size. Feature your roster and a hero photo, personalized with your colors and headline. Free preview before you order.',
     features: ['Roster and hero photo', 'Your team colors', 'Wall-ready poster size', 'Digital option for sharing'],
     occasionTags: ['team', 'season'], sportTags: SPORTS,
-    seoTitle: 'Custom Team Poster', seoDescription: 'Personalized team poster with your roster and colors. Start a free design proof — no payment required.',
+    seoTitle: 'Custom Team Poster', seoDescription: 'Personalized team poster with your roster and colors. Start a free design preview — no payment required.',
     posterLabel: 'EAGLES', posterSub: 'Team Poster',
   },
   {
@@ -229,7 +243,7 @@ const SEEDS: Seed[] = [
       'Say thank you the right way. Celebrate your coach with a personalized banner featuring their photo, a message from the team, and your colors. Preview it free first.',
     features: ['Coach photo & tribute message', 'Signed-by-the-team feel', 'Your team colors', 'Perfect for end-of-season'],
     occasionTags: ['appreciation', 'team', 'end-of-season'], sportTags: SPORTS,
-    seoTitle: 'Coach Appreciation Banner', seoDescription: 'Personalized coach appreciation banner honoring your coach’s season. Free design proof before you order.',
+    seoTitle: 'Coach Appreciation Banner', seoDescription: 'Personalized coach appreciation banner honoring your coach’s season. Free design preview before you order.',
     posterLabel: 'COACH', posterSub: 'Thank You',
   },
   {
@@ -237,21 +251,21 @@ const SEEDS: Seed[] = [
     productType: 'banner', deliveryType: 'both', startingPriceCents: 7999, proofProductKey: 'player-spotlight-poster',
     shortDescription: 'A standout-player banner with an action photo, number, and name.',
     fullDescription:
-      'Put one athlete center stage. Feature an action photo, name, and number on a bold banner personalized with your team colors. See your free proof before you pay.',
+      'Put one athlete center stage. Feature an action photo, name, and number on a bold banner personalized with your team colors. See your free preview before you pay.',
     features: ['Action photo & name', 'Number and position', 'Your team colors', 'Digital option for socials'],
     occasionTags: ['player', 'team', 'game-day'], sportTags: SPORTS,
-    seoTitle: 'Player Spotlight Banner', seoDescription: 'Personalized player spotlight banner with an action photo and stats. Free design proof — pay only when ready.',
+    seoTitle: 'Player Spotlight Banner', seoDescription: 'Personalized player spotlight banner with an action photo and stats. Free design preview — pay only when ready.',
     posterLabel: '#11 SMITH', posterSub: 'Player Spotlight',
   },
   {
     slug: 'team-photo-collage', name: 'Team Photo Collage', collectionSlug: 'team-banners', category: 'Collage',
-    productType: 'collage', deliveryType: 'both', startingPriceCents: 4999, proofProductKey: 'team-roster-banner',
+    productType: 'collage', deliveryType: 'both', startingPriceCents: 7999, proofProductKey: 'team-roster-banner',
     shortDescription: 'A photo collage of your season — many moments on one keepsake.',
     fullDescription:
-      'Turn a season of photos into one keepsake. Add your favorite team moments and we’ll arrange them into a clean collage personalized with your colors. Free proof first.',
+      'Turn a season of photos into one keepsake. Add your favorite team moments and we’ll arrange them into a clean collage personalized with your colors. Free preview first.',
     features: ['Multiple photos, one layout', 'Season-long moments', 'Your team colors', 'Printed keepsake or digital file'],
     occasionTags: ['team', 'season', 'keepsake'], sportTags: SPORTS,
-    seoTitle: 'Team Photo Collage', seoDescription: 'Personalized team photo collage of your season. Start a free design proof — no payment required.',
+    seoTitle: 'Team Photo Collage', seoDescription: 'Personalized team photo collage of your season. Start a free design preview — no payment required.',
     posterLabel: 'THE SEASON', posterSub: 'Team Collage',
   },
 
@@ -265,30 +279,30 @@ const SEEDS: Seed[] = [
       'Mark the milestone with a banner made for the graduate. Add their name, class year, school, and favorite photos, personalized with your colors. Preview it free before ordering.',
     features: ['Graduate name, year & school', 'Hero photo and supporting shots', 'Your colors & headline', 'Printed keepsake or digital file'],
     occasionTags: ['graduation', 'celebration', 'party'],
-    seoTitle: 'Custom Graduation Banner', seoDescription: 'Personalized graduation banner with your graduate’s name, year, and photos. Free design proof — pay only when you love it.',
+    seoTitle: 'Custom Graduation Banner', seoDescription: 'Personalized graduation banner with your graduate’s name, year, and photos. Free design preview — pay only when you love it.',
     posterLabel: 'CLASS OF 2026', posterSub: 'Graduation',
   },
   {
     slug: 'graduation-poster', name: 'Graduation Poster', collectionSlug: 'graduation', category: 'Poster',
-    productType: 'poster', deliveryType: 'both', startingPriceCents: 4999, proofProductKey: 'graduation-banner',
+    productType: 'poster', deliveryType: 'both', startingPriceCents: 7999, proofProductKey: 'graduation-banner',
     featured: true,
     shortDescription: 'A wall-ready graduation poster personalized with your graduate’s photo.',
     fullDescription:
-      'A poster-sized tribute for your graduate. Feature their photo, name, and year in a clean, celebratory layout personalized with your colors. See your free proof first.',
+      'A poster-sized tribute for your graduate. Feature their photo, name, and year in a clean, celebratory layout personalized with your colors. See your free preview first.',
     features: ['Graduate photo, name & year', 'Clean celebratory layout', 'Your colors', 'Digital option for sharing'],
     occasionTags: ['graduation', 'party', 'keepsake'],
-    seoTitle: 'Graduation Poster', seoDescription: 'Personalized graduation poster with your graduate’s photo and year. Start a free design proof — no payment required.',
+    seoTitle: 'Graduation Poster', seoDescription: 'Personalized graduation poster with your graduate’s photo and year. Start a free design preview — no payment required.',
     posterLabel: 'SARAH J.', posterSub: 'Graduate 2026',
   },
   {
     slug: 'graduation-yard-sign', name: 'Graduation Yard Sign', collectionSlug: 'graduation', category: 'Yard Sign',
-    productType: 'yard-sign', deliveryType: 'printed', startingPriceCents: 2999, proofProductKey: 'graduation-banner',
+    productType: 'yard-sign', deliveryType: 'printed', startingPriceCents: 7999, proofProductKey: 'graduation-banner',
     shortDescription: 'A personalized yard sign to announce your graduate at home.',
     fullDescription:
       'Announce your graduate from the front lawn. A personalized yard sign with their photo, name, and year — designed to be seen and celebrated. Preview your design free.',
     features: ['Graduate photo, name & year', 'Bold, readable-from-the-street layout', 'Your colors', 'Great for grad parties'],
     occasionTags: ['graduation', 'party', 'yard-sign'],
-    seoTitle: 'Graduation Yard Sign', seoDescription: 'Personalized graduation yard sign with your graduate’s photo and year. Free design proof before you order.',
+    seoTitle: 'Graduation Yard Sign', seoDescription: 'Personalized graduation yard sign with your graduate’s photo and year. Free design preview before you order.',
     posterLabel: 'GRAD 2026', posterSub: 'Yard Sign',
   },
   {
@@ -296,10 +310,10 @@ const SEEDS: Seed[] = [
     productType: 'social-graphic', deliveryType: 'digital', startingPriceCents: 999, proofProductKey: 'graduation-banner',
     shortDescription: 'A share-ready graduation graphic for social media.',
     fullDescription:
-      'Announce the good news online. A personalized graduation graphic sized for social, featuring your graduate’s photo, name, and year. Free proof before you download.',
+      'Announce the good news online. A personalized graduation graphic sized for social, featuring your graduate’s photo, name, and year. Free preview before you download.',
     features: ['Sized for social sharing', 'Graduate photo, name & year', 'Your colors', 'Instant digital download'],
     occasionTags: ['graduation', 'social', 'announcement'],
-    seoTitle: 'Graduation Social Graphic', seoDescription: 'Personalized graduation social media graphic with your graduate’s photo. Free design proof — instant digital download.',
+    seoTitle: 'Graduation Social Graphic', seoDescription: 'Personalized graduation social media graphic with your graduate’s photo. Free design preview — instant digital download.',
     posterLabel: 'WE DID IT', posterSub: 'Grad Social',
   },
   {
@@ -310,18 +324,18 @@ const SEEDS: Seed[] = [
       'Set the scene for the celebration. A personalized welcome banner featuring your graduate’s photo and name to greet party guests. Preview your design free first.',
     features: ['“Welcome” headline & graduate name', 'Hero photo', 'Your party colors', 'Printed keepsake or digital file'],
     occasionTags: ['graduation', 'party', 'welcome'],
-    seoTitle: 'Graduation Welcome Banner', seoDescription: 'Personalized graduation party welcome banner with your graduate’s photo. Free design proof before you order.',
+    seoTitle: 'Graduation Welcome Banner', seoDescription: 'Personalized graduation party welcome banner with your graduate’s photo. Free design preview before you order.',
     posterLabel: 'WELCOME', posterSub: 'Grad Party',
   },
   {
     slug: 'graduation-memory-collage', name: 'Graduation Memory Collage', collectionSlug: 'graduation', category: 'Collage',
-    productType: 'collage', deliveryType: 'both', startingPriceCents: 5999, proofProductKey: 'graduation-banner',
+    productType: 'collage', deliveryType: 'both', startingPriceCents: 7999, proofProductKey: 'graduation-banner',
     shortDescription: 'A photo collage tracing your graduate’s journey to the stage.',
     fullDescription:
-      'From first day to graduation day. Add photos across the years and we’ll arrange them into a memory collage personalized with your colors. See your free proof first.',
+      'From first day to graduation day. Add photos across the years and we’ll arrange them into a memory collage personalized with your colors. See your free preview first.',
     features: ['Multiple photos across the years', 'Clean collage layout', 'Your colors', 'Printed keepsake or digital file'],
     occasionTags: ['graduation', 'keepsake', 'memory'],
-    seoTitle: 'Graduation Memory Collage', seoDescription: 'Personalized graduation memory collage of your graduate’s journey. Start a free design proof — no payment required.',
+    seoTitle: 'Graduation Memory Collage', seoDescription: 'Personalized graduation memory collage of your graduate’s journey. Start a free design preview — no payment required.',
     posterLabel: 'THE JOURNEY', posterSub: 'Grad Collage',
   },
 
@@ -335,18 +349,18 @@ const SEEDS: Seed[] = [
       'Hang the season on the wall. A championship banner personalized with your team name, record, and roster, in your colors. Preview your design free before you order.',
     features: ['Team name, record & roster', 'Bold championship layout', 'Your team colors', 'Printed keepsake or digital file'],
     occasionTags: ['championship', 'celebration', 'team'], sportTags: SPORTS,
-    seoTitle: 'Championship Banner', seoDescription: 'Personalized championship banner with your team name, record, and roster. Free design proof — pay only when ready.',
+    seoTitle: 'Championship Banner', seoDescription: 'Personalized championship banner with your team name, record, and roster. Free design preview — pay only when ready.',
     posterLabel: 'CHAMPIONS', posterSub: 'Title Season',
   },
   {
     slug: 'championship-poster', name: 'Championship Poster', collectionSlug: 'championship', category: 'Poster',
-    productType: 'poster', deliveryType: 'both', startingPriceCents: 4999, proofProductKey: 'championship-poster',
+    productType: 'poster', deliveryType: 'both', startingPriceCents: 7999, proofProductKey: 'championship-poster',
     shortDescription: 'A wall-ready championship poster with your title year and roster.',
     fullDescription:
-      'The championship banner in poster size. Feature your team name, title year, and roster in a bold layout personalized with your colors. Free proof first.',
+      'The championship banner in poster size. Feature your team name, title year, and roster in a bold layout personalized with your colors. Free preview first.',
     features: ['Team name & title year', 'Roster and record', 'Your team colors', 'Digital option for sharing'],
     occasionTags: ['championship', 'team', 'keepsake'], sportTags: SPORTS,
-    seoTitle: 'Championship Poster', seoDescription: 'Personalized championship poster with your title year and roster. Start a free design proof — no payment required.',
+    seoTitle: 'Championship Poster', seoDescription: 'Personalized championship poster with your title year and roster. Start a free design preview — no payment required.',
     posterLabel: '2026 CHAMPS', posterSub: 'Champion Poster',
   },
   {
@@ -357,18 +371,18 @@ const SEEDS: Seed[] = [
       'Celebrate the run to the title. A personalized tournament banner featuring your team, the tournament name, and your winning result, in your colors. Preview it free.',
     features: ['Tournament name & result', 'Team roster', 'Your team colors', 'Printed keepsake or digital file'],
     occasionTags: ['championship', 'tournament', 'team'], sportTags: SPORTS,
-    seoTitle: 'Tournament Champion Banner', seoDescription: 'Personalized tournament champion banner with your team and result. Free design proof before you order.',
+    seoTitle: 'Tournament Champion Banner', seoDescription: 'Personalized tournament champion banner with your team and result. Free design preview before you order.',
     posterLabel: 'TOURNEY CHAMPS', posterSub: 'Champions',
   },
   {
     slug: 'mvp-poster', name: 'MVP Poster', collectionSlug: 'championship', category: 'Poster',
-    productType: 'poster', deliveryType: 'both', startingPriceCents: 3999, proofProductKey: 'player-spotlight-poster',
+    productType: 'poster', deliveryType: 'both', startingPriceCents: 7999, proofProductKey: 'player-spotlight-poster',
     shortDescription: 'A standout-player MVP poster with an action photo and name.',
     fullDescription:
-      'Honor the difference-maker. An MVP poster featuring an action photo, name, and your team colors — perfect for the season’s standout. See your free proof first.',
+      'Honor the difference-maker. An MVP poster featuring an action photo, name, and your team colors — perfect for the season’s standout. See your free preview first.',
     features: ['MVP action photo & name', 'Award headline', 'Your team colors', 'Digital option for socials'],
     occasionTags: ['championship', 'player', 'award'], sportTags: SPORTS,
-    seoTitle: 'MVP Poster', seoDescription: 'Personalized MVP poster with an action photo and your team colors. Start a free design proof — no payment required.',
+    seoTitle: 'MVP Poster', seoDescription: 'Personalized MVP poster with an action photo and your team colors. Start a free design preview — no payment required.',
     posterLabel: 'MVP', posterSub: 'Most Valuable',
   },
   {
@@ -379,18 +393,18 @@ const SEEDS: Seed[] = [
       'Keep the celebration going. A team celebration banner featuring your roster and a headline moment, personalized with your colors. Preview your design free first.',
     features: ['Team roster & celebration headline', 'Hero photo', 'Your team colors', 'Printed keepsake or digital file'],
     occasionTags: ['championship', 'celebration', 'team'], sportTags: SPORTS,
-    seoTitle: 'Team Celebration Banner', seoDescription: 'Personalized team celebration banner for your big moment. Free design proof — pay only when ready.',
+    seoTitle: 'Team Celebration Banner', seoDescription: 'Personalized team celebration banner for your big moment. Free design preview — pay only when ready.',
     posterLabel: 'CELEBRATE', posterSub: 'Team Moment',
   },
   {
     slug: 'championship-social-pack', name: 'Championship Social Pack', collectionSlug: 'championship', category: 'Social Pack',
-    productType: 'social-pack', deliveryType: 'digital', startingPriceCents: 1499, proofProductKey: 'football-social-graphics',
+    productType: 'social-pack', deliveryType: 'digital', startingPriceCents: 999, proofProductKey: 'football-social-graphics',
     shortDescription: 'A set of share-ready championship graphics for social.',
     fullDescription:
-      'Announce the title everywhere. A pack of personalized championship graphics sized for social, featuring your team, colors, and result. Free proof before you download.',
+      'Announce the title everywhere. A pack of personalized championship graphics sized for social, featuring your team, colors, and result. Free preview before you download.',
     features: ['Multiple social-ready graphics', 'Team name & result', 'Your team colors', 'Instant digital download'],
     occasionTags: ['championship', 'social', 'announcement'], sportTags: SPORTS,
-    seoTitle: 'Championship Social Pack', seoDescription: 'Personalized championship social media graphics pack. Free design proof — instant digital download.',
+    seoTitle: 'Championship Social Pack', seoDescription: 'Personalized championship social media graphics pack. Free design preview — instant digital download.',
     posterLabel: 'CHAMPS', posterSub: 'Social Pack',
   },
 
@@ -401,10 +415,10 @@ const SEEDS: Seed[] = [
     featured: true,
     shortDescription: 'A share-ready game day graphic to announce the matchup.',
     fullDescription:
-      'Hype the matchup online. A personalized game day graphic with your team, opponent, date, and colors — sized for social. Free proof before you download.',
+      'Hype the matchup online. A personalized game day graphic with your team, opponent, date, and colors — sized for social. Free preview before you download.',
     features: ['Matchup, date & time', 'Your team colors', 'Sized for social', 'Instant digital download'],
     occasionTags: ['game-day', 'social', 'announcement'], sportTags: SPORTS,
-    seoTitle: 'Game Day Graphic', seoDescription: 'Personalized game day social media graphic for your matchup. Free design proof — instant digital download.',
+    seoTitle: 'Game Day Graphic', seoDescription: 'Personalized game day social media graphic for your matchup. Free design preview — instant digital download.',
     posterLabel: 'GAME DAY', posterSub: 'Matchup',
   },
   {
@@ -412,10 +426,10 @@ const SEEDS: Seed[] = [
     productType: 'social-graphic', deliveryType: 'digital', startingPriceCents: 999, proofProductKey: 'football-social-graphics',
     shortDescription: 'A post-game graphic to share the final score.',
     fullDescription:
-      'Post the result the second it’s final. A personalized final score graphic with both teams, the score, and your colors — sized for social. Free proof first.',
+      'Post the result the second it’s final. A personalized final score graphic with both teams, the score, and your colors — sized for social. Free preview first.',
     features: ['Both teams & final score', 'Your team colors', 'Sized for social', 'Instant digital download'],
     occasionTags: ['game-day', 'social', 'result'], sportTags: SPORTS,
-    seoTitle: 'Final Score Graphic', seoDescription: 'Personalized final score social media graphic. Free design proof — instant digital download.',
+    seoTitle: 'Final Score Graphic', seoDescription: 'Personalized final score social media graphic. Free design preview — instant digital download.',
     posterLabel: 'FINAL', posterSub: 'Score',
   },
   {
@@ -423,21 +437,21 @@ const SEEDS: Seed[] = [
     productType: 'social-graphic', deliveryType: 'digital', startingPriceCents: 999, proofProductKey: 'player-spotlight-poster',
     shortDescription: 'A player-of-the-game graphic to spotlight a standout.',
     fullDescription:
-      'Give the standout their moment. A personalized player of the game graphic with an action photo, name, and your colors — sized for social. Free proof before download.',
+      'Give the standout their moment. A personalized player of the game graphic with an action photo, name, and your colors — sized for social. Free preview before download.',
     features: ['Player photo & name', 'Award headline', 'Your team colors', 'Instant digital download'],
     occasionTags: ['player', 'social', 'award'], sportTags: SPORTS,
-    seoTitle: 'Player of the Game Graphic', seoDescription: 'Personalized player of the game social graphic. Free design proof — instant digital download.',
+    seoTitle: 'Player of the Game Graphic', seoDescription: 'Personalized player of the game social graphic. Free design preview — instant digital download.',
     posterLabel: 'POTG', posterSub: 'Player of the Game',
   },
   {
     slug: 'schedule-graphic', name: 'Schedule Graphic', collectionSlug: 'social-graphics', category: 'Social Graphic',
-    productType: 'social-graphic', deliveryType: 'digital', startingPriceCents: 1499, proofProductKey: 'football-social-graphics',
+    productType: 'social-graphic', deliveryType: 'digital', startingPriceCents: 999, proofProductKey: 'football-social-graphics',
     shortDescription: 'A season schedule graphic to share all your matchups.',
     fullDescription:
-      'Put the whole season in one post. A personalized schedule graphic listing your matchups and dates in your team colors — sized for social. Free proof first.',
+      'Put the whole season in one post. A personalized schedule graphic listing your matchups and dates in your team colors — sized for social. Free preview first.',
     features: ['Full season schedule', 'Your team colors', 'Sized for social', 'Instant digital download'],
     occasionTags: ['season', 'social', 'schedule'], sportTags: SPORTS,
-    seoTitle: 'Team Schedule Graphic', seoDescription: 'Personalized season schedule social media graphic. Free design proof — instant digital download.',
+    seoTitle: 'Team Schedule Graphic', seoDescription: 'Personalized season schedule social media graphic. Free design preview — instant digital download.',
     posterLabel: 'SCHEDULE', posterSub: 'Season',
   },
   {
@@ -445,10 +459,10 @@ const SEEDS: Seed[] = [
     productType: 'social-graphic', deliveryType: 'digital', startingPriceCents: 999, proofProductKey: 'coach-recognition-banner',
     shortDescription: 'A thank-you graphic to celebrate your coach on social.',
     fullDescription:
-      'Say thanks where the whole team can see it. A personalized thank-you coach graphic with a photo and message in your colors — sized for social. Free proof before download.',
+      'Say thanks where the whole team can see it. A personalized thank-you coach graphic with a photo and message in your colors — sized for social. Free preview before download.',
     features: ['Coach photo & message', 'Your team colors', 'Sized for social', 'Instant digital download'],
     occasionTags: ['appreciation', 'social', 'end-of-season'], sportTags: SPORTS,
-    seoTitle: 'Thank You Coach Graphic', seoDescription: 'Personalized thank you coach social media graphic. Free design proof — instant digital download.',
+    seoTitle: 'Thank You Coach Graphic', seoDescription: 'Personalized thank you coach social media graphic. Free design preview — instant digital download.',
     posterLabel: 'THANK YOU', posterSub: 'Coach',
   },
   {
@@ -456,10 +470,10 @@ const SEEDS: Seed[] = [
     productType: 'social-graphic', deliveryType: 'digital', startingPriceCents: 999, proofProductKey: 'football-social-graphics',
     shortDescription: 'An announcement graphic for signings, tryouts, and news.',
     fullDescription:
-      'Make it official online. A personalized announcement graphic for signings, tryouts, or team news — with your photo and colors, sized for social. Free proof first.',
+      'Make it official online. A personalized announcement graphic for signings, tryouts, or team news — with your photo and colors, sized for social. Free preview first.',
     features: ['Announcement headline & details', 'Your photo & colors', 'Sized for social', 'Instant digital download'],
     occasionTags: ['announcement', 'social', 'team'], sportTags: SPORTS,
-    seoTitle: 'Team Announcement Graphic', seoDescription: 'Personalized team announcement social media graphic. Free design proof — instant digital download.',
+    seoTitle: 'Team Announcement Graphic', seoDescription: 'Personalized team announcement social media graphic. Free design preview — instant digital download.',
     posterLabel: 'ANNOUNCEMENT', posterSub: 'Team News',
   },
 ];

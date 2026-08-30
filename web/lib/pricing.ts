@@ -50,8 +50,8 @@ export const PRICING: Record<ProductId, Product> = {
     tagline: '24×36" delivered',
     description:
       "We professionally print your banner at 24×36\" on premium vinyl with grommets, and ship it to your door in 3–5 business days.",
-    amountCents: 4900,
-    displayPrice: '$49',
+    amountCents: 7999,
+    displayPrice: '$79.99',
     metadata: { fulfillment: 'print', requiresShipping: true },
   },
   video: {

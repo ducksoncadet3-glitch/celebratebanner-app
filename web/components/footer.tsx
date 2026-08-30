@@ -19,12 +19,14 @@ const COL_COMPANY: FooterLink[] = [
   { href: '/contact', label: 'Contact' },
 ];
 
-// Terms & Privacy point to the approved canonical pages on the marketing site
-// (verified HTTP 200). Refund policy removed pending an approved page — no live
-// route or approved content exists, and legal copy must not be fabricated.
+// All four legal policies resolve to first-party routes in THIS app so they never depend on
+// the legacy marketing host after the Fly/domain cutover. Content is migrated from the live
+// celebratebanner.com policies with only stale vendor references reconciled (see app/*/page).
 const COL_LEGAL: FooterLink[] = [
-  { href: 'https://www.celebratebanner.com/terms', label: 'Terms', external: true },
-  { href: 'https://www.celebratebanner.com/privacy', label: 'Privacy', external: true },
+  { href: '/terms', label: 'Terms' },
+  { href: '/privacy', label: 'Privacy' },
+  { href: '/returns', label: 'Returns & Refunds' },
+  { href: '/shipping', label: 'Shipping' },
 ];
 
 export function Footer() {

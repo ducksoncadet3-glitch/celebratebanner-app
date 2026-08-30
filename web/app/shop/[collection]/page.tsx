@@ -14,6 +14,7 @@ import {
   getCollectionBySlug,
   getProductsByCollection,
 } from '@/lib/catalog/products';
+import { thumbnailOverrides } from '@/lib/catalog/resolve-thumbnails';
 import { poster } from '@/lib/catalog/poster';
 import { buildMetadata, SITE } from '@/lib/seo';
 
@@ -29,7 +30,7 @@ export async function generateMetadata({ params }: { params: Promise<{ collectio
 }
 
 const COLLECTION_FAQ = [
-  { q: 'Do I pay before I see my design?', a: 'No. Start a free design proof, personalize it, and preview your design. You only pay when you approve it.' },
+  { q: 'Do I pay before I see my design?', a: 'No. Create your free preview — personalize your design and see it first. You only pay if you decide to order or download.' },
   { q: 'Can I order printed or digital?', a: 'Available options are shown for each product during customization — choose what fits your celebration.' },
   { q: 'Can I use my own photos?', a: 'Yes. Every product is personalized with your photos, colors, and text.' },
 ];
@@ -62,7 +63,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ col
         title={c.name}
         subtitle={c.description}
         backgroundImage={poster(c.heroLabel, c.tagline, '16x9')}
-        primaryCTA={{ href: '/proof', label: 'Start Free Design Proof' }}
+        primaryCTA={{ href: '/proof', label: 'Create Your Free Preview' }}
         secondaryCTA={{ href: '#products', label: 'Browse products' }}
       />
 
@@ -79,7 +80,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ col
             {products.length} {products.length === 1 ? 'product' : 'products'} · {c.tagline}
           </p>
         </div>
-        <ProductGrid products={products} />
+        <ProductGrid products={products} imageOverrides={thumbnailOverrides(products)} />
       </Section>
 
       <TrustSection background="ivory-dim" />
@@ -103,9 +104,9 @@ export default async function CollectionPage({ params }: { params: Promise<{ col
         <CollectionGrid collections={others} className="lg:grid-cols-3" />
         <div className="mt-10 text-center">
           <Button asChild variant="gold" size="lg">
-            <Link href="/proof">Start Free Design Proof</Link>
+            <Link href="/proof">Create Your Free Preview</Link>
           </Button>
-          <p className="mt-3 text-sm text-obsidian/55">No payment required to see your proof.</p>
+          <p className="mt-3 text-sm text-obsidian/55">No payment required to see your preview.</p>
         </div>
       </Section>
     </>

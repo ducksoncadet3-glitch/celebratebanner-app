@@ -10,6 +10,16 @@
  * If Redis is unavailable, requests are allowed through ("fail open") — better
  * to let traffic through than to take the site down. Failures are logged.
  *
+ * Fail-open has two layers, because a store outage must never look like a
+ * throttle to a paying customer:
+ *   1. `insuranceLimiter` — an in-process memory limiter the library falls back
+ *      to when the Redis store errors, so abuse protection degrades rather than
+ *      disappears.
+ *   2. The catch below discriminates a genuine limit rejection (a
+ *      `RateLimiterRes`, a plain object carrying `msBeforeNext`) from a store
+ *      failure (an `Error`). Only the former becomes a 429; an `Error` is
+ *      logged and the request continues.
+ *
  * Dependencies:
  *   "ioredis":         "^5.4.1"
  *   "rate-limiter-flexible": "^5.0.4"
@@ -23,6 +33,9 @@ try {
 }
 try { IORedis = require('ioredis'); } catch { /* ignore */ }
 
+let logger;
+try { ({ logger } = require('../services/logger')); } catch { /* ignore */ }
+
 const REDIS_URL = process.env.REDIS_URL;
 const client = REDIS_URL && IORedis ? new IORedis(REDIS_URL, { maxRetriesPerRequest: 1 }) : null;
 
@@ -34,6 +47,11 @@ function makeLimiter(name, { points, durationSec }) {
       points,
       duration: durationSec,
       inMemoryBlockOnConsumed: points,
+      // When the Redis store errors (outage, quota exhaustion), the library
+      // routes the request to this in-process limiter instead of rejecting.
+      insuranceLimiter: RateLimiterMemory
+        ? new RateLimiterMemory({ keyPrefix: `rl:${name}`, points, duration: durationSec })
+        : undefined,
     });
   }
   if (RateLimiterMemory) {
@@ -61,6 +79,20 @@ function clientIp(req) {
   );
 }
 
+/**
+ * True only for a real rate-limit rejection. `rate-limiter-flexible` rejects
+ * with a `RateLimiterRes` (a plain object with numeric `msBeforeNext` and
+ * `remainingPoints`); any store failure rejects with an `Error`.
+ */
+function isLimitRejection(rejection) {
+  return (
+    rejection != null &&
+    !(rejection instanceof Error) &&
+    typeof rejection === 'object' &&
+    typeof rejection.msBeforeNext === 'number'
+  );
+}
+
 function rateLimit(name) {
   const limiter = limiters[name];
   return async function rateLimitMiddleware(req, res, next) {
@@ -69,6 +101,17 @@ function rateLimit(name) {
       await limiter.consume(clientIp(req));
       next();
     } catch (rejection) {
+      // A genuine throttle rejects with a RateLimiterRes — a plain object whose
+      // `msBeforeNext` says when the caller may retry. A store failure rejects
+      // with an Error. Treating the latter as a 429 would turn a Redis outage
+      // into a hard block on uploads, autosave and downloads, so fail open.
+      if (!isLimitRejection(rejection)) {
+        logger?.error?.(
+          { err: rejection, limiter: name },
+          '[rate-limit] store unavailable — failing open',
+        );
+        return next();
+      }
       const retryAfter = Math.max(1, Math.ceil((rejection.msBeforeNext || 1000) / 1000));
       res.setHeader('Retry-After', String(retryAfter));
       res.status(429).json({ error: 'Too many requests. Try again in a moment.' });
@@ -76,4 +119,4 @@ function rateLimit(name) {
   };
 }
 
-module.exports = { rateLimit, clientIp };
+module.exports = { rateLimit, clientIp, isLimitRejection };

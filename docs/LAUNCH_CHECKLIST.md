@@ -39,7 +39,7 @@ written next to it. No silent green-checking.
 ### A3 · Deploys configured
 
 - [ ] `.github/workflows/test.yml` — green on the commit you're shipping
-- [ ] `.github/workflows/deploy-web.yml` — deploy target chosen (Cloudflare Pages / Fly / VPS) and uncommented
+- [ ] `.github/workflows/deploy-web.yml` — Fly.io deploy step uncommented (authoritative target; `Dockerfile.web` + `fly.web.toml`)
 - [ ] `celebratebanner-api/.github/workflows/deploy-api.yml` — deploy target chosen and uncommented
 - [ ] `celebratebanner-api/.github/workflows/rollback.yml` — present and points at the same target
 - [ ] Health check verified locally: `curl https://api.celebratebanner.com/health/ready` returns 200

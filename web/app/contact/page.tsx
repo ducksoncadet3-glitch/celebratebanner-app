@@ -50,9 +50,9 @@ export default function ContactPage() {
 
       <div className="mt-10">
         <Button asChild variant="gold" size="lg">
-          <Link href="/proof">Start Free Design Proof</Link>
+          <Link href="/proof">Create Your Free Preview</Link>
         </Button>
-        <p className="mt-3 text-sm text-obsidian/55">No payment required to see your proof.</p>
+        <p className="mt-3 text-sm text-obsidian/55">No payment required to see your preview.</p>
       </div>
     </Section>
   );

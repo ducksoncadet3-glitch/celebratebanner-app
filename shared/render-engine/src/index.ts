@@ -27,6 +27,9 @@ export type { PreviewOptions, ExportOptions } from './pipeline/index.js';
 
 export { frameIds, getFrame, listFrames, registerFrame } from './frames/index.js';
 export { getArrangement, listArrangements, registerArrangement } from './arrangements/index.js';
+export {
+  ARRANGEMENT_MAX_PHOTOS, ARRANGEMENT_MIN_PHOTOS, supportingCapacity, supportingCount,
+} from './arrangements/index.js';
 export { getMockup, listMockups, registerMockup } from './mockups/index.js';
 
 // Lower-level utilities — useful for custom themes or arrangements.

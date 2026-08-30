@@ -1,0 +1,71 @@
+# Fly.io configuration — CelebrateBanner API + workers (one image, three process groups).
+# Deploy from the repo root (build context = root, required by the file: dependency):
+#   fly deploy --config backend-stub/fly.toml --dockerfile backend-stub/Dockerfile .
+#
+# Secrets (DATABASE_URL, REDIS_URL, STRIPE_*, AWS_*, POSTMARK_API_TOKEN, DOWNLOAD_TOKEN_SECRET,
+# ADMIN_JWT_SECRET, …) are set with `fly secrets set` — NEVER hardcoded here.
+# See docs/INFRASTRUCTURE.md for the full matrix. This file provisions no infrastructure.
+
+app = "celebratebanner-api"
+primary_region = "iad"
+
+[build]
+  dockerfile = "backend-stub/Dockerfile"
+
+# Run migrations once per release, before the new version takes traffic.
+[deploy]
+  release_command = "node db/migrate.js"
+  strategy = "bluegreen"
+
+# Three process groups from the single image.
+[processes]
+  api = "node server.js"
+  worker = "node worker.js"
+  recovery = "node recovery.js"
+
+# Non-secret runtime config only.
+[env]
+  NODE_ENV = "production"
+  PORT = "8080"
+  LOG_LEVEL = "info"
+
+# Only the `api` process serves HTTP; workers bind no ports.
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["api"]
+
+  # Liveness: process is up.
+  [[http_service.checks]]
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/health/live"
+
+  # Readiness: dependencies (Postgres, Redis) reachable; 503 when not.
+  [[http_service.checks]]
+    interval = "15s"
+    timeout = "3s"
+    grace_period = "30s"
+    method = "GET"
+    path = "/health/ready"
+
+# Per-process VM sizing. The render worker needs more memory (canvas + ffmpeg).
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1024mb"
+  processes = ["api"]
+
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "2048mb"
+  processes = ["worker"]
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  processes = ["recovery"]

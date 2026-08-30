@@ -9,7 +9,8 @@ export interface DesignPreferencesFormProps {
 
 /**
  * Optional design direction — colors, size, format, and free-form notes. Nothing here is
- * required; it just helps the design team produce a closer first proof.
+ * required; it just pre-fills the builder so your first on-screen preview starts closer to
+ * what you want.
  */
 export function DesignPreferencesForm({ value, onChange }: DesignPreferencesFormProps) {
   return (
@@ -41,7 +42,7 @@ export function DesignPreferencesForm({ value, onChange }: DesignPreferencesForm
           value={value.notes}
           onChange={(v) => onChange({ notes: v })}
           hint="Optional — player names, wording, deadlines, or inspiration."
-          placeholder="Tell us anything that will help us design your proof."
+          placeholder="Anything that should shape your design — names, wording, or inspiration."
         />
       </div>
     </div>

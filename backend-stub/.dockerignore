@@ -1,0 +1,11 @@
+# NOTE: the canonical image builds from the REPO ROOT context (backend-stub depends on
+# ../shared/render-engine), so the repo-root .dockerignore governs that build. This file
+# applies if backend-stub is ever built in isolation (e.g. once render-engine is published
+# to a registry). Either way, never ship host artifacts:
+node_modules
+.env
+.env.*
+npm-debug.log*
+*.log
+.DS_Store
+.git

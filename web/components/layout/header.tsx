@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { AnnouncementBar } from './announcement-bar';
+import { PROOF_CTA } from '@/lib/nav';
 import { cn } from '@/lib/utils';
 
 export interface NavLink {
@@ -12,7 +13,7 @@ export interface NavLink {
 }
 
 const DEFAULT_LINKS: NavLink[] = [
-  { href: '/products', label: 'Products' },
+  { href: '/shop', label: 'Shop' },
   { href: '/create', label: 'Create' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/gallery', label: 'Gallery' },
@@ -27,7 +28,7 @@ const DEFAULT_LINKS: NavLink[] = [
  */
 export function Header({
   links = DEFAULT_LINKS,
-  cta = { href: 'https://app.celebratebanner.com/index.html', label: 'Start Free Proof' },
+  cta = { href: PROOF_CTA.href, label: 'Start Free Proof' },
   showAnnouncement = true,
   brandHref = '/',
 }: {
