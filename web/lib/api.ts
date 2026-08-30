@@ -159,7 +159,10 @@ export const api = {
   ): Promise<ProjectStatus> {
     const qs = opts.sessionId ? `?session_id=${encodeURIComponent(opts.sessionId)}` : '';
     return request<ProjectStatus>(`/api/projects/${encodeURIComponent(projectId)}/status${qs}`, {
-      headers: opts.projectToken ? { 'x-project-token': opts.projectToken } : undefined,
+      // `Authorization: Bearer` (not `x-project-token`): the API accepts either
+      // (services/project-token.js extractProjectToken), but only Authorization is on the
+      // production CORS allow-list, so the custom header is blocked by the browser preflight.
+      headers: opts.projectToken ? { Authorization: `Bearer ${opts.projectToken}` } : undefined,
     });
   },
 
@@ -224,7 +227,9 @@ export const api = {
       {
         method: 'PATCH',
         json: body,
-        headers: projectToken ? { 'x-project-token': projectToken } : undefined,
+        // See getProjectStatus: Authorization is CORS-allowed in production; the
+        // equivalent `x-project-token` header is not, so autosaves would be blocked.
+        headers: projectToken ? { Authorization: `Bearer ${projectToken}` } : undefined,
       },
     );
   },
