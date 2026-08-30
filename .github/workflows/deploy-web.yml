@@ -44,10 +44,16 @@ jobs:
       - name: build
         working-directory: web
         env:
-          NEXT_PUBLIC_SITE_URL:               ${{ vars.PUBLIC_SITE_URL }}
-          NEXT_PUBLIC_API_BASE_URL:           ${{ vars.API_BASE_URL }}
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
-          NEXT_PUBLIC_LEGACY_STRIPE_LINK:     ${{ vars.LEGACY_STRIPE_LINK }}
+          # NON-SECRET, and must never be empty: `next build` calls new URL() on
+          # NEXT_PUBLIC_SITE_URL for metadataBase, and an empty string throws
+          # ERR_INVALID_URL while collecting /_not-found. The fallbacks are the same
+          # authoritative values fly.web.toml passes as build args, so this artifact build
+          # matches the image the Fly deploy actually ships.
+          NEXT_PUBLIC_SITE_URL:               ${{ vars.PUBLIC_SITE_URL || 'https://app.celebratebanner.com' }}
+          NEXT_PUBLIC_API_BASE_URL:           ${{ vars.API_BASE_URL || 'https://api.celebratebanner.com' }}
+          # Intentionally EMPTY, matching fly.web.toml: the static payment link cannot carry
+          # projectId metadata, so an order paid through it would never be fulfilled.
+          NEXT_PUBLIC_LEGACY_STRIPE_LINK:     ''
         run: npm run build
 
       - uses: actions/upload-artifact@v4
