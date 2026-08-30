@@ -32,6 +32,7 @@ const projects = require('./routes/projects');
 const emails = require('./routes/emails');
 const admin = require('./routes/admin');
 const { liveHandler, readyHandler, depsHandler } = require('./routes/health');
+const { cors } = require('./middleware/cors');
 const {
   loginHandler,
   logoutHandler,
@@ -43,6 +44,11 @@ const {
 const app = express();
 app.disable('x-powered-by');
 app.use(requestLogger);
+
+// ── CORS — strict origin allow-list, applied to every path (preflight included) ──
+// Reconciles behaviour that has been live in production but absent from source; see
+// middleware/cors.js. Must precede the webhook + 404 so OPTIONS never falls through.
+app.use(cors);
 
 // ── Stripe webhook — RAW body, must run BEFORE express.json() so the signature verifies ──
 app.post('/api/payments/webhook', webhookRawParser, webhookHandler);
