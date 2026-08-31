@@ -223,9 +223,22 @@ jobs:
                renders: [.renders[] | {id, status}]}' /tmp/proj.json
 
           # The design must actually be there - a render of an empty project proves nothing.
+          # Run 33394473167 stopped right here: proj_render137424 existed but was a bare row
+          # (rev 0, photos 0, renders []), because a signed upload pre-creates the projects
+          # row before any design is saved. rev > 0 is the same "somebody has actually saved
+          # a design here" signal that routes/projects.js uses to decide ownership.
+          REV=$(jq -r '.rev' /tmp/proj.json)
           N=$(jq -r '.renderInput.photos | length' /tmp/proj.json)
+          [ "$REV" -gt 0 ] || { echo "::error::project rev is 0 - no design has ever been saved here"; exit 1; }
           [ "$N" -ge 1 ] || { echo "::error::project has no photos in render_input - nothing to render"; exit 1; }
-          echo "PROOF: the target project carries a real saved design ($N photo(s))"
+          # The worker fetches each photo URL. If S3/CloudFront can't serve it the render
+          # fails deep in the worker with a far less obvious message, so check it here.
+          for u in $(jq -r '.renderInput.photos[].url' /tmp/proj.json); do
+            pc=$(curl -s -o /dev/null -w '%{http_code}' "$u")
+            echo "  photo $pc  $u"
+            [ "$pc" = "200" ] || { echo "::error::photo is not fetchable ($pc) - the worker cannot render it"; exit 1; }
+          done
+          echo "PROOF: the target project carries a real saved design (rev $REV, $N fetchable photo(s))"
 
           # workers/render.worker.js emails projects.customer_email on completion. This proof
           # must never surprise a real customer, so it only runs against a null or internal
