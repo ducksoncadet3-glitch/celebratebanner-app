@@ -71,7 +71,21 @@ jobs:
       - name: deploy
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
-        run: flyctl deploy --remote-only --config backend-stub/fly.toml .
+        run: |
+          set -o pipefail
+          # Prefer Fly's remote builder. It can fail for reasons that have nothing to do
+          # with this repo — the builder machine is an org-level resource, so an app-scoped
+          # deploy token may not be able to provision one, and the fleet itself sometimes
+          # returns "failed to list workers / handshake failed". Fall back to building the
+          # image on this runner and pushing it, which needs only app-scoped registry access.
+          if flyctl deploy --remote-only --config backend-stub/fly.toml . ; then
+            echo "deployed via remote builder"
+          else
+            echo "::warning::remote builder unavailable — falling back to a local build"
+            flyctl auth docker
+            flyctl deploy --local-only --config backend-stub/fly.toml .
+            echo "deployed via local build"
+          fi
 
       - name: verify the API is healthy
         run: |
