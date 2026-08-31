@@ -1,17 +1,25 @@
 name: deploy-api
 
 # Deploys ONLY the celebratebanner-api Fly app (api + worker + recovery process groups
-# from one image). Manual dispatch only — the API carries a migration release_command
-# and must never ship as a side effect of a web or docs change.
+# from one image). The API carries a migration release_command, so this is deliberately
+# narrow: it fires only on a change to backend-stub/ or to this workflow, never as a side
+# effect of a web, render-engine, docs or marketing change.
 #
 # celebratebanner-web is deployed by deploy-web.yml and is not touched here.
 on:
+  # Path-scoped: only a change to the API's own source can release the API. A web, docs,
+  # render-engine or marketing change never reaches this workflow.
+  push:
+    branches: [main]
+    paths:
+      - 'backend-stub/**'
+      - '.github/workflows/deploy-api.yml'
   workflow_dispatch:
     inputs:
       reason:
         description: 'Why this deploy is happening (recorded in the run)'
-        required: true
-        default: 'claim-on-first-write fix 2984b66'
+        required: false
+        default: 'manual'
 
 concurrency:
   group: deploy-api
@@ -26,7 +34,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: reason
-        run: echo "Deploy reason - ${{ inputs.reason }}"
+        run: echo "Deploy reason - ${{ inputs.reason || 'push to backend-stub' }}"
 
       - uses: actions/setup-node@v4
         with:
