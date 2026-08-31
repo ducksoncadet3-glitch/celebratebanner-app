@@ -118,11 +118,13 @@ async function saveHandler(req, res) {
   //    that as "claimed" rejected every first save with 403. The design then never
   //    reached the server, and a paid HD render had no render_input to draw.
   //
-  //    A project is unclaimed until it has been saved, i.e. render_input IS NULL.
-  //    Once a design exists, a valid token is required exactly as before, so the
-  //    trust-on-first-use window is unchanged.
+  //    "Unclaimed" is `rev === 0`. It is NOT "render_input IS NULL": createIfMissing
+  //    seeds render_input with {"items":[]}, so that column is non-null from the moment
+  //    the row is created. rev is BIGINT NOT NULL DEFAULT 0 and saveRenderInput does
+  //    rev = rev + 1 on every save, so rev > 0 means exactly "a customer has already
+  //    saved a design here", which is precisely when a token must be required.
   const existing = await getById(id).catch(() => null);
-  if (existing && existing.render_input != null) return res.status(403).json({ error: 'forbidden' });
+  if (existing && Number(existing.rev) > 0) return res.status(403).json({ error: 'forbidden' });
   await createIfMissing({ projectId: id, templateId: templateIdFrom(renderInput), renderType: 'standard', customerEmail: null, items: [] });
   return persist(res, id, renderInput, rev);
 }
