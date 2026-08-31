@@ -1,0 +1,107 @@
+name: deploy-api
+
+# Deploys ONLY the celebratebanner-api Fly app (api + worker + recovery process groups
+# from one image). Manual dispatch only — the API carries a migration release_command
+# and must never ship as a side effect of a web or docs change.
+#
+# celebratebanner-web is deployed by deploy-web.yml and is not touched here.
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Why this deploy is happening (recorded in the run)'
+        required: true
+        default: 'claim-on-first-write fix 2984b66'
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false          # never cancel a deploy mid-flight
+
+jobs:
+  deploy:
+    name: deploy celebratebanner-api
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: reason
+        run: echo "Deploy reason - ${{ inputs.reason }}"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # The suite is intentionally dependency-free (no npm ci): it exercises pure modules
+      # and stubs anything third-party, so it runs fast and cannot be broken by a registry
+      # hiccup on the way to a production deploy.
+      - name: backend tests
+        working-directory: backend-stub
+        run: node --test
+
+      - name: check API deploy credential
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+        run: |
+          if [ -z "${FLY_API_TOKEN}" ]; then
+            echo "::error::FLY_API_TOKEN_API resolved to an EMPTY value for this job."
+            echo "::error::It must be a REPOSITORY secret (Settings, Secrets and variables,"
+            echo "::error::Actions, Repository secrets) app-scoped to celebratebanner-api."
+            echo "::error::Environment and Dependabot secrets are separate stores and are not visible here."
+            exit 1
+          fi
+          echo "FLY_API_TOKEN_API present."
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      # Build context is the repo ROOT: backend-stub depends on shared/render-engine
+      # through a file: dependency. The release_command in backend-stub/fly.toml runs
+      # node db/migrate.js once before the new version takes traffic.
+      - name: deploy
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+        run: flyctl deploy --remote-only --config backend-stub/fly.toml --dockerfile backend-stub/Dockerfile .
+
+      - name: verify the API is healthy
+        run: |
+          set -e
+          ok=""
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /tmp/dep.json -w '%{http_code}' https://api.celebratebanner.com/health/dependencies || true)
+            if [ "$code" = "200" ]; then
+              cat /tmp/dep.json
+              echo
+              ok=$(python3 -c "import json;print(json.load(open('/tmp/dep.json'))['ok'])")
+              echo "overall ok = $ok"
+              break
+            fi
+            echo "  [$i] health=$code, waiting"
+            sleep 10
+          done
+          [ "$ok" = "True" ] || { echo "::error::API dependencies unhealthy after deploy"; exit 1; }
+
+      - name: verify the claim fix is live
+        run: |
+          set -e
+          API=https://api.celebratebanner.com
+          ORIGIN='Origin: https://app.celebratebanner.com'
+          PID="proj_ci$(date +%s | tail -c 8)"
+          SHA=$(head -c 32 /dev/urandom | sha256sum | cut -d' ' -f1)
+          echo "project $PID"
+
+          echo "1) signed upload - this pre-creates the projects row"
+          code=$(curl -s -o /tmp/signed.json -w '%{http_code}' -X POST "$API/api/uploads/signed" \
+            -H 'Content-Type: application/json' -H "$ORIGIN" \
+            -d "{\"projectId\":\"$PID\",\"templateId\":\"graduation\",\"filename\":\"t.png\",\"contentType\":\"image/png\",\"bytes\":1024,\"sha256\":\"$SHA\",\"width\":64,\"height\":64}")
+          echo "   HTTP $code"
+          [ "$code" = "200" ] || { echo "::error::signed upload failed"; cat /tmp/signed.json; exit 1; }
+
+          echo "2) FIRST autosave after that upload - this is what used to return 403"
+          RI="{\"version\":1,\"projectId\":\"$PID\",\"width\":800,\"height\":1200,\"arrangement\":\"classic\",\"theme\":{\"id\":\"graduation\",\"fields\":[\"name\"],\"palette\":{\"bg\":\"#0C0E14\",\"accent\":\"#C9A84C\",\"text\":\"#FAF8F3\"}},\"bannerText\":{\"name\":\"CI\"},\"photos\":[{\"id\":\"p1\",\"url\":\"https://example.com/a.png\",\"width\":64,\"height\":64}],\"heroId\":\"p1\",\"frames\":{},\"defaultFrame\":\"rounded\",\"rotations\":{},\"seed\":1,\"cinematicHero\":true}"
+          code=$(curl -s -o /tmp/save1.json -w '%{http_code}' -X PATCH "$API/api/projects/$PID" \
+            -H 'Content-Type: application/json' -H "$ORIGIN" \
+            -d "{\"renderInput\":$RI,\"rev\":0}")
+          cat /tmp/save1.json
+          echo
+          [ "$code" = "200" ] || { echo "::error::claim fix NOT live - first autosave returned $code"; exit 1; }
+          echo "   PASS - upload then first autosave returned 200"
