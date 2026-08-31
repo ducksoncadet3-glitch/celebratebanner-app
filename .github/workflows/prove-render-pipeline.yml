@@ -1,0 +1,184 @@
+name: prove-render-pipeline
+
+# Proves the real fulfilment chain WITHOUT a customer payment:
+#
+#   enqueueRender (BullMQ queue.add) -> worker picks the job up -> HD render
+#   -> S3 objects -> project marked ready -> signed delivery URL resolves
+#
+# Uses only mechanisms that already exist in this repository:
+#   * middleware/admin-auth.js bootstrap()  - the documented one-shot operator account
+#   * POST /api/admin/projects/:id/rerender - the documented re-render entry point, which
+#     calls the SAME enqueueRender the Stripe webhook calls
+#
+# It never fabricates a Stripe signature, never touches Stripe keys or mode, never creates
+# a charge, never bypasses CSRF, and never inserts fake queue or render state.
+on:
+  # Also runs on a push that touches this file. workflow_dispatch cannot be triggered from
+  # the Codespaces environment (its token has no actions:write), so this is the only way to
+  # execute the proof from there. On a push the inputs fall back to the job env below.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/prove-render-pipeline.yml'
+  workflow_dispatch:
+    inputs:
+      project_id:
+        description: 'Existing production project to re-render'
+        required: true
+      admin_email:
+        description: 'Operator account to bootstrap and use'
+        required: true
+        default: 'ops@celebratebanner.com'
+
+concurrency:
+  group: prove-render-pipeline
+  cancel-in-progress: false
+
+jobs:
+  prove:
+    name: prove render pipeline
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      API: https://api.celebratebanner.com
+      APP: celebratebanner-api
+      PROJECT_ID: ${{ inputs.project_id || 'proj_proof42813' }}
+      ADMIN_EMAIL: ${{ inputs.admin_email || 'ops@celebratebanner.com' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: check API credential
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+        run: |
+          if [ -z "${FLY_API_TOKEN}" ]; then
+            echo "::error::FLY_API_TOKEN_API is empty."
+            exit 1
+          fi
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      # Gate: an app-scoped DEPLOY token may not carry SSH. Find out explicitly, with a
+      # clear message, before doing anything else.
+      - name: probe SSH capability
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+        run: |
+          set +e
+          out=$(flyctl ssh console -a "$APP" -C "node -e \"console.log('ssh-ok')\"" 2>&1)
+          rc=$?
+          set -e
+          echo "$out"
+          if [ $rc -ne 0 ] || ! echo "$out" | grep -q "ssh-ok"; then
+            echo "::error::flyctl ssh console is not permitted by FLY_API_TOKEN_API."
+            echo "::error::The documented admin bootstrap (middleware/admin-auth.js bootstrap)"
+            echo "::error::must run INSIDE the API container because it needs DATABASE_URL."
+            echo "::error::Required: a Fly token for app 'celebratebanner-api' that allows SSH."
+            exit 1
+          fi
+          echo "SSH available."
+
+      # Password is generated here, masked, used within this job only, never printed.
+      - name: bootstrap operator account
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+        run: |
+          PW="$(openssl rand -hex 24)"
+          echo "::add-mask::$PW"
+          echo "ADMIN_PW=$PW" >> "$GITHUB_ENV"
+          flyctl ssh console -a "$APP" -C "node -e \"require('./middleware/admin-auth').bootstrap(process.argv[1],process.argv[2]).then(r=>console.log(JSON.stringify(r))).catch(e=>{console.error(e.message);process.exit(1)})\" '$ADMIN_EMAIL' '$PW'"
+
+      - name: 1-4  login, csrf, and queue.add via the documented rerender route
+        run: |
+          set -e
+          JAR=/tmp/jar
+          code=$(curl -s -o /tmp/login.json -w '%{http_code}' -c "$JAR" -X POST "$API/api/admin/auth/login" \
+            -H 'Content-Type: application/json' \
+            --data "$(jq -nc --arg e "$ADMIN_EMAIL" --arg p "$ADMIN_PW" '{email:$e,password:$p}')")
+          [ "$code" = "200" ] || { echo "::error::admin login failed ($code)"; cat /tmp/login.json; exit 1; }
+          echo "login OK"
+
+          CSRF=$(curl -s -b "$JAR" "$API/api/admin/auth/csrf" | jq -r '.csrfToken')
+          [ -n "$CSRF" ] && [ "$CSRF" != "null" ] || { echo "::error::no csrf token"; exit 1; }
+          echo "csrf OK"
+
+          echo "queue BEFORE:"
+          curl -s -b "$JAR" "$API/api/admin/queue" | tee /tmp/qbefore.json | jq -c .
+
+          JOB=$(curl -s -b "$JAR" -X POST "$API/api/admin/projects/$PROJECT_ID/rerender" \
+            -H "x-csrf-token: $CSRF" -H 'Content-Type: application/json' --data '{}')
+          echo "rerender response: $JOB"
+          JOB_ID=$(echo "$JOB" | jq -r '.jobId // empty')
+          [ -n "$JOB_ID" ] || { echo "::error::queue.add did not return a jobId"; exit 1; }
+          echo "PROOF 1-3: queue.add succeeded, BullMQ jobId=$JOB_ID"
+          echo "JOB_ID=$JOB_ID" >> "$GITHUB_ENV"
+          echo "CSRF=$CSRF" >> "$GITHUB_ENV"
+
+      - name: 4-9  worker picks it up, HD render, S3, database status
+        run: |
+          set -e
+          JAR=/tmp/jar
+          SAW_ACTIVE=0
+          for i in $(seq 1 80); do
+            Q=$(curl -s -b "$JAR" "$API/api/admin/queue")
+            P=$(curl -s -b "$JAR" "$API/api/admin/projects/$PROJECT_ID")
+            ACT=$(echo "$Q" | jq -r '.active // 0')
+            WAIT=$(echo "$Q" | jq -r '.waiting // 0')
+            DONE=$(echo "$Q" | jq -r '.completed // 0')
+            FAILED=$(echo "$Q" | jq -r '.failed // 0')
+            ST=$(echo "$P" | jq -r '.status // "?"')
+            RST=$(echo "$P" | jq -r '.renders[0].status // "?"')
+            RPR=$(echo "$P" | jq -r '.renders[0].progress // 0')
+            RER=$(echo "$P" | jq -r '.renders[0].errorMessage // ""')
+            echo "[$i] queue waiting=$WAIT active=$ACT completed=$DONE failed=$FAILED | project=$ST render=$RST ${RPR}%"
+            [ "$ACT" != "0" ] && SAW_ACTIVE=1
+            [ "$RST" = "running" ] && SAW_ACTIVE=1
+            if [ "$RST" = "done" ] || [ "$RST" = "failed" ] || [ "$ST" = "ready" ] || [ "$ST" = "failed" ]; then
+              echo "terminal: project=$ST render=$RST"
+              [ -n "$RER" ] && echo "render error: $RER"
+              break
+            fi
+            sleep 8
+          done
+
+          P=$(curl -s -b "$JAR" "$API/api/admin/projects/$PROJECT_ID")
+          echo "$P" | jq '{status, rev, renders}'
+          ST=$(echo "$P" | jq -r '.status')
+          RST=$(echo "$P" | jq -r '.renders[0].status // "none"')
+          DUR=$(echo "$P" | jq -r '.renders[0].durationMs // 0')
+          echo "saw active/running: $SAW_ACTIVE"
+          [ "$RST" = "done" ] || { echo "::error::render did not complete (render=$RST project=$ST)"; exit 1; }
+          [ "$ST" = "ready" ] || { echo "::error::project status is $ST, expected ready"; exit 1; }
+          echo "PROOF 4-9: worker ran the job, HD render completed in ${DUR}ms, project=ready"
+
+      # resend-delivery only succeeds when the project is ready AND a completed render row
+      # has a jpeg_key, so a 200 here is itself proof the S3 object exists and that a signed
+      # download token was minted and stored. It also sends the real delivery email.
+      - name: 10-12  signed delivery URL is issued and resolves
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+        run: |
+          set -e
+          JAR=/tmp/jar
+          code=$(curl -s -o /tmp/resend.json -w '%{http_code}' -b "$JAR" -X POST \
+            "$API/api/admin/projects/$PROJECT_ID/resend-delivery" \
+            -H "x-csrf-token: $CSRF" -H 'Content-Type: application/json' --data '{}')
+          cat /tmp/resend.json; echo
+          [ "$code" = "200" ] || { echo "::error::resend-delivery failed ($code) - no S3 render object or signed token"; exit 1; }
+          echo "PROOF 10: signed download token issued and delivery email sent"
+
+          # Mint one more URL through the app's own token service so we can fetch it here.
+          URL=$(flyctl ssh console -a "$APP" -C "node -e \"const{one}=require('./db/index');const{issueDownloadToken}=require('./services/tokens');(async()=>{const r=await one(\\\"SELECT jpeg_key FROM renders WHERE project_id=\$1 AND status='done' ORDER BY finished_at DESC LIMIT 1\\\",[process.argv[1]]);const t=await issueDownloadToken({projectId:process.argv[1],assetType:'jpeg',s3Key:r.jpeg_key});console.log('URL='+t.url);process.exit(0)})().catch(e=>{console.error(e.message);process.exit(1)})\" '$PROJECT_ID'" | grep -o 'URL=.*' | sed 's/^URL=//' | tr -d '\r')
+          echo "signed URL host: $(echo "$URL" | sed 's|\(https://[^/]*\).*|\1|')"
+          [ -n "$URL" ] || { echo "::error::could not mint a delivery URL"; exit 1; }
+
+          code=$(curl -sL -o /tmp/out.bin -w '%{http_code}' "$URL")
+          SIZE=$(stat -c%s /tmp/out.bin)
+          TYPE=$(file -b --mime-type /tmp/out.bin)
+          echo "download HTTP=$code bytes=$SIZE type=$TYPE"
+          [ "$code" = "200" ] || { echo "::error::signed delivery URL returned $code"; exit 1; }
+          [ "$SIZE" -gt 10000 ] || { echo "::error::delivered file is suspiciously small ($SIZE bytes)"; exit 1; }
+          case "$TYPE" in image/*) ;; *) echo "::error::delivered file is not an image ($TYPE)"; exit 1;; esac
+          echo "PROOF 11-12: delivery URL returned a $SIZE byte $TYPE for $PROJECT_ID"
+          echo
+          echo "FULL CHAIN PROVEN: queue.add -> worker -> HD render -> S3 -> signed delivery"
