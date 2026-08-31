@@ -12,10 +12,11 @@
  * reusable from the server page. Those symbols are re-exported here for existing callers.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Dispatch } from 'react';
 import type { ProjectAction } from '@/lib/project-store';
 import { mapProofToBuilder } from './mapping';
+import { productTitle } from './options';
 import type { ProofFormData } from './types';
 
 export { mapProofToBuilder, PROOF_PRODUCT_MAP } from './mapping';
@@ -58,8 +59,12 @@ export function clearProofHandoff(): void {
  * intent wins for theme/text while any restored photos are preserved. No handoff → no-op,
  * so users entering /create directly are completely unaffected.
  */
-export function useProofHandoff(dispatch: Dispatch<ProjectAction>): void {
+export function useProofHandoff(dispatch: Dispatch<ProjectAction>): { productLabel: string | null } {
   const applied = useRef(false);
+  // The product the customer chose upstream, so the builder can SHOW what is being designed
+  // instead of silently applying a theme. Null for direct /create visitors.
+  const [productLabel, setProductLabel] = useState<string | null>(null);
+
   useEffect(() => {
     if (applied.current) return;
     applied.current = true;
@@ -76,6 +81,13 @@ export function useProofHandoff(dispatch: Dispatch<ProjectAction>): void {
         if (value) dispatch({ type: 'setText', key, value });
       }
     }
+    // Only claim an identity when the product actually mapped to a builder configuration.
+    if (prefill.themeId && data.productId) {
+      const title = productTitle(data.productId);
+      if (title && title !== '—') setProductLabel(title);
+    }
     clearProofHandoff();
   }, [dispatch]);
+
+  return { productLabel };
 }

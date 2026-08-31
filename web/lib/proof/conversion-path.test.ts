@@ -35,8 +35,21 @@ describe('Football conversion path — every CTA routes Football → /proof', ()
 
   it('points every conversion CTA at /proof (never straight to /create)', () => {
     for (const href of hrefs) {
+      // A Coming Soon card routes to the shop, never into the builder — assert that
+      // explicitly so it cannot silently regress into a /create deep link.
+      if (!href.startsWith('/proof')) {
+        expect(href.startsWith('/create'), `${href} must never enter the builder`).toBe(false);
+        continue;
+      }
       expect(href.startsWith('/proof')).toBe(true);
       expect(href.startsWith('/create')).toBe(false);
+    }
+  });
+
+  it('no Coming Soon collection card deep-links into the proof flow', () => {
+    for (const p of footballCollection.products.filter((x) => x.comingSoon)) {
+      expect(p.href.startsWith('/proof'), `${p.id} must not preselect a proof product`).toBe(false);
+      expect(p.href.startsWith('/create')).toBe(false);
     }
   });
 
@@ -50,7 +63,7 @@ describe('Football conversion path — every CTA routes Football → /proof', ()
   });
 
   it('every product CTA deep-links its own slug and that slug preselects', () => {
-    for (const p of footballCollection.products) {
+    for (const p of footballCollection.products.filter((x) => !x.comingSoon)) {
       expect(p.href).toBe(`/proof?product=${p.id}`);
       // A preselected product flows through the mapping without error.
       const out = mapProofToBuilder({ ...EMPTY_PROOF, productId: resolveProductId(p.id) });

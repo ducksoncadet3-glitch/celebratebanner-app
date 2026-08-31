@@ -22,7 +22,7 @@ export function CreateFlow() {
   const { state, dispatch, isDirty } = useProjectStore();
   // Prefill from the Free Design Proof wizard, if the customer arrived from it.
   // No-op for direct visitors → fully backward compatible.
-  useProofHandoff(dispatch);
+  const { productLabel } = useProofHandoff(dispatch);
   const [step, setStep] = useState(0);
 
   // Build the canonical RenderInput from state — used by both the preview and
@@ -134,10 +134,27 @@ export function CreateFlow() {
 
         {step === 0 && (
           <>
-            <h2 className="text-2xl">Choose your theme</h2>
-            <p className="mt-1 text-sm text-obsidian/65">
-              Each theme has its own palette, typography, and text fields.
-            </p>
+            {productLabel ? (
+              <>
+                {/* Arrived from a product page: the style is already set from that choice,
+                    so this reads as a confirmation to adjust — not a fresh unrelated pick. */}
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gold-dark">
+                  You&apos;re designing
+                </p>
+                <h2 className="mt-1 text-2xl">{productLabel}</h2>
+                <p className="mt-1 text-sm text-obsidian/65">
+                  We&apos;ve set the style to match your product. You can change it below if you
+                  want a different look.
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="text-2xl">Choose your theme</h2>
+                <p className="mt-1 text-sm text-obsidian/65">
+                  Each theme has its own palette, typography, and text fields.
+                </p>
+              </>
+            )}
             <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {THEME_DISPLAY.map((t) => (
                 <li key={t.id}>
@@ -183,7 +200,7 @@ export function CreateFlow() {
 
         {step === 2 && (
           <>
-            <h2 className="text-2xl">Design your banner</h2>
+            <h2 className="text-2xl">Design your product</h2>
             <p className="mt-1 text-sm text-obsidian/65">
               Pick an arrangement, choose a default frame, and personalize the headline.
             </p>

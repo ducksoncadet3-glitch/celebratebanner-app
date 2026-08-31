@@ -85,9 +85,10 @@ export default function FootballCollectionPage() {
               title={p.title}
               description={p.description}
               href={p.href}
-              price={`Available as: ${p.format} · multiple sizes and formats.`}
-              badge={p.badge}
-              buttonText="Start Designing"
+              price={p.comingSoon ? 'Coming soon' : `Available as: ${p.format} · multiple sizes and formats.`}
+              badge={p.comingSoon ? { label: 'Coming soon', variant: 'info' } : p.badge}
+              buttonText={p.comingSoon ? 'View details' : 'Start Designing'}
+              className={p.comingSoon ? 'opacity-75' : undefined}
             />
           ))}
         </div>

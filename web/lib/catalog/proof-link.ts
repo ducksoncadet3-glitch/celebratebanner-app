@@ -1,3 +1,4 @@
+import { isComingSoon } from './availability';
 import type { Product } from './types';
 
 /**
@@ -13,6 +14,14 @@ export function proofHrefForKey(key: string): string {
   return `/proof?product=${encodeURIComponent(key)}`;
 }
 
-export function proofHrefForProduct(product: Product): string {
+/**
+ * The proof deep-link for a product, or `null` when the product is not sellable yet.
+ *
+ * Returning null (rather than a string) makes the Coming Soon case a TYPE-level concern:
+ * a caller must handle it explicitly and cannot accidentally render a live CTA into the
+ * proof/builder/checkout flow for a product the renderer cannot produce.
+ */
+export function proofHrefForProduct(product: Product): string | null {
+  if (isComingSoon(product)) return null;
   return proofHrefForKey(product.proofProductKey);
 }

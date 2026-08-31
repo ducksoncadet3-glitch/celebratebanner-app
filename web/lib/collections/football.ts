@@ -118,7 +118,10 @@ export const footballCollection: CollectionData = {
       format: 'Digital',
       image: poster('GAME DAY', 'Social Graphic'),
       imageAlt: 'Football social graphic sample design sized for Instagram, marked "SAMPLE DESIGN."',
-      href: proofHref('football-social-graphics'),
+      // Coming Soon: the render engine has no square/social output, so this must not deep-link
+      // into the proof flow. Card stays visible for discovery; CTA is disabled on the page.
+      href: '/shop/social-graphics',
+      comingSoon: true,
     },
   ],
 

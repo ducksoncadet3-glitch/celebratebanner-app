@@ -15,6 +15,9 @@ export interface CollectionProduct {
   imageAlt: string;
   href: string;
   badge?: { label: string; variant?: ComponentProps<typeof Badge>['variant'] };
+  /** True when the render engine cannot produce this yet — card shows Coming Soon and the
+   *  CTA must not route into /proof, /create or checkout. See lib/catalog/availability.ts. */
+  comingSoon?: boolean;
 }
 
 export interface CollectionPackage {

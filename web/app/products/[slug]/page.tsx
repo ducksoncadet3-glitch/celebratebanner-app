@@ -24,6 +24,7 @@ import {
 } from '@/lib/catalog/products';
 import { productOffer } from '@/lib/catalog/structured-data';
 import { proofHrefForProduct } from '@/lib/catalog/proof-link';
+import { isComingSoon, COMING_SOON_LABEL, COMING_SOON_NOTE } from '@/lib/catalog/availability';
 import { resolveProductImage } from '@/lib/catalog/product-image';
 import { buildMetadata, SITE } from '@/lib/seo';
 
@@ -59,6 +60,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   const collection = getCollectionBySlug(product.collectionSlug);
   const proofHref = proofHrefForProduct(product);
+  const comingSoon = isComingSoon(product);
   const url = `${SITE.url}/products/${product.slug}`;
 
   // Approved flagship hero if present, else the catalog placeholder (never broken).
@@ -108,15 +110,30 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <div>
             {product.badge && <Badge variant="featured">{product.badge}</Badge>}
             <h1 className="mt-3 font-display text-4xl font-semibold text-obsidian sm:text-5xl">{product.name}</h1>
-            <PriceDisplay label={product.priceLabel} size="lg" className="mt-3" />
+            {comingSoon ? (
+              <p className="mt-3 text-lg font-semibold text-obsidian/55">{COMING_SOON_LABEL}</p>
+            ) : (
+              <PriceDisplay label={product.priceLabel} size="lg" className="mt-3" />
+            )}
             <p className="mt-4 text-lg leading-relaxed text-obsidian/70">{product.shortDescription}</p>
             <p className="mt-4 text-base leading-relaxed text-obsidian/60">{product.fullDescription}</p>
 
             <div className="mt-7">
-              <Button asChild variant="gold" size="lg" fullWidth>
-                <Link href={proofHref}>Create Your Free Preview</Link>
-              </Button>
-              <p className="mt-3 text-center text-sm text-obsidian/60">No payment required to see your preview.</p>
+              {comingSoon || !proofHref ? (
+                <>
+                  <Button variant="gold" size="lg" fullWidth disabled aria-disabled="true">
+                    {COMING_SOON_LABEL}
+                  </Button>
+                  <p className="mt-3 text-center text-sm text-obsidian/60">{COMING_SOON_NOTE}</p>
+                </>
+              ) : (
+                <>
+                  <Button asChild variant="gold" size="lg" fullWidth>
+                    <Link href={proofHref}>Create Your Free Preview</Link>
+                  </Button>
+                  <p className="mt-3 text-center text-sm text-obsidian/60">No payment required to see your preview.</p>
+                </>
+              )}
             </div>
 
             {/* Available formats */}
@@ -203,17 +220,33 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <Section background="obsidian" spacing="lg" aria-labelledby="product-cta-heading">
         <Card as="div" padding="none" className="border-0 bg-transparent shadow-none">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 id="product-cta-heading" className="font-display text-3xl font-semibold text-ivory sm:text-4xl">
-              Ready to see your {product.name.toLowerCase()}?
-            </h2>
-            <p className="mt-4 text-lg leading-relaxed text-ivory/75">
-              Create your free preview — no payment required to see your design.
-            </p>
-            <div className="mt-8 flex justify-center">
-              <Button asChild variant="gold" size="lg">
-                <Link href={proofHref}>Create Your Free Preview</Link>
-              </Button>
-            </div>
+            {comingSoon || !proofHref ? (
+              <>
+                <h2 id="product-cta-heading" className="font-display text-3xl font-semibold text-ivory sm:text-4xl">
+                  {product.name} is coming soon
+                </h2>
+                <p className="mt-4 text-lg leading-relaxed text-ivory/75">{COMING_SOON_NOTE}</p>
+                <div className="mt-8 flex justify-center">
+                  <Button asChild variant="gold" size="lg">
+                    <Link href="/shop">Browse designs you can create today</Link>
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 id="product-cta-heading" className="font-display text-3xl font-semibold text-ivory sm:text-4xl">
+                  Ready to see your {product.name.toLowerCase()}?
+                </h2>
+                <p className="mt-4 text-lg leading-relaxed text-ivory/75">
+                  Create your free preview — no payment required to see your design.
+                </p>
+                <div className="mt-8 flex justify-center">
+                  <Button asChild variant="gold" size="lg">
+                    <Link href={proofHref}>Create Your Free Preview</Link>
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </Card>
       </Section>

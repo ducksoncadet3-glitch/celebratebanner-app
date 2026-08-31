@@ -34,11 +34,6 @@ export const PROOF_PRODUCTS: ProductOption[] = [
     description: "Honor a coach's season, leadership, and years of service.",
   },
   {
-    id: 'football-social-graphics',
-    title: 'Football Social Graphics',
-    description: 'Share-ready graphics for game-day announcements and player features.',
-  },
-  {
     id: 'graduation-banner',
     title: 'Graduation Banner',
     description: 'Celebrate a graduate with a personalized name, year, and school design.',
@@ -68,6 +63,13 @@ export const FORMAT_OPTIONS: SelectOption[] = [
 export function productTitle(id: string | null): string {
   return PROOF_PRODUCTS.find((p) => p.id === id)?.title ?? '—';
 }
+
+/**
+ * NOTE: `football-social-graphics` was removed — the render engine has no social/square
+ * output, so every product using that key is Coming Soon (lib/catalog/availability.ts).
+ * A stale `/proof?product=football-social-graphics` link now resolves to null, i.e. no
+ * preselection, which is the intended safe fallback rather than a broken design.
+ */
 
 /**
  * Resolve a `?product=<slug>` query value to a known product id, or null if it doesn't

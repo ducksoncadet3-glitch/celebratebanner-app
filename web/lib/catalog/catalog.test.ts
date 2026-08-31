@@ -8,6 +8,7 @@ import {
   getRelatedProducts,
 } from './products';
 import { proofHrefForProduct } from './proof-link';
+import { isComingSoon, isSellable, COMING_SOON_SLUGS } from './availability';
 import { resolveProductId } from '@/lib/proof/options';
 
 const products = getAllProducts();
@@ -47,9 +48,18 @@ describe('catalog integrity', () => {
     for (const p of products) expect(collectionSlugs.has(p.collectionSlug)).toBe(true);
   });
 
-  it('every product has a proofProductKey that the proof flow resolves', () => {
-    for (const p of products) {
-      expect(resolveProductId(p.proofProductKey)).toBe(p.proofProductKey);
+  it('every SELLABLE product has a proofProductKey that the proof flow resolves', () => {
+    for (const p of products.filter(isSellable)) {
+      expect(resolveProductId(p.proofProductKey), p.slug).toBe(p.proofProductKey);
+    }
+  });
+
+  it('a Coming Soon product key does NOT resolve, so it cannot preselect a design', () => {
+    // Only assert for keys no sellable product shares — a shared key must stay resolvable.
+    const sellableKeys = new Set(products.filter(isSellable).map((p) => p.proofProductKey));
+    for (const p of products.filter(isComingSoon)) {
+      if (sellableKeys.has(p.proofProductKey)) continue;
+      expect(resolveProductId(p.proofProductKey), `${p.slug} must not preselect`).toBeNull();
     }
   });
 
@@ -115,12 +125,22 @@ describe('catalog helpers', () => {
 });
 
 describe('proof CTA URL', () => {
-  it('produces /proof?product=<resolvable key> for every product', () => {
-    for (const p of products) {
+  it('produces /proof?product=<resolvable key> for every SELLABLE product', () => {
+    const sellable = products.filter(isSellable);
+    expect(sellable.length).toBeGreaterThan(0);
+    for (const p of sellable) {
       const href = proofHrefForProduct(p);
-      expect(href).toBe(`/proof?product=${p.proofProductKey}`);
-      const key = new URLSearchParams(href.split('?')[1]).get('product');
+      expect(href, `${p.slug} must have a proof link`).toBe(`/proof?product=${p.proofProductKey}`);
+      const key = new URLSearchParams((href as string).split('?')[1]).get('product');
       expect(resolveProductId(key)).toBe(key);
+    }
+  });
+
+  it('produces NO proof link for a Coming Soon product', () => {
+    const comingSoon = products.filter(isComingSoon);
+    expect(comingSoon.length).toBe(COMING_SOON_SLUGS.length);
+    for (const p of comingSoon) {
+      expect(proofHrefForProduct(p), `${p.slug} must not deep-link into the proof flow`).toBeNull();
     }
   });
 });
