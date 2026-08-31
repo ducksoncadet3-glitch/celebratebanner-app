@@ -1,6 +1,6 @@
 # Fly.io configuration — CelebrateBanner API + workers (one image, three process groups).
 # Deploy from the repo root (build context = root, required by the file: dependency):
-#   fly deploy --config backend-stub/fly.toml --dockerfile backend-stub/Dockerfile .
+#   fly deploy --config backend-stub/fly.toml .
 #
 # Secrets (DATABASE_URL, REDIS_URL, STRIPE_*, AWS_*, POSTMARK_API_TOKEN, DOWNLOAD_TOKEN_SECRET,
 # ADMIN_JWT_SECRET, …) are set with `fly secrets set` — NEVER hardcoded here.
@@ -10,7 +10,11 @@ app = "celebratebanner-api"
 primary_region = "iad"
 
 [build]
-  dockerfile = "backend-stub/Dockerfile"
+  # Resolved relative to THIS file's directory, not the build context. "backend-stub/Dockerfile"
+  # made flyctl look for backend-stub/backend-stub/Dockerfile. The build CONTEXT is still the
+  # repo root (passed as the trailing "." on the deploy command), which is what the Dockerfile
+  # expects: it COPYs both shared/render-engine/ and backend-stub/.
+  dockerfile = "Dockerfile"
 
 # Run migrations once per release, before the new version takes traffic.
 [deploy]

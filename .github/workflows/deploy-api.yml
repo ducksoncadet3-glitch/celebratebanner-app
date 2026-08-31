@@ -62,13 +62,16 @@ jobs:
 
       - uses: superfly/flyctl-actions/setup-flyctl@master
 
-      # Build context is the repo ROOT: backend-stub depends on shared/render-engine
-      # through a file: dependency. The release_command in backend-stub/fly.toml runs
+      # The trailing "." is the build CONTEXT and must be the repo ROOT, because the
+      # Dockerfile COPYs both shared/render-engine/ and backend-stub/. The dockerfile PATH
+      # comes from fly.toml and is resolved relative to that file's own directory, so it is
+      # simply "Dockerfile" — passing --dockerfile backend-stub/Dockerfile here made flyctl
+      # look for backend-stub/backend-stub/Dockerfile. The release_command in fly.toml runs
       # node db/migrate.js once before the new version takes traffic.
       - name: deploy
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
-        run: flyctl deploy --remote-only --config backend-stub/fly.toml --dockerfile backend-stub/Dockerfile .
+        run: flyctl deploy --remote-only --config backend-stub/fly.toml .
 
       - name: verify the API is healthy
         run: |

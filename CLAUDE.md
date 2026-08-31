@@ -182,7 +182,7 @@ lives in **[docs/DEPLOY_COMMANDS.md](docs/DEPLOY_COMMANDS.md) → "Deployment to
 In short:
 ```
 web: fly deploy --config fly.web.toml --dockerfile Dockerfile.web .
-api + workers: fly deploy --config backend-stub/fly.toml --dockerfile backend-stub/Dockerfile .
+api + workers: fly deploy --config backend-stub/fly.toml .
 ```
 
 ### Legacy (single-file `index.html`) — legacy only

@@ -116,7 +116,7 @@ the Render / VPS lines are illustrative alternates, not the CelebrateBanner targ
 ```bash
 # Fly.io (authoritative). Build context = repo ROOT; migrations run via the
 # release_command in backend-stub/fly.toml before traffic shifts (bluegreen).
-fly deploy --config backend-stub/fly.toml --dockerfile backend-stub/Dockerfile .
+fly deploy --config backend-stub/fly.toml .
 
 # ── Illustrative alternates (NOT used by CelebrateBanner) ──────────────────
 # Render:  curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
