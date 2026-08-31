@@ -2,16 +2,27 @@ name: prove-render-pipeline
 
 # Proves the real fulfilment chain WITHOUT a customer payment:
 #
-#   enqueueRender (BullMQ queue.add) -> worker picks the job up -> HD render
-#   -> S3 objects -> project marked ready -> signed delivery URL resolves
+#   enqueueRender (BullMQ queue.add) -> the production worker picks up THAT job -> HD render
+#   -> S3 objects -> project marked ready -> signed delivery URL resolves to real bytes
 #
 # Uses only mechanisms that already exist in this repository:
 #   * middleware/admin-auth.js bootstrap()  - the documented one-shot operator account
 #   * POST /api/admin/projects/:id/rerender - the documented re-render entry point, which
 #     calls the SAME enqueueRender the Stripe webhook calls
+#   * services/tokens.js issueDownloadToken - the same call the worker makes on completion
 #
 # It never fabricates a Stripe signature, never touches Stripe keys or mode, never creates
 # a charge, never bypasses CSRF, and never inserts fake queue or render state.
+#
+# Two things this workflow learned the hard way:
+#
+#  1. Every `node -e` run over `flyctl ssh console -C` MUST end in process.exit(0). db/index.js
+#     holds an open pg Pool, so the event loop never drains on its own, node never exits, and
+#     the ssh session hangs until the job timeout. Run 33350772969 bootstrapped the operator
+#     successfully at 02:28:32 and then sat there for 30 minutes for exactly this reason.
+#  2. Nested quoting through `ssh -C "node -e \"...\""` is unmaintainable. Each in-container
+#     program is written as a normal .js file, base64'd, and eval'd, so the only thing
+#     interpolated into the ssh command line is one opaque blob.
 on:
   # Also runs on a push that touches this file. workflow_dispatch cannot be triggered from
   # the Codespaces environment (its token has no actions:write), so this is the only way to
@@ -38,11 +49,11 @@ jobs:
   prove:
     name: prove render pipeline
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 25
     env:
       API: https://api.celebratebanner.com
       APP: celebratebanner-api
-      PROJECT_ID: ${{ inputs.project_id || 'proj_proof42813' }}
+      PROJECT_ID: ${{ inputs.project_id || 'proj_render137424' }}
       ADMIN_EMAIL: ${{ inputs.admin_email || 'ops@celebratebanner.com' }}
     steps:
       - uses: actions/checkout@v4
@@ -58,6 +69,107 @@ jobs:
 
       - uses: superfly/flyctl-actions/setup-flyctl@master
 
+      # ── in-container helper ────────────────────────────────────────────────
+      # Files written here persist for the whole job.
+      - name: stage in-container runner and programs
+        run: |
+          mkdir -p /tmp/js
+          cat > /tmp/incontainer.sh <<'SH'
+          #!/usr/bin/env bash
+          # usage: incontainer.sh <local .js file> [argv...]
+          # Runs the program inside the API container. The program is base64'd so nothing
+          # but an opaque blob crosses the ssh command line. Bounded so a hung session
+          # fails this step in minutes instead of eating the whole job timeout.
+          set -euo pipefail
+          JS="$1"; shift
+          B64="$(base64 -w0 "$JS")"
+          timeout 300 flyctl ssh console -a "$APP" \
+            -C "node -e \"eval(Buffer.from('$B64','base64').toString('utf8'))\" $*"
+          SH
+          chmod +x /tmp/incontainer.sh
+
+          # 0) liveness probe
+          cat > /tmp/js/probe.js <<'JS'
+          console.log('ssh-ok');
+          process.exit(0);
+          JS
+
+          # 1) documented one-shot operator bootstrap. argv: email, password
+          cat > /tmp/js/bootstrap.js <<'JS'
+          require('./middleware/admin-auth')
+            .bootstrap(process.argv[1], process.argv[2])
+            .then((r) => { console.log(JSON.stringify(r)); process.exit(0); })
+            .catch((e) => { console.error(e.message); process.exit(1); });
+          JS
+
+          # 2) read the EXACT BullMQ job back out of Redis. argv: jobId
+          cat > /tmp/js/job.js <<'JS'
+          const { queue } = require('./services/queue');
+          (async () => {
+            const job = await queue.getJob(process.argv[1]);
+            if (!job) { console.error('JOB NOT FOUND IN REDIS'); process.exit(1); }
+            const state = await job.getState();
+            console.log('JOB=' + JSON.stringify({
+              id: String(job.id),
+              state,
+              name: job.name,
+              projectId: job.data && job.data.projectId,
+              renderId: job.data && job.data.renderId,
+              attemptsMade: job.attemptsMade,
+              processedOn: job.processedOn,
+              finishedOn: job.finishedOn,
+              failedReason: job.failedReason || null,
+            }));
+            process.exit(0);
+          })().catch((e) => { console.error(e.message); process.exit(1); });
+          JS
+
+          # 3) the render row + a real HeadObject against S3. argv: renderId
+          cat > /tmp/js/s3check.js <<'JS'
+          const { one } = require('./db/index');
+          const { s3, DEFAULTS } = require('./services/s3');
+          const { HeadObjectCommand } = require('@aws-sdk/client-s3');
+          (async () => {
+            const r = await one(
+              `SELECT id, project_id, status, png_key, jpeg_key, mockup_key,
+                      dimensions_w, dimensions_h, dpi, duration_ms
+                 FROM renders WHERE id = $1`,
+              [process.argv[1]],
+            );
+            if (!r) { console.error('RENDER ROW NOT FOUND'); process.exit(1); }
+            const out = { render: r, objects: {} };
+            for (const kind of ['png_key', 'jpeg_key', 'mockup_key']) {
+              const key = r[kind];
+              if (!key) { out.objects[kind] = null; continue; }
+              const h = await s3.send(new HeadObjectCommand({ Bucket: DEFAULTS.BUCKET, Key: key }));
+              out.objects[kind] = { key, bytes: h.ContentLength, type: h.ContentType };
+            }
+            console.log('S3=' + JSON.stringify(out));
+            process.exit(0);
+          })().catch((e) => { console.error(e.message); process.exit(1); });
+          JS
+
+          # 4) mint a delivery URL through the app's own token service - the same call the
+          #    worker makes on completion. argv: projectId
+          cat > /tmp/js/deliver.js <<'JS'
+          const { one } = require('./db/index');
+          const { issueDownloadToken } = require('./services/tokens');
+          (async () => {
+            const r = await one(
+              `SELECT jpeg_key FROM renders
+                WHERE project_id = $1 AND status = 'done'
+                ORDER BY finished_at DESC LIMIT 1`,
+              [process.argv[1]],
+            );
+            if (!r || !r.jpeg_key) { console.error('NO COMPLETED RENDER WITH A JPEG KEY'); process.exit(1); }
+            const t = await issueDownloadToken({
+              projectId: process.argv[1], assetType: 'jpeg', s3Key: r.jpeg_key,
+            });
+            console.log('URL=' + t.url);
+            process.exit(0);
+          })().catch((e) => { console.error(e.message); process.exit(1); });
+          JS
+
       # Gate: an app-scoped DEPLOY token may not carry SSH. Find out explicitly, with a
       # clear message, before doing anything else.
       - name: probe SSH capability
@@ -65,8 +177,7 @@ jobs:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
         run: |
           set +e
-          out=$(flyctl ssh console -a "$APP" -C "node -e \"console.log('ssh-ok')\"" 2>&1)
-          rc=$?
+          out=$(/tmp/incontainer.sh /tmp/js/probe.js 2>&1); rc=$?
           set -e
           echo "$out"
           if [ $rc -ne 0 ] || ! echo "$out" | grep -q "ssh-ok"; then
@@ -83,12 +194,13 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
         run: |
+          set -e
           PW="$(openssl rand -hex 24)"
           echo "::add-mask::$PW"
           echo "ADMIN_PW=$PW" >> "$GITHUB_ENV"
-          flyctl ssh console -a "$APP" -C "node -e \"require('./middleware/admin-auth').bootstrap(process.argv[1],process.argv[2]).then(r=>console.log(JSON.stringify(r))).catch(e=>{console.error(e.message);process.exit(1)})\" '$ADMIN_EMAIL' '$PW'"
+          /tmp/incontainer.sh /tmp/js/bootstrap.js "'$ADMIN_EMAIL'" "'$PW'" | tail -1
 
-      - name: 1-4  login, csrf, and queue.add via the documented rerender route
+      - name: login, csrf, and preflight the target project
         run: |
           set -e
           JAR=/tmp/jar
@@ -100,25 +212,56 @@ jobs:
 
           CSRF=$(curl -s -b "$JAR" "$API/api/admin/auth/csrf" | jq -r '.csrfToken')
           [ -n "$CSRF" ] && [ "$CSRF" != "null" ] || { echo "::error::no csrf token"; exit 1; }
+          echo "CSRF=$CSRF" >> "$GITHUB_ENV"
           echo "csrf OK"
 
-          echo "queue BEFORE:"
-          curl -s -b "$JAR" "$API/api/admin/queue" | tee /tmp/qbefore.json | jq -c .
+          code=$(curl -s -o /tmp/proj.json -w '%{http_code}' -b "$JAR" "$API/api/admin/projects/$PROJECT_ID")
+          [ "$code" = "200" ] || { echo "::error::project $PROJECT_ID not found ($code)"; cat /tmp/proj.json; exit 1; }
+          jq '{id, status, rev, customerEmail, templateId,
+               photos: (.renderInput.photos | length),
+               heroId: .renderInput.heroId,
+               renders: [.renders[] | {id, status}]}' /tmp/proj.json
 
+          # The design must actually be there - a render of an empty project proves nothing.
+          N=$(jq -r '.renderInput.photos | length' /tmp/proj.json)
+          [ "$N" -ge 1 ] || { echo "::error::project has no photos in render_input - nothing to render"; exit 1; }
+          echo "PROOF: the target project carries a real saved design ($N photo(s))"
+
+          # workers/render.worker.js emails projects.customer_email on completion. This proof
+          # must never surprise a real customer, so it only runs against a null or internal
+          # address. This is a deliberate stop, not a failure of the pipeline.
+          EMAIL=$(jq -r '.customerEmail // ""' /tmp/proj.json)
+          case "$EMAIL" in
+            ""|null) echo "customer_email is null - the worker will send no email" ;;
+            *@celebratebanner.com|*@example.com|ducksoncadet3@gmail.com|ducksoncadet4@yahoo.com)
+              echo "customer_email is an internal address - safe to deliver" ;;
+            *)
+              echo "::error::project $PROJECT_ID has an external customer_email."
+              echo "::error::A re-render would send that person a real delivery email."
+              echo "::error::Point this proof at a project whose customer_email is null or internal."
+              exit 1 ;;
+          esac
+
+          echo "queue BEFORE:"
+          curl -s -b "$JAR" "$API/api/admin/queue" | jq -c '{connected, waiting, active, completed, failed, delayed}'
+
+      - name: 1-3  queue.add via the documented rerender route
+        run: |
+          set -e
+          JAR=/tmp/jar
           JOB=$(curl -s -b "$JAR" -X POST "$API/api/admin/projects/$PROJECT_ID/rerender" \
             -H "x-csrf-token: $CSRF" -H 'Content-Type: application/json' --data '{}')
           echo "rerender response: $JOB"
           JOB_ID=$(echo "$JOB" | jq -r '.jobId // empty')
           [ -n "$JOB_ID" ] || { echo "::error::queue.add did not return a jobId"; exit 1; }
-          echo "PROOF 1-3: queue.add succeeded, BullMQ jobId=$JOB_ID"
           echo "JOB_ID=$JOB_ID" >> "$GITHUB_ENV"
-          echo "CSRF=$CSRF" >> "$GITHUB_ENV"
+          echo "PROOF 1-3: enqueueRender -> BullMQ queue.add succeeded, jobId=$JOB_ID"
 
-      - name: 4-9  worker picks it up, HD render, S3, database status
+      - name: 4-9  worker picks up THAT job, HD render, S3, database status
         run: |
           set -e
           JAR=/tmp/jar
-          SAW_ACTIVE=0
+          SAW_PENDING=0
           for i in $(seq 1 80); do
             Q=$(curl -s -b "$JAR" "$API/api/admin/queue")
             P=$(curl -s -b "$JAR" "$API/api/admin/projects/$PROJECT_ID")
@@ -131,8 +274,7 @@ jobs:
             RPR=$(echo "$P" | jq -r '.renders[0].progress // 0')
             RER=$(echo "$P" | jq -r '.renders[0].errorMessage // ""')
             echo "[$i] queue waiting=$WAIT active=$ACT completed=$DONE failed=$FAILED | project=$ST render=$RST ${RPR}%"
-            [ "$ACT" != "0" ] && SAW_ACTIVE=1
-            [ "$RST" = "running" ] && SAW_ACTIVE=1
+            { [ "$ACT" != "0" ] || [ "$WAIT" != "0" ] || [ "$RST" = "running" ]; } && SAW_PENDING=1
             if [ "$RST" = "done" ] || [ "$RST" = "failed" ] || [ "$ST" = "ready" ] || [ "$ST" = "failed" ]; then
               echo "terminal: project=$ST render=$RST"
               [ -n "$RER" ] && echo "render error: $RER"
@@ -142,35 +284,58 @@ jobs:
           done
 
           P=$(curl -s -b "$JAR" "$API/api/admin/projects/$PROJECT_ID")
-          echo "$P" | jq '{status, rev, renders}'
+          echo "$P" | jq '{status, rev, renders: [.renders[] | {id, status, progress, durationMs, errorMessage}]}'
           ST=$(echo "$P" | jq -r '.status')
           RST=$(echo "$P" | jq -r '.renders[0].status // "none"')
           DUR=$(echo "$P" | jq -r '.renders[0].durationMs // 0')
-          echo "saw active/running: $SAW_ACTIVE"
+          echo "saw the job waiting/active at least once: $SAW_PENDING"
           [ "$RST" = "done" ] || { echo "::error::render did not complete (render=$RST project=$ST)"; exit 1; }
           [ "$ST" = "ready" ] || { echo "::error::project status is $ST, expected ready"; exit 1; }
-          echo "PROOF 4-9: worker ran the job, HD render completed in ${DUR}ms, project=ready"
+          echo "PROOF 6-7,9: HD render completed in ${DUR}ms, project status=ready"
 
-      # resend-delivery only succeeds when the project is ready AND a completed render row
-      # has a jpeg_key, so a 200 here is itself proof the S3 object exists and that a signed
-      # download token was minted and stored. It also sends the real delivery email.
+      # Reads the job straight out of Redis: same id we enqueued, terminal state completed,
+      # and its payload names THIS project. That is what makes it the exact job.
+      - name: 4-5  the production worker processed THAT exact job
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+        run: |
+          set -e
+          /tmp/incontainer.sh /tmp/js/job.js "$JOB_ID" | tr -d '\r' | grep '^JOB=' | sed 's/^JOB=//' > /tmp/job.json
+          jq . /tmp/job.json
+          STATE=$(jq -r '.state' /tmp/job.json)
+          PID=$(jq -r '.projectId' /tmp/job.json)
+          RID=$(jq -r '.renderId' /tmp/job.json)
+          [ "$PID" = "$PROJECT_ID" ] || { echo "::error::job payload names $PID, not $PROJECT_ID"; exit 1; }
+          [ "$STATE" = "completed" ] || { echo "::error::job $JOB_ID state is $STATE, expected completed"; exit 1; }
+          [ -n "$RID" ] && [ "$RID" != "null" ] || { echo "::error::job carries no renderId"; exit 1; }
+          echo "RENDER_ID=$RID" >> "$GITHUB_ENV"
+          echo "PROOF 4-5,7: BullMQ job $JOB_ID for $PROJECT_ID reached state=completed, renderId=$RID"
+
+      - name: 8  the S3 render objects exist
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+        run: |
+          set -e
+          /tmp/incontainer.sh /tmp/js/s3check.js "$RENDER_ID" | tr -d '\r' | grep '^S3=' | sed 's/^S3=//' > /tmp/s3.json
+          jq . /tmp/s3.json
+          [ "$(jq -r '.render.project_id' /tmp/s3.json)" = "$PROJECT_ID" ] || { echo "::error::render row belongs to another project"; exit 1; }
+          [ "$(jq -r '.render.status' /tmp/s3.json)" = "done" ] || { echo "::error::render row is not done"; exit 1; }
+          JB=$(jq -r '.objects.jpeg_key.bytes // 0' /tmp/s3.json)
+          PB=$(jq -r '.objects.png_key.bytes // 0' /tmp/s3.json)
+          [ "$JB" -gt 10000 ] || { echo "::error::jpeg object missing or tiny ($JB bytes)"; exit 1; }
+          [ "$PB" -gt 10000 ] || { echo "::error::png object missing or tiny ($PB bytes)"; exit 1; }
+          echo "PROOF 8: HeadObject confirms the S3 render objects (jpeg $JB bytes, png $PB bytes)"
+
       - name: 10-12  signed delivery URL is issued and resolves
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
         run: |
           set -e
-          JAR=/tmp/jar
-          code=$(curl -s -o /tmp/resend.json -w '%{http_code}' -b "$JAR" -X POST \
-            "$API/api/admin/projects/$PROJECT_ID/resend-delivery" \
-            -H "x-csrf-token: $CSRF" -H 'Content-Type: application/json' --data '{}')
-          cat /tmp/resend.json; echo
-          [ "$code" = "200" ] || { echo "::error::resend-delivery failed ($code) - no S3 render object or signed token"; exit 1; }
-          echo "PROOF 10: signed download token issued and delivery email sent"
-
-          # Mint one more URL through the app's own token service so we can fetch it here.
-          URL=$(flyctl ssh console -a "$APP" -C "node -e \"const{one}=require('./db/index');const{issueDownloadToken}=require('./services/tokens');(async()=>{const r=await one(\\\"SELECT jpeg_key FROM renders WHERE project_id=\$1 AND status='done' ORDER BY finished_at DESC LIMIT 1\\\",[process.argv[1]]);const t=await issueDownloadToken({projectId:process.argv[1],assetType:'jpeg',s3Key:r.jpeg_key});console.log('URL='+t.url);process.exit(0)})().catch(e=>{console.error(e.message);process.exit(1)})\" '$PROJECT_ID'" | grep -o 'URL=.*' | sed 's/^URL=//' | tr -d '\r')
-          echo "signed URL host: $(echo "$URL" | sed 's|\(https://[^/]*\).*|\1|')"
+          URL=$(/tmp/incontainer.sh /tmp/js/deliver.js "$PROJECT_ID" | tr -d '\r' | grep '^URL=' | sed 's/^URL=//')
           [ -n "$URL" ] || { echo "::error::could not mint a delivery URL"; exit 1; }
+          echo "signed URL: $(echo "$URL" | sed 's|/[^/]*$|/<token>|')"
+          case "$URL" in *"$PROJECT_ID"*) echo "the URL is bound to $PROJECT_ID" ;;
+            *) echo "::error::minted URL is not bound to $PROJECT_ID"; exit 1 ;; esac
 
           code=$(curl -sL -o /tmp/out.bin -w '%{http_code}' "$URL")
           SIZE=$(stat -c%s /tmp/out.bin)
@@ -179,6 +344,10 @@ jobs:
           [ "$code" = "200" ] || { echo "::error::signed delivery URL returned $code"; exit 1; }
           [ "$SIZE" -gt 10000 ] || { echo "::error::delivered file is suspiciously small ($SIZE bytes)"; exit 1; }
           case "$TYPE" in image/*) ;; *) echo "::error::delivered file is not an image ($TYPE)"; exit 1;; esac
-          echo "PROOF 11-12: delivery URL returned a $SIZE byte $TYPE for $PROJECT_ID"
+
+          # It must be the SAME object S3 reported for this project's render.
+          EXPECT=$(jq -r '.objects.jpeg_key.bytes' /tmp/s3.json)
+          [ "$SIZE" = "$EXPECT" ] || { echo "::error::delivered $SIZE bytes, S3 object is $EXPECT bytes"; exit 1; }
+          echo "PROOF 10-12: delivery URL returned the exact $SIZE byte $TYPE render for $PROJECT_ID"
           echo
           echo "FULL CHAIN PROVEN: queue.add -> worker -> HD render -> S3 -> signed delivery"
