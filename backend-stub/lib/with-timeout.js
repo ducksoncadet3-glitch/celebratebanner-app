@@ -28,8 +28,12 @@ function withTimeout(operation, ms, name) {
       () => finish({ name, ok: false, error: `health check timed out after ${ms}ms`, timedOut: true }),
       ms,
     );
-    // Don't let the timer keep the event loop alive on its own.
-    if (typeof timer.unref === 'function') timer.unref();
+    // The timer is deliberately NOT unref'd. When a probe hangs, this timer is the only
+    // thing that can settle the race — unref'ing it meant the event loop could drain and
+    // the bounded result would never be produced, so the "always settles within ms"
+    // guarantee held only while something else (the HTTP server) kept the loop alive.
+    // `finish` clears it the moment the probe settles, so it delays a shutdown by at most
+    // `ms`, and only when a dependency is actually hanging.
 
     Promise.resolve()
       .then(operation)
