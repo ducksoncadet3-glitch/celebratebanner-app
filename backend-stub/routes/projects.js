@@ -108,9 +108,21 @@ async function saveHandler(req, res) {
   // 2) A token was presented but doesn't authorize this project → forbidden.
   if (token) return res.status(403).json({ error: 'forbidden' });
 
-  // 3) No credential: allow claim-on-first-write ONLY for an unclaimed (nonexistent) project.
+  // 3) No credential: allow claim-on-first-write for a project nobody has saved yet.
+  //
+  //    "Row exists" must NOT be read as "someone owns this". POST /api/uploads/signed
+  //    pre-creates the projects row (uploads.project_id is NOT NULL REFERENCES
+  //    projects), and the builder uploads photos BEFORE its first autosave — the
+  //    autosave effect is gated on state.photos.length > 0. So on the real customer
+  //    path the row always exists by the time the first save arrives, and treating
+  //    that as "claimed" rejected every first save with 403. The design then never
+  //    reached the server, and a paid HD render had no render_input to draw.
+  //
+  //    A project is unclaimed until it has been saved, i.e. render_input IS NULL.
+  //    Once a design exists, a valid token is required exactly as before, so the
+  //    trust-on-first-use window is unchanged.
   const existing = await getById(id).catch(() => null);
-  if (existing) return res.status(403).json({ error: 'forbidden' });
+  if (existing && existing.render_input != null) return res.status(403).json({ error: 'forbidden' });
   await createIfMissing({ projectId: id, templateId: templateIdFrom(renderInput), renderType: 'standard', customerEmail: null, items: [] });
   return persist(res, id, renderInput, rev);
 }
