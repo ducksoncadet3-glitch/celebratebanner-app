@@ -17,6 +17,7 @@ const { rateLimit } = require('../middleware/rate-limit');
 const { createUploadPolicy } = require('../services/s3');
 const { optimize: optimizeImage } = require('../services/image-optimizer');
 const { query, one } = require('../db/index');
+const { createIfMissing } = require('../db/projects');
 const { metrics } = require('../services/metrics');
 const { logger } = require('../services/logger');
 
@@ -28,6 +29,9 @@ const OPTIMIZE_DELAY_MS = Number.parseInt(process.env.IMAGE_OPT_DELAY_MS || '800
 
 const Body = z.object({
   projectId:   z.string().regex(/^proj_[a-zA-Z0-9_-]{6,32}$/),
+  // The builder sends this; it seeds the projects row created below. Optional so an
+  // older client that omits it still uploads successfully.
+  templateId:  z.string().min(1).max(64).optional(),
   filename:    z.string().min(1).max(256),
   contentType: z.string().regex(/^image\/(jpeg|png|webp)$/),
   bytes:       z.number().int().min(1).max(50 * 1024 * 1024),
@@ -56,6 +60,21 @@ async function signedUploadHandler(req, res) {
       contentType: body.contentType,
       bytes: body.bytes,
       sha256: body.sha256,
+    });
+
+    // uploads.project_id is NOT NULL REFERENCES projects(id), and the builder requests a
+    // signed upload BEFORE its first autosave (create-flow only builds a RenderInput once
+    // photos exist). So the projects row has to exist here or the INSERT below fails the
+    // foreign key and the customer sees "Could not start upload".
+    //
+    // The row is created UNCLAIMED (render_input NULL), which is what lets the customer's
+    // first autosave claim it — see routes/projects.js saveHandler.
+    await createIfMissing({
+      projectId: body.projectId,
+      templateId: body.templateId || 'graduation',
+      renderType: 'standard',
+      customerEmail: null,
+      items: [],
     });
 
     // Pre-create the uploads row so the asset URL is reservable. The render
