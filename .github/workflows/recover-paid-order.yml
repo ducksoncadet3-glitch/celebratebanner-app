@@ -11,7 +11,9 @@ name: recover-paid-order
 #   * refuses unless a payments row for the project has status = 'succeeded'
 #   * refuses unless the stored render_input deserializes (never renders an empty design)
 #   * refuses unless the operator types the project id into `confirm`
-#   * refuses if a render row already exists in a non-failed state (no double delivery)
+#   * refuses if a render row already exists in a non-failed state (no double delivery),
+#     unless override_existing=yes — used when a shipped render was defective and the
+#     customer must receive a corrected file. A queued/running render is NEVER overridden.
 on:
   workflow_dispatch:
     inputs:
@@ -25,6 +27,10 @@ on:
         description: 'Why this recovery is running (recorded in the run + audit log)'
         required: false
         default: 'incident recovery'
+      override_existing:
+        description: 'Re-render even though a completed render exists (e.g. the output was defective). Types: yes/no'
+        required: false
+        default: 'no'
 
 concurrency:
   group: recover-paid-order
@@ -97,14 +103,23 @@ jobs:
             }
             console.log('guard: render_input valid, photos =', (renderInput.photos || []).length);
 
-            const existing = await rows(
-              "SELECT id, status FROM renders WHERE project_id = $1 AND status IN ('queued','running','done')", [ID]);
-            if (existing.length) {
-              console.error('REFUSING: a render already exists in state ' + existing.map((r) => r.status).join(','));
-              console.error('Recovery would risk a duplicate delivery. Inspect before retrying.');
+            const inFlight = await rows(
+              "SELECT id, status FROM renders WHERE project_id = $1 AND status IN ('queued','running')", [ID]);
+            if (inFlight.length) {
+              console.error('REFUSING: a render is already ' + inFlight[0].status + ' — never override in-flight work');
               process.exit(1);
             }
-            console.log('guard: no queued/running/done render exists');
+            const doneRows = await rows(
+              "SELECT id FROM renders WHERE project_id = $1 AND status = 'done'", [ID]);
+            const override = String(process.env.RECOVER_OVERRIDE || 'no').toLowerCase() === 'yes';
+            if (doneRows.length && !override) {
+              console.error('REFUSING: a completed render already exists — this would duplicate delivery.');
+              console.error('Set override_existing=yes only if that output was defective.');
+              process.exit(1);
+            }
+            console.log(doneRows.length
+              ? 'guard: overriding ' + doneRows.length + ' completed render(s) — operator confirmed the output was defective'
+              : 'guard: no queued/running/done render exists');
 
             const renderId = crypto.randomUUID();
             const { jobId } = await enqueueRender({
@@ -116,7 +131,7 @@ jobs:
             await auditRecord({
               actorKind: 'admin', actorId: 'gha:recover-paid-order', action: 'project.rerender',
               subjectKind: 'project', subjectId: ID,
-              metadata: { jobId, renderId, reason: REASON },
+              metadata: { jobId, renderId, reason: REASON, override: String(process.env.RECOVER_OVERRIDE || 'no') },
             });
             console.log('ENQUEUED jobId=' + jobId + ' renderId=' + renderId);
             process.exit(0);
@@ -129,8 +144,9 @@ jobs:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
           PROJECT_ID: ${{ inputs.project_id }}
           REASON: ${{ inputs.reason }}
+          OVERRIDE: ${{ inputs.override_existing }}
         run: |
           set -o pipefail
           B64=$(base64 -w0 /tmp/recover.js)
           flyctl ssh console -a celebratebanner-api -C \
-            "/bin/sh -lc \"cd /app/backend-stub && RECOVER_PROJECT_ID='${PROJECT_ID}' RECOVER_REASON='${REASON}' node -e \\\"eval(Buffer.from('${B64}','base64').toString('utf8'))\\\"\""
+            "/bin/sh -lc \"cd /app/backend-stub && RECOVER_PROJECT_ID='${PROJECT_ID}' RECOVER_REASON='${REASON}' RECOVER_OVERRIDE='${OVERRIDE}' node -e \\\"eval(Buffer.from('${B64}','base64').toString('utf8'))\\\"\""
