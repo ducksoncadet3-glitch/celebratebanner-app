@@ -1,0 +1,170 @@
+name: diagnose-project
+
+# READ-ONLY production diagnostic for a single project/order.
+#
+# Runs one SELECT-only Node script inside the running celebratebanner-api machine and
+# prints ONLY derived facts. It never writes, never enqueues a render, never sends mail,
+# never touches Stripe, and never prints DATABASE_URL, tokens, customer email, addresses,
+# photo URLs, or the render_input document itself.
+#
+# It deploys nothing: no image is built and no release is created.
+on:
+  workflow_dispatch:
+    inputs:
+      project_id:
+        description: 'Project id to trace (proj_...)'
+        required: true
+      reason:
+        description: 'Why this diagnostic is running (recorded in the run)'
+        required: false
+        default: 'incident triage'
+
+concurrency:
+  group: diagnose-project
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    name: read-only trace
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: context
+        run: |
+          echo "project: ${{ inputs.project_id }}"
+          echo "reason : ${{ inputs.reason }}"
+
+      - name: validate project id shape
+        env:
+          PROJECT_ID: ${{ inputs.project_id }}
+        run: |
+          case "$PROJECT_ID" in
+            proj_[a-zA-Z0-9_-]*) echo "project id shape OK" ;;
+            *) echo "::error::project_id must look like proj_..."; exit 1 ;;
+          esac
+
+      - name: check API credential
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+        run: |
+          if [ -z "${FLY_API_TOKEN}" ]; then
+            echo "::error::FLY_API_TOKEN_API resolved to an EMPTY value for this job."
+            echo "::error::It must be a REPOSITORY secret scoped to celebratebanner-api."
+            exit 1
+          fi
+          echo "FLY_API_TOKEN_API present."
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: write the read-only probe
+        env:
+          PROJECT_ID: ${{ inputs.project_id }}
+        run: |
+          cat > /tmp/diag.js <<'ENDOFPROBE'
+          /* READ ONLY. SELECT statements and Redis reads only. No INSERT/UPDATE/DELETE,
+             no queue.add, no mail. Derived facts only: never secrets, never PII. */
+          const { Pool } = require('pg');
+          const ID = process.env.DIAG_PROJECT_ID;
+          const pool = new Pool({
+            connectionString: process.env.DATABASE_URL,
+            ssl: process.env.PG_SSL === 'require' ? { rejectUnauthorized: false } : undefined,
+          });
+          const out = (k, v) => console.log('\n=== ' + k + ' ===\n' + JSON.stringify(v, null, 2));
+          (async () => {
+            const proj = await pool.query(
+              "SELECT id, rev, status, template_id, render_type, created_at, updated_at," +
+              " (render_input IS NOT NULL) AS ri_present," +
+              " jsonb_typeof(render_input) AS ri_type," +
+              " (render_input ? 'version') AS ri_has_version," +
+              " render_input->>'version' AS ri_version," +
+              " COALESCE(jsonb_array_length(render_input->'photos'), -1) AS photo_count," +
+              " COALESCE(jsonb_array_length(render_input->'items'), -1) AS legacy_items_count," +
+              " render_input->'theme'->>'id' AS theme_id," +
+              " render_input->>'arrangement' AS arrangement," +
+              " (render_input->>'heroId' IS NOT NULL) AS has_hero," +
+              " pg_column_size(render_input) AS ri_bytes" +
+              " FROM projects WHERE id = $1", [ID]);
+            out('PHASE 1 PROJECT', proj.rows[0] || null);
+
+            const pay = await pool.query(
+              "SELECT status, product_ids, amount_total_cents, currency, project_id," +
+              " (customer_email IS NOT NULL) AS has_customer_email," +
+              " (confirmation_sent_at IS NOT NULL) AS confirmation_claimed," +
+              " confirmation_sent_at, created_at," +
+              " ('...' || right(stripe_session_id, 6)) AS session_tail," +
+              " (stripe_session_id IS NOT NULL) AS has_session" +
+              " FROM payments WHERE project_id = $1 ORDER BY created_at DESC", [ID]);
+            out('PHASE 2 PAYMENTS', pay.rows);
+
+            const ren = await pool.query(
+              "SELECT id, queue_job_id, status, progress, attempts," +
+              " (png_key IS NOT NULL) AS has_png, (jpeg_key IS NOT NULL) AS has_jpeg," +
+              " (mockup_key IS NOT NULL) AS has_mockup," +
+              " enqueued_at, started_at, finished_at, duration_ms, error_message" +
+              " FROM renders WHERE project_id = $1 ORDER BY enqueued_at DESC", [ID]);
+            out('PHASE 3 RENDERS', ren.rows);
+
+            const dl = await pool.query(
+              "SELECT count(*)::int AS token_count FROM download_tokens WHERE project_id = $1", [ID]);
+            out('DOWNLOAD TOKENS', dl.rows[0]);
+
+            const audit = await pool.query(
+              "SELECT action, actor_kind, created_at, (metadata->>'reason') AS reason" +
+              " FROM audit_log WHERE subject_id = $1 ORDER BY created_at ASC LIMIT 40", [ID]);
+            out('AUDIT TRAIL', audit.rows);
+
+            /* BullMQ: the webhook enqueues with jobId = 'paid:<stripe_session_id>'. */
+            let redisReport = { checked: false };
+            try {
+              const IORedis = require('ioredis');
+              const conn = new IORedis(process.env.REDIS_URL, { maxRetriesPerRequest: null, lazyConnect: true });
+              await conn.connect();
+              const q = process.env.RENDER_QUEUE_NAME || 'cb-renders';
+              const sess = await pool.query(
+                "SELECT stripe_session_id FROM payments WHERE project_id = $1 ORDER BY created_at DESC LIMIT 1", [ID]);
+              const sid = sess.rows[0] && sess.rows[0].stripe_session_id;
+              const jobId = sid ? 'paid:' + sid : null;
+              const hash = jobId ? await conn.hgetall('bull:' + q + ':' + jobId) : {};
+              const jobExists = !!(hash && Object.keys(hash).length);
+              redisReport = {
+                checked: true,
+                queue: q,
+                jobIdProbed: sid ? 'paid:...' + String(sid).slice(-6) : null,
+                jobExists: jobExists,
+                jobState: jobExists ? {
+                  attemptsMade: hash.attemptsMade,
+                  failedReason: hash.failedReason ? String(hash.failedReason).slice(0, 300) : null,
+                  processedOn: hash.processedOn,
+                  finishedOn: hash.finishedOn,
+                } : null,
+                counters: {
+                  wait: await conn.llen('bull:' + q + ':wait'),
+                  active: await conn.llen('bull:' + q + ':active'),
+                  failed: await conn.zcard('bull:' + q + ':failed'),
+                  completed: await conn.zcard('bull:' + q + ':completed'),
+                  delayed: await conn.zcard('bull:' + q + ':delayed'),
+                },
+              };
+              await conn.quit();
+            } catch (e) {
+              redisReport = { checked: false, error: String(e.message).slice(0, 200) };
+            }
+            out('PHASE 3 BULLMQ', redisReport);
+
+            await pool.end();
+            console.log('\n=== DIAGNOSTIC COMPLETE (read-only) ===');
+          })().catch(function (e) { console.error('DIAG ERROR:', e.message); process.exit(1); });
+          ENDOFPROBE
+          node --check /tmp/diag.js && echo "probe syntax OK"
+
+      - name: run the read-only trace inside celebratebanner-api
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+          PROJECT_ID: ${{ inputs.project_id }}
+        run: |
+          set -o pipefail
+          B64=$(base64 -w0 /tmp/diag.js)
+          flyctl ssh console -a celebratebanner-api -C \
+            "/bin/sh -lc \"DIAG_PROJECT_ID='${PROJECT_ID}' node -e \\\"eval(Buffer.from('${B64}','base64').toString('utf8'))\\\"\""
