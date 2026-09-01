@@ -90,6 +90,44 @@ test('every image that builds the render engine is released on a render-engine c
   }
 });
 
+/**
+ * Every direct build/deploy input for an app: the Dockerfile that builds its image and the
+ * fly config that defines the release. Changing either changes what runs in production, so
+ * each must trigger that app's deploy workflow.
+ *
+ * The API's inputs live inside backend-stub/ and are already covered by 'backend-stub/**';
+ * the web app's sit at the repo ROOT, outside 'web/**', so they must be named explicitly.
+ * That asymmetry is exactly what made the web gap easy to miss.
+ */
+const BUILD_INPUTS: Record<string, string[]> = {
+  '.github/workflows/deploy-web.yml': ['Dockerfile.web', 'fly.web.toml'],
+  '.github/workflows/deploy-api.yml': ['backend-stub/Dockerfile', 'backend-stub/fly.toml'],
+};
+
+/** True when `file` is released by `paths` — matched literally or by a `dir/**` prefix. */
+function pathsCover(paths: string[], file: string): boolean {
+  return paths.some((p) => (p.endsWith('/**') ? file.startsWith(p.slice(0, -2)) : p === file));
+}
+
+test('every build/deploy input releases the app it defines', () => {
+  for (const [workflow, inputs] of Object.entries(BUILD_INPUTS)) {
+    const paths = pushPaths(workflow);
+    assert.ok(paths.length > 0, `${workflow}: could not read its push paths`);
+    for (const file of inputs) {
+      assert.ok(
+        existsSync(path.join(ROOT, file)),
+        `${file} is missing — update this guard if the layout changed`,
+      );
+      assert.ok(
+        pathsCover(paths, file),
+        `${workflow} does not trigger on "${file}", which defines the image it deploys. ` +
+          `Editing that file would leave production on the previous image. ` +
+          `Current paths: ${JSON.stringify(paths)}`,
+      );
+    }
+  }
+});
+
 test('each deploy workflow still triggers on its own source', () => {
   // Guards against a filter being loosened into "renderer only".
   const own: Record<string, string> = {

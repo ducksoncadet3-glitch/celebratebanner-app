@@ -7,11 +7,20 @@ name: deploy-web
 # Triggers: push to main that touches /web or shared/render-engine.
 
 on:
+  # Path-scoped to everything that ships in, or defines, the celebratebanner-web image.
+  #
+  # Dockerfile.web and fly.web.toml live at the repo ROOT, outside web/**, so they need to be
+  # named explicitly — unlike the API, whose Dockerfile and fly.toml sit inside backend-stub/
+  # and are already covered by 'backend-stub/**'. Without them, editing the web image
+  # definition or its Fly config (process/vm sizing, health checks, NEXT_PUBLIC build args)
+  # would not release the app, and production would keep running the previous image.
   push:
     branches: [main]
     paths:
       - 'web/**'
       - 'shared/render-engine/**'
+      - 'Dockerfile.web'
+      - 'fly.web.toml'
       - '.github/workflows/deploy-web.yml'
   workflow_dispatch:                # allow manual deploys from the Actions tab
 
