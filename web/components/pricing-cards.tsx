@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { PRICING, PRODUCT_ORDER, type ProductId } from '@/lib/pricing';
+import { PRICING, PRODUCT_ORDER, VIDEO_UPSELL_PUBLIC, type ProductId } from '@/lib/pricing';
 import { CheckoutButton } from './checkout-button';
 import { cn } from '@/lib/utils';
 
@@ -28,10 +28,11 @@ const FEATURES: Record<ProductId, string[]> = {
 
 export function PricingCards({ projectId, templateId }: { projectId?: string; templateId?: string }) {
   const [video, setVideo] = useState(false);
+  const addVideo = VIDEO_UPSELL_PUBLIC && video;
 
   return (
     <div>
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className={cn('grid gap-6', VIDEO_UPSELL_PUBLIC ? 'lg:grid-cols-3' : 'lg:grid-cols-2')}>
         {PRODUCT_ORDER.filter((id) => id !== 'video').map((id) => {
           const p = PRICING[id];
           return (
@@ -64,7 +65,7 @@ export function PricingCards({ projectId, templateId }: { projectId?: string; te
               <div className="mt-7 flex-1" />
               <CheckoutButton
                 productId={p.id}
-                addVideo={video}
+                addVideo={addVideo}
                 projectId={projectId}
                 templateId={templateId}
                 variant={p.featured ? 'gold' : 'primary'}
@@ -76,6 +77,10 @@ export function PricingCards({ projectId, templateId }: { projectId?: string; te
           );
         })}
 
+        {/* Video add-on is not advertised or sellable until it is certified end to end.
+            The card, its copy and its checkout wiring stay here so restoring the upsell is
+            a single flag flip (lib/pricing.ts VIDEO_UPSELL_PUBLIC). */}
+        {VIDEO_UPSELL_PUBLIC && (
         <article className="flex flex-col rounded-2xl border border-dashed border-gold/40 bg-ivory p-7">
           <h3 className="text-2xl">{PRICING.video.label}</h3>
           <p className="mt-1 text-sm text-obsidian/65">{PRICING.video.tagline}</p>
@@ -102,6 +107,7 @@ export function PricingCards({ projectId, templateId }: { projectId?: string; te
             Video is added to whichever banner option you check out with above.
           </p>
         </article>
+        )}
       </div>
     </div>
   );

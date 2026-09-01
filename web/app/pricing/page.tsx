@@ -3,9 +3,9 @@ import { Container } from '@/components/ui/container';
 import { buildMetadata } from '@/lib/seo';
 
 export const metadata = buildMetadata({
-  title: 'Pricing — Digital, Printed, and Video',
+  title: 'Pricing — Digital and Printed',
   description:
-    'Digital banner $9.99, printed 24×36" banner $79.99, optional video slideshow +$19. Pay once. No subscriptions.',
+    'Digital banner $9.99, printed 24×36" banner $79.99. Pay once. No subscriptions.',
   path: '/pricing',
 });
 
@@ -21,10 +21,6 @@ const FAQ = [
   {
     q: 'How long does the printed banner take?',
     a: 'We print and ship within 1–2 business days, and the carrier typically delivers in another 2–3 business days. Most US customers receive their banner within 5 business days of ordering.',
-  },
-  {
-    q: 'What is the video slideshow?',
-    a: 'A cinematic 60-second video built from the same photos as your banner, with motion and music. Great for sharing on Instagram, TikTok, or in a slideshow at the event.',
   },
   {
     q: 'Can I get a refund?',

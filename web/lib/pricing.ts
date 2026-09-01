@@ -69,6 +69,29 @@ export const PRICING: Record<ProductId, Product> = {
 
 export const PRODUCT_ORDER: ProductId[] = ['digital', 'print', 'video'];
 
+/**
+ * Public availability of the video slideshow add-on.
+ *
+ * The renderer, encoder (backend-stub/video/encoder.js), worker branch, SKU and delivery
+ * path are all implemented and intentionally left intact — but video has never been proven
+ * end to end by a real paid order, and the worker swallows a video failure (logs and
+ * continues) so a customer could pay for it and silently receive only the banner.
+ *
+ * Until a controlled video order certifies that path, it is not advertised or sellable.
+ * Flip this to true to restore the public upsell; nothing else needs to change.
+ */
+export const VIDEO_UPSELL_PUBLIC = false;
+
+/** Product ids a customer may actually purchase right now. */
+export const PURCHASABLE_PRODUCTS: ProductId[] = PRODUCT_ORDER.filter(
+  (id) => id !== 'video' || VIDEO_UPSELL_PUBLIC,
+);
+
+/** True when `id` may be bought today. Guards the checkout path, not just the UI. */
+export function isPurchasable(id: ProductId): boolean {
+  return PURCHASABLE_PRODUCTS.includes(id);
+}
+
 export function formatUSD(cents: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',

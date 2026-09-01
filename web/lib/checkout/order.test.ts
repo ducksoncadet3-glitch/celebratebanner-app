@@ -48,7 +48,9 @@ describe('parseOrderParams', () => {
       projectId: 'proj_x',
       templateId: 'champion',
       renderType: 'premium',
-      addVideo: true,
+      // Gated: ?video=1 is ignored while VIDEO_UPSELL_PUBLIC is false, so an uncertified
+      // SKU can never ride in on a URL. See lib/checkout/video-gating.test.ts.
+      addVideo: false,
     });
   });
 
@@ -93,10 +95,12 @@ describe('order line items + total', () => {
     expect(orderTotalCents(digitalOrder)).toBe(PRICING.digital.amountCents);
   });
 
-  it('appends the video add-on and sums the total', () => {
+  it('does NOT append the video add-on while it is gated off', () => {
+    // The append logic itself is unchanged and returns when VIDEO_UPSELL_PUBLIC flips true;
+    // today video is not purchasable, so the order stays a single line.
     const withVideo = { ...printOrder, addVideo: true };
-    expect(orderProductIds(withVideo)).toEqual(['print', 'video']);
-    expect(orderTotalCents(withVideo)).toBe(PRICING.print.amountCents + PRICING.video.amountCents);
+    expect(orderProductIds(withVideo)).toEqual(['print']);
+    expect(orderTotalCents(withVideo)).toBe(PRICING.print.amountCents);
   });
 
   it('does not double-add video when the product IS video', () => {
@@ -179,9 +183,9 @@ describe('buildCheckoutInput', () => {
     expect(input.shipping).toBeUndefined();
   });
 
-  it('includes the video line item when addVideo is set', () => {
+  it('omits the video line item while the add-on is gated off', () => {
     const input = buildCheckoutInput({ ...printOrder, addVideo: true }, { email: 'a@b.com' }, validShipping);
-    expect(input.items).toEqual([{ productId: 'print' }, { productId: 'video' }]);
+    expect(input.items).toEqual([{ productId: 'print' }]);
   });
 
   it('drops line2 from shipping when empty', () => {

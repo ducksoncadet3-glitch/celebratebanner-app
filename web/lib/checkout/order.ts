@@ -9,7 +9,7 @@
  * session). We never touch Stripe secrets or invent new backend endpoints.
  */
 
-import { PRICING, totalCents, type ProductId, type RenderType } from '@/lib/pricing';
+import { PRICING, totalCents, isPurchasable, VIDEO_UPSELL_PUBLIC, type ProductId, type RenderType } from '@/lib/pricing';
 import type { CreateCheckoutInput, ShippingAddress } from '@/lib/api';
 
 export interface OrderParams {
@@ -74,7 +74,9 @@ export function parseOrderParams(
     projectId: first(sp.project) ?? '',
     templateId: first(sp.template) || 'graduation',
     renderType: isRenderType(renderRaw) ? renderRaw : 'standard',
-    addVideo: first(sp.video) === '1',
+    // ?video=1 is ignored while the add-on is gated, so a hand-crafted or stale URL
+    // cannot attach an uncertified SKU to a real checkout (see lib/pricing.ts).
+    addVideo: VIDEO_UPSELL_PUBLIC && first(sp.video) === '1',
   };
 }
 
@@ -86,7 +88,7 @@ export function requiresShipping(productId: ProductId): boolean {
 /** All product ids in the order (primary + optional video add-on), de-duplicated. */
 export function orderProductIds(params: OrderParams): ProductId[] {
   const ids: ProductId[] = [params.productId];
-  if (params.addVideo && params.productId !== 'video') ids.push('video');
+  if (params.addVideo && params.productId !== 'video' && isPurchasable('video')) ids.push('video');
   return ids;
 }
 
