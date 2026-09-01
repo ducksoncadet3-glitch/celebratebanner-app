@@ -1,0 +1,136 @@
+name: recover-paid-order
+
+# Re-enqueue the HD render for an EXISTING, ALREADY-PAID order whose render never ran.
+#
+# This is the same code path as POST /api/admin/projects/:id/rerender (routes/admin.js):
+# read the stored render_input, read the paid product ids, call enqueueRender. It creates
+# NO charge, mutates no payment, writes no project data, and sends no email itself — the
+# render worker performs delivery exactly as it would for a normal order.
+#
+# Safety guards, all enforced before anything is enqueued:
+#   * refuses unless a payments row for the project has status = 'succeeded'
+#   * refuses unless the stored render_input deserializes (never renders an empty design)
+#   * refuses unless the operator types the project id into `confirm`
+#   * refuses if a render row already exists in a non-failed state (no double delivery)
+on:
+  workflow_dispatch:
+    inputs:
+      project_id:
+        description: 'Paid project id to recover (proj_...)'
+        required: true
+      confirm:
+        description: 'Retype the project id exactly, to confirm'
+        required: true
+      reason:
+        description: 'Why this recovery is running (recorded in the run + audit log)'
+        required: false
+        default: 'incident recovery'
+
+concurrency:
+  group: recover-paid-order
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    name: re-enqueue a paid render
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: confirm the operator typed the same project id
+        env:
+          PROJECT_ID: ${{ inputs.project_id }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          if [ "$PROJECT_ID" != "$CONFIRM" ]; then
+            echo "::error::confirm does not match project_id — refusing."
+            exit 1
+          fi
+          case "$PROJECT_ID" in
+            proj_[a-zA-Z0-9_-]*) echo "project id shape OK: $PROJECT_ID" ;;
+            *) echo "::error::project_id must look like proj_..."; exit 1 ;;
+          esac
+          echo "reason: ${{ inputs.reason }}"
+
+      - name: check API credential
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+        run: |
+          if [ -z "${FLY_API_TOKEN}" ]; then
+            echo "::error::FLY_API_TOKEN_API resolved to an EMPTY value for this job."
+            exit 1
+          fi
+          echo "FLY_API_TOKEN_API present."
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: write the guarded recovery probe
+        run: |
+          cat > /tmp/recover.js <<'ENDOFPROBE'
+          /* Guarded re-enqueue for an already-paid order. No charge, no payment mutation,
+             no direct email. Mirrors routes/admin.js rerenderHandler. */
+          const crypto = require('node:crypto');
+          const { one, rows } = require('/app/backend-stub/db');
+          const { deserializeRenderInput } = require('/app/backend-stub/utils/render-input');
+          const { enqueueRender } = require('/app/backend-stub/services/queue');
+          const { record: auditRecord } = require('/app/backend-stub/services/audit');
+          const ID = process.env.RECOVER_PROJECT_ID;
+          const REASON = process.env.RECOVER_REASON || 'incident recovery';
+
+          (async () => {
+            const p = await one('SELECT * FROM projects WHERE id = $1', [ID]);
+            if (!p) { console.error('REFUSING: project not found'); process.exit(1); }
+
+            const paid = await rows(
+              "SELECT product_ids FROM payments WHERE project_id = $1 AND status = 'succeeded'" +
+              ' ORDER BY created_at DESC LIMIT 1', [ID]);
+            if (!paid.length) { console.error('REFUSING: no succeeded payment for this project'); process.exit(1); }
+            console.log('guard: succeeded payment found, products =', JSON.stringify(paid[0].product_ids));
+
+            let renderInput;
+            try {
+              renderInput = deserializeRenderInput(p.render_input);
+            } catch (e) {
+              console.error('REFUSING: render_input is not renderable -', e.message);
+              process.exit(1);
+            }
+            console.log('guard: render_input valid, photos =', (renderInput.photos || []).length);
+
+            const existing = await rows(
+              "SELECT id, status FROM renders WHERE project_id = $1 AND status IN ('queued','running','done')", [ID]);
+            if (existing.length) {
+              console.error('REFUSING: a render already exists in state ' + existing.map((r) => r.status).join(','));
+              console.error('Recovery would risk a duplicate delivery. Inspect before retrying.');
+              process.exit(1);
+            }
+            console.log('guard: no queued/running/done render exists');
+
+            const renderId = crypto.randomUUID();
+            const { jobId } = await enqueueRender({
+              projectId: ID,
+              renderInput,
+              productIds: paid[0].product_ids || [],
+              renderId,
+            });
+            await auditRecord({
+              actorKind: 'admin', actorId: 'gha:recover-paid-order', action: 'project.rerender',
+              subjectKind: 'project', subjectId: ID,
+              metadata: { jobId, renderId, reason: REASON },
+            });
+            console.log('ENQUEUED jobId=' + jobId + ' renderId=' + renderId);
+            process.exit(0);
+          })().catch((e) => { console.error('RECOVERY ERROR:', e.message); process.exit(1); });
+          ENDOFPROBE
+          node --check /tmp/recover.js && echo "probe syntax OK"
+
+      - name: re-enqueue inside celebratebanner-api
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+          PROJECT_ID: ${{ inputs.project_id }}
+          REASON: ${{ inputs.reason }}
+        run: |
+          set -o pipefail
+          B64=$(base64 -w0 /tmp/recover.js)
+          flyctl ssh console -a celebratebanner-api -C \
+            "/bin/sh -lc \"cd /app/backend-stub && RECOVER_PROJECT_ID='${PROJECT_ID}' RECOVER_REASON='${REASON}' node -e \\\"eval(Buffer.from('${B64}','base64').toString('utf8'))\\\"\""
