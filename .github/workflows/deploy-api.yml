@@ -7,12 +7,19 @@ name: deploy-api
 #
 # celebratebanner-web is deployed by deploy-web.yml and is not touched here.
 on:
-  # Path-scoped: only a change to the API's own source can release the API. A web, docs,
-  # render-engine or marketing change never reaches this workflow.
+  # Path-scoped: only a change to code that ships INSIDE the API image can release the API.
+  # A web-only, docs or marketing change never reaches this workflow.
+  #
+  # shared/render-engine/** is included because backend-stub/Dockerfile COPYs and builds it
+  # into this image (backend-stub/package.json depends on it via `file:`), and the render
+  # worker executes it. Omitting it caused real deployment drift during the text-fit
+  # incident: deploy-web shipped the corrected renderer while the production worker kept
+  # rendering with the old one until the API deploy was dispatched by hand.
   push:
     branches: [main]
     paths:
       - 'backend-stub/**'
+      - 'shared/render-engine/**'
       - '.github/workflows/deploy-api.yml'
   workflow_dispatch:
     inputs:
