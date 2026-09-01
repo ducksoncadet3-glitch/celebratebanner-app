@@ -115,6 +115,17 @@ jobs:
               " FROM audit_log WHERE subject_id = $1 ORDER BY created_at ASC LIMIT 40", [ID]);
             out('AUDIT TRAIL', audit.rows);
 
+            /* Why did the handler fail? webhook_events.error_message is authoritative.
+               Matched on the projectId inside the Stripe payload — never printed. */
+            const wh = await pool.query(
+              "SELECT type, status, attempts, received_at, processed_at," +
+              " left(error_message, 400) AS error_message," +
+              " ('...' || right(stripe_event_id, 6)) AS event_tail" +
+              " FROM webhook_events" +
+              " WHERE payload->'data'->'object'->'metadata'->>'projectId' = $1" +
+              " ORDER BY received_at ASC LIMIT 20", [ID]);
+            out('WEBHOOK EVENTS', wh.rows);
+
             /* BullMQ: the webhook enqueues with jobId = 'paid:<stripe_session_id>'. */
             let redisReport = { checked: false };
             try {
