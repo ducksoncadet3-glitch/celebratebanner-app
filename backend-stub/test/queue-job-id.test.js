@@ -17,9 +17,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-// queue.js constructs no Redis connection when REDIS_URL is unset, so this import is inert.
-delete process.env.REDIS_URL;
-const { toJobId } = require('../services/queue');
+// utils/job-id is dependency-free on purpose: the pre-deploy suite runs `node --test`
+// with no npm install, so a test must never pull in bullmq/ioredis/zod.
+const { toJobId } = require('../utils/job-id');
 
 /** BullMQ's own guard, mirrored so the test fails for the real reason. */
 function bullmqWouldReject(jobId) {

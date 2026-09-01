@@ -20,6 +20,7 @@
 const { Queue, QueueEvents, Worker } = require('bullmq');
 const IORedis = require('ioredis');
 const { logger } = require('./logger');
+const { toJobId } = require('../utils/job-id');
 
 const QUEUE_NAME = process.env.RENDER_QUEUE_NAME || 'cb-renders';
 const REDIS_URL  = process.env.REDIS_URL;
@@ -56,20 +57,6 @@ if (queueEvents) {
   queueEvents.on('stalled', ({ jobId }) => logger.warn({ jobId }, 'render.stalled'));
 }
 
-/**
- * BullMQ uses ":" as its Redis key separator and REJECTS a custom job id containing one
- * ("Custom Id cannot contain :", bullmq/classes/job.js). Callers naturally build keys like
- * `paid:<stripe_session_id>`, and that threw inside queue.add — which, from the Stripe
- * webhook, meant every paid order failed to enqueue: payment captured, no job, no render,
- * no download email, and Stripe retrying a call that could never succeed.
- *
- * Normalising here (rather than at each call site) means no caller can reintroduce it.
- * The key stays 1:1 with its input, so dedupe semantics are unchanged.
- */
-function toJobId(dedupeKey) {
-  if (dedupeKey === undefined || dedupeKey === null) return undefined;
-  return String(dedupeKey).replace(/:/g, '-');
-}
 
 /**
  * Enqueue an HD render. Returns the BullMQ job id. The worker picks it up and writes
@@ -147,7 +134,7 @@ module.exports = {
   queue,
   Worker,        // re-exported so workers/render.worker.js builds with one import
   enqueueRender,
-  toJobId,        // exported for the regression test
+  toJobId,        // re-exported from utils/job-id for callers/tests
   cancelRender,
   getJob,
   getQueueHealth,
