@@ -28,6 +28,7 @@ if (client) {
   counters.uploadsRequested   = new client.Counter({ name: 'cb_uploads_requested_total', help: 'Signed upload URLs issued', registers: [registry] });
   counters.rendersEnqueued    = new client.Counter({ name: 'cb_renders_enqueued_total', help: 'HD render jobs enqueued', registers: [registry] });
   counters.renderFailures     = new client.Counter({ name: 'cb_render_failures_total', help: 'HD render attempts that ended in error', registers: [registry] });
+  counters.paidOrdersNotRenderable = new client.Counter({ name: 'cb_paid_orders_not_renderable_total', help: 'Paid orders whose project had no usable render_input (no render started)', registers: [registry] });
   counters.emailsSent         = new client.Counter({ name: 'cb_emails_sent_total', help: 'Transactional emails dispatched', labelNames: ['kind'], registers: [registry] });
   counters.downloads          = new client.Counter({ name: 'cb_downloads_total', help: 'Signed downloads served', labelNames: ['kind'], registers: [registry] });
 
@@ -48,6 +49,8 @@ const metrics = {
   incUploadsRequested:() => counters.uploadsRequested?.inc(),
   incRendersEnqueued: () => counters.rendersEnqueued?.inc(),
   incRenderFailures:  () => counters.renderFailures?.inc(),
+  // A PAID order that could not start a render — must never be non-zero unnoticed.
+  incPaidOrdersNotRenderable: () => counters.paidOrdersNotRenderable?.inc(),
   incEmailsSent:      (kind = 'delivery') => counters.emailsSent?.inc({ kind }),
   incDownloads:       (kind = 'jpeg') => counters.downloads?.inc({ kind }),
   observeRenderDuration: (ms) => histograms.renderDuration?.observe(ms),

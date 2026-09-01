@@ -138,7 +138,31 @@ async function handleSessionSucceeded(event) {
   try {
     renderInput = deserializeRenderInput(project?.render_input);
   } catch (err) {
-    logger.error({ projectId, err: err.message }, 'webhook.bad-render-input');
+    // The customer has PAID but the project carries no usable design — e.g. the row still
+    // holds the empty `{"items":[]}` that createIfMissing seeds, or no autosave ever landed.
+    //
+    // Returning here (the old behavior) captured the money, answered Stripe 200 so the event
+    // was never retried, and left the order with no job, no render and no delivery email —
+    // invisible to everyone except a log line nobody was watching. A paid order must never
+    // fail silently: raise a deduped alert and write an audit row so it is discoverable and
+    // recoverable via POST /api/admin/projects/:id/rerender once the design is restored.
+    //
+    // Payment state is deliberately NOT altered: the charge succeeded and markPaid above is
+    // correct. Only the render could not start.
+    await captureError(err, {
+      event: 'webhook.paid-order-not-renderable',
+      projectId,
+      sessionId: session.id,
+      productIds,
+      hint: 'Paid order has no usable render_input — customer will receive NO download email until re-rendered.',
+    });
+    await auditRecord({
+      actorKind: 'webhook', actorId: event.id, action: 'payment.render_input_missing',
+      subjectKind: 'project', subjectId: projectId,
+      metadata: { sessionId: session.id, reason: err.message },
+    });
+    logger.error({ projectId, sessionId: session.id, err: err.message }, 'webhook.paid-order-not-renderable');
+    metrics.incPaidOrdersNotRenderable();
     return;
   }
 
