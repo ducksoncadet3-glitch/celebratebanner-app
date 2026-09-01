@@ -70,6 +70,9 @@ export interface RenderContext {
   fillRect(x: number, y: number, w: number, h: number): void;
   strokeRect(x: number, y: number, w: number, h: number): void;
   fillText(text: string, x: number, y: number, maxWidth?: number): void;
+  /** Advance width of `text` under the context's CURRENT font/letterSpacing state.
+   *  Required by theme/fit-text.ts so fitting measures exactly what will be drawn. */
+  measureText(text: string): { width: number };
   drawImage(image: CanvasImageSource, dx: number, dy: number, dw: number, dh: number): void;
   drawImage(
     image: CanvasImageSource,

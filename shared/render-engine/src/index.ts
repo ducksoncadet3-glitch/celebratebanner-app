@@ -40,3 +40,8 @@ export { drawBannerBackground } from './theme/background.js';
 export { renderBannerText } from './theme/text.js';
 export { drawHero3D, drawPhoto3D, drawPhotoFramed } from './frames/dispatch.js';
 export { RENDER_INPUT_VERSION, type RenderInputVersion } from './schema/version.js';
+
+// Text fitting — shared by preview and HD export so they cannot disagree.
+export { fitText, drawFittedText } from './theme/fit-text.js';
+export type { FitTextOptions, FittedText } from './theme/fit-text.js';
+export { TEXT_SAFE_INSET } from './theme/text.js';
