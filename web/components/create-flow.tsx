@@ -23,6 +23,9 @@ export function CreateFlow() {
   // Prefill from the Free Design Proof wizard, if the customer arrived from it.
   // No-op for direct visitors → fully backward compatible.
   const { productLabel } = useProofHandoff(dispatch);
+  // A theme absent from THEME_DISPLAY is a PRODUCT configuration, not a generic style the
+  // customer picks. Showing the generic grid there would invite them to break the product.
+  const productSpecificTheme = !THEME_DISPLAY.some((t) => t.id === state.themeId);
   const [step, setStep] = useState(0);
 
   // Build the canonical RenderInput from state — used by both the preview and
@@ -143,8 +146,9 @@ export function CreateFlow() {
                 </p>
                 <h2 className="mt-1 text-2xl">{productLabel}</h2>
                 <p className="mt-1 text-sm text-obsidian/65">
-                  We&apos;ve set the style to match your product. You can change it below if you
-                  want a different look.
+                  {productSpecificTheme
+                    ? 'Your design is already set up for this product. Add your photos and headline next.'
+                    : "We've set the style to match your product. You can change it below if you want a different look."}
                 </p>
               </>
             ) : (
@@ -155,6 +159,7 @@ export function CreateFlow() {
                 </p>
               </>
             )}
+            {!productSpecificTheme && (
             <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {THEME_DISPLAY.map((t) => (
                 <li key={t.id}>
@@ -174,6 +179,7 @@ export function CreateFlow() {
                 </li>
               ))}
             </ul>
+            )}
           </>
         )}
 
@@ -296,7 +302,10 @@ export function CreateFlow() {
         <div className="rounded-2xl border border-gold/15 bg-white p-6 shadow-lift">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-dark">Order summary</p>
           <dl className="mt-4 space-y-2 text-sm">
-            <Row k="Theme" v={THEME_DISPLAY.find((t) => t.id === state.themeId)?.name ?? '—'} />
+            <Row
+              k={productSpecificTheme ? 'Product' : 'Theme'}
+              v={THEME_DISPLAY.find((t) => t.id === state.themeId)?.name ?? productLabel ?? state.themeId}
+            />
             <Row k="Photos" v={state.photos.length === 0 ? '—' : `${state.photos.length} uploaded`} />
             <Row k="Arrangement" v={state.arrangement} />
             <Row k="Frame" v={state.defaultFrame} />

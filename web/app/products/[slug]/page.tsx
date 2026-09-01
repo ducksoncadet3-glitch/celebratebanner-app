@@ -129,7 +129,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               ) : (
                 <>
                   <Button asChild variant="gold" size="lg" fullWidth>
-                    <Link href={proofHref}>Create Your Free Preview</Link>
+                    <Link href={proofHref}>{product.ctaLabel ?? 'Create Your Free Preview'}</Link>
                   </Button>
                   <p className="mt-3 text-center text-sm text-obsidian/60">No payment required to see your preview.</p>
                 </>
@@ -242,7 +242,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 </p>
                 <div className="mt-8 flex justify-center">
                   <Button asChild variant="gold" size="lg">
-                    <Link href={proofHref}>Create Your Free Preview</Link>
+                    <Link href={proofHref}>{product.ctaLabel ?? 'Create Your Free Preview'}</Link>
                   </Button>
                 </div>
               </>

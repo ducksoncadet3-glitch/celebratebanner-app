@@ -16,13 +16,13 @@ const collections = getAllCollections();
 const collectionSlugs = new Set(collections.map((c) => c.slug));
 
 describe('catalog integrity', () => {
-  it('contains exactly 24 products', () => {
-    expect(products).toHaveLength(24);
+  it('contains exactly 25 products', () => {
+    expect(products).toHaveLength(25);
   });
 
   it('every product has a unique slug', () => {
     const slugs = products.map((p) => p.slug);
-    expect(new Set(slugs).size).toBe(24);
+    expect(new Set(slugs).size).toBe(products.length);
   });
 
   it('every product has a valid positive starting price in cents', () => {
@@ -98,16 +98,20 @@ describe('catalog helpers', () => {
     ]);
   });
 
-  it('getProductsByCollection returns only that collection, 6 each', () => {
+  it('getProductsByCollection returns only that collection, and covers every product', () => {
+    let total = 0;
     for (const c of collections) {
       const inC = getProductsByCollection(c.slug);
-      expect(inC.length).toBe(6);
+      expect(inC.length, `${c.slug} must not be empty`).toBeGreaterThan(0);
       for (const p of inC) expect(p.collectionSlug).toBe(c.slug);
+      total += inC.length;
     }
+    // Every product belongs to exactly one collection.
+    expect(total).toBe(products.length);
   });
 
-  it('there are 4 collections', () => {
-    expect(collections).toHaveLength(4);
+  it('there are 5 collections', () => {
+    expect(collections).toHaveLength(5);
   });
 
   it('getProductBySlug returns undefined for an unknown slug (safe handling)', () => {

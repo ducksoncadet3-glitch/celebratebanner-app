@@ -57,6 +57,23 @@ export const THEMES: Record<string, Theme> = {
     },
     palette: { bg: '#0C0E14', accent: '#C9A84C', text: '#FAF8F3' },
   },
+  /**
+   * World Memories Photo Collage. The id deliberately equals the catalog slug: templateId
+   * flows into Stripe session metadata and projects.template_id, so the order identifies
+   * the product without adding a field or touching the backend.
+   *
+   * Deliberately NOT in THEME_DISPLAY — it is a product configuration, not a generic theme
+   * a customer picks from the grid.
+   */
+  'world-memories-photo-collage': {
+    id: 'world-memories-photo-collage',
+    fields: ['title', 'subtitle'],
+    fieldMeta: {
+      title:    { label: 'Headline', placeholder: 'My Beautiful Memories' },
+      subtitle: { label: 'Subtitle (optional)', placeholder: 'Ten years, one story' },
+    },
+    palette: { bg: '#0C0E14', accent: '#C9A84C', text: '#F5E4B0' },
+  },
   milestone: {
     id: 'milestone',
     fields: ['name', 'year', 'caption'],

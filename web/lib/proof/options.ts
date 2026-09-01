@@ -39,6 +39,12 @@ export const PROOF_PRODUCTS: ProductOption[] = [
     description: 'Celebrate a graduate with a personalized name, year, and school design.',
   },
   {
+    id: 'world-memories-collage',
+    title: 'World Memories Photo Collage',
+    description: 'Turn travel, family, and life photos into one premium personalized artwork.',
+    badge: 'New',
+  },
+  {
     id: 'not-sure',
     title: 'Not sure yet',
     description: "Tell us about your team and we'll recommend the right design.",

@@ -11,6 +11,7 @@ export const SHOP_LINKS: NavLink[] = [
   { href: '/shop/team-banners', label: 'Team Banners' },
   { href: '/shop/graduation', label: 'Graduation' },
   { href: '/shop/championship', label: 'Championship' },
+  { href: '/shop/photo-collages', label: 'Photo Collages' },
   { href: '/shop/social-graphics', label: 'Social Graphics' },
 ];
 

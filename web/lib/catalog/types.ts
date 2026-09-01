@@ -3,7 +3,12 @@
  * is derived from one source of truth in lib/catalog/products.ts.
  */
 
-export type CollectionSlug = 'team-banners' | 'graduation' | 'championship' | 'social-graphics';
+export type CollectionSlug =
+  | 'team-banners'
+  | 'graduation'
+  | 'championship'
+  | 'social-graphics'
+  | 'photo-collages';
 
 export type ProductType = 'banner' | 'poster' | 'yard-sign' | 'collage' | 'social-graphic' | 'social-pack';
 
@@ -22,7 +27,8 @@ export type ProofProductKey =
   | 'player-spotlight-poster'
   | 'coach-recognition-banner'
   | 'football-social-graphics'
-  | 'graduation-banner';
+  | 'graduation-banner'
+  | 'world-memories-collage';
 
 export interface ProductSpec {
   label: string;
@@ -59,6 +65,8 @@ export interface Product {
   faq: ProductFaq[];
   relatedProductSlugs: string[];
   proofProductKey: ProofProductKey;
+  /** Product-specific primary CTA. Falls back to the standard proof CTA when absent. */
+  ctaLabel?: string;
   sportTags: string[];
   occasionTags: string[];
   seoTitle: string;

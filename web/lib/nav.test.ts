@@ -56,9 +56,9 @@ describe('required storefront routes are backed by data', () => {
     }
   });
 
-  it('every one of the 24 products has a /products/<slug> target', () => {
+  it('every catalog product has a /products/<slug> target', () => {
     const products = getAllProducts();
-    expect(products).toHaveLength(24);
+    expect(products.length).toBeGreaterThanOrEqual(25);
     for (const p of products) {
       expect(routeExists(`/products/${p.slug}`), `product route ${p.slug}`).toBe(true);
     }

@@ -19,6 +19,7 @@ const SUPPORTED_SLUGS = [
   'graduation-welcome-banner', 'graduation-memory-collage',
   'championship-banner', 'championship-poster', 'tournament-champion-banner',
   'mvp-poster', 'team-celebration-banner',
+  'world-memories-photo-collage',
 ];
 
 describe('unsupported social products cannot be designed or purchased', () => {
@@ -56,7 +57,7 @@ describe('unsupported social products cannot be designed or purchased', () => {
 });
 
 describe('supported products remain sellable', () => {
-  it('all 16 supported products are sellable and deep-link into the proof flow', () => {
+  it('every supported product is sellable and deep-links into the proof flow', () => {
     const sellable = products.filter(isSellable).map((p) => p.slug).sort();
     expect(sellable).toEqual([...SUPPORTED_SLUGS].sort());
     for (const p of products.filter(isSellable)) {

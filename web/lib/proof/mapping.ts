@@ -28,6 +28,7 @@ export const PROOF_PRODUCT_MAP: Record<string, ProductMapEntry | null> = {
   'player-spotlight-poster': { themeId: 'champion', nameField: 'teamName' },
   'coach-recognition-banner': { themeId: 'champion', nameField: 'teamName' },
   'graduation-banner': { themeId: 'graduation', nameField: 'school' },
+  'world-memories-collage': { themeId: 'world-memories-photo-collage', nameField: 'title' },
   'not-sure': null,
 };
 

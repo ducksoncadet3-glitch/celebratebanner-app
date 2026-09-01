@@ -12,13 +12,14 @@ const RECOMMENDED_FOR: Record<Product['collectionSlug'], string[]> = {
   graduation: ['Graduates & Families', 'Schools', 'Grad Parties'],
   championship: ['Champion Teams', 'Athletic Programs', 'Booster Clubs'],
   'social-graphics': ['Team Accounts', 'Coaches', 'Boosters'],
+  'photo-collages': ['Families', 'Travellers', 'Anniversaries & Milestones'],
 };
 
 const COACH_TIP: Record<Product['productType'], string> = {
   banner: 'Upload one high-resolution hero photo — it prints sharpest at large banner sizes.',
   poster: 'Bright, well-lit photos make posters pop on the wall.',
   'yard-sign': 'Keep the name and year short so it reads clearly from the street.',
-  collage: 'Pick a mix of close-ups and action shots for a balanced collage.',
+  collage: 'Mix wide scenes with close-ups, and pick one standout photo as your hero.',
   'social-graphic': 'Post it right after the game, while excitement is highest.',
   'social-pack': 'Space the graphics across the week to keep your feed active.',
 };
@@ -53,7 +54,12 @@ export function getWhyChoose(product: Product): string[] {
  * other collection members so the list is never empty. Always excludes the product itself.
  */
 export function getFrequentlyBoughtTogether(product: Product, limit = 3): Product[] {
-  const siblings = getProductsByCollection(product.collectionSlug).filter((p) => p.slug !== product.slug);
+  let siblings = getProductsByCollection(product.collectionSlug).filter((p) => p.slug !== product.slug);
+  if (siblings.length === 0) {
+    // A collection with a single product would otherwise render an empty section. Fall back
+    // to the product's curated cross-sells, which are validated to resolve.
+    siblings = resolveSlugs(product.relatedProductSlugs).filter((p) => p.slug !== product.slug);
+  }
   const differentType = siblings.filter((p) => p.productType !== product.productType);
   const rest = siblings.filter((p) => p.productType === product.productType);
   const seen = new Set<string>();

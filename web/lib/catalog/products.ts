@@ -96,6 +96,7 @@ interface Seed {
   deliveryType: DeliveryType;
   startingPriceCents: number;
   proofProductKey: ProofProductKey;
+  ctaLabel?: string;
   shortDescription: string;
   fullDescription: string;
   features: string[];
@@ -140,6 +141,7 @@ function build(seed: Seed): Product {
     faq: [...(seed.faq ?? []), ...COMMON_FAQ],
     relatedProductSlugs: [], // filled after all products are defined
     proofProductKey: seed.proofProductKey,
+    ctaLabel: seed.ctaLabel,
     sportTags: seed.sportTags ?? [],
     occasionTags: seed.occasionTags,
     seoTitle: seed.seoTitle,
@@ -183,6 +185,17 @@ export const COLLECTIONS: Collection[] = [
     seoTitle: 'Championship Banners & Posters',
     seoDescription:
       'Custom championship banners, posters, MVP prints, and celebration graphics personalized with your team’s title season — free design preview first.',
+  },
+  {
+    slug: 'photo-collages',
+    name: 'Photo Collages',
+    tagline: 'Your memories, one artwork',
+    description:
+      'Turn travel, family, and life photos into one premium personalized collage — a hero photo surrounded by the moments that go with it.',
+    heroLabel: 'MEMORIES',
+    seoTitle: 'Personalized Photo Collages & Memory Artwork',
+    seoDescription:
+      'Turn your favorite travel, family, and vacation photos into one premium personalized photo collage. Free design preview before you order.',
   },
   {
     slug: 'social-graphics',
@@ -409,6 +422,30 @@ const SEEDS: Seed[] = [
   },
 
   // SOCIAL GRAPHICS COLLECTION
+  // ── Photo Collages ─────────────────────────────────────────────────────────
+  {
+    slug: 'world-memories-photo-collage', name: 'World Memories Photo Collage',
+    collectionSlug: 'photo-collages', category: 'Photo Collage',
+    productType: 'collage', deliveryType: 'both', startingPriceCents: 7999,
+    proofProductKey: 'world-memories-collage',
+    ctaLabel: 'Create My Photo Collage',
+    shortDescription:
+      'Turn your favorite memories into one unforgettable personalized photo artwork.',
+    fullDescription:
+      'A premium collage built from your own photographs — one hero image surrounded by the moments that belong with it. Add 20 to 50 photos from a trip, a family year, an anniversary, or a lifetime, write your own headline, and see the finished artwork before you pay.',
+    features: [
+      'Add roughly 20–50 of your own photos',
+      'Choose one hero photo to anchor the design',
+      'Write your own headline and subtitle',
+      'Print-ready 300 DPI with safe margins',
+    ],
+    occasionTags: ['travel', 'family', 'vacation', 'anniversary', 'friendship', 'milestone', 'nature', 'adventure', 'memorial'],
+    seoTitle: 'World Memories Photo Collage — Personalized Memory Artwork',
+    seoDescription:
+      'Turn travel, family, and vacation photos into one premium personalized photo collage. Digital $9.99 or printed 24×36". Free design preview before you pay.',
+    posterLabel: 'MEMORIES', posterSub: 'World Collage',
+    badge: 'New', featured: true,
+  },
   {
     slug: 'game-day-graphic', name: 'Game Day Graphic', collectionSlug: 'social-graphics', category: 'Social Graphic',
     productType: 'social-graphic', deliveryType: 'digital', startingPriceCents: 999, proofProductKey: 'football-social-graphics',
@@ -491,6 +528,9 @@ const RELATED_OVERRIDES: Record<string, string[]> = {
   'graduation-banner': ['graduation-poster', 'graduation-yard-sign', 'graduation-memory-collage', 'graduation-social-graphic'],
   'championship-banner': ['championship-poster', 'mvp-poster', 'team-celebration-banner', 'championship-social-pack'],
   'game-day-graphic': ['final-score-graphic', 'schedule-graphic', 'player-of-the-game', 'team-announcement'],
+  // Alone in its collection, so it needs an explicit cross-sell list: the other collage and
+  // poster products are its closest analogues, and all four are sellable today.
+  'world-memories-photo-collage': ['team-photo-collage', 'graduation-memory-collage', 'graduation-poster', 'team-poster'],
 };
 
 const validSlugs = new Set(PRODUCTS.map((p) => p.slug));
