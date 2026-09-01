@@ -57,15 +57,30 @@ if (queueEvents) {
 }
 
 /**
- * Enqueue an HD render. Returns the BullMQ job id. The worker picks it up
- * and writes progress + final asset keys to the `renders` table.
+ * BullMQ uses ":" as its Redis key separator and REJECTS a custom job id containing one
+ * ("Custom Id cannot contain :", bullmq/classes/job.js). Callers naturally build keys like
+ * `paid:<stripe_session_id>`, and that threw inside queue.add — which, from the Stripe
+ * webhook, meant every paid order failed to enqueue: payment captured, no job, no render,
+ * no download email, and Stripe retrying a call that could never succeed.
  *
- * Idempotency: pass `dedupeKey` (typically the Stripe session id) so retried
- * webhook deliveries don't enqueue duplicate renders.
+ * Normalising here (rather than at each call site) means no caller can reintroduce it.
+ * The key stays 1:1 with its input, so dedupe semantics are unchanged.
+ */
+function toJobId(dedupeKey) {
+  if (dedupeKey === undefined || dedupeKey === null) return undefined;
+  return String(dedupeKey).replace(/:/g, '-');
+}
+
+/**
+ * Enqueue an HD render. Returns the BullMQ job id. The worker picks it up and writes
+ * progress + final asset keys to the `renders` table.
+ *
+ * Idempotency: pass `dedupeKey` (typically the Stripe session id) so retried webhook
+ * deliveries don't enqueue duplicate renders.
  */
 async function enqueueRender(payload, { dedupeKey } = {}) {
   if (!queue) throw new Error('Render queue unavailable (REDIS_URL not set)');
-  const opts = { jobId: dedupeKey, timeout: TIMEOUT_MS };
+  const opts = { jobId: toJobId(dedupeKey), timeout: TIMEOUT_MS };
   const job = await queue.add('hd-render', payload, opts);
   logger.info({ jobId: job.id, projectId: payload.projectId }, 'render.enqueued');
   return { jobId: job.id };
@@ -132,6 +147,7 @@ module.exports = {
   queue,
   Worker,        // re-exported so workers/render.worker.js builds with one import
   enqueueRender,
+  toJobId,        // exported for the regression test
   cancelRender,
   getJob,
   getQueueHealth,
