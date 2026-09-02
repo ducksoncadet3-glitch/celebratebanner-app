@@ -1,0 +1,170 @@
+name: diagnose-email
+
+# READ-ONLY Postmark deliverability trace for one recipient.
+#
+# GET requests only: outbound message search, per-message details (which carry the receiving
+# server's SMTP response), bounces, and the suppression dump. It sends nothing, resends
+# nothing, and changes no Postmark, DNS or sender configuration.
+#
+# Never prints: the Postmark token, DATABASE_URL, any download token, or a full email
+# address — the recipient is matched inside the API machine and only ever shown masked.
+on:
+  workflow_dispatch:
+    inputs:
+      project_id:
+        description: 'Project whose customer address to trace (proj_...)'
+        required: true
+      reason:
+        description: 'Why this diagnostic is running'
+        required: false
+        default: 'deliverability triage'
+
+concurrency:
+  group: diagnose-email
+  cancel-in-progress: false
+
+jobs:
+  trace:
+    name: read-only email trace
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: check API credential
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+        run: |
+          if [ -z "${FLY_API_TOKEN}" ]; then
+            echo "::error::FLY_API_TOKEN_API resolved to an EMPTY value."; exit 1
+          fi
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: write the read-only probe
+        run: |
+          cat > /tmp/mail.js <<'ENDOFPROBE'
+          /* READ ONLY. Postmark GETs and SELECTs only. Nothing is sent or modified. */
+          const { Pool } = require('pg');
+          const ID = process.env.DIAG_PROJECT_ID;
+          const pool = new Pool({
+            connectionString: process.env.DATABASE_URL,
+            ssl: process.env.PG_SSL === 'require' ? { rejectUnauthorized: false } : undefined,
+          });
+          const out = (k, v) => console.log('\n=== ' + k + ' ===\n' + JSON.stringify(v, null, 2));
+          const mask = (e) => {
+            if (!e) return null;
+            const [u, d] = String(e).split('@');
+            return (u ? u.slice(0, 2) : '') + '***@' + (d || '');
+          };
+          const H = { Accept: 'application/json', 'X-Postmark-Server-Token': process.env.POSTMARK_API_TOKEN };
+          const get = async (path) => {
+            const r = await fetch('https://api.postmarkapp.com' + path, { headers: H });
+            const body = await r.json().catch(() => ({}));
+            return { httpStatus: r.status, body };
+          };
+
+          (async () => {
+            const p = await pool.query(
+              'SELECT customer_email FROM payments WHERE project_id = $1 ORDER BY created_at DESC LIMIT 1', [ID]);
+            const email = p.rows[0] && p.rows[0].customer_email;
+            if (!email) { console.log('no recipient on file for', ID); await pool.end(); return; }
+            out('RECIPIENT', { project: ID, address: mask(email) });
+
+            // Which projects has this address ever bought? Lets first-vs-second be compared.
+            const orders = await pool.query(
+              "SELECT project_id, status, created_at, ('...' || right(stripe_session_id,6)) AS session_tail" +
+              ' FROM payments WHERE customer_email = $1 ORDER BY created_at ASC', [email]);
+            out('ALL ORDERS FOR THIS ADDRESS', orders.rows);
+
+            // The sending identity, as configured. MAIL_FROM is not a secret.
+            out('SENDER CONFIGURATION', {
+              MAIL_FROM: process.env.MAIL_FROM || null,
+              POSTMARK_STREAM: process.env.POSTMARK_STREAM || 'outbound (default)',
+            });
+
+            const search = await get('/messages/outbound?count=25&offset=0&recipient=' + encodeURIComponent(email));
+            const msgs = (search.body && search.body.Messages) || [];
+            out('OUTBOUND SEARCH', { httpStatus: search.httpStatus, totalCount: search.body && search.body.TotalCount, found: msgs.length });
+
+            const detailed = [];
+            for (const m of msgs) {
+              const d = await get('/messages/outbound/' + m.MessageID + '/details');
+              const b = d.body || {};
+              const events = (b.MessageEvents || []).map((e) => ({
+                type: e.Type,
+                receivedAt: e.ReceivedAt,
+                // The receiving server's own words: the SMTP response, and who accepted it.
+                smtpResponse: e.Details && (e.Details.DeliveryMessage || e.Details.Summary || null),
+                destinationServer: e.Details && e.Details.DestinationServer,
+                destinationIP: e.Details && e.Details.DestinationIP,
+                bounceType: e.Details && e.Details.BounceID ? e.Details.Type : undefined,
+              }));
+              detailed.push({
+                messageId: b.MessageID || m.MessageID,
+                subject: b.Subject,
+                status: b.Status,
+                sentAt: b.ReceivedAt,
+                stream: b.MessageStream,
+                from: b.From,
+                to: (b.Recipients || []).map(mask),
+                replyTo: b.ReplyTo || null,
+                trackOpens: b.TrackOpens,
+                // Postmark stamps its own Message-ID header: <MessageID@mtasv.net>.
+                // Any threading header WE set would appear here.
+                headers: (b.Headers || []).map((h) => h.Name + ': ' + String(h.Value).slice(0, 120)),
+                events,
+              });
+            }
+            out('MESSAGE DETAILS (oldest last)', detailed);
+
+            const bounces = await get('/bounces?count=25&offset=0&emailFilter=' + encodeURIComponent(email));
+            out('BOUNCES', {
+              httpStatus: bounces.httpStatus,
+              totalCount: bounces.body && bounces.body.TotalCount,
+              bounces: ((bounces.body && bounces.body.Bounces) || []).map((x) => ({
+                type: x.Type, name: x.Name, inactive: x.Inactive, bouncedAt: x.BouncedAt,
+                subject: x.Subject, details: String(x.Details || '').slice(0, 200),
+              })),
+            });
+
+            const sup = await get('/message-streams/' + (process.env.POSTMARK_STREAM || 'outbound') +
+              '/suppressions/dump?emailaddress=' + encodeURIComponent(email));
+            out('SUPPRESSIONS', {
+              httpStatus: sup.httpStatus,
+              suppressions: ((sup.body && sup.body.Suppressions) || []).map((s) => ({
+                reason: s.SuppressionReason, origin: s.Origin, createdAt: s.CreatedAt,
+              })),
+            });
+
+            // Spam complaints are their own bounce type; list explicitly.
+            const spam = await get('/bounces?count=25&offset=0&type=SpamComplaint&emailFilter=' + encodeURIComponent(email));
+            out('SPAM COMPLAINTS', { httpStatus: spam.httpStatus, totalCount: spam.body && spam.body.TotalCount });
+
+            // Domain/DKIM/SPF verification needs the ACCOUNT token, which this process does
+            // not hold. Attempt it so the report can say "unavailable" with evidence.
+            const dom = await get('/domains?count=25&offset=0');
+            out('DOMAIN AUTH (account-token scoped)', {
+              httpStatus: dom.httpStatus,
+              note: dom.httpStatus === 200 ? 'available' : 'server token cannot read domain auth',
+              domains: ((dom.body && dom.body.Domains) || []).map((d) => ({
+                name: d.Name, spfVerified: d.SPFVerified, dkimVerified: d.DKIMVerified,
+                returnPathVerified: d.ReturnPathDomainVerified,
+              })),
+            });
+
+            await pool.end();
+            console.log('\n=== EMAIL TRACE COMPLETE (read-only) ===');
+          })().catch((e) => { console.error('TRACE ERROR:', e.message); process.exit(1); });
+          ENDOFPROBE
+          node --check /tmp/mail.js && echo "probe syntax OK"
+
+      - name: run inside celebratebanner-api
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+          PID: ${{ inputs.project_id }}
+        run: |
+          set -o pipefail
+          B64=$(base64 -w0 /tmp/mail.js)
+          flyctl ssh console -a celebratebanner-api -C \
+            "/bin/sh -lc \"cd /app/backend-stub && DIAG_PROJECT_ID='${PID}' node -e \\\"eval(Buffer.from('${B64}','base64').toString('utf8'))\\\"\""
