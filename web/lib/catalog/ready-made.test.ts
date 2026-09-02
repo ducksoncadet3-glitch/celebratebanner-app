@@ -27,11 +27,11 @@ describe('The Beauty of the World — ready-made product', () => {
     expect(isReadyMade(p!)).toBe(true);
   });
 
-  it('is listed for discovery but NOT purchasable until its master asset is approved', () => {
-    // Selling before the approved artwork is stored would take payment and hand the
-    // customer a broken download. One flag flip + one API secret makes it live.
-    expect(READY_MADE_PUBLIC).toBe(false);
-    expect(isComingSoon(getProductBySlug(READY)!)).toBe(true);
+  it('is purchasable now that the approved master asset is stored and configured', () => {
+    // The gate opened only after the master was copied byte-identically to its stable key
+    // and READY_MADE_BEAUTY_ASSET_KEY was set on the API.
+    expect(READY_MADE_PUBLIC).toBe(true);
+    expect(isComingSoon(getProductBySlug(READY)!)).toBe(false);
   });
 
   it('carries the ready-made promise and CTA', () => {

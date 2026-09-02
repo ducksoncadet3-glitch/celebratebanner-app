@@ -20,6 +20,7 @@ const SUPPORTED_SLUGS = [
   'championship-banner', 'championship-poster', 'tournament-champion-banner',
   'mvp-poster', 'team-celebration-banner',
   'world-memories-photo-collage',
+  'the-beauty-of-the-world', // ready-made: sellable, but never enters the builder
 ];
 
 describe('unsupported social products cannot be designed or purchased', () => {

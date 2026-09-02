@@ -41,9 +41,11 @@ export const COMING_SOON_SLUGS: readonly string[] = [
  * (READY_MADE_BEAUTY_ASSET_KEY on the API). Selling before then would take payment and hand
  * the customer a broken download — the exact failure this codebase has twice been bitten by.
  *
- * Flip to true only after the master asset is confirmed in place.
+ * Enabled 2026-09-02: the approved master (render 3ffb4b6e, image/jpeg, 7,305,078 bytes)
+ * was copied byte-identically to ready-made/the-beauty-of-the-world/master.jpg and
+ * READY_MADE_BEAUTY_ASSET_KEY is configured on celebratebanner-api.
  */
-export const READY_MADE_PUBLIC = false;
+export const READY_MADE_PUBLIC = true;
 
 /** True when the product cannot be designed or purchased yet. */
 export function isComingSoon(product: Product): boolean {

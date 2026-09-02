@@ -1,0 +1,135 @@
+name: ready-made-preview
+
+# Publish a downsized STOREFRONT PREVIEW of an approved ready-made master asset.
+#
+# The master lives in a private bucket and is only ever delivered through an expiring signed
+# token. The product page still needs to show what is being sold, so this generates a small,
+# web-sized preview from the exact approved master and commits it to web/public/storefront/.
+#
+# It reads one S3 object, writes NO S3 object, and commits one image file. No database, no
+# Stripe, no queue, no email. The full-resolution master is never published.
+on:
+  workflow_dispatch:
+    inputs:
+      asset_key:
+        description: 'S3 key of the approved master artwork'
+        required: true
+        default: 'ready-made/the-beauty-of-the-world/master.jpg'
+      slug:
+        description: 'Catalog slug the preview belongs to'
+        required: true
+        default: 'the-beauty-of-the-world'
+      max_width:
+        description: 'Preview width in pixels'
+        required: false
+        default: '1200'
+
+concurrency:
+  group: ready-made-preview
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  preview:
+    name: build and commit the storefront preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: validate inputs
+        env:
+          KEY: ${{ inputs.asset_key }}
+          SLUG: ${{ inputs.slug }}
+        run: |
+          case "$KEY" in ready-made/*) ;; *) echo "::error::asset_key must be under ready-made/"; exit 1 ;; esac
+          case "$SLUG" in [a-z0-9-]*) ;; *) echo "::error::bad slug"; exit 1 ;; esac
+          echo "slug: $SLUG"
+
+      - name: check API credential
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+        run: |
+          if [ -z "${FLY_API_TOKEN}" ]; then
+            echo "::error::FLY_API_TOKEN_API resolved to an EMPTY value."; exit 1
+          fi
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: render a downsized preview inside celebratebanner-api
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+          KEY: ${{ inputs.asset_key }}
+          MAXW: ${{ inputs.max_width }}
+          SLUG: ${{ inputs.slug }}
+        run: |
+          set -o pipefail
+          cat > /tmp/preview.js <<'ENDOFPROBE'
+          /* Read the approved master, downscale it, and emit base64 JPEG on stdout.
+             Reads only — nothing is written to S3. */
+          const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
+          const { createCanvas, loadImage } = require('canvas');
+          const KEY = process.env.PREVIEW_KEY;
+          const MAXW = Math.max(320, Math.min(2000, Number(process.env.PREVIEW_MAXW) || 1200));
+          const s3 = new S3Client({ region: process.env.AWS_REGION });
+
+          (async () => {
+            const obj = await s3.send(new GetObjectCommand({
+              Bucket: process.env.S3_BUCKET, Key: KEY,
+            }));
+            const chunks = [];
+            for await (const c of obj.Body) chunks.push(c);
+            const buf = Buffer.concat(chunks);
+            const img = await loadImage(buf);
+            const scale = Math.min(1, MAXW / img.width);
+            const w = Math.round(img.width * scale);
+            const h = Math.round(img.height * scale);
+            const canvas = createCanvas(w, h);
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            const out = canvas.toBuffer('image/jpeg', { quality: 0.82 });
+            process.stderr.write(`source=${buf.length}B preview=${out.length}B ${w}x${h}\n`);
+            process.stdout.write('B64START' + out.toString('base64') + 'B64END');
+          })().catch((e) => { process.stderr.write('PREVIEW ERROR: ' + e.message + '\n'); process.exit(1); });
+          ENDOFPROBE
+          node --check /tmp/preview.js
+          B64=$(base64 -w0 /tmp/preview.js)
+          flyctl ssh console -a celebratebanner-api -C \
+            "/bin/sh -lc \"cd /app/backend-stub && PREVIEW_KEY='${KEY}' PREVIEW_MAXW='${MAXW}' node -e \\\"eval(Buffer.from('${B64}','base64').toString('utf8'))\\\"\"" \
+            > /tmp/out.txt 2>/tmp/err.txt || { cat /tmp/err.txt; exit 1; }
+          cat /tmp/err.txt
+          python3 - <<'PY'
+          import re, base64, pathlib, os
+          raw = pathlib.Path('/tmp/out.txt').read_text(errors='ignore')
+          m = re.search(r'B64START(.*?)B64END', raw, re.S)
+          if not m:
+              raise SystemExit('could not find preview payload in output')
+          data = base64.b64decode(re.sub(r'\s+', '', m.group(1)))
+          if len(data) < 5000:
+              raise SystemExit(f'preview suspiciously small: {len(data)} bytes')
+          slug = os.environ['SLUG']
+          d = pathlib.Path('web/public/storefront') / slug
+          d.mkdir(parents=True, exist_ok=True)
+          (d / 'hero.jpg').write_bytes(data)
+          print(f'wrote web/public/storefront/{slug}/hero.jpg  {len(data)} bytes')
+          PY
+      - name: commit the preview
+        env:
+          SLUG: ${{ inputs.slug }}
+        run: |
+          if [ ! -f "web/public/storefront/${SLUG}/hero.jpg" ]; then
+            echo "::error::preview file was not produced"; exit 1
+          fi
+          ls -l "web/public/storefront/${SLUG}/hero.jpg"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "web/public/storefront/${SLUG}/hero.jpg"
+          git commit -m "feat(storefront): add the approved ready-made preview for ${SLUG}
+
+Downsized from the approved master asset so the product page shows the artwork
+being sold. The full-resolution master stays private and is delivered only
+through an expiring signed download.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+          git push
