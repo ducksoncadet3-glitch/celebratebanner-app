@@ -23,7 +23,7 @@ const express = require('express');
 const { logger, requestLogger } = require('./services/logger');
 const { metricsHandler } = require('./services/metrics');
 const { checkoutHandler } = require('./routes/payments.checkout');
-const { eventsHandler } = require('./routes/events');
+const { eventsHandler, middlewares: eventsMw } = require('./routes/events');
 const { webhookHandler, webhookRawParser } = require('./routes/payments.webhook');
 const { signedUploadHandler, middlewares: uploadMw } = require('./routes/uploads.signed');
 const { downloadHandler, middlewares: downloadMw } = require('./routes/downloads');
@@ -67,7 +67,7 @@ app.post('/api/payments/checkout', checkoutHandler);
 // First-party funnel events (product_view only). checkout_started and purchase_completed
 // are written server-side so a client cannot forge or inflate them. Rate-limited like the
 // other public write endpoints.
-app.post('/api/events', rateLimit('events'), eventsHandler);
+app.post('/api/events', eventsMw, eventsHandler);
 app.post('/api/uploads/signed', ...uploadMw, signedUploadHandler);
 app.get('/api/downloads/:projectId/:assetType/:token', ...downloadMw, downloadHandler);
 app.post('/api/render/hd', hdRenderHandler);

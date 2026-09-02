@@ -16,6 +16,7 @@
  */
 
 const { recordEvent } = require('../db/analytics');
+const { rateLimit } = require('../middleware/rate-limit');
 const { logger } = require('../services/logger');
 
 const ACCEPTED = new Set(['product_view']);
@@ -56,4 +57,7 @@ async function eventsHandler(req, res) {
   return res.status(202).json({ ok: true });
 }
 
-module.exports = { eventsHandler };
+/** Middleware chain, mirroring uploads/downloads so server.js stays declarative. */
+const middlewares = [rateLimit('events')];
+
+module.exports = { eventsHandler, middlewares };
