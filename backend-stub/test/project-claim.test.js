@@ -67,6 +67,9 @@ stub('db/projects', {
   getStatus: async () => ({ projectId: 'proj_test01', status: 'pending' }),
 });
 stub('db/index', { one: async () => null, query: async () => ({ rows: [] }) });
+// routes/projects also wires the ready-made delivery endpoint, which reaches the AWS SDK
+// through services/tokens → services/s3. Autosave claiming has nothing to do with it.
+stub('services/ready-made-delivery', { authorizeSelfServeDownload: async () => ({ available: false }) });
 
 const { saveHandler } = require('../routes/projects');
 const { signProjectToken } = require('../services/project-token');
