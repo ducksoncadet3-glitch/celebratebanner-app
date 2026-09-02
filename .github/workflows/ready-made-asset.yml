@@ -1,0 +1,155 @@
+name: ready-made-asset
+
+# Promote an APPROVED render to the stable ready-made master asset key.
+#
+# Copies one existing S3 object to a fixed key and verifies it. It writes exactly one new
+# object, never deletes, never modifies the source, touches no database row, no Stripe, no
+# queue, and sends no email. Bucket stays private throughout — the master is only ever
+# reachable through an expiring signed download token.
+#
+# Guards: the operator must name the source key and retype the destination, and the copy is
+# refused unless the source HeadObject succeeds first.
+on:
+  workflow_dispatch:
+    inputs:
+      source_key:
+        description: 'S3 key of the APPROVED render (renders/<project>/<render>/jpeg.jpeg)'
+        required: true
+      dest_key:
+        description: 'Stable master key (retype exactly)'
+        required: true
+        default: 'ready-made/the-beauty-of-the-world/master.jpg'
+      confirm_dest:
+        description: 'Retype the destination key to confirm the write'
+        required: true
+      mode:
+        description: 'verify (read-only) or copy (writes the master asset)'
+        required: true
+        default: 'verify'
+
+concurrency:
+  group: ready-made-asset
+  cancel-in-progress: false
+
+jobs:
+  asset:
+    name: verify / copy the approved master
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: confirm the destination and mode
+        env:
+          DEST: ${{ inputs.dest_key }}
+          CONFIRM: ${{ inputs.confirm_dest }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          if [ "$DEST" != "$CONFIRM" ]; then
+            echo "::error::confirm_dest does not match dest_key — refusing."; exit 1
+          fi
+          case "$MODE" in
+            verify|copy) echo "mode: $MODE" ;;
+            *) echo "::error::mode must be 'verify' or 'copy'"; exit 1 ;;
+          esac
+          case "$DEST" in
+            ready-made/*) echo "destination scoped to ready-made/ — OK" ;;
+            *) echo "::error::destination must live under ready-made/"; exit 1 ;;
+          esac
+
+      - name: check API credential
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+        run: |
+          if [ -z "${FLY_API_TOKEN}" ]; then
+            echo "::error::FLY_API_TOKEN_API resolved to an EMPTY value."; exit 1
+          fi
+          echo "FLY_API_TOKEN_API present."
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: write the S3 probe
+        run: |
+          cat > /tmp/asset.js <<'ENDOFPROBE'
+          /* HeadObject the approved source, optionally copy it to the stable master key,
+             then verify the copy. Never deletes, never alters the source, never makes an
+             object public. */
+          const {
+            S3Client, HeadObjectCommand, CopyObjectCommand,
+          } = require('@aws-sdk/client-s3');
+
+          const SRC = process.env.ASSET_SOURCE_KEY;
+          const DEST = process.env.ASSET_DEST_KEY;
+          const MODE = process.env.ASSET_MODE;
+          const BUCKET = process.env.S3_BUCKET;
+
+          const s3 = new S3Client({ region: process.env.AWS_REGION });
+          const show = (label, h) => console.log(
+            `  ${label}: contentType=${h.ContentType} bytes=${h.ContentLength} etag=${h.ETag} modified=${h.LastModified && h.LastModified.toISOString()}`,
+          );
+
+          (async () => {
+            console.log('bucket configured:', BUCKET ? 'yes' : 'NO');
+
+            let src;
+            try {
+              src = await s3.send(new HeadObjectCommand({ Bucket: BUCKET, Key: SRC }));
+            } catch (e) {
+              console.error('REFUSING: source HeadObject failed -', e.name || e.message);
+              process.exit(1);
+            }
+            console.log('SOURCE OK');
+            show('source', src);
+            if (!src.ContentLength || src.ContentLength <= 0) {
+              console.error('REFUSING: source is empty'); process.exit(1);
+            }
+
+            if (MODE !== 'copy') {
+              // Report whether the destination already exists, without writing.
+              try {
+                const d = await s3.send(new HeadObjectCommand({ Bucket: BUCKET, Key: DEST }));
+                console.log('DEST ALREADY EXISTS');
+                show('dest', d);
+                console.log('MATCHES SOURCE:', d.ETag === src.ETag ? 'YES' : 'NO');
+              } catch {
+                console.log('DEST DOES NOT EXIST YET (verify mode — nothing written)');
+              }
+              console.log('=== VERIFY COMPLETE (read-only) ===');
+              return;
+            }
+
+            await s3.send(new CopyObjectCommand({
+              Bucket: BUCKET,
+              Key: DEST,
+              CopySource: encodeURI(`${BUCKET}/${SRC}`),
+              ContentType: src.ContentType || 'image/jpeg',
+              MetadataDirective: 'REPLACE',
+              CacheControl: 'private, max-age=604800',
+            }));
+            console.log('COPIED');
+
+            const dst = await s3.send(new HeadObjectCommand({ Bucket: BUCKET, Key: DEST }));
+            show('dest', dst);
+            const sameBytes = dst.ContentLength === src.ContentLength;
+            const sameEtag = dst.ETag === src.ETag;
+            console.log('INTEGRITY bytes-match:', sameBytes, ' etag-match:', sameEtag);
+            if (!sameBytes) { console.error('FAILED: byte length differs'); process.exit(1); }
+            if (!dst.ContentLength || dst.ContentLength <= 0) {
+              console.error('FAILED: destination empty'); process.exit(1);
+            }
+            console.log('=== MASTER ASSET READY ===');
+          })().catch((e) => { console.error('ASSET ERROR:', e.message); process.exit(1); });
+          ENDOFPROBE
+          node --check /tmp/asset.js && echo "probe syntax OK"
+
+      - name: run inside celebratebanner-api
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+          SRC: ${{ inputs.source_key }}
+          DEST: ${{ inputs.dest_key }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          set -o pipefail
+          B64=$(base64 -w0 /tmp/asset.js)
+          flyctl ssh console -a celebratebanner-api -C \
+            "/bin/sh -lc \"cd /app/backend-stub && ASSET_SOURCE_KEY='${SRC}' ASSET_DEST_KEY='${DEST}' ASSET_MODE='${MODE}' node -e \\\"eval(Buffer.from('${B64}','base64').toString('utf8'))\\\"\""
