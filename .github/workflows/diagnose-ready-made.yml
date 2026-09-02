@@ -200,6 +200,33 @@ jobs:
             }
             out('DELIVERY EMAIL EVENTS + BOUNCES', events);
 
+            // 8c) Analytics layer: did the migration run, and are events landing?
+            let analytics = { checked: false };
+            try {
+              const t = await pool.query(
+                "SELECT to_regclass('public.analytics_events') IS NOT NULL AS table_exists");
+              if (t.rows[0].table_exists) {
+                const counts = await pool.query(
+                  "SELECT event_type, COUNT(*)::int AS n," +
+                  " COALESCE(SUM(amount_cents) FILTER (WHERE event_type='purchase_completed'),0) AS revenue_cents" +
+                  " FROM analytics_events GROUP BY event_type ORDER BY event_type");
+                const bySource = await pool.query(
+                  "SELECT utm_source, utm_campaign, utm_content, product_slug, COUNT(*)::int AS n" +
+                  " FROM analytics_events GROUP BY 1,2,3,4 ORDER BY n DESC LIMIT 10");
+                const dupes = await pool.query(
+                  "SELECT COUNT(*)::int AS n FROM (SELECT dedupe_key FROM analytics_events" +
+                  " WHERE dedupe_key IS NOT NULL GROUP BY dedupe_key HAVING COUNT(*) > 1) d");
+                analytics = {
+                  checked: true, tableExists: true,
+                  countsByType: counts.rows, topRows: bySource.rows,
+                  duplicateDedupeKeys: dupes.rows[0].n,
+                };
+              } else {
+                analytics = { checked: true, tableExists: false };
+              }
+            } catch (e) { analytics = { checked: false, error: String(e.message).slice(0, 200) }; }
+            out('ANALYTICS EVENTS', analytics);
+
             // 9) Mail configuration presence (names only, never values).
             out('MAIL CONFIG PRESENCE', {
               POSTMARK_API_TOKEN: Boolean(process.env.POSTMARK_API_TOKEN),
