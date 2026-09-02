@@ -1,0 +1,79 @@
+name: set-ready-made-key
+
+# Configure the ready-made master asset key on celebratebanner-api.
+#
+# Sets exactly one value (READY_MADE_BEAUTY_ASSET_KEY) as a Fly secret, which activates the
+# ready-made product server-side. Touches no other secret, no database, no Stripe, no S3
+# object. The value is masked in the run log.
+#
+# Setting a Fly secret restages the app, so the API restarts with the new configuration.
+on:
+  workflow_dispatch:
+    inputs:
+      asset_key:
+        description: 'S3 key of the approved master artwork (must live under ready-made/)'
+        required: true
+        default: 'ready-made/the-beauty-of-the-world/master.jpg'
+      confirm:
+        description: 'Retype the key to confirm'
+        required: true
+
+concurrency:
+  group: set-ready-made-key
+  cancel-in-progress: false
+
+jobs:
+  configure:
+    name: set READY_MADE_BEAUTY_ASSET_KEY
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: validate and mask
+        env:
+          KEY: ${{ inputs.asset_key }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          echo "::add-mask::$KEY"
+          if [ "$KEY" != "$CONFIRM" ]; then
+            echo "::error::confirm does not match asset_key — refusing."; exit 1
+          fi
+          case "$KEY" in
+            ready-made/*) echo "key is scoped under ready-made/ — OK" ;;
+            *) echo "::error::asset_key must live under ready-made/"; exit 1 ;;
+          esac
+
+      - name: check API credential
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+        run: |
+          if [ -z "${FLY_API_TOKEN}" ]; then
+            echo "::error::FLY_API_TOKEN_API resolved to an EMPTY value."; exit 1
+          fi
+          echo "FLY_API_TOKEN_API present."
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: set the secret
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+          KEY: ${{ inputs.asset_key }}
+        run: |
+          echo "::add-mask::$KEY"
+          flyctl secrets set "READY_MADE_BEAUTY_ASSET_KEY=$KEY" --app celebratebanner-api
+          echo "secret set; app restaged"
+
+      - name: confirm it is present (name only, never the value)
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+        run: |
+          flyctl secrets list --app celebratebanner-api | grep -E 'NAME|READY_MADE_BEAUTY_ASSET_KEY' || true
+
+      - name: verify the API is healthy after restage
+        run: |
+          set -e
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' https://api.celebratebanner.com/health/ready || true)
+            if [ "$code" = "200" ]; then echo "API healthy"; exit 0; fi
+            sleep 10
+          done
+          echo "::error::API did not return healthy after the restage"; exit 1
