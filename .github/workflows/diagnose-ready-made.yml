@@ -64,10 +64,17 @@ jobs:
               "SELECT id, status, template_id, render_type, created_at, updated_at, paid_at," +
               " (render_input IS NOT NULL) AS ri_present," +
               " COALESCE(jsonb_array_length(render_input->'photos'), -1) AS photo_count" +
-              " FROM projects WHERE template_id = $1 ORDER BY created_at DESC LIMIT 3", [TPL]);
-            out('PROJECTS (most recent 3)', proj.rows);
+              " FROM projects WHERE template_id = $1 ORDER BY created_at DESC LIMIT 5", [TPL]);
+            out('PROJECTS (most recent 5)', proj.rows);
             if (!proj.rows.length) { console.log('no ready-made project found'); await pool.end(); return; }
-            const ID = proj.rows[0].id;
+
+            // Trace the most recent PAID order — abandoned checkouts also create a project row.
+            const paid = await pool.query(
+              "SELECT p.id FROM projects p JOIN payments pay ON pay.project_id = p.id" +
+              " WHERE p.template_id = $1 AND pay.status = 'succeeded'" +
+              " ORDER BY pay.created_at DESC LIMIT 1", [TPL]);
+            const ID = paid.rows.length ? paid.rows[0].id : proj.rows[0].id;
+            console.log(paid.rows.length ? 'tracing most recent PAID order' : 'no paid order found; tracing newest project');
             console.log('\ntracing project:', ID);
 
             // 2) Payment rows.
