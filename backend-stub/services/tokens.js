@@ -44,7 +44,7 @@ function hashToken(token) {
  * underlying token string (useful for tests). Writes a row to download_tokens
  * so we can revoke or audit usage.
  */
-async function issueDownloadToken({ projectId, assetType, s3Key, ttlDays = TTL_DAYS }) {
+async function issueDownloadToken({ projectId, assetType, s3Key, ttlDays = TTL_DAYS, purpose = 'delivery' }) {
   const tokenBody = b64u(crypto.randomBytes(24));
   const sig = sign(`${projectId}.${assetType}.${tokenBody}`);
   const token = `${tokenBody}.${sig}`;
@@ -52,9 +52,9 @@ async function issueDownloadToken({ projectId, assetType, s3Key, ttlDays = TTL_D
   const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000);
 
   await query(
-    `INSERT INTO download_tokens (project_id, asset_type, s3_key, token_hash, expires_at)
-     VALUES ($1, $2, $3, $4, $5)`,
-    [projectId, assetType, s3Key, tokenHash, expiresAt.toISOString()],
+    `INSERT INTO download_tokens (project_id, asset_type, s3_key, token_hash, expires_at, purpose)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [projectId, assetType, s3Key, tokenHash, expiresAt.toISOString(), purpose],
   );
 
   const base = process.env.API_PUBLIC_URL || 'https://api.celebratebanner.com';
@@ -109,8 +109,28 @@ async function resolveDownloadToken({ projectId, assetType, token, ip, ua }) {
   return { url, s3Key: row.s3_key, expiresIn: 5 * 60 };
 }
 
+/** Revoke EVERY download for a project — what a refund does. Purpose-blind on purpose. */
 async function revokeProjectTokens(projectId) {
   await query(`DELETE FROM download_tokens WHERE project_id = $1`, [projectId]);
 }
 
-module.exports = { issueDownloadToken, resolveDownloadToken, revokeProjectTokens };
+/**
+ * Revoke only the tokens issued for one purpose.
+ *
+ * Used to keep at most one live 'self_serve' token per project: the success page replaces
+ * its own previous authorization on each visit and never touches the 'delivery' token the
+ * customer was emailed, so both channels keep working for the life of the order.
+ */
+async function revokeProjectTokensByPurpose(projectId, purpose) {
+  await query(
+    `DELETE FROM download_tokens WHERE project_id = $1 AND purpose = $2`,
+    [projectId, purpose],
+  );
+}
+
+module.exports = {
+  issueDownloadToken,
+  resolveDownloadToken,
+  revokeProjectTokens,
+  revokeProjectTokensByPurpose,
+};

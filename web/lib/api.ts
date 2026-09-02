@@ -81,11 +81,34 @@ export interface CreateCheckoutResponse {
 export interface ProjectStatus {
   projectId: string;
   status: 'pending' | 'paid' | 'rendering' | 'ready' | 'failed' | 'refunded';
+  /**
+   * What KIND of order this is. A ready-made order renders nothing, so the success page
+   * must not narrate rendering for it — it asks getReadyMadeDelivery for a download instead.
+   */
+  productMode?: 'ready-made' | 'personalized';
+  productName?: string;
   renderProgress?: number; // 0..100 while rendering
   downloadUrl?: string;    // signed URL, present once status === 'ready'
   videoUrl?: string;       // present when video upsell included
   expiresAt?: string;      // ISO timestamp for the signed URLs
   errorMessage?: string;
+}
+
+/**
+ * Self-serve delivery for a paid ready-made order (GET /api/projects/:id/delivery).
+ *
+ * `downloadUrl` is a tokenized API URL, never an S3 or CDN link, and is short-lived — the
+ * page asks again rather than storing it. When `available` is false the server has already
+ * decided why (refunded, unpaid) and supplied copy the customer can read.
+ */
+export interface ReadyMadeDelivery {
+  available: boolean;
+  state: 'ok' | 'refunded' | 'unpaid' | 'personalized' | 'unavailable';
+  message?: string;
+  productMode?: 'ready-made' | 'personalized';
+  productName?: string | null;
+  downloadUrl?: string;
+  expiresAt?: string;
 }
 
 export interface UploadedPhoto {
@@ -170,6 +193,22 @@ export const api = {
       // `Authorization: Bearer` (not `x-project-token`): the API accepts either
       // (services/project-token.js extractProjectToken), but only Authorization is on the
       // production CORS allow-list, so the custom header is blocked by the browser preflight.
+      headers: opts.projectToken ? { Authorization: `Bearer ${opts.projectToken}` } : undefined,
+    });
+  },
+
+  /**
+   * GET /api/projects/:id/delivery — a paid ready-made order's download authorization.
+   *
+   * Same project-scoped credentials as getProjectStatus. The server re-decides eligibility
+   * on every call, so a refunded order stops downloading the moment it is refunded.
+   */
+  getReadyMadeDelivery(
+    projectId: string,
+    opts: { projectToken?: string; sessionId?: string } = {},
+  ): Promise<ReadyMadeDelivery> {
+    const qs = opts.sessionId ? `?session_id=${encodeURIComponent(opts.sessionId)}` : '';
+    return request<ReadyMadeDelivery>(`/api/projects/${encodeURIComponent(projectId)}/delivery${qs}`, {
       headers: opts.projectToken ? { Authorization: `Bearer ${opts.projectToken}` } : undefined,
     });
   },

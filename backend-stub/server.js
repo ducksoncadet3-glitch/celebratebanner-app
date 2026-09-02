@@ -77,6 +77,7 @@ app.get('/metrics', metricsHandler);
 
 // Project status polling + autosave (thin wrappers over db/projects).
 app.get('/api/projects/:id/status', projects.statusHandler);
+app.get('/api/projects/:id/delivery', ...projects.deliveryMiddlewares, projects.deliveryHandler);
 app.patch('/api/projects/:id', ...projects.saveMiddlewares, projects.saveHandler);
 
 // Internal transactional email (server-to-server only; gated by x-internal-secret).

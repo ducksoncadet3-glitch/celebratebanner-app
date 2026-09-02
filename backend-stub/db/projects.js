@@ -6,6 +6,7 @@
  */
 
 const { one, query, rows, tx } = require('./index');
+const { readyMadeByTemplateId } = require('../config/ready-made-products');
 
 async function createIfMissing({ projectId, templateId, renderType, customerEmail, items }) {
   await query(
@@ -119,7 +120,7 @@ async function getById(projectId) {
 
 async function getStatus(projectId) {
   const p = await one(
-    `SELECT p.id, p.status, p.failure_reason,
+    `SELECT p.id, p.status, p.failure_reason, p.template_id,
             r.progress AS render_progress,
             r.png_key, r.jpeg_key, r.video_key
        FROM projects p
@@ -132,12 +133,19 @@ async function getStatus(projectId) {
     [projectId],
   );
   if (!p) return { projectId, status: 'pending' };
+
+  // Which product this order IS decides what the success page may say. A ready-made order
+  // renders nothing, so a render narrative there is a lie — the page reads this to choose.
+  const readyMade = readyMadeByTemplateId(p.template_id);
   return {
     projectId: p.id,
     status: p.status,
+    productMode: readyMade ? 'ready-made' : 'personalized',
+    productName: readyMade ? readyMade.name : undefined,
     renderProgress: p.render_progress ?? (p.status === 'ready' ? 100 : p.status === 'paid' ? 35 : 0),
     errorMessage: p.failure_reason ?? undefined,
-    // downloadUrl / videoUrl are filled in by services/tokens.js when issuing signed URLs.
+    // A ready-made download is authorized separately by GET /api/projects/:id/delivery:
+    // it has no render row, so nothing here can ever produce a link for it.
   };
 }
 

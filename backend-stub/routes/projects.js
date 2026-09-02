@@ -3,6 +3,7 @@
  * another customer's project.
  *
  *   GET   /api/projects/:id/status   — poll render/payment status (used by /success)
+ *   GET   /api/projects/:id/delivery — self-serve download for a paid ready-made order
  *   PATCH /api/projects/:id          — autosave the canonical RenderInput (versioned)
  *
  * Authorization (no customer accounts — see services/project-token.js):
@@ -24,6 +25,7 @@ const { one } = require('../db/index');
 const { validate } = require('../middleware/validate');
 const { rateLimit } = require('../middleware/rate-limit');
 const { logger } = require('../services/logger');
+const { authorizeSelfServeDownload } = require('../services/ready-made-delivery');
 const {
   signProjectToken,
   verifyProjectToken,
@@ -66,6 +68,28 @@ async function statusHandler(req, res) {
     res.status(200).json(await getStatus(id));
   } catch (err) {
     logger.error({ err: err.message, projectId: id }, 'projects.status-failed');
+    res.status(500).json({ error: 'failed' });
+  }
+}
+
+// ── GET /api/projects/:id/delivery ───────────────────────────────────────────
+//
+// The success page's download. Same authorization as status (project token, or the Stripe
+// session id the paying customer holds), then the delivery decision is re-made from the
+// database — being able to READ an order never implies being able to download it.
+//
+// A denied request answers 200 with a state the page can explain to the customer
+// ("refunded", "unpaid"); only a missing or wrong credential is 401/403.
+async function deliveryHandler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  const id = req.params.id;
+  const decision = await authorizeRead(req, id);
+  if (decision === 'none') return res.status(401).json({ error: 'authorization required' });
+  if (decision === 'invalid') return res.status(403).json({ error: 'forbidden' });
+  try {
+    res.status(200).json(await authorizeSelfServeDownload(id));
+  } catch (err) {
+    logger.error({ err: err.message, projectId: id }, 'projects.delivery-failed');
     res.status(500).json({ error: 'failed' });
   }
 }
@@ -131,6 +155,8 @@ async function saveHandler(req, res) {
 
 module.exports = {
   statusHandler,
+  deliveryHandler,
+  deliveryMiddlewares: [rateLimit('downloads')],
   saveHandler,
   SaveBody,
   saveMiddlewares: [rateLimit('autosave'), validate(SaveBody)],

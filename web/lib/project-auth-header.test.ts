@@ -25,8 +25,20 @@ const CORS_ALLOWED = ['content-type', 'authorization', 'accept'];
 
 describe('project token travels on a CORS-allowed header', () => {
   it('sends the token as Authorization: Bearer', () => {
-    const bearer = source.match(/Authorization: `Bearer \$\{[^}]+\}`/g) ?? [];
-    expect(bearer.length, 'both autosave and status must use Bearer').toBe(2);
+    // Every place the client turns a project token into a request header must produce
+    // `Authorization: Bearer`. Checked per call site rather than by counting, so adding a
+    // new project-scoped endpoint cannot quietly reintroduce a blocked custom header.
+    const usages = [...source.matchAll(/headers:[^\n]*projectToken[^\n]*/g)].map((m) => m[0]);
+    expect(usages.length, 'expected project-token header call sites').toBeGreaterThan(0);
+    for (const u of usages) {
+      expect(u, `this call site does not send Bearer: ${u.trim()}`).toContain('Authorization: `Bearer ');
+    }
+    // And the token never reaches a request except through one of those header expressions.
+    for (const line of source.split('\n')) {
+      if (!/projectToken/.test(line) || /headers:/.test(line)) continue;
+      expect(line, `projectToken used outside a headers expression: ${line.trim()}`)
+        .not.toMatch(/Bearer|['"]x-/);
+    }
   });
 
   it('never sets x-project-token as an actual request header', () => {
