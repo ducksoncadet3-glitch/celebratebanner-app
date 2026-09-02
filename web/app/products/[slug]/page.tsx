@@ -41,6 +41,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return buildMetadata({ title: p.seoTitle, description: p.seoDescription, path: `/products/${p.slug}` });
 }
 
+/** Ready-made art skips design entirely, so the personalized steps would contradict it. */
+const HOW_IT_WORKS_READY_MADE = [
+  { title: 'Choose this artwork', description: 'The finished piece you see is the piece you get.' },
+  { title: 'Secure checkout', description: 'Pay once — no account required.' },
+  { title: 'Download instantly', description: 'A private, expiring link arrives by email and on your order page.' },
+];
+
 const HOW_IT_WORKS = [
   { title: 'Choose this product', description: 'Start from a layout built for your celebration.' },
   { title: 'Upload your photos', description: 'Add your photos, colors, and details.' },
@@ -218,9 +225,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <Section background="ivory" spacing="lg" aria-labelledby="how-heading">
         <div className="mx-auto mb-12 max-w-2xl text-center">
           <h2 id="how-heading" className="font-display text-3xl font-semibold text-obsidian sm:text-4xl">How it works</h2>
-          <p className="mt-4 text-base leading-relaxed text-obsidian/60">From photos to a finished design — free to preview.</p>
+          <p className="mt-4 text-base leading-relaxed text-obsidian/60">
+            {readyMade
+              ? 'A finished artwork — buy it and download it.'
+              : 'From photos to a finished design — free to preview.'}
+          </p>
         </div>
-        <ProcessSteps steps={HOW_IT_WORKS} />
+        <ProcessSteps steps={readyMade ? HOW_IT_WORKS_READY_MADE : HOW_IT_WORKS} />
       </Section>
 
       {/* Specifications */}
