@@ -86,7 +86,19 @@ async function resolveDownloadToken({ projectId, assetType, token, ip, ua }) {
       WHERE token_hash = $1 AND project_id = $2 AND asset_type = $3`,
     [hashToken(token), projectId, assetType],
   );
-  if (!row) throw Object.assign(new Error('token revoked or not issued'), { status: 404 });
+  if (!row) {
+    // The signature verified, so THIS token was genuinely issued by us for this project —
+    // a forged or guessed token never reaches here. That makes it safe to tell the holder
+    // the one thing they actually need to know: their order was refunded, so the download
+    // was revoked on purpose. Everything else stays generic.
+    if (await projectWasRefunded(projectId)) {
+      throw Object.assign(
+        new Error('This download is no longer available because this order was refunded.'),
+        { status: 410 },
+      );
+    }
+    throw Object.assign(new Error('token revoked or not issued'), { status: 404 });
+  }
   if (new Date(row.expires_at).getTime() < Date.now()) {
     throw Object.assign(new Error('token expired'), { status: 410 });
   }
@@ -107,6 +119,29 @@ async function resolveDownloadToken({ projectId, assetType, token, ip, ua }) {
   // Sign a 5-minute S3 GET URL — the client downloads the file directly.
   const url = await signedGet(row.s3_key, 5 * 60);
   return { url, s3Key: row.s3_key, expiresIn: 5 * 60 };
+}
+
+/**
+ * Was this project refunded? Used ONLY to explain an already-denied download in customer
+ * language. It grants nothing: it runs after access has been refused, and reveals no token
+ * state, S3 key, amount or payment identifier.
+ */
+async function projectWasRefunded(projectId) {
+  try {
+    const row = await one(
+      `SELECT 1 AS refunded
+         FROM projects p
+         LEFT JOIN payments pay ON pay.project_id = p.id
+        WHERE p.id = $1
+          AND (p.status = 'refunded' OR pay.status = 'refunded')
+        LIMIT 1`,
+      [projectId],
+    );
+    return Boolean(row);
+  } catch {
+    // Never turn a lookup failure into a different outcome — fall back to the generic answer.
+    return false;
+  }
 }
 
 /** Revoke EVERY download for a project — what a refund does. Purpose-blind on purpose. */

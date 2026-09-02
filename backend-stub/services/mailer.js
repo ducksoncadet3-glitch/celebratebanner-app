@@ -12,9 +12,12 @@
  */
 
 const deliveryTemplate = require('../email/templates/delivery');
+const readyMadeDeliveryTemplate = require('../email/templates/ready-made-delivery');
+const readyMadeConfirmationTemplate = require('../email/templates/ready-made-confirmation');
 const recoveryTemplate = require('../email/templates/recovery');
 const failureTemplate  = require('../email/templates/failure');
 const confirmationTemplate = require('../email/templates/confirmation');
+const { readyMadeByTemplateId } = require('../config/ready-made-products');
 const { logger } = require('./logger');
 const { metrics } = require('./metrics');
 
@@ -22,10 +25,19 @@ const MAIL_FROM = process.env.MAIL_FROM || 'CelebrateBanner <info@celebratebanne
 const POSTMARK_TOKEN = process.env.POSTMARK_API_TOKEN;
 const POSTMARK_STREAM = process.env.POSTMARK_STREAM || 'outbound';
 
-async function sendDeliveryEmail({ to, projectId, links, name }) {
+/**
+ * Delivery email. A ready-made order gets ready-made words: nothing was rendered for it, so
+ * the personalized template's rendering language would be a lie. `templateId` is the order's
+ * product slug — anything not in the ready-made registry keeps the certified personalized
+ * copy byte-for-byte.
+ */
+async function sendDeliveryEmail({ to, projectId, links, name, templateId }) {
   if (!to) return;
-  const { subject, html, text } = deliveryTemplate({ projectId, links, name });
-  await transport({ to, subject, html, text, kind: 'delivery' });
+  const readyMade = readyMadeByTemplateId(templateId);
+  const { subject, html, text } = readyMade
+    ? readyMadeDeliveryTemplate({ productName: readyMade.name, links, name })
+    : deliveryTemplate({ projectId, links, name });
+  await transport({ to, subject, html, text, kind: readyMade ? 'delivery-ready-made' : 'delivery' });
 }
 
 async function sendRecoveryEmail({ to, projectId, recoveryToken, photoCount }) {
@@ -40,11 +52,19 @@ async function sendFailureEmail({ to, projectId }) {
   await transport({ to, subject, html, text, kind: 'failure' });
 }
 
-/** Order-confirmation ("we got your order"). Returns true only if actually dispatched. */
-async function sendConfirmationEmail({ to, projectId }) {
+/**
+ * Order-confirmation ("we got your order"). Returns true only if actually dispatched.
+ *
+ * For a ready-made digital order there is no preparation, no queue and no shipping — the
+ * artwork is downloadable the moment the payment lands — so that order gets its own copy.
+ */
+async function sendConfirmationEmail({ to, projectId, templateId, sessionId }) {
   if (!to) return false;
-  const { subject, html, text } = confirmationTemplate({ projectId });
-  return transport({ to, subject, html, text, kind: 'confirmation' });
+  const readyMade = readyMadeByTemplateId(templateId);
+  const { subject, html, text } = readyMade
+    ? readyMadeConfirmationTemplate({ projectId, productName: readyMade.name, sessionId })
+    : confirmationTemplate({ projectId });
+  return transport({ to, subject, html, text, kind: readyMade ? 'confirmation-ready-made' : 'confirmation' });
 }
 
 // Returns true only if the provider accepted the message. Existing callers ignore the

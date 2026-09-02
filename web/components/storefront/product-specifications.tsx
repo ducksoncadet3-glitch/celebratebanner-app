@@ -3,13 +3,15 @@ import type { ProductSpec } from '@/lib/catalog/types';
 export interface ProductSpecificationsProps {
   specifications: ProductSpec[];
   availableSizes: string[];
+  /** Ready-made products have no customization step, so the standing note must not appear. */
+  productMode?: 'personalized' | 'ready-made';
 }
 
 /**
  * Specifications table. Confirmed facts only; a standing note tells customers exact options
  * appear during customization (so we never over-promise unconfirmed specs).
  */
-export function ProductSpecifications({ specifications, availableSizes }: ProductSpecificationsProps) {
+export function ProductSpecifications({ specifications, availableSizes, productMode = 'personalized' }: ProductSpecificationsProps) {
   return (
     <div>
       <dl className="divide-y divide-obsidian/8 overflow-hidden rounded-xl border border-obsidian/[0.08]">
@@ -26,7 +28,9 @@ export function ProductSpecifications({ specifications, availableSizes }: Produc
           </div>
         ))}
       </dl>
-      <p className="mt-3 text-xs text-obsidian/55">Available options are shown during customization.</p>
+      {productMode === 'personalized' ? (
+        <p className="mt-3 text-xs text-obsidian/55">Available options are shown during customization.</p>
+      ) : null}
     </div>
   );
 }

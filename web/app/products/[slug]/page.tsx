@@ -241,7 +241,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <Section background="ivory-dim" spacing="lg" aria-labelledby="specs-heading">
         <div className="mx-auto max-w-2xl">
           <h2 id="specs-heading" className="mb-6 font-display text-3xl font-semibold text-obsidian sm:text-4xl">Specifications</h2>
-          <ProductSpecifications specifications={product.specifications} availableSizes={product.availableSizes} />
+          <ProductSpecifications
+            specifications={product.specifications}
+            availableSizes={product.availableSizes}
+            productMode={product.productMode}
+          />
         </div>
       </Section>
 

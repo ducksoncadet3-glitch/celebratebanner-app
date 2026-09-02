@@ -273,6 +273,8 @@ async function fulfillReadyMade({ readyMade, projectId, session, event, customer
     await sendDeliveryEmail({
       to: customerEmail,
       projectId,
+      // The slug selects ready-made copy — this order rendered nothing.
+      templateId: readyMade.slug,
       links: { downloadUrl: download.url, expiresAt: download.expiresAt },
     });
   }

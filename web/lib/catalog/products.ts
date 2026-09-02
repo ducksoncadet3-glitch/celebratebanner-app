@@ -75,6 +75,27 @@ export function priceLabelFor(d: DeliveryType): string {
   return print; // printed-only
 }
 
+/**
+ * Ready-made products answer these differently: there is no preview to create, no photos to
+ * add and no customization step — the piece shown is the piece delivered. Serving the
+ * personalized answers on a ready-made page tells the customer they design something they
+ * do not.
+ */
+const READY_MADE_FAQ: ProductFaq[] = [
+  {
+    q: 'Do I need to design anything?',
+    a: 'No. This is a finished artwork sold exactly as shown — nothing to upload and nothing to customize. You receive the exact piece on this page.',
+  },
+  {
+    q: 'How do I get my file after paying?',
+    a: 'Your download is ready immediately. A private, expiring link appears on your order page right after checkout, and the same link is emailed to you.',
+  },
+  {
+    q: 'Can I get this made with my own photos?',
+    a: 'Yes — that is a different product. Create a World Memories Photo Collage to build your own collage from your photos.',
+  },
+];
+
 const COMMON_FAQ: ProductFaq[] = [
   {
     q: 'Do I pay before I see my design?',
@@ -114,11 +135,14 @@ interface Seed {
   bestSeller?: boolean;
 }
 
-function specsFor(d: DeliveryType): ProductSpec[] {
-  return d === 'digital' ? SPECS_DIGITAL : d === 'printed' ? SPECS_PRINT : SPECS_BOTH;
+function specsFor(d: DeliveryType, mode: 'personalized' | 'ready-made'): ProductSpec[] {
+  const base = d === 'digital' ? SPECS_DIGITAL : d === 'printed' ? SPECS_PRINT : SPECS_BOTH;
+  // "Personalization: your photos, colors & text" is false for a finished artwork.
+  return mode === 'ready-made' ? base.filter((s) => s.label !== 'Personalization') : base;
 }
 
 function build(seed: Seed): Product {
+  const mode = seed.productMode ?? 'personalized';
   const aspect = DEFAULT_ASPECT[seed.productType];
   const image = poster(seed.posterLabel, seed.posterSub, aspect);
   return {
@@ -139,12 +163,12 @@ function build(seed: Seed): Product {
     deliveryType: seed.deliveryType,
     availableSizes: SIZES[seed.productType],
     features: seed.features,
-    specifications: specsFor(seed.deliveryType),
-    faq: [...(seed.faq ?? []), ...COMMON_FAQ],
+    specifications: specsFor(seed.deliveryType, mode),
+    faq: [...(seed.faq ?? []), ...(mode === 'ready-made' ? READY_MADE_FAQ : COMMON_FAQ)],
     relatedProductSlugs: [], // filled after all products are defined
     proofProductKey: seed.proofProductKey,
     ctaLabel: seed.ctaLabel,
-    productMode: seed.productMode ?? 'personalized',
+    productMode: mode,
     crossSellSlug: seed.crossSellSlug,
     sportTags: seed.sportTags ?? [],
     occasionTags: seed.occasionTags,

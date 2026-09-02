@@ -30,7 +30,7 @@ const ANALYTICS = read('db/analytics.js');
 const CAMPAIGN = 'beauty_world_launch';
 
 test('each launch platform persists through normalisation', () => {
-  for (const source of ['instagram', 'facebook', 'tiktok', 'pinterest', 'youtube']) {
+  for (const source of ['instagram', 'facebook', 'x', 'tiktok', 'pinterest', 'youtube']) {
     const a = normalizeAttribution({
       utm_source: source, utm_medium: 'organic',
       utm_campaign: CAMPAIGN, utm_content: 'creative_01',
@@ -42,7 +42,7 @@ test('each launch platform persists through normalisation', () => {
     assert.equal(a.isAttributed, true);
     assert.equal(a.isKnownSource, true);
   }
-  assert.deepEqual(KNOWN_SOURCES, ['instagram', 'facebook', 'tiktok', 'pinterest', 'youtube']);
+  assert.deepEqual(KNOWN_SOURCES, ['instagram', 'facebook', 'x', 'tiktok', 'pinterest', 'youtube']);
 });
 
 test('utm_content persists so creatives can be compared', () => {
@@ -61,6 +61,10 @@ test('common link spellings resolve to one canonical platform', () => {
   assert.equal(normalizeSource('Instagram '), 'instagram');
   assert.equal(normalizeSource('facebook.com'), 'facebook');
   assert.equal(normalizeSource('youtu.be'), 'youtube');
+  // X: every spelling a shared link can carry must resolve to one channel.
+  for (const spelling of ['twitter', 'Twitter ', 'twitter.com', 'x.com', 't.co', 'X']) {
+    assert.equal(normalizeSource(spelling), 'x', `${spelling} must report as x`);
+  }
 });
 
 test('direct/untagged traffic is classified, never rejected', () => {

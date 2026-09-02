@@ -16,7 +16,7 @@ import {
 
 const WEB_ROOT = process.cwd();
 const CAMPAIGN = 'beauty_world_launch';
-const PLATFORMS = ['instagram', 'facebook', 'tiktok', 'pinterest', 'youtube'] as const;
+const PLATFORMS = ['instagram', 'facebook', 'x', 'tiktok', 'pinterest', 'youtube'] as const;
 
 /** Minimal first-party storage stand-in — no third-party cookie, no fingerprint. */
 function installStorage() {

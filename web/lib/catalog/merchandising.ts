@@ -40,6 +40,16 @@ export function getWhyChoose(product: Product): string[] {
       : product.deliveryType === 'printed'
         ? 'Printed and shipped to you'
         : 'Instant digital download';
+  // A ready-made product has no preview step and no personalization — saying otherwise on
+  // its page is a claim about what the customer is buying, not a marketing flourish.
+  if (product.productMode === 'ready-made') {
+    return [
+      'Finished artwork — exactly as shown',
+      'Nothing to upload, nothing to design',
+      delivery,
+      'Secure checkout when you’re ready',
+    ];
+  }
   return [
     'See your free design preview before you pay',
     'Personalized with your photos, colors, and text',

@@ -39,7 +39,14 @@ async function runConfirmation({ sessionId, db, mailer, log }) {
   let sent = false;
   try {
     // Recipient comes from the stored payment row, NOT from the request.
-    sent = await mailer.sendConfirmationEmail({ to: claim.email, projectId: claim.projectId });
+    sent = await mailer.sendConfirmationEmail({
+      to: claim.email,
+      projectId: claim.projectId,
+      // Selects ready-made vs personalized copy; the session id lets the ready-made
+      // confirmation link straight to the customer's own download.
+      templateId: claim.templateId,
+      sessionId,
+    });
   } catch (err) {
     log?.error?.({ err: err.message, sessionId }, 'order-confirmation.send-error');
     sent = false;

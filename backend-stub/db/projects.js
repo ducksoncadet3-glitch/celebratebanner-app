@@ -158,16 +158,26 @@ async function getStatus(projectId) {
  * stored row, never from the request, so this cannot be steered to an arbitrary address.
  */
 async function claimConfirmation(stripeSessionId) {
+  // One statement, still atomic: the CTE claims the send, and the join reads the product
+  // slug the confirmation copy depends on — a ready-made order must not be told its banner
+  // is being prepared.
   const row = await one(
-    `UPDATE payments
-        SET confirmation_sent_at = NOW()
-      WHERE stripe_session_id = $1
-        AND status = 'succeeded'
-        AND confirmation_sent_at IS NULL
-      RETURNING project_id, customer_email`,
+    `WITH claimed AS (
+       UPDATE payments
+          SET confirmation_sent_at = NOW()
+        WHERE stripe_session_id = $1
+          AND status = 'succeeded'
+          AND confirmation_sent_at IS NULL
+        RETURNING project_id, customer_email
+     )
+     SELECT c.project_id, c.customer_email, p.template_id
+       FROM claimed c
+       LEFT JOIN projects p ON p.id = c.project_id`,
     [stripeSessionId],
   );
-  return row ? { projectId: row.project_id, email: row.customer_email } : null;
+  return row
+    ? { projectId: row.project_id, email: row.customer_email, templateId: row.template_id }
+    : null;
 }
 
 /** Does a SUCCEEDED payment exist for this session? (distinguishes already-sent from unknown/unpaid). */
