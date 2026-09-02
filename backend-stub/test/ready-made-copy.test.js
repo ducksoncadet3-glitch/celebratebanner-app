@@ -190,6 +190,19 @@ test('an unknown or forged token still gets the generic answer', () => {
   assert.match(resolve, /'malformed token'/);
 });
 
+test('a wrong-length signature is rejected, not crashed into a 500', () => {
+  // crypto.timingSafeEqual throws RangeError when the buffers differ in length, so a forged
+  // token of any other length used to return 500 {"error":"Input buffers must have the same
+  // byte length"} — an internal message, and the wrong status.
+  const resolve = TOKENS.slice(TOKENS.indexOf('async function resolveDownloadToken'));
+  assert.match(resolve, /given\.length !== expected\.length \|\| !crypto\.timingSafeEqual\(given, expected\)/);
+  assert.doesNotMatch(
+    resolve.slice(0, resolve.indexOf('const row')),
+    /timingSafeEqual\(Buffer\.from\(parts\[1\]\)/,
+    'the unguarded compare must be gone',
+  );
+});
+
 test('the explanation leaks no internals', () => {
   const fn = TOKENS.slice(TOKENS.indexOf('async function projectWasRefunded'), TOKENS.indexOf('async function revokeProjectTokens'));
   // It selects a literal 1 — no amount, no payment id, no key, no token state.

@@ -76,8 +76,12 @@ async function resolveDownloadToken({ projectId, assetType, token, ip, ua }) {
   const parts = token.split('.');
   if (parts.length !== 2) throw Object.assign(new Error('malformed token'), { status: 400 });
   const expectedSig = sign(`${projectId}.${assetType}.${parts[0]}`);
-  // Constant-time compare to prevent timing oracles.
-  if (!crypto.timingSafeEqual(Buffer.from(parts[1]), Buffer.from(expectedSig))) {
+  const given = Buffer.from(parts[1]);
+  const expected = Buffer.from(expectedSig);
+  // timingSafeEqual THROWS on a length mismatch, which turned a forged token into a 500
+  // carrying a Node internal message. Length is not a secret — the signature is always the
+  // same width — so check it first and answer with the same generic rejection.
+  if (given.length !== expected.length || !crypto.timingSafeEqual(given, expected)) {
     throw Object.assign(new Error('invalid signature'), { status: 403 });
   }
   const row = await one(
