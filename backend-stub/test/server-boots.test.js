@@ -31,7 +31,9 @@ const DEPS_INSTALLED = fs.existsSync(path.join(__dirname, '..', 'node_modules', 
 
 /** A complete, obviously-fake environment: enough to satisfy assertEnv, connects nowhere. */
 const DUMMY_ENV = {
-  NODE_ENV: 'test',
+  // production, to match the deploy gate: NODE_ENV=test loads pino-pretty, a devDependency
+  // the production install does not include.
+  NODE_ENV: 'production',
   PORT: '0',
   DATABASE_URL: 'postgres://user:pass@127.0.0.1:5432/db',
   PG_SSL: 'disable',

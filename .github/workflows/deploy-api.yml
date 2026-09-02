@@ -60,7 +60,9 @@ jobs:
       - name: verify the server boots
         working-directory: backend-stub
         env:
-          NODE_ENV: test
+          # Mirror production exactly: NODE_ENV=test would pull in pino-pretty, a
+          # devDependency that --omit=dev correctly does not install.
+          NODE_ENV: production
           PORT: '0'
           DATABASE_URL: postgres://user:pass@127.0.0.1:5432/db
           PG_SSL: disable
@@ -79,6 +81,9 @@ jobs:
           MAIL_FROM: CelebrateBanner <noreply@example.test>
           ADMIN_JWT_SECRET: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         run: |
+          # Mirror the Dockerfile: the render engine is a file: dependency whose dist/ is
+          # gitignored, so it must be built from source before backend deps resolve.
+          (cd ../shared/render-engine && npm ci && npm run build)
           npm ci --omit=dev
           node -e "require('./server.js'); console.log('BOOT_OK'); process.exit(0);"
 
