@@ -81,6 +81,11 @@ export function useProofHandoff(dispatch: Dispatch<ProjectAction>): { productLab
         if (value) dispatch({ type: 'setText', key, value });
       }
     }
+    // Starting composition for products that specify one. Dispatched through the store's
+    // normal action, so the customer can change it immediately afterwards.
+    if (prefill.arrangement) {
+      dispatch({ type: 'setArrangement', arrangement: prefill.arrangement });
+    }
     // Only claim an identity when the product actually mapped to a builder configuration.
     if (prefill.themeId && data.productId) {
       const title = productTitle(data.productId);

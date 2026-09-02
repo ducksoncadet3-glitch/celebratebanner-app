@@ -4,19 +4,27 @@
  *
  * Compatible fields (builder render-state ∩ wizard answers):
  *   • product  → themeId           (via PROOF_PRODUCT_MAP)
+ *   • product  → arrangement       (optional per-product STARTING composition)
  *   • teamName → bannerText[field]  (the mapped theme's team/org text field)
  *
  * Everything else the wizard collects (contact name, email, phone, colors, size, format,
  * notes) has no corresponding builder render field, so it is intentionally not transferred.
  */
 
-import type { Theme } from '@celebratebanner/render-engine';
+import { listArrangements, type ArrangementId, type Theme } from '@celebratebanner/render-engine';
 import { THEMES } from '@/lib/themes';
 import type { ProofFormData } from './types';
 
 export interface ProductMapEntry {
   themeId: string;
   nameField: string;
+  /**
+   * Optional STARTING arrangement for this product. Only set it where the composition is
+   * part of the product's identity; omit it and the builder keeps its own default, so no
+   * existing product's behavior changes. The customer can still switch afterwards — this
+   * seeds the initial value, it does not lock it.
+   */
+  arrangement?: ArrangementId;
 }
 
 /** Maps a wizard product slug to a builder theme + the theme text field that should receive
@@ -28,7 +36,9 @@ export const PROOF_PRODUCT_MAP: Record<string, ProductMapEntry | null> = {
   'player-spotlight-poster': { themeId: 'champion', nameField: 'teamName' },
   'coach-recognition-banner': { themeId: 'champion', nameField: 'teamName' },
   'graduation-banner': { themeId: 'graduation', nameField: 'school' },
-  'world-memories-collage': { themeId: 'world-memories-photo-collage', nameField: 'title' },
+  // 'scattered' is the composition the product was designed around: a prominent hero
+  // with many smaller photographs balanced around it.
+  'world-memories-collage': { themeId: 'world-memories-photo-collage', nameField: 'title', arrangement: 'scattered' },
   'not-sure': null,
 };
 
@@ -36,6 +46,8 @@ export interface BuilderPrefill {
   themeId?: string;
   /** Theme text field values to seed, e.g. { teamName: 'Riverside Eagles' }. */
   text?: Record<string, string>;
+  /** Starting arrangement, when the product specifies one. Absent → builder default. */
+  arrangement?: ArrangementId;
 }
 
 export interface MapDeps {
@@ -43,6 +55,8 @@ export interface MapDeps {
   catalog?: Record<string, Theme>;
   /** Product→theme map. Defaults to PROOF_PRODUCT_MAP. */
   productMap?: Record<string, ProductMapEntry | null>;
+  /** Arrangement ids to validate against. Defaults to the engine's real list. */
+  arrangements?: readonly string[];
 }
 
 /**
@@ -54,6 +68,7 @@ export interface MapDeps {
 export function mapProofToBuilder(data: ProofFormData, deps: MapDeps = {}): BuilderPrefill {
   const catalog = deps.catalog ?? THEMES;
   const productMap = deps.productMap ?? PROOF_PRODUCT_MAP;
+  const arrangements = deps.arrangements ?? listArrangements().map((a) => a.id);
 
   const out: BuilderPrefill = {};
 
@@ -71,6 +86,12 @@ export function mapProofToBuilder(data: ProofFormData, deps: MapDeps = {}): Buil
   const name = data.team.teamName.trim();
   if (name && theme.fields.includes(map.nameField)) {
     out.text = { [map.nameField]: name };
+  }
+
+  // Guard: only seed an arrangement the engine actually supports, so a stale product config
+  // can never inject an id the renderer would reject.
+  if (map.arrangement && arrangements.includes(map.arrangement)) {
+    out.arrangement = map.arrangement;
   }
   return out;
 }

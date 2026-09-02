@@ -7,7 +7,7 @@ import { PROOF_PRODUCTS, resolveProductId, productTitle } from '@/lib/proof/opti
 import { PROOF_PRODUCT_MAP, mapProofToBuilder } from '@/lib/proof/mapping';
 import { THEMES, THEME_DISPLAY, themeById } from '@/lib/themes';
 import { SHOP_LINKS } from '@/lib/nav';
-import { fitText, TEXT_SAFE_INSET } from '@celebratebanner/render-engine';
+import { fitText, listArrangements, TEXT_SAFE_INSET } from '@celebratebanner/render-engine';
 
 const SLUG = 'world-memories-photo-collage';
 const PROOF_KEY = 'world-memories-collage';
@@ -60,6 +60,43 @@ describe('World Memories Photo Collage — proof-first handoff', () => {
     } as never);
     expect(prefill.themeId).toBe(SLUG);
     expect(prefill.text).toEqual({ title: 'Our Ten Years' });
+  });
+
+  it('seeds the scattered arrangement as the STARTING composition', () => {
+    const prefill = mapProofToBuilder({
+      productId: PROOF_KEY,
+      team: { teamName: '', email: '', name: '', phone: '' },
+    } as never);
+    expect(prefill.arrangement).toBe('scattered');
+    // It is a starting value, not a lock: the builder dispatches it through the store's
+    // ordinary setArrangement action, which the ArrangementPicker also uses.
+    expect(listArrangements().map((a) => a.id)).toContain('scattered');
+  });
+
+  it('only seeds an arrangement the engine actually supports', () => {
+    const prefill = mapProofToBuilder(
+      { productId: 'x', team: { teamName: '', email: '', name: '', phone: '' } } as never,
+      {
+        catalog: THEMES,
+        productMap: { x: { themeId: SLUG, nameField: 'title', arrangement: 'not-a-real-arrangement' as never } },
+      },
+    );
+    expect(prefill.themeId).toBe(SLUG);
+    expect(prefill.arrangement).toBeUndefined();
+  });
+
+  it('does NOT change the starting arrangement of any other product', () => {
+    // Every previously certified product must keep the builder's own default — this change
+    // is product-specific by construction, not a global default change.
+    for (const [key, entry] of Object.entries(PROOF_PRODUCT_MAP)) {
+      if (key === PROOF_KEY || entry === null) continue;
+      expect(entry.arrangement, `${key} must not have gained a seeded arrangement`).toBeUndefined();
+      const prefill = mapProofToBuilder({
+        productId: key,
+        team: { teamName: 'Riverside Eagles', email: '', name: '', phone: '' },
+      } as never);
+      expect(prefill.arrangement, `${key} must not seed an arrangement`).toBeUndefined();
+    }
   });
 
   it('the builder shows product identity instead of the generic theme grid', () => {
