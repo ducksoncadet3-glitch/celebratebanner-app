@@ -101,7 +101,7 @@ export function SuccessView() {
             {readyUrl && (
               <Button asChild variant="gold">
                 <a href={readyUrl} download>
-                  ⬇ Download banner
+                  ⬇ Download Your Artwork
                 </a>
               </Button>
             )}
@@ -119,7 +119,17 @@ export function SuccessView() {
         </div>
       )}
 
-      <div className="mt-8 text-center">
+      {/* Post-purchase: keep the customer in the CelebrateBanner world. Works for a
+          rendered order and a ready-made artwork alike. */}
+      <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+        <Button asChild variant="gold">
+          <Link href="/shop">Discover More CelebrateBanner Designs</Link>
+        </Button>
+        <Button asChild variant="ghost">
+          <a href="https://www.celebratebanner.com/">Continue Shopping</a>
+        </Button>
+      </div>
+      <div className="mt-4 text-center">
         <Button asChild variant="ghost">
           <Link href="/create">Design another banner</Link>
         </Button>

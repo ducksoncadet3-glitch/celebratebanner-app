@@ -30,13 +30,20 @@ module.exports = function deliveryTemplate({ projectId, links, name }) {
       ${greet} we&rsquo;ve finished rendering your CelebrateBanner. Click below to download your files.
     </p>
     <div style="margin:24px 0;">
-      ${cta('⬇ Download banner', links.downloadUrl, true)}
+      ${cta('⬇ Download Your Artwork', links.downloadUrl, true)}
       ${links.videoUrl ? cta('⬇ Download video slideshow', links.videoUrl, false) : ''}
     </div>
     <p style="font-family:'Outfit',Arial,sans-serif;font-size:12px;line-height:1.5;color:#7a7d84;">
       Download links expire <strong>${expires}</strong>. Save the files to your device — you can also re-send them
       from <a href="${SITE}/orders/${encodeURIComponent(projectId)}" style="color:#8B6020;">your order page</a>.
     </p>
+    <hr style="border:none;border-top:1px solid #e5e0d3;margin:32px 0;">
+    <p style="font-family:'Outfit',Arial,sans-serif;font-size:14px;line-height:1.55;color:#3a3d44;margin:0 0 12px;">
+      Looking for your next keepsake?
+    </p>
+    <div style="margin:0 0 24px;">
+      ${cta('Discover More CelebrateBanner Designs', 'https://www.celebratebanner.com/', false)}
+    </div>
     <hr style="border:none;border-top:1px solid #e5e0d3;margin:32px 0;">
     <p style="font-family:'Outfit',Arial,sans-serif;font-size:11px;line-height:1.5;color:#a7aab1;">
       CDN4 LLC dba CelebrateBanner · 211 Old Okeechobee Road, Bay 2 #1058, West Palm Beach, FL 33401<br>
@@ -48,11 +55,13 @@ module.exports = function deliveryTemplate({ projectId, links, name }) {
   const text = [
     `Your CelebrateBanner is ready.`,
     ``,
-    `Download banner: ${links.downloadUrl}`,
+    `Download your artwork: ${links.downloadUrl}`,
     links.videoUrl ? `Download video slideshow: ${links.videoUrl}` : null,
     ``,
     `Links expire ${expires}. Save the files to your device.`,
     `Order page: ${SITE}/orders/${encodeURIComponent(projectId)}`,
+    ``,
+    `Discover more CelebrateBanner designs: https://www.celebratebanner.com/`,
   ].filter(Boolean).join('\n');
 
   return { subject, html, text };

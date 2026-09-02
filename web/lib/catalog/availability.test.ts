@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { getAllProducts } from './products';
 import { proofHrefForProduct } from './proof-link';
-import { COMING_SOON_SLUGS, isComingSoon, isSellable } from './availability';
+import { COMING_SOON_SLUGS, isComingSoon, isReadyMade, isSellable } from './availability';
 import { PROOF_PRODUCTS, resolveProductId } from '@/lib/proof/options';
 import { PROOF_PRODUCT_MAP, mapProofToBuilder } from '@/lib/proof/mapping';
 import { PRICING } from '@/lib/pricing';
@@ -23,9 +23,18 @@ const SUPPORTED_SLUGS = [
 ];
 
 describe('unsupported social products cannot be designed or purchased', () => {
-  it('the Coming Soon set is exactly the 8 unsupported social products', () => {
-    const actual = products.filter(isComingSoon).map((p) => p.slug).sort();
-    expect(actual).toEqual([...COMING_SOON_SLUGS].sort());
+  it('every unsupported social product is Coming Soon', () => {
+    const comingSoon = products.filter(isComingSoon).map((p) => p.slug);
+    for (const slug of COMING_SOON_SLUGS) expect(comingSoon, slug).toContain(slug);
+  });
+
+  it('the only other Coming Soon product is ready-made art awaiting its master asset', () => {
+    const extra = products
+      .filter(isComingSoon)
+      .filter((p) => !COMING_SOON_SLUGS.includes(p.slug));
+    for (const p of extra) {
+      expect(isReadyMade(p), `${p.slug} is gated for an unexpected reason`).toBe(true);
+    }
   });
 
   it('no Coming Soon product exposes a route into proof / create / checkout', () => {
@@ -61,12 +70,17 @@ describe('supported products remain sellable', () => {
     const sellable = products.filter(isSellable).map((p) => p.slug).sort();
     expect(sellable).toEqual([...SUPPORTED_SLUGS].sort());
     for (const p of products.filter(isSellable)) {
+      if (isReadyMade(p)) {
+        expect(proofHrefForProduct(p), `${p.slug} is ready-made`).toBeNull();
+        continue;
+      }
       expect(proofHrefForProduct(p)).toBe(`/proof?product=${p.proofProductKey}`);
     }
   });
 
-  it('every sellable product maps to a real builder configuration', () => {
-    for (const p of products.filter(isSellable)) {
+  it('every sellable PERSONALIZED product maps to a real builder configuration', () => {
+    // Ready-made products have no builder configuration by design.
+    for (const p of products.filter(isSellable).filter((x) => !isReadyMade(x))) {
       expect(PROOF_PRODUCT_MAP[p.proofProductKey], `${p.slug} → ${p.proofProductKey}`).toBeTruthy();
     }
   });

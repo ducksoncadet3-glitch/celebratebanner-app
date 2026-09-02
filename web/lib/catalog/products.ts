@@ -97,6 +97,8 @@ interface Seed {
   startingPriceCents: number;
   proofProductKey: ProofProductKey;
   ctaLabel?: string;
+  productMode?: 'personalized' | 'ready-made';
+  crossSellSlug?: string;
   shortDescription: string;
   fullDescription: string;
   features: string[];
@@ -142,6 +144,8 @@ function build(seed: Seed): Product {
     relatedProductSlugs: [], // filled after all products are defined
     proofProductKey: seed.proofProductKey,
     ctaLabel: seed.ctaLabel,
+    productMode: seed.productMode ?? 'personalized',
+    crossSellSlug: seed.crossSellSlug,
     sportTags: seed.sportTags ?? [],
     occasionTags: seed.occasionTags,
     seoTitle: seed.seoTitle,
@@ -429,6 +433,8 @@ const SEEDS: Seed[] = [
     productType: 'collage', deliveryType: 'both', startingPriceCents: 7999,
     proofProductKey: 'world-memories-collage',
     ctaLabel: 'Create My Photo Collage',
+    productMode: 'personalized',
+    crossSellSlug: 'the-beauty-of-the-world',
     shortDescription:
       'Turn your favorite memories into one unforgettable personalized photo artwork.',
     fullDescription:
@@ -445,6 +451,30 @@ const SEEDS: Seed[] = [
       'Turn travel, family, and vacation photos into one premium personalized photo collage. Digital $9.99 or printed 24×36". Free design preview before you pay.',
     posterLabel: 'MEMORIES', posterSub: 'World Collage',
     badge: 'New', featured: true,
+  },
+  {
+    slug: 'the-beauty-of-the-world', name: 'The Beauty of the World',
+    collectionSlug: 'photo-collages', category: 'Ready-Made Art',
+    productType: 'collage', deliveryType: 'digital', startingPriceCents: 999,
+    proofProductKey: 'the-beauty-of-the-world',
+    ctaLabel: 'View & Buy',
+    productMode: 'ready-made',
+    crossSellSlug: 'world-memories-photo-collage',
+    shortDescription: 'Purchase this finished artwork exactly as shown.',
+    fullDescription:
+      'A finished photo artwork, ready to download the moment you buy it. Nothing to upload, nothing to design — you receive the exact piece shown here, prepared as a high-resolution file.',
+    features: [
+      'Finished artwork — no design step',
+      'Instant secure download after payment',
+      'High-resolution digital file',
+      'Personalized version also available',
+    ],
+    occasionTags: ['travel', 'nature', 'adventure', 'wall-art'],
+    seoTitle: 'The Beauty of the World — Ready-Made Photo Artwork',
+    seoDescription:
+      'A finished photo artwork sold exactly as shown. Instant secure digital download for $9.99. Prefer your own photos? Create a World Memories Photo Collage.',
+    posterLabel: 'BEAUTY', posterSub: 'Of The World',
+    badge: 'Ready-Made',
   },
   {
     slug: 'game-day-graphic', name: 'Game Day Graphic', collectionSlug: 'social-graphics', category: 'Social Graphic',

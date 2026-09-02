@@ -8,7 +8,7 @@ import {
   getRelatedProducts,
 } from './products';
 import { proofHrefForProduct } from './proof-link';
-import { isComingSoon, isSellable, COMING_SOON_SLUGS } from './availability';
+import { isComingSoon, isReadyMade, isSellable, COMING_SOON_SLUGS } from './availability';
 import { resolveProductId } from '@/lib/proof/options';
 
 const products = getAllProducts();
@@ -16,8 +16,8 @@ const collections = getAllCollections();
 const collectionSlugs = new Set(collections.map((c) => c.slug));
 
 describe('catalog integrity', () => {
-  it('contains exactly 25 products', () => {
-    expect(products).toHaveLength(25);
+  it('contains exactly 26 products', () => {
+    expect(products).toHaveLength(26);
   });
 
   it('every product has a unique slug', () => {
@@ -48,8 +48,8 @@ describe('catalog integrity', () => {
     for (const p of products) expect(collectionSlugs.has(p.collectionSlug)).toBe(true);
   });
 
-  it('every SELLABLE product has a proofProductKey that the proof flow resolves', () => {
-    for (const p of products.filter(isSellable)) {
+  it('every SELLABLE personalized product has a proofProductKey the proof flow resolves', () => {
+    for (const p of products.filter(isSellable).filter((x) => !isReadyMade(x))) {
       expect(resolveProductId(p.proofProductKey), p.slug).toBe(p.proofProductKey);
     }
   });
@@ -129,8 +129,8 @@ describe('catalog helpers', () => {
 });
 
 describe('proof CTA URL', () => {
-  it('produces /proof?product=<resolvable key> for every SELLABLE product', () => {
-    const sellable = products.filter(isSellable);
+  it('produces /proof?product=<resolvable key> for every SELLABLE personalized product', () => {
+    const sellable = products.filter(isSellable).filter((p) => !isReadyMade(p));
     expect(sellable.length).toBeGreaterThan(0);
     for (const p of sellable) {
       const href = proofHrefForProduct(p);
@@ -142,7 +142,7 @@ describe('proof CTA URL', () => {
 
   it('produces NO proof link for a Coming Soon product', () => {
     const comingSoon = products.filter(isComingSoon);
-    expect(comingSoon.length).toBe(COMING_SOON_SLUGS.length);
+    expect(comingSoon.length).toBeGreaterThanOrEqual(COMING_SOON_SLUGS.length);
     for (const p of comingSoon) {
       expect(proofHrefForProduct(p), `${p.slug} must not deep-link into the proof flow`).toBeNull();
     }

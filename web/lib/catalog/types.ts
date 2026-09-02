@@ -28,7 +28,8 @@ export type ProofProductKey =
   | 'coach-recognition-banner'
   | 'football-social-graphics'
   | 'graduation-banner'
-  | 'world-memories-collage';
+  | 'world-memories-collage'
+  | 'the-beauty-of-the-world';
 
 export interface ProductSpec {
   label: string;
@@ -67,6 +68,16 @@ export interface Product {
   proofProductKey: ProofProductKey;
   /** Product-specific primary CTA. Falls back to the standard proof CTA when absent. */
   ctaLabel?: string;
+  /**
+   * How the customer obtains this product.
+   *   • 'personalized' (default) — proof-first: upload, customize, preview, then buy.
+   *   • 'ready-made'  — a finished master artwork sold exactly as shown. No builder, no
+   *     upload, no render. Fulfilled from a stored master asset (backend-stub/config/
+   *     ready-made-products.js) via an expiring signed download.
+   */
+  productMode?: 'personalized' | 'ready-made';
+  /** Slug of the product to cross-sell from this one. */
+  crossSellSlug?: string;
   sportTags: string[];
   occasionTags: string[];
   seoTitle: string;

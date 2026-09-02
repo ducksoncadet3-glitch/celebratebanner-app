@@ -23,5 +23,8 @@ export function proofHrefForKey(key: string): string {
  */
 export function proofHrefForProduct(product: Product): string | null {
   if (isComingSoon(product)) return null;
+  // Ready-made art is sold exactly as shown: there is nothing to design, so it must never
+  // enter the proof/builder flow. Its product page renders a direct checkout instead.
+  if (product.productMode === 'ready-made') return null;
   return proofHrefForKey(product.proofProductKey);
 }

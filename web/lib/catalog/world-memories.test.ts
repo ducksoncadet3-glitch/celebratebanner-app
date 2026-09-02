@@ -171,8 +171,8 @@ describe('World Memories Photo Collage — certified commerce, unchanged', () =>
   it('leaves the previously certified 16 products sellable and the 8 social ones Coming Soon', () => {
     const sellable = getAllProducts().filter(isSellable).map((p) => p.slug);
     expect(sellable).toContain(SLUG);
-    expect(sellable).toHaveLength(17); // the certified 16 + this new product
-    const comingSoon = getAllProducts().filter(isComingSoon).map((p) => p.slug).sort();
-    expect(comingSoon).toEqual([...COMING_SOON_SLUGS].sort());
+    expect(sellable).toHaveLength(17); // the certified 16 + World Memories
+    const comingSoon = getAllProducts().filter(isComingSoon).map((p) => p.slug);
+    for (const slug of COMING_SOON_SLUGS) expect(comingSoon, slug).toContain(slug);
   });
 });

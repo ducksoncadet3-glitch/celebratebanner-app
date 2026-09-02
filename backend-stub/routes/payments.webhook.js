@@ -16,7 +16,7 @@
 const crypto = require('node:crypto');
 const Stripe = require('stripe');
 const express = require('express');
-const { markPaid, markFailed, markRefunded, getById } = require('../db/projects');
+const { markPaid, markFailed, markRefunded, markReady, getById } = require('../db/projects');
 const { claimEvent, markEventOk, markEventFailed } = require('../db/webhook-events');
 const { revokeProjectTokens } = require('../services/tokens');
 const { enqueueRender } = require('../services/queue');
@@ -26,6 +26,10 @@ const { metrics } = require('../services/metrics');
 const { record: auditRecord } = require('../services/audit');
 const { captureWarning, captureError } = require('../services/alerts');
 const { deserializeRenderInput } = require('../utils/render-input');
+const { readyMadeByTemplateId } = require('../config/ready-made-products');
+const { issueDownloadToken } = require('../services/tokens');
+const { sendDeliveryEmail } = require('../services/mailer');
+const { rows } = require('../db');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-12-18.acacia' });
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
@@ -132,6 +136,17 @@ async function handleSessionSucceeded(event) {
     metadata: { sessionId: session.id, amountTotalCents: session.amount_total, productIds },
   });
 
+  // ── Ready-made fulfilment ──────────────────────────────────────────────────
+  // A finished master artwork sold exactly as shown. There is no customer design, so this
+  // path never reads render_input and never enqueues a render — it authorizes a download of
+  // the stored master asset. Personalized orders fall through to the certified pipeline
+  // below, unchanged.
+  const readyMade = readyMadeByTemplateId(session.metadata?.templateId);
+  if (readyMade) {
+    await fulfillReadyMade({ readyMade, projectId, session, event, customerEmail });
+    return;
+  }
+
   // Load the saved canonical RenderInput from the project row.
   const project = await getById(projectId);
   let renderInput;
@@ -175,6 +190,58 @@ async function handleSessionSucceeded(event) {
   );
   metrics.incRendersEnqueued();
   logger.info({ projectId, renderId, productIds, eventId: event.id }, 'webhook.render-enqueued');
+}
+
+/**
+ * Fulfil a ready-made order: authorize a secure, expiring download of the approved master
+ * asset and send the delivery email. No render, no S3 write, no image generation.
+ *
+ * Delivery idempotency: a download token already existing for this project means a previous
+ * delivery (or a redelivered webhook) already fulfilled it, so we do not issue a second
+ * token or send a second email. Stripe event-level dedupe is handled by claimEvent upstream;
+ * this is the second line of defence.
+ */
+async function fulfillReadyMade({ readyMade, projectId, session, event, customerEmail }) {
+  const existing = await rows(
+    'SELECT id FROM download_tokens WHERE project_id = $1 LIMIT 1',
+    [projectId],
+  );
+  if (existing.length) {
+    logger.info({ projectId, eventId: event.id }, 'readymade.already-delivered');
+    await auditRecord({
+      actorKind: 'webhook', actorId: event.id, action: 'readymade.delivery_deduped',
+      subjectKind: 'project', subjectId: projectId,
+      metadata: { sessionId: session.id, slug: readyMade.slug },
+    });
+    return;
+  }
+
+  // The master asset is never exposed as a public URL — this mints a tokenized link that
+  // resolves to a short-lived signed S3 URL, with the same expiry and usage caps as a
+  // rendered delivery.
+  const download = await issueDownloadToken({
+    projectId,
+    assetType: readyMade.masterAssetType,
+    s3Key: readyMade.masterAssetKey,
+  });
+
+  await markReady({ projectId });
+
+  if (customerEmail) {
+    await sendDeliveryEmail({
+      to: customerEmail,
+      projectId,
+      links: { downloadUrl: download.url, expiresAt: download.expiresAt },
+    });
+  }
+
+  await auditRecord({
+    actorKind: 'webhook', actorId: event.id, action: 'readymade.delivered',
+    subjectKind: 'project', subjectId: projectId,
+    metadata: { sessionId: session.id, slug: readyMade.slug, assetType: readyMade.masterAssetType },
+  });
+  metrics.incEmailsSent('delivery');
+  logger.info({ projectId, slug: readyMade.slug, eventId: event.id }, 'readymade.delivered');
 }
 
 async function handleSessionFailed(event) {

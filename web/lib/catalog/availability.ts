@@ -33,9 +33,25 @@ export const COMING_SOON_SLUGS: readonly string[] = [
   'team-announcement',
 ];
 
+/**
+ * Public availability of ready-made art.
+ *
+ * The ready-made commerce engine is complete and tested, but a ready-made product can only
+ * be sold once its APPROVED master artwork is stored and its S3 key configured
+ * (READY_MADE_BEAUTY_ASSET_KEY on the API). Selling before then would take payment and hand
+ * the customer a broken download — the exact failure this codebase has twice been bitten by.
+ *
+ * Flip to true only after the master asset is confirmed in place.
+ */
+export const READY_MADE_PUBLIC = false;
+
 /** True when the product cannot be designed or purchased yet. */
 export function isComingSoon(product: Product): boolean {
-  return UNSUPPORTED_TYPES.has(product.productType);
+  if (UNSUPPORTED_TYPES.has(product.productType)) return true;
+  // Ready-made art is listed for discovery but not purchasable until its master asset is
+  // approved and stored.
+  if (product.productMode === 'ready-made' && !READY_MADE_PUBLIC) return true;
+  return false;
 }
 
 /** True when the product can enter the proof → builder → checkout flow. */
@@ -47,3 +63,8 @@ export function isSellable(product: Product): boolean {
 export const COMING_SOON_LABEL = 'Coming soon';
 export const COMING_SOON_NOTE =
   'This design is not available to create or order yet. It is in development — check back soon.';
+
+/** True when this product is a finished artwork sold exactly as shown (no builder). */
+export function isReadyMade(product: Product): boolean {
+  return product.productMode === 'ready-made';
+}

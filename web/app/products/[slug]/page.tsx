@@ -24,7 +24,9 @@ import {
 } from '@/lib/catalog/products';
 import { productOffer } from '@/lib/catalog/structured-data';
 import { proofHrefForProduct } from '@/lib/catalog/proof-link';
-import { isComingSoon, COMING_SOON_LABEL, COMING_SOON_NOTE } from '@/lib/catalog/availability';
+import { isComingSoon, isReadyMade, COMING_SOON_LABEL, COMING_SOON_NOTE } from '@/lib/catalog/availability';
+import { CheckoutButton } from '@/components/checkout-button';
+import { getProductBySlug as lookupProduct } from '@/lib/catalog/products';
 import { resolveProductImage } from '@/lib/catalog/product-image';
 import { buildMetadata, SITE } from '@/lib/seo';
 
@@ -61,6 +63,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const collection = getCollectionBySlug(product.collectionSlug);
   const proofHref = proofHrefForProduct(product);
   const comingSoon = isComingSoon(product);
+  // Ready-made checkout renders only when the product is actually purchasable.
+  const readyMade = isReadyMade(product) && !comingSoon;
+  const crossSell = product.crossSellSlug ? lookupProduct(product.crossSellSlug) : undefined;
   const url = `${SITE.url}/products/${product.slug}`;
 
   // Approved flagship hero if present, else the catalog placeholder (never broken).
@@ -119,7 +124,23 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <p className="mt-4 text-base leading-relaxed text-obsidian/60">{product.fullDescription}</p>
 
             <div className="mt-7">
-              {comingSoon || !proofHref ? (
+              {readyMade ? (
+                <>
+                  {/* Ready-made: finished artwork, sold exactly as shown. Straight to the
+                      certified checkout — no builder, no upload, nothing to render. */}
+                  <CheckoutButton
+                    productId="digital"
+                    templateId={product.slug}
+                    variant="gold"
+                    className="w-full"
+                  >
+                    {product.ctaLabel ?? 'View & Buy'}
+                  </CheckoutButton>
+                  <p className="mt-3 text-center text-sm text-obsidian/60">
+                    Instant secure download after payment. Printed edition coming soon.
+                  </p>
+                </>
+              ) : comingSoon || !proofHref ? (
                 <>
                   <Button variant="gold" size="lg" fullWidth disabled aria-disabled="true">
                     {COMING_SOON_LABEL}
@@ -135,6 +156,24 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 </>
               )}
             </div>
+
+            {crossSell && (
+              <div className="mt-6 rounded-xl border border-gold/25 bg-gold/5 p-4">
+                <p className="text-sm text-obsidian/80">
+                  {readyMade
+                    ? 'Want one made with your own photos?'
+                    : 'Prefer a finished artwork?'}{' '}
+                  <Link
+                    href={`/products/${crossSell.slug}`}
+                    className="font-semibold text-gold-dark underline underline-offset-2"
+                  >
+                    {readyMade
+                      ? 'Create a World Memories Photo Collage'
+                      : 'Discover The Beauty of the World'}
+                  </Link>
+                </p>
+              </div>
+            )}
 
             {/* Available formats */}
             <div className="mt-7 border-t border-obsidian/8 pt-6">
