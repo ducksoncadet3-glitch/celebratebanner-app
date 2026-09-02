@@ -168,6 +168,38 @@ jobs:
             }
             out('POSTMARK OUTBOUND (read-only)', postmark);
 
+            // 8b) Per-message delivery events + bounce/suppression state for the delivery
+            //     email. This is what distinguishes "accepted by Postmark" from "reached the
+            //     recipient's mail server". Read-only.
+            let events = { checked: false };
+            const delivery = (postmark.messages || []).find(
+              (m) => /is ready/i.test(m.subject || ''),
+            );
+            if (process.env.POSTMARK_API_TOKEN && delivery) {
+              try {
+                const h = { Accept: 'application/json', 'X-Postmark-Server-Token': process.env.POSTMARK_API_TOKEN };
+                const d = await fetch('https://api.postmarkapp.com/messages/outbound/' + delivery.messageId + '/details', { headers: h });
+                const dj = await d.json();
+                const b = await fetch('https://api.postmarkapp.com/bounces?count=10&offset=0&emailFilter=' + encodeURIComponent(email), { headers: h });
+                const bj = await b.json();
+                events = {
+                  checked: true,
+                  messageId: delivery.messageId,
+                  status: dj.Status,
+                  messageEvents: (dj.MessageEvents || []).map((e) => ({
+                    type: e.Type, receivedAt: e.ReceivedAt,
+                    detailsSummary: e.Details ? Object.keys(e.Details).join(',') : null,
+                  })),
+                  bounceCount: bj.TotalCount,
+                  bounces: (bj.Bounces || []).map((x) => ({
+                    type: x.Type, name: x.Name, inactive: x.Inactive,
+                    bouncedAt: x.BouncedAt, subject: x.Subject,
+                  })),
+                };
+              } catch (e) { events = { checked: false, error: String(e.message).slice(0, 200) }; }
+            }
+            out('DELIVERY EMAIL EVENTS + BOUNCES', events);
+
             // 9) Mail configuration presence (names only, never values).
             out('MAIL CONFIG PRESENCE', {
               POSTMARK_API_TOKEN: Boolean(process.env.POSTMARK_API_TOKEN),
