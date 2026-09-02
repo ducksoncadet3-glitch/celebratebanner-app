@@ -18,7 +18,16 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
+const fs = require('node:fs');
 const path = require('node:path');
+
+/**
+ * The pre-deploy suite runs `node --test` with NO npm install, so server.js (express,
+ * stripe, pg…) cannot be loaded there. When dependencies are absent these checks skip; the
+ * deploy workflow installs production deps and runs the same boot check before releasing,
+ * which is the gate that actually protects a release.
+ */
+const DEPS_INSTALLED = fs.existsSync(path.join(__dirname, '..', 'node_modules', 'express'));
 
 /** A complete, obviously-fake environment: enough to satisfy assertEnv, connects nowhere. */
 const DUMMY_ENV = {
@@ -42,7 +51,7 @@ const DUMMY_ENV = {
   ADMIN_JWT_SECRET: 'a'.repeat(32),
 };
 
-test('server.js loads without throwing (catches missing imports)', () => {
+test('server.js loads without throwing (catches missing imports)', { skip: !DEPS_INSTALLED && 'dependencies not installed' }, () => {
   const root = path.join(__dirname, '..');
   let output = '';
   try {
@@ -66,7 +75,7 @@ test('server.js loads without throwing (catches missing imports)', () => {
   assert.match(output, /BOOT_OK/, 'server.js must load cleanly');
 });
 
-test('every route module referenced by server.js resolves', () => {
+test('every route module referenced by server.js resolves', { skip: !DEPS_INSTALLED && 'dependencies not installed' }, () => {
   // A require of a path that does not exist is the other way a deploy dies on boot.
   const root = path.join(__dirname, '..');
   const script = [

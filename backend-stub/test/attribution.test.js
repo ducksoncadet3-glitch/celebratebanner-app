@@ -133,7 +133,10 @@ test('the client cannot forge a purchase or a checkout start', () => {
 });
 
 test('the events endpoint is rate limited and never breaks the page', () => {
-  assert.match(SERVER, /app\.post\('\/api\/events', rateLimit\('events'\), eventsHandler\)/);
+  // The route module owns its middleware chain (as uploads/downloads do), so server.js
+  // cannot reference an unimported helper — that is what broke the first deploy.
+  assert.match(SERVER, /app\.post\('\/api\/events', eventsMw, eventsHandler\)/);
+  assert.match(read('routes/events.js'), /rateLimit\('events'\)/, 'events must be rate limited');
   assert.match(EVENTS, /catch \(err\)/, 'a write failure must be swallowed');
   assert.match(EVENTS, /res\.status\(202\)/, 'always answers success');
 });

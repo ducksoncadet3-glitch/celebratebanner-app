@@ -54,6 +54,34 @@ jobs:
         working-directory: backend-stub
         run: node --test
 
+      # A missing import is invisible to the dependency-free suite above: the analytics
+      # release passed every test and then crashed every machine on boot. Install production
+      # dependencies and actually load server.js before releasing.
+      - name: verify the server boots
+        working-directory: backend-stub
+        env:
+          NODE_ENV: test
+          PORT: '0'
+          DATABASE_URL: postgres://user:pass@127.0.0.1:5432/db
+          PG_SSL: disable
+          PUBLIC_SITE_URL: https://example.test
+          API_PUBLIC_URL: https://api.example.test
+          STRIPE_SECRET_KEY: sk_test_dummy
+          STRIPE_WEBHOOK_SECRET: whsec_dummy
+          REDIS_URL: redis://127.0.0.1:6379
+          AWS_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: dummy
+          AWS_SECRET_ACCESS_KEY: dummy
+          S3_BUCKET: dummy-bucket
+          S3_CDN_BASE: https://cdn.example.test
+          DOWNLOAD_TOKEN_SECRET: dddddddddddddddddddddddddddddddd
+          POSTMARK_API_TOKEN: dummy
+          MAIL_FROM: CelebrateBanner <noreply@example.test>
+          ADMIN_JWT_SECRET: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        run: |
+          npm ci --omit=dev
+          node -e "require('./server.js'); console.log('BOOT_OK'); process.exit(0);"
+
       - name: check API deploy credential
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
