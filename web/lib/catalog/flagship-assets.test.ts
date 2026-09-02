@@ -16,10 +16,11 @@ const EXPECTED: Record<string, 'landscape' | 'portrait' | 'square'> = {
   'championship-banner': 'landscape',
   'coach-appreciation-banner': 'landscape',
   'game-day-graphic': 'square',
+  'the-beauty-of-the-world': 'portrait',
 };
 
 describe('flagship products + manifest', () => {
-  it('defines exactly the seven flagship products', () => {
+  it('defines the flagship products, including the ready-made artwork', () => {
     expect(FLAGSHIP_SLUGS.sort()).toEqual(Object.keys(EXPECTED).sort());
   });
 
@@ -29,10 +30,11 @@ describe('flagship products + manifest', () => {
     }
   });
 
-  it('every manifest entry has valid, non-empty asset paths (WebP, under /storefront/<slug>/)', () => {
+  it('every manifest entry has valid, non-empty asset paths under /storefront/<slug>/', () => {
     for (const a of FLAGSHIP_ASSETS) {
-      expect(a.heroPath).toBe(`/storefront/${a.slug}/hero.webp`);
-      expect(a.thumbnailPath).toBe(`/storefront/${a.slug}/thumbnail.webp`);
+      // webp is the preferred export; a ready-made preview keeps its source format.
+      expect(a.heroPath).toMatch(new RegExp(`^/storefront/${a.slug}/hero\\.(webp|jpg)$`));
+      expect(a.thumbnailPath).toMatch(new RegExp(`^/storefront/${a.slug}/thumbnail\\.(webp|jpg)$`));
       expect(a.heroPath.length).toBeGreaterThan(0);
       expect(a.thumbnailPath.length).toBeGreaterThan(0);
       expect(a.alt.length).toBeGreaterThan(0);
@@ -67,12 +69,20 @@ describe('image resolver — fallback', () => {
     }
   });
 
-  it('with the real filesystem (no files present yet), all seven still resolve to placeholders', () => {
-    for (const slug of FLAGSHIP_SLUGS) {
+  it('with the real filesystem, products without an approved file resolve to placeholders', () => {
+    // The ready-made artwork now HAS an approved preview on disk, so it is excluded here.
+    const APPROVED_ON_DISK = ['the-beauty-of-the-world'];
+    for (const slug of FLAGSHIP_SLUGS.filter((s) => !APPROVED_ON_DISK.includes(s))) {
       const r = resolveProductImage(slug, 'hero'); // default fs check
-      expect(r.isPlaceholder).toBe(true);
+      expect(r.isPlaceholder, slug).toBe(true);
       expect(r.src.length).toBeGreaterThan(0);
     }
+  });
+
+  it('the approved ready-made preview resolves to the real artwork, not a placeholder', () => {
+    const r = resolveProductImage('the-beauty-of-the-world', 'hero'); // default fs check
+    expect(r.isPlaceholder).toBe(false);
+    expect(r.src).toBe('/storefront/the-beauty-of-the-world/hero.jpg');
   });
 });
 

@@ -49,6 +49,12 @@ interface FlagshipSeed {
   slug: string;
   aspect: AssetAspect;
   alt: string;
+  /**
+   * Override the file extension for this asset. Approved assets are normally exported as
+   * webp; a ready-made master is published straight from the finished artwork, so its
+   * preview keeps that source format.
+   */
+  format?: string;
 }
 
 // Aspect is derived from each product's productType in the catalog:
@@ -61,14 +67,20 @@ const SEEDS: FlagshipSeed[] = [
   { slug: 'championship-banner', aspect: 'landscape', alt: 'Personalized championship banner featuring the team name, record, and roster.' },
   { slug: 'coach-appreciation-banner', aspect: 'landscape', alt: "Personalized coach appreciation banner featuring the coach's photo and a tribute message." },
   { slug: 'game-day-graphic', aspect: 'square', alt: 'Personalized game day social graphic featuring the matchup, date, and team colors.' },
+  {
+    slug: 'the-beauty-of-the-world',
+    aspect: 'portrait',
+    format: 'jpg',
+    alt: 'The Beauty of the World — a finished photo collage artwork with a hero image surrounded by smaller travel and nature photographs.',
+  },
 ];
 
 function build(seed: FlagshipSeed): FlagshipAsset {
   const dims = ASPECT_DIMENSIONS[seed.aspect];
   return {
     slug: seed.slug,
-    heroPath: `${ASSET_BASE}/${seed.slug}/hero.${PREFERRED_FORMAT}`,
-    thumbnailPath: `${ASSET_BASE}/${seed.slug}/thumbnail.${PREFERRED_FORMAT}`,
+    heroPath: `${ASSET_BASE}/${seed.slug}/hero.${seed.format ?? PREFERRED_FORMAT}`,
+    thumbnailPath: `${ASSET_BASE}/${seed.slug}/thumbnail.${seed.format ?? PREFERRED_FORMAT}`,
     aspect: seed.aspect,
     heroDimensions: dims.hero,
     thumbnailDimensions: dims.thumbnail,
