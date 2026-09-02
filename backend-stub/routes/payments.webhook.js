@@ -30,6 +30,7 @@ const { readyMadeByTemplateId } = require('../config/ready-made-products');
 const { issueDownloadToken } = require('../services/tokens');
 const { sendDeliveryEmail } = require('../services/mailer');
 const { rows } = require('../db');
+const { recordEvent } = require('../db/analytics');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-12-18.acacia' });
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
@@ -143,11 +144,25 @@ async function handleSessionSucceeded(event) {
   // below, unchanged.
   const readyMade = readyMadeByTemplateId(session.metadata?.templateId);
   if (readyMade) {
+    try {
+      await recordPurchaseEvent({ session, projectId, customerEmail });
+    } catch (err) {
+      logger.warn({ err: err.message, projectId }, 'analytics.purchase-failed');
+    }
     await fulfillReadyMade({ readyMade, projectId, session, event, customerEmail });
     return;
   }
 
   // Load the saved canonical RenderInput from the project row.
+  // Funnel event: the webhook is the ONLY authoritative source of a completed purchase.
+  // Deduped on the Stripe session id, so a redelivered webhook cannot double-count revenue,
+  // and a success-page visit is never counted at all.
+  try {
+    await recordPurchaseEvent({ session, projectId, customerEmail });
+  } catch (err) {
+    logger.warn({ err: err.message, projectId }, 'analytics.purchase-failed');
+  }
+
   const project = await getById(projectId);
   let renderInput;
   try {
@@ -201,6 +216,33 @@ async function handleSessionSucceeded(event) {
  * token or send a second email. Stripe event-level dedupe is handled by claimEvent upstream;
  * this is the second line of defence.
  */
+/**
+ * Record a completed purchase for campaign reporting. Idempotent on the Stripe session id:
+ * a redelivered webhook is a no-op, so revenue is never double-counted. Amount and currency
+ * come from the Stripe session itself, so reported revenue equals what was actually charged.
+ */
+async function recordPurchaseEvent({ session, projectId, customerEmail }) {
+  const md = session.metadata || {};
+  const readyMade = readyMadeByTemplateId(md.templateId);
+  await recordEvent({
+    eventType: 'purchase_completed',
+    productSlug: md.templateId || null,
+    productMode: readyMade ? 'ready-made' : 'personalized',
+    attribution: {
+      utm_source: md.utmSource,
+      utm_medium: md.utmMedium,
+      utm_campaign: md.utmCampaign,
+      utm_content: md.utmContent,
+      attribution_id: md.attributionId,
+    },
+    projectId,
+    sessionRef: session.id,
+    amountCents: session.amount_total ?? 0,
+    currency: session.currency ?? 'usd',
+    dedupeKey: 'purchase_completed:' + session.id,
+  });
+}
+
 async function fulfillReadyMade({ readyMade, projectId, session, event, customerEmail }) {
   const existing = await rows(
     'SELECT id FROM download_tokens WHERE project_id = $1 LIMIT 1',

@@ -26,6 +26,10 @@
 const Stripe = require('stripe');
 const { priceFor, ALLOWED_PRODUCT_IDS, isProductId } = require('../lib/pricing');
 const { createProjectIfMissing } = require('../services/projects');
+const { normalizeAttribution } = require('../services/attribution');
+const { logger } = require('../services/logger');
+const { recordEvent } = require('../db/analytics');
+const { readyMadeByTemplateId } = require('../config/ready-made-products');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-12-18.acacia' });
 
@@ -38,6 +42,7 @@ const SITE = process.env.PUBLIC_SITE_URL || 'https://app.celebratebanner.com';
 async function checkoutHandler(req, res) {
   try {
     const body = req.body ?? {};
+    const attribution = normalizeAttribution(body.attribution ?? {});
     const errors = validate(body);
     if (errors.length) return res.status(400).json({ error: errors.join('; ') });
 
@@ -96,6 +101,14 @@ async function checkoutHandler(req, res) {
         renderType: body.renderType,
         customerEmail: body.customerEmail,
         affiliateRef: body.affiliateRef ?? '',
+        // Campaign attribution. Normalised (lowercased, length-capped, aliases resolved)
+        // before it ever reaches Stripe; absent attribution becomes direct/unknown rather
+        // than blocking checkout.
+        utmSource: attribution.utmSource,
+        utmMedium: attribution.utmMedium,
+        utmCampaign: attribution.utmCampaign,
+        utmContent: attribution.utmContent ?? '',
+        attributionId: attribution.attributionId ?? '',
         recoveryToken: body.recoveryToken ?? '',
         productIds: body.items.map((i) => i.productId).join(','),
       },
@@ -110,6 +123,23 @@ async function checkoutHandler(req, res) {
       // Future: allow_promotion_codes once you wire up Stripe Coupons.
       allow_promotion_codes: false,
     });
+
+    // Funnel event, recorded server-side. Analytics must never break checkout, so a
+    // failure here is logged and swallowed. Deduped on the session id so a retried
+    // request cannot double-count a start.
+    try {
+      await recordEvent({
+        eventType: 'checkout_started',
+        productSlug: body.templateId,
+        productMode: readyMadeByTemplateId(body.templateId) ? 'ready-made' : 'personalized',
+        attribution,
+        projectId: body.projectId,
+        sessionRef: session.id,
+        dedupeKey: 'checkout_started:' + session.id,
+      });
+    } catch (err) {
+      logger.warn({ err: err.message, projectId: body.projectId }, 'analytics.checkout-started-failed');
+    }
 
     return res.status(200).json({ url: session.url, sessionId: session.id });
   } catch (err) {

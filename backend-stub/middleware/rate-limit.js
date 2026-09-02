@@ -65,6 +65,9 @@ const limiters = {
   uploads:     makeLimiter('uploads',     { points: 200, durationSec: 60 * 60 }),
   autosave:    makeLimiter('autosave',    { points: 600, durationSec: 60 * 60 }),
   downloads:   makeLimiter('downloads',   { points: 100, durationSec: 5 * 60 }),
+  // Funnel events are cheap and frequent (one per product view), but still capped so a
+  // single client cannot flood the analytics table.
+  events:      makeLimiter('events',      { points: 300, durationSec: 60 * 60 }),
   // Aggressive limit on admin login to deter credential-stuffing attacks.
   'admin-login': makeLimiter('admin-login', { points: 10, durationSec: 60 }),
 };

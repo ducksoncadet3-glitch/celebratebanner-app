@@ -26,6 +26,7 @@ import { productOffer } from '@/lib/catalog/structured-data';
 import { proofHrefForProduct } from '@/lib/catalog/proof-link';
 import { isComingSoon, isReadyMade, COMING_SOON_LABEL, COMING_SOON_NOTE } from '@/lib/catalog/availability';
 import { CheckoutButton } from '@/components/checkout-button';
+import { ProductViewTracker } from '@/components/product-view-tracker';
 import { getProductBySlug as lookupProduct } from '@/lib/catalog/products';
 import { resolveProductImage } from '@/lib/catalog/product-image';
 import { buildMetadata, SITE } from '@/lib/seo';
@@ -115,6 +116,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             { label: product.name },
           ]}
         />
+
+        <ProductViewTracker productSlug={product.slug} productMode={product.productMode} />
 
         <div className="mt-6 grid gap-10 lg:grid-cols-2">
           <ProductGallery images={[hero.src]} alt={heroAlt} />

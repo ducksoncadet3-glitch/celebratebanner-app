@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { TextField } from '@/components/proof/field';
 import { ShippingForm } from './shipping-form';
 import { api, ApiError, type ShippingAddress } from '@/lib/api';
+import { attributionPayload } from '@/lib/attribution';
 import { logOperationalEvent } from '@/lib/orders/events';
 import { PRICING, formatUSD } from '@/lib/pricing';
 import { getStoredEmail, newProjectId, setStoredEmail } from '@/lib/utils';
@@ -84,9 +85,12 @@ export function OrderReview({ params }: OrderReviewProps) {
         metadata: { productIds, totalCents: total, requiresShipping: needsShipping },
       });
       // Creates the order record + Stripe Checkout session server-side, then we redirect.
-      const { url } = await api.createCheckout(
-        buildCheckoutInput(resolved, { email, name }, needsShipping ? shipping : null),
-      );
+      const { url } = await api.createCheckout({
+        ...buildCheckoutInput(resolved, { email, name }, needsShipping ? shipping : null),
+        // Same campaign attribution as the direct checkout button, so the personalized
+        // funnel is measured identically to the ready-made one.
+        attribution: attributionPayload(),
+      });
       window.location.assign(url);
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Could not start payment. Please try again.';

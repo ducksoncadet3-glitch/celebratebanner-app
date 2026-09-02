@@ -50,6 +50,14 @@ export interface CreateCheckoutInput {
   affiliateRef?: string;
   /** Optional cart-recovery token returned by abandoned-cart emails. */
   recoveryToken?: string;
+  /** Campaign attribution captured on arrival. Absent → the backend records direct. */
+  attribution?: {
+    utmSource: string;
+    utmMedium: string;
+    utmCampaign: string;
+    utmContent: string | null;
+    attributionId: string;
+  };
 }
 
 /**

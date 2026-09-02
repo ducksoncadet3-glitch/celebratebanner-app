@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { Spinner } from './ui/spinner';
 import { api, ApiError } from '@/lib/api';
 import { getStoredEmail, newProjectId, setStoredEmail } from '@/lib/utils';
+import { attributionPayload } from '@/lib/attribution';
 import type { ProductId, RenderType } from '@/lib/pricing';
 
 interface Props {
@@ -69,6 +70,9 @@ export function CheckoutButton({
       if (addVideo && productId !== 'video') items.push({ productId: 'video' });
 
       const { url } = await api.createCheckout({
+        // Campaign attribution captured on arrival, so the eventual Stripe webhook can
+        // credit the platform/creative that actually drove the sale.
+        attribution: attributionPayload(),
         projectId: projectId ?? newProjectId(),
         templateId,
         renderType,

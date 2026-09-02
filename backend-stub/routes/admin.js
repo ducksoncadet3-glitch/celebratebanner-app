@@ -11,6 +11,7 @@
 const crypto = require('node:crypto');
 const { rows, one, query } = require('../db/index');
 const { getQueueHealth, getJob, cancelRender, enqueueRender, queue } = require('../services/queue');
+const { funnelReport, funnelTotals, rate } = require('../db/analytics');
 const { recent: recentWebhooks } = require('../db/webhook-events');
 const { record: auditRecord, forSubject: auditForSubject } = require('../services/audit');
 const { issueDownloadToken } = require('../services/tokens');
@@ -348,7 +349,53 @@ async function webhookLogHandler(_req, res) {
   }
 }
 
+// ── GET /api/admin/analytics ────────────────────────────────────────────────
+// Campaign funnel by platform / campaign / product, optionally by creative.
+// Mounted under /api/admin, which is auth-gated in server.js — never public.
+async function analyticsHandler(req, res) {
+  try {
+    const days = Math.max(1, Math.min(365, Number.parseInt(req.query.days, 10) || 30));
+    const byCreative = req.query.byCreative === '1' || req.query.byCreative === 'true';
+    const [breakdown, totals] = await Promise.all([
+      funnelReport({ days, byCreative }),
+      funnelTotals({ days }),
+    ]);
+    const decorate = (r) => ({
+      platform: r.utm_source,
+      campaign: r.utm_campaign,
+      creative: r.utm_content ?? null,
+      productSlug: r.product_slug,
+      productMode: r.product_mode,
+      productViews: Number(r.product_views),
+      checkoutStarts: Number(r.checkout_starts),
+      purchases: Number(r.purchases),
+      revenueCents: Number(r.revenue_cents),
+      viewToCheckoutPct: rate(r.checkout_starts, r.product_views),
+      checkoutToPurchasePct: rate(r.purchases, r.checkout_starts),
+      viewToPurchasePct: rate(r.purchases, r.product_views),
+    });
+    res.json({
+      windowDays: days,
+      byCreative,
+      totals: {
+        productViews: Number(totals.product_views),
+        checkoutStarts: Number(totals.checkout_starts),
+        purchases: Number(totals.purchases),
+        revenueCents: Number(totals.revenue_cents),
+        viewToCheckoutPct: rate(totals.checkout_starts, totals.product_views),
+        checkoutToPurchasePct: rate(totals.purchases, totals.checkout_starts),
+        viewToPurchasePct: rate(totals.purchases, totals.product_views),
+      },
+      rows: breakdown.map(decorate),
+    });
+  } catch (err) {
+    logger.error({ err: err.message }, 'admin.analytics-failed');
+    res.status(500).json({ error: 'failed' });
+  }
+}
+
 module.exports = {
+  analyticsHandler,
   overviewHandler,
   listProjectsHandler,
   getProjectHandler,
