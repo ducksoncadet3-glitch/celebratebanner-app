@@ -100,9 +100,8 @@ jobs:
 
             const ren = await pool.query(
               "SELECT id, queue_job_id, status, progress, attempts," +
-              " (png_key IS NOT NULL) AS has_png, (jpeg_key IS NOT NULL) AS has_jpeg," +
-              " (mockup_key IS NOT NULL) AS has_mockup," +
-              " enqueued_at, started_at, finished_at, duration_ms, error_message" +
+              " png_key, jpeg_key, (mockup_key IS NOT NULL) AS has_mockup_key," +
+                            " enqueued_at, started_at, finished_at, duration_ms, error_message" +
               " FROM renders WHERE project_id = $1 ORDER BY enqueued_at DESC", [ID]);
             out('PHASE 3 RENDERS', ren.rows);
 
