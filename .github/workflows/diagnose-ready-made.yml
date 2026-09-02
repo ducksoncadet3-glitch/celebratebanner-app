@@ -10,6 +10,10 @@ name: diagnose-ready-made
 on:
   workflow_dispatch:
     inputs:
+      project_id:
+        description: 'Exact project id to trace (proj_...). Takes precedence over template_id.'
+        required: false
+        default: ''
       template_id:
         description: 'Ready-made templateId / product slug to trace'
         required: true
@@ -47,6 +51,7 @@ jobs:
           /* READ ONLY. No INSERT/UPDATE/DELETE, no queue.add, no mail send. */
           const { Pool } = require('pg');
           const TPL = process.env.RM_TEMPLATE_ID;
+          const PIN = (process.env.RM_PROJECT_ID || '').trim();
           const pool = new Pool({
             connectionString: process.env.DATABASE_URL,
             ssl: process.env.PG_SSL === 'require' ? { rejectUnauthorized: false } : undefined,
@@ -73,8 +78,16 @@ jobs:
               "SELECT p.id FROM projects p JOIN payments pay ON pay.project_id = p.id" +
               " WHERE p.template_id = $1 AND pay.status = 'succeeded'" +
               " ORDER BY pay.created_at DESC LIMIT 1", [TPL]);
-            const ID = paid.rows.length ? paid.rows[0].id : proj.rows[0].id;
-            console.log(paid.rows.length ? 'tracing most recent PAID order' : 'no paid order found; tracing newest project');
+            // An explicit project id always wins: "most recent paid" is the wrong order to
+            // trace when an earlier test order is being investigated alongside a later one.
+            const ID = PIN || (paid.rows.length ? paid.rows[0].id : proj.rows[0].id);
+            console.log(PIN ? 'tracing PINNED project id' : (paid.rows.length ? 'tracing most recent PAID order' : 'no paid order found; tracing newest project'));
+            if (PIN) {
+              const exists = await pool.query(
+                'SELECT id, status, template_id, render_type, created_at FROM projects WHERE id = $1', [PIN]);
+              out('PINNED PROJECT IDENTITY', exists.rows[0] || { found: false });
+              if (!exists.rows.length) { console.log('PINNED PROJECT NOT FOUND — aborting'); await pool.end(); return; }
+            }
             console.log('\ntracing project:', ID);
 
             // 2) Payment rows.
@@ -82,6 +95,7 @@ jobs:
               "SELECT status, product_ids, amount_total_cents, currency," +
               " (customer_email IS NOT NULL) AS has_email, customer_email," +
               " (confirmation_sent_at IS NOT NULL) AS confirmation_claimed, confirmation_sent_at," +
+              " refunded_amount_cents," +
               " created_at, ('...' || right(stripe_session_id, 6)) AS session_tail," +
               " ('...' || right(COALESCE(stripe_payment_intent,''), 6)) AS pi_tail," +
               " count(*) OVER () AS row_count" +
@@ -245,8 +259,9 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
           TPL: ${{ inputs.template_id }}
+          PID: ${{ inputs.project_id }}
         run: |
           set -o pipefail
           B64=$(base64 -w0 /tmp/rm.js)
           flyctl ssh console -a celebratebanner-api -C \
-            "/bin/sh -lc \"cd /app/backend-stub && RM_TEMPLATE_ID='${TPL}' node -e \\\"eval(Buffer.from('${B64}','base64').toString('utf8'))\\\"\""
+            "/bin/sh -lc \"cd /app/backend-stub && RM_TEMPLATE_ID='${TPL}' RM_PROJECT_ID='${PID}' node -e \\\"eval(Buffer.from('${B64}','base64').toString('utf8'))\\\"\""
