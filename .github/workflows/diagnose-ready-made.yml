@@ -1,0 +1,186 @@
+name: diagnose-ready-made
+
+# READ-ONLY trace of the most recent ready-made order.
+#
+# SELECT statements, Redis reads, and one Postmark *read* (outbound message search) only.
+# It writes nothing, enqueues nothing, sends nothing, and mutates no Stripe object.
+#
+# Never prints: DATABASE_URL, any token/secret, the download bearer token, a signed URL, or
+# a full customer email address (only a masked form, to correlate with the provider).
+on:
+  workflow_dispatch:
+    inputs:
+      template_id:
+        description: 'Ready-made templateId / product slug to trace'
+        required: true
+        default: 'the-beauty-of-the-world'
+      reason:
+        description: 'Why this diagnostic is running'
+        required: false
+        default: 'delivery failure triage'
+
+concurrency:
+  group: diagnose-ready-made
+  cancel-in-progress: false
+
+jobs:
+  trace:
+    name: read-only ready-made trace
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: check API credential
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+        run: |
+          if [ -z "${FLY_API_TOKEN}" ]; then
+            echo "::error::FLY_API_TOKEN_API resolved to an EMPTY value."; exit 1
+          fi
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: write the read-only probe
+        run: |
+          cat > /tmp/rm.js <<'ENDOFPROBE'
+          /* READ ONLY. No INSERT/UPDATE/DELETE, no queue.add, no mail send. */
+          const { Pool } = require('pg');
+          const TPL = process.env.RM_TEMPLATE_ID;
+          const pool = new Pool({
+            connectionString: process.env.DATABASE_URL,
+            ssl: process.env.PG_SSL === 'require' ? { rejectUnauthorized: false } : undefined,
+          });
+          const out = (k, v) => console.log('\n=== ' + k + ' ===\n' + JSON.stringify(v, null, 2));
+          const maskEmail = (e) => {
+            if (!e) return null;
+            const [u, d] = String(e).split('@');
+            return (u ? u.slice(0, 2) : '') + '***@' + (d || '');
+          };
+
+          (async () => {
+            // 1) Most recent project for this ready-made template.
+            const proj = await pool.query(
+              "SELECT id, status, template_id, render_type, created_at, updated_at, paid_at," +
+              " (render_input IS NOT NULL) AS ri_present," +
+              " COALESCE(jsonb_array_length(render_input->'photos'), -1) AS photo_count" +
+              " FROM projects WHERE template_id = $1 ORDER BY created_at DESC LIMIT 3", [TPL]);
+            out('PROJECTS (most recent 3)', proj.rows);
+            if (!proj.rows.length) { console.log('no ready-made project found'); await pool.end(); return; }
+            const ID = proj.rows[0].id;
+            console.log('\ntracing project:', ID);
+
+            // 2) Payment rows.
+            const pay = await pool.query(
+              "SELECT status, product_ids, amount_total_cents, currency," +
+              " (customer_email IS NOT NULL) AS has_email, customer_email," +
+              " (confirmation_sent_at IS NOT NULL) AS confirmation_claimed, confirmation_sent_at," +
+              " created_at, ('...' || right(stripe_session_id, 6)) AS session_tail," +
+              " ('...' || right(COALESCE(stripe_payment_intent,''), 6)) AS pi_tail," +
+              " count(*) OVER () AS row_count" +
+              " FROM payments WHERE project_id = $1 ORDER BY created_at DESC", [ID]);
+            out('PAYMENTS', pay.rows.map((r) => ({ ...r, customer_email: maskEmail(r.customer_email) })));
+
+            // 3) Webhook events for this project.
+            const wh = await pool.query(
+              "SELECT type, status, attempts, received_at, processed_at," +
+              " left(error_message, 400) AS error_message," +
+              " ('...' || right(stripe_event_id, 6)) AS event_tail" +
+              " FROM webhook_events" +
+              " WHERE payload->'data'->'object'->'metadata'->>'projectId' = $1" +
+              " ORDER BY received_at ASC LIMIT 20", [ID]);
+            out('WEBHOOK EVENTS', wh.rows);
+
+            // 4) Audit trail — did the ready-made branch run?
+            const audit = await pool.query(
+              "SELECT action, actor_kind, created_at, metadata->>'slug' AS slug," +
+              " metadata->>'assetType' AS asset_type, metadata->>'reason' AS reason" +
+              " FROM audit_log WHERE subject_id = $1 ORDER BY created_at ASC LIMIT 40", [ID]);
+            out('AUDIT TRAIL', audit.rows);
+
+            // 5) Download token — existence/expiry/target only. NEVER the token itself.
+            const dl = await pool.query(
+              "SELECT asset_type, s3_key, created_at, expires_at," +
+              " (expires_at > NOW()) AS still_valid," +
+              " (token_hash IS NOT NULL) AS token_recorded" +
+              " FROM download_tokens WHERE project_id = $1 ORDER BY created_at DESC", [ID]);
+            out('DOWNLOAD TOKENS', dl.rows);
+
+            // 6) Renders MUST be empty for a ready-made order.
+            const ren = await pool.query(
+              "SELECT id, status, queue_job_id FROM renders WHERE project_id = $1", [ID]);
+            out('RENDERS (must be empty)', ren.rows);
+
+            // 7) BullMQ — prove no job exists for this session.
+            let redis = { checked: false };
+            try {
+              const IORedis = require('ioredis');
+              const conn = new IORedis(process.env.REDIS_URL, { maxRetriesPerRequest: null, lazyConnect: true });
+              await conn.connect();
+              const q = process.env.RENDER_QUEUE_NAME || 'cb-renders';
+              const sess = await pool.query(
+                "SELECT stripe_session_id FROM payments WHERE project_id = $1 ORDER BY created_at DESC LIMIT 1", [ID]);
+              const sid = sess.rows[0] && sess.rows[0].stripe_session_id;
+              const jobId = sid ? 'paid-' + sid : null; // toJobId() normalises ':' to '-'
+              const hash = jobId ? await conn.hgetall('bull:' + q + ':' + jobId) : {};
+              redis = {
+                checked: true, queue: q,
+                jobExists: !!(hash && Object.keys(hash).length),
+                counters: {
+                  wait: await conn.llen('bull:' + q + ':wait'),
+                  active: await conn.llen('bull:' + q + ':active'),
+                  failed: await conn.zcard('bull:' + q + ':failed'),
+                },
+              };
+              await conn.quit();
+            } catch (e) { redis = { checked: false, error: String(e.message).slice(0, 150) }; }
+            out('BULLMQ (must show no job)', redis);
+
+            // 8) Postmark: READ-ONLY outbound search for this recipient. Token never printed.
+            const email = pay.rows[0] && pay.rows[0].customer_email;
+            let postmark = { checked: false };
+            if (process.env.POSTMARK_API_TOKEN && email) {
+              try {
+                const r = await fetch(
+                  'https://api.postmarkapp.com/messages/outbound?count=10&offset=0&recipient=' +
+                  encodeURIComponent(email),
+                  { headers: { Accept: 'application/json', 'X-Postmark-Server-Token': process.env.POSTMARK_API_TOKEN } },
+                );
+                const body = await r.json();
+                postmark = {
+                  checked: true, httpStatus: r.status,
+                  totalCount: body.TotalCount,
+                  messages: (body.Messages || []).map((m) => ({
+                    messageId: m.MessageID, status: m.Status, subject: m.Subject,
+                    sentAt: m.ReceivedAt, stream: m.MessageStream,
+                  })),
+                };
+              } catch (e) { postmark = { checked: false, error: String(e.message).slice(0, 150) }; }
+            } else {
+              postmark = { checked: false, reason: process.env.POSTMARK_API_TOKEN ? 'no recipient on file' : 'POSTMARK_API_TOKEN not set in this process' };
+            }
+            out('POSTMARK OUTBOUND (read-only)', postmark);
+
+            // 9) Mail configuration presence (names only, never values).
+            out('MAIL CONFIG PRESENCE', {
+              POSTMARK_API_TOKEN: Boolean(process.env.POSTMARK_API_TOKEN),
+              MAIL_FROM: Boolean(process.env.MAIL_FROM),
+              POSTMARK_STREAM: process.env.POSTMARK_STREAM || '(default outbound)',
+              READY_MADE_BEAUTY_ASSET_KEY: Boolean(process.env.READY_MADE_BEAUTY_ASSET_KEY),
+            });
+
+            await pool.end();
+            console.log('\n=== READY-MADE TRACE COMPLETE (read-only) ===');
+          })().catch((e) => { console.error('TRACE ERROR:', e.message); process.exit(1); });
+          ENDOFPROBE
+          node --check /tmp/rm.js && echo "probe syntax OK"
+
+      - name: run inside celebratebanner-api
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+          TPL: ${{ inputs.template_id }}
+        run: |
+          set -o pipefail
+          B64=$(base64 -w0 /tmp/rm.js)
+          flyctl ssh console -a celebratebanner-api -C \
+            "/bin/sh -lc \"cd /app/backend-stub && RM_TEMPLATE_ID='${TPL}' node -e \\\"eval(Buffer.from('${B64}','base64').toString('utf8'))\\\"\""
